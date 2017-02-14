@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{33AD0EE8-D99B-4E14-8CD9-3F56ABEF97A2}") = "AzureFunction-github-bot", "AzureFunction-dco-check\AzureFunction-github-bot.funproj", "{CDF6C0A3-723C-4B3F-AA9D-876939EAF236}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CDF6C0A3-723C-4B3F-AA9D-876939EAF236}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDF6C0A3-723C-4B3F-AA9D-876939EAF236}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDF6C0A3-723C-4B3F-AA9D-876939EAF236}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDF6C0A3-723C-4B3F-AA9D-876939EAF236}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
