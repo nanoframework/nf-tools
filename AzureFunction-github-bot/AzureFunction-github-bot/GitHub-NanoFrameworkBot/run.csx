@@ -22,6 +22,8 @@ public static async Task Run(dynamic payload, TraceWriter log)
     // process PR opened
     if (payload.pull_request != null && payload.action == "opened")
     {
+        log.Info($"Processing new PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
+
         // get commit collection for this PR
         dynamic commitsForThisPull = await GetGitHubRequest(payload.pull_request.commits_url.ToString(), log);
 
@@ -33,7 +35,7 @@ public static async Task Run(dynamic payload, TraceWriter log)
             // DCO check is valid
 
             // add comment with thank you note!
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nEverything seems to be in order.\\r\\nA human will be reviewing it shortly. :wink:\" }}";
             // post comment with thank you message
             await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
@@ -70,7 +72,7 @@ public static async Task Run(dynamic payload, TraceWriter log)
             // DCO check failed
 
             // add comment with thank you note!
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nIt seems that the DCO or 'obvious fix' mention are missing in the commit(s) message(s).\\r\\nPlease make sure that you've:\\r\\n 1. Followed the [Contribution Workflow](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md).\\r\\n 2. Signed off the commit(s) following the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin). \\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nIt seems that the DCO or 'obvious fix' mention are missing in the commit(s) message(s).\\r\\nPlease make sure that you've:\\r\\n 1. Followed the [Contribution Workflow](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md).\\r\\n 2. Signed off the commit(s) following the instructions about the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin). \\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
             // post comment with thank you message
             await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
@@ -90,6 +92,8 @@ public static async Task Run(dynamic payload, TraceWriter log)
     {
         // PR was edited or reopened 
 
+        log.Info($"Processing PR #{payload.pull_request.number}:{payload.pull_request.title} changes");
+
         // get commit collection for this PR
         dynamic commitsForThisPull = await GetGitHubRequest(payload.pull_request.commits_url.ToString(), log);
 
@@ -143,6 +147,10 @@ public static async Task Run(dynamic payload, TraceWriter log)
         else
         {
             // DCO check failed
+
+            // post comment with warning
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nIt seems that the DCO or 'obvious fix' mention are missing in some of the commit(s) message(s).\\r\\nPlease make sure that you've signed off the commit(s) following the instructions regarding the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin).\\r\\n\\r\\nA human will be reviewing this shortly. :wink:\" }}";
+            await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
             // delete DCO not required label, if there
             await SendGitHubDeleteRequest($"{payload.pull_request.issue_url.ToString()}/labels/DCO-not-required", log);
@@ -166,6 +174,8 @@ public static async Task Run(dynamic payload, TraceWriter log)
     {
         // we have a new fork
         // send message to Slack channel
+
+        log.Info($"Processing new fork event from {payload.forkee.owner.login.ToString()}");
 
         //log.Info($">> : {payload.forkee.name.ToString()}");
 
@@ -192,12 +202,12 @@ public static async Task Run(dynamic payload, TraceWriter log)
 
     #region process stared event 
 
-    else if (payload.action != null)
+    else if (payload.repository != null && payload.action == "started")
     {
         // we have a user staring the repo
         // send message to Slack channel
 
-        //log.Info($">> : {payload.sender.ToString()}");
+        log.Info($"Processing new repo stared event from {payload.sender.login.ToString()}");
 
         var slackPayload = new
         {
