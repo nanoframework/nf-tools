@@ -13,7 +13,6 @@ private const string allCommitsHaveObviousFixString = "All commits have an obvio
 private const string allCommitsHaveSignOffOrObviousFixString = "All commits have a DCO Signed-off-by or an obvious fix statement.";
 private const string commitsMissingSignOffOrObviousFixString = "Some commits are missing the DCO Signed-off-by or obvious fix statement.";
 
-
 public static async Task Run(dynamic payload, TraceWriter log)
 {
 
@@ -34,9 +33,8 @@ public static async Task Run(dynamic payload, TraceWriter log)
         {
             // DCO check is valid
 
-            // add comment with thank you note!
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nEverything seems to be in order.\\r\\nA human will be reviewing it shortly. :wink:\" }}";
             // post comment with thank you message
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nEverything seems to be in order.\\r\\nA human will be reviewing it shortly. :wink:\" }}";
             await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
             if (checkResult.Item1 > 0 && checkResult.Item2 == 0)
@@ -71,9 +69,8 @@ public static async Task Run(dynamic payload, TraceWriter log)
         {
             // DCO check failed
 
-            // add comment with thank you note!
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nIt seems that the DCO or 'obvious fix' mention are missing in the commit(s) message(s).\\r\\nPlease make sure that you've:\\r\\n 1. Followed the [Contribution Workflow](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md).\\r\\n 2. Signed off the commit(s) following the instructions about the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin). \\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
-            // post comment with thank you message
+            // add comment with thank you note mentioning that the DCO or obvious fix mention are missing
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nIt seems that the DCO signed-off or an 'obvious fix' mention are missing in the commit(s) message(s).\\r\\nPlease make sure that you've:\\r\\n 1. Followed the [Contribution Workflow](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md).\\r\\n 2. Signed off the commit(s) following the instructions about the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin) or an [Obvious Fix](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#obvious-fix) mention.\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
             await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
             // set label to DCO required
@@ -149,7 +146,7 @@ public static async Task Run(dynamic payload, TraceWriter log)
             // DCO check failed
 
             // post comment with warning
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nIt seems that the DCO or 'obvious fix' mention are missing in some of the commit(s) message(s).\\r\\nPlease make sure that you've signed off the commit(s) following the instructions regarding the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin).\\r\\n\\r\\nA human will be reviewing this shortly. :wink:\" }}";
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nIt seems that the DCO or 'obvious fix' mention are missing in some of the commit(s) message(s).\\r\\nPlease make sure that you've either signed off the commit(s) following the instructions regarding the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin) or added an [Obvious Fix](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#obvious-fix) mention.\\r\\n\\r\\nA human will be reviewing this shortly. :wink:\" }}";
             await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
             // delete DCO not required label, if there
@@ -247,6 +244,8 @@ public static async Task<Tuple<int, int, bool>> CheckCommitMessages(dynamic comm
         // check for sign-off message 
         if (item.commit.message.ToString().Contains($"Signed-off-by: {item.commit.author.name.ToString()} <{item.commit.author.email.ToString()}>"))
         {
+            //log.Info($"CheckCommitMessages: Signed-off-by comment verified");
+
             signedOffCount++;
 
             // set status to DCO checked
@@ -256,10 +255,17 @@ public static async Task<Tuple<int, int, bool>> CheckCommitMessages(dynamic comm
         else
         {
             // this commit message isn't signed-off 
-            // check for obvious fix message
-            if((item.commit.message.ToString().Contains("obvious fix") ||
-                item.commit.message.ToString().Contains("Obvious fix")))
+            // check for obvious fix message variations (this has to be a single line, to clear use of this on a sentence)
+            if(item.commit.message.ToString().Contains("\r\nobvious fix") ||
+                item.commit.message.ToString().Contains("obvious fix\r\n") ||
+                item.commit.message.ToString().Contains("obvious fix.\r\n") ||
+
+                item.commit.message.ToString().Contains("\r\nObvious fix") ||
+                item.commit.message.ToString().Contains("Obvious fix\r\n") ||
+                item.commit.message.ToString().Contains("Obvious fix.\r\n"))
             {
+                //log.Info($"CheckCommitMessages: Obvious fix comment verified");
+
                 obviousFixCount++;
 
                 // set status to DCO checked
@@ -268,8 +274,11 @@ public static async Task<Tuple<int, int, bool>> CheckCommitMessages(dynamic comm
             }
             else
             {
-                // no obvious fix message either, flag to NOT checked if not already...
-                checkPass ^= false;
+                // no obvious fix message either
+                //log.Info($"CheckCommitMessages: no valid comment found");
+
+                // flag to NOT checked if not already...
+                checkPass &= false;
 
                 // set status to DCO required
                 // need to hack this URL because the API is not exposing the URL for setting individual commit status
