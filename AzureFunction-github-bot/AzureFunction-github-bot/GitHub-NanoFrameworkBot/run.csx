@@ -85,9 +85,9 @@ public static async Task Run(dynamic payload, TraceWriter log)
 
         //log.Info($"{payload.pull_request.user.login} submitted pull request #{payload.pull_request.number}:{payload.pull_request.title}. Comment with thank you note.");
     }
-    else if (payload.pull_request != null && (payload.action == "edited" || payload.action == "reopened"))
+    else if (payload.pull_request != null && (payload.action == "edited" || payload.action == "reopened" || payload.action == "synchronize"))
     {
-        // PR was edited or reopened 
+        // PR was edited, reopened or synchronized
 
         log.Info($"Processing PR #{payload.pull_request.number}:{payload.pull_request.title} changes");
 
