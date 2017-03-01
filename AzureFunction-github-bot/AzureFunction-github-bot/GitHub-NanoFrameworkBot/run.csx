@@ -238,6 +238,8 @@ public static async Task<Tuple<int, int, bool>> CheckCommitMessages(dynamic comm
     {
         // get commit message
         //log.Info($"Commit message: {item.commit.message.ToString()}");
+        //log.Info($"Commit message lenght: {item.commit.message.ToString().Length}");
+        //log.Info($"Commit message '{item.commit.message.ToString()[0].ToString()}' + '{item.commit.message.ToString()[1].ToString()}' + '{item.commit.message.ToString()[2].ToString()}'");
         //log.Info($"Commit author name: {item.commit.author.name.ToString()}");
         //log.Info($"Commit author email: {item.commit.author.email.ToString()}");
 
@@ -256,13 +258,13 @@ public static async Task<Tuple<int, int, bool>> CheckCommitMessages(dynamic comm
         {
             // this commit message isn't signed-off 
             // check for obvious fix message variations (this has to be a single line, to clear use of this on a sentence)
-            if(item.commit.message.ToString().Contains("\r\nobvious fix") ||
-                item.commit.message.ToString().Contains("obvious fix\r\n") ||
-                item.commit.message.ToString().Contains("obvious fix.\r\n") ||
+            if(item.commit.message.ToString().Contains("\nobvious fix") ||
+                item.commit.message.ToString().Contains("obvious fix\n") ||
+                item.commit.message.ToString().Contains("obvious fix.\n") ||
 
-                item.commit.message.ToString().Contains("\r\nObvious fix") ||
-                item.commit.message.ToString().Contains("Obvious fix\r\n") ||
-                item.commit.message.ToString().Contains("Obvious fix.\r\n"))
+                item.commit.message.ToString().Contains("\nObvious fix") ||
+                item.commit.message.ToString().Contains("Obvious fix\n") ||
+                item.commit.message.ToString().Contains("Obvious fix.\n"))
             {
                 //log.Info($"CheckCommitMessages: Obvious fix comment verified");
 
