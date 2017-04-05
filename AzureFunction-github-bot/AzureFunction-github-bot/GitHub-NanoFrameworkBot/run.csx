@@ -23,143 +23,14 @@ public static async Task Run(dynamic payload, TraceWriter log)
     {
         log.Info($"Processing new PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
 
-        // get commit collection for this PR
-        dynamic commitsForThisPull = await GetGitHubRequest(payload.pull_request.commits_url.ToString(), log);
-
-        // check commit collection for DCO or obvious fix message
-        var checkResult = await CheckCommitMessages(commitsForThisPull, log);
-
-        if (checkResult.Item3)
-        {
-            // DCO check is valid
-
-            // post comment with thank you message
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nEverything seems to be in order.\\r\\nA human will be reviewing it shortly. :wink:\" }}";
-            await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
-
-            if (checkResult.Item1 > 0 && checkResult.Item2 == 0)
-            {
-                // commits with signed-off
-                // set label to DCO check valid
-                await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"DCO-check-valid\" ]", log);
-
-                // set status to DCO checked
-                await SendGitHubRequest($"{payload.pull_request.statuses_url.ToString()}", $"{{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"{allCommitsHaveSignOffString}\" }}", log);
-            }
-            else if (checkResult.Item1 > 0 || checkResult.Item2 > 0)
-            {
-                // mixed commits with signed-off and obvious fix
-                // set label to DCO check valid
-                await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"DCO-check-valid\" ]", log);
-
-                // set status to DCO checked
-                await SendGitHubRequest($"{payload.pull_request.statuses_url.ToString()}", $"{{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"{allCommitsHaveSignOffOrObviousFixString}\" }}", log);
-            }
-            else
-            {
-                // must be all obvious fix
-                // set label to DCO not required
-                await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"DCO-not-required\" ]", log);
-
-                // set status to DCO checked
-                await SendGitHubRequest($"{payload.pull_request.statuses_url.ToString()}", $"{{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"{allCommitsHaveObviousFixString}\" }}", log);
-            }
-        }
-        else
-        {
-            // DCO check failed
-
-            // add comment with thank you note mentioning that the DCO or obvious fix mention are missing
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nIt seems that the DCO signed-off or an 'obvious fix' mention are missing in the commit(s) message(s).\\r\\nPlease make sure that you've:\\r\\n 1. Followed the [Contribution Workflow](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md).\\r\\n 2. Signed off the commit(s) following the instructions about the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin) or an [Obvious Fix](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#obvious-fix) mention.\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
-            await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
-
-            // set label to DCO required
-            await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"DCO-required\" ]", log);
-
-            // set status to DCO failed
-            await SendGitHubRequest($"{payload.pull_request.statuses_url.ToString()}", $"{{ \"context\" : \"DCO\" , \"state\" : \"failure\" , \"description\" : \"{commitsMissingSignOffOrObviousFixString}\" }}", log);
-        }
+        // post comment with thank you message
+        string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
+        await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
         // add thumbs up reaction in PR main message
         await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/reactions", "{ \"content\" : \"+1\" }", log, "application/vnd.github.squirrel-girl-preview");
 
         //log.Info($"{payload.pull_request.user.login} submitted pull request #{payload.pull_request.number}:{payload.pull_request.title}. Comment with thank you note.");
-    }
-    else if (payload.pull_request != null && (payload.action == "edited" || payload.action == "reopened" || payload.action == "synchronize"))
-    {
-        // PR was edited, reopened or synchronized
-
-        log.Info($"Processing PR #{payload.pull_request.number}:{payload.pull_request.title} changes");
-
-        // get commit collection for this PR
-        dynamic commitsForThisPull = await GetGitHubRequest(payload.pull_request.commits_url.ToString(), log);
-
-        // check commit collection for DCO or obvious fix message
-        var checkResult = await CheckCommitMessages(commitsForThisPull, log);
-
-        if (checkResult.Item3)
-        {
-            // DCO check is valid
-
-            if (checkResult.Item1 > 0 && checkResult.Item2 == 0)
-            {
-                // commits with signed-off
-                
-                // set label to DCO check valid
-                await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"DCO-check-valid\" ]", log);
-
-                // delete DCO required label, if there
-                await SendGitHubDeleteRequest($"{payload.pull_request.issue_url.ToString()}/labels/DCO-required", log);
-
-                // set status to DCO checked
-                await SendGitHubRequest($"{payload.pull_request.statuses_url.ToString()}", $"{{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"{allCommitsHaveSignOffString}\" }}", log);
-            }
-            else if (checkResult.Item1 > 0 || checkResult.Item2 > 0)
-            {
-                // mixed commits with signed-off and obvious fix
-                
-                // set label to DCO check valid
-                await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"DCO-check-valid\" ]", log);
-
-                // delete DCO required label, if there
-                await SendGitHubDeleteRequest($"{payload.pull_request.issue_url.ToString()}/labels/DCO-required", log);
-
-                // set status to DCO checked
-                await SendGitHubRequest($"{payload.pull_request.statuses_url.ToString()}", $"{{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"{allCommitsHaveSignOffOrObviousFixString}\" }}", log);
-            }
-            else
-            {
-                // must be all obvious fix
-                
-                // set label to DCO not required
-                await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"DCO-not-required\" ]", log);
-
-                // delete DCO required label, if there
-                await SendGitHubDeleteRequest($"{payload.pull_request.issue_url.ToString()}/labels/DCO-required", log);
-
-                // set status to DCO checked
-                await SendGitHubRequest($"{payload.pull_request.statuses_url.ToString()}", $"{{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"{allCommitsHaveObviousFixString}\" }}", log);
-            }
-        }
-        else
-        {
-            // DCO check failed
-
-            // post comment with warning
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nIt seems that the DCO or 'obvious fix' mention are missing in some of the commit(s) message(s).\\r\\nPlease make sure that you've either signed off the commit(s) following the instructions regarding the [Developer Certificate of Origin](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#developer-certificate-of-origin) or added an [Obvious Fix](https://github.com/nanoframework/nf-interpreter/blob/master/docs/project-documentation/contributing-workflow.md#obvious-fix) mention.\\r\\n\\r\\nA human will be reviewing this shortly. :wink:\" }}";
-            await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
-
-            // delete DCO not required label, if there
-            await SendGitHubDeleteRequest($"{payload.pull_request.issue_url.ToString()}/labels/DCO-not-required", log);
-            // delete DCO check valid label, if there
-            await SendGitHubDeleteRequest($"{payload.pull_request.issue_url.ToString()}/labels/DCO-check-valid", log);
-
-            // set label to DCO required
-            await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"DCO-required\" ]", log);
-
-            // set status to DCO failed
-            await SendGitHubRequest($"{payload.pull_request.statuses_url.ToString()}", $"{{ \"context\" : \"DCO\" , \"state\" : \"failure\" , \"description\" : \"{commitsMissingSignOffOrObviousFixString}\" }}", log);
-        }
     }
 
     #endregion
@@ -237,14 +108,17 @@ public static async Task<Tuple<int, int, bool>> CheckCommitMessages(dynamic comm
     foreach(dynamic item in commitsCollection)
     {
         // get commit message
-        //log.Info($"Commit message: {item.commit.message.ToString()}");
-        //log.Info($"Commit author name: {item.commit.author.name.ToString()}");
-        //log.Info($"Commit author email: {item.commit.author.email.ToString()}");
+        log.Info($"Commit sha: [{item.sha.ToString()}]");
+        log.Info($"Commit message: >>{item.commit.message.ToString()}<<");
+        //log.Info($"Commit message lenght: {item.commit.message.ToString().Length}");
+        //log.Info($"Commit message '{item.commit.message.ToString()[0].ToString()}' + '{item.commit.message.ToString()[1].ToString()}' + '{item.commit.message.ToString()[2].ToString()}'");
+        log.Info($"Commit author name: >>{item.commit.author.name.ToString()}<<");
+        log.Info($"Commit author email: >>{item.commit.author.email.ToString()}<<");
 
         // check for sign-off message 
         if (item.commit.message.ToString().Contains($"Signed-off-by: {item.commit.author.name.ToString()} <{item.commit.author.email.ToString()}>"))
         {
-            //log.Info($"CheckCommitMessages: Signed-off-by comment verified");
+            log.Info($"CheckCommitMessages: Signed-off-by comment verified");
 
             signedOffCount++;
 
@@ -256,15 +130,15 @@ public static async Task<Tuple<int, int, bool>> CheckCommitMessages(dynamic comm
         {
             // this commit message isn't signed-off 
             // check for obvious fix message variations (this has to be a single line, to clear use of this on a sentence)
-            if(item.commit.message.ToString().Contains("\r\nobvious fix") ||
-                item.commit.message.ToString().Contains("obvious fix\r\n") ||
-                item.commit.message.ToString().Contains("obvious fix.\r\n") ||
+            if(item.commit.message.ToString().Contains("\nobvious fix") ||
+                item.commit.message.ToString().Contains("obvious fix\n") ||
+                item.commit.message.ToString().Contains("obvious fix.\n") ||
 
-                item.commit.message.ToString().Contains("\r\nObvious fix") ||
-                item.commit.message.ToString().Contains("Obvious fix\r\n") ||
-                item.commit.message.ToString().Contains("Obvious fix.\r\n"))
+                item.commit.message.ToString().Contains("\nObvious fix") ||
+                item.commit.message.ToString().Contains("Obvious fix\n") ||
+                item.commit.message.ToString().Contains("Obvious fix.\n"))
             {
-                //log.Info($"CheckCommitMessages: Obvious fix comment verified");
+                log.Info($"CheckCommitMessages: Obvious fix comment verified");
 
                 obviousFixCount++;
 
@@ -275,7 +149,7 @@ public static async Task<Tuple<int, int, bool>> CheckCommitMessages(dynamic comm
             else
             {
                 // no obvious fix message either
-                //log.Info($"CheckCommitMessages: no valid comment found");
+                log.Info($"CheckCommitMessages: no valid comment found");
 
                 // flag to NOT checked if not already...
                 checkPass &= false;
@@ -324,12 +198,16 @@ public static async Task SendGitHubRequest(string url, string requestBody, Trace
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.squirrel-girl-preview"));
         }
 
-        //log.Info($"Request URL {url}");
+        log.Info($"Request URL {url}");
 
         var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+        log.Info($"Request content >>{content.ReadAsStringAsync()}<<");
+
         HttpResponseMessage response = await client.PostAsync(url, content);
 
-        //log.Info($"Request result {response.StatusCode} content {await response.Content.ReadAsStringAsync()} .");
+
+        log.Info($"Request result {response.StatusCode}");
+        //log.Info($"Request result {response.StatusCode} content >>{await response.Content.ReadAsStringAsync()}<< .");
     }
 }
 
