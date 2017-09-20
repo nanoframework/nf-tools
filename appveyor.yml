@@ -9,4 +9,4 @@ build_script:
 - ps: >-
     nuget restore nanoFramework.Tools.Hex2Dfu\nanoFramework.Tools.Hex2Dfu.sln
 
-    msbuild nanoFramework.Tools.Hex2Dfu\nanoFramework.Tools.Hex2Dfu.sln /p:Configuration=Release /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+    msbuild nanoFramework.Tools.Hex2Dfu\nanoFramework.Tools.Hex2Dfu.sln /unsafe /p:Configuration=Release /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
