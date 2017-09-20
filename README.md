@@ -9,6 +9,7 @@ This repo contains various tools that are required in **nanoFramework** developm
 
 * [GitHub-bot](AzureFunction-github-bot) Azure Function project for **nanoFramework** GitHub bot which help with managing various aspects of communication and the pull requests workflow.
 * [GitHub DCO Check](GitHubDcoCheck) Windows app to check Pull Requests for DCO (obsolete as DCO is not required anymore).
+* [Hex2Dfu](nanoFramework.Tools.Hex2Dfu) Console app to convert and/or pack HEX or BIN files in DFU packages (required to update some target boards).
 
 
 ## Feedback and documentation
