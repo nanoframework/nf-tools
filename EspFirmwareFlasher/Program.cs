@@ -22,7 +22,7 @@ namespace EspFirmwareFlasher
 		/// </param>
 		/// <remarks>
 		/// If no arguments are delivered the tool asks for the serial port at the command line. Then it uses the baudrate 921600, the flash mode "dio" and the flash frequency "40m".
-		/// You can set other default values via NanoClrEsp32Flasher.exe.config (application configuration) file.
+		/// You can set other default values via EspFirmwareFlasher.exe.config (application configuration) file.
 		/// </remarks>
 		/// <returns>0: successful executed; no error;
 		/// -1: an internal exception occured
