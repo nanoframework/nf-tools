@@ -1,0 +1,329 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.IO.Compression;
+using System.IO.Ports;
+using System.Net.NetworkInformation;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace EspFirmwareFlasher
+{
+	/// <summary>
+	/// Class the handles all the calls to the esptool.exe.
+	/// </summary>
+	/// <remarks>
+	/// The esptool.py Python script with all its dependencies has to be converted into an folder where the esptool can be called without a Python installed.
+	/// That's done by the pyinstaller program. The resulting folder should be zipped and distributed as esptool.zip in the same folder where this program is.
+	/// </remarks>
+	internal class EspTool
+	{
+		/// <summary>
+		/// The serial port over which all the communication goes
+		/// </summary>
+		private readonly string _serialPort = null;
+
+		/// <summary>
+		/// The baud rate for the serial port; 921600 baud is the default
+		/// </summary>
+		private readonly int _baudRate = 0;
+
+		/// <summary>
+		/// ESP chip type. Only ESP32 and ESP8266 are allowed.
+		/// </summary>
+		private readonly string _chipType = null;
+
+		/// <summary>
+		/// The flash mode for the esptool: See https://github.com/espressif/esptool#flash-modes for more details
+		/// </summary>
+		private readonly string _flashMode = null;
+
+		/// <summary>
+		/// The flash frequency for the esptool: See https://github.com/espressif/esptool#flash-modes for more details
+		/// </summary>
+		/// <remarks>This value should be in Hz; 40 MHz = 40.000.000 Hz</remarks>
+		private readonly int _flashFrequency = 0;
+
+		/// <summary>
+		/// The size of the flash in bytes; 4 MB = 0x40000 bytes
+		/// </summary>
+		private int _flashSize = -1;
+
+		/// <summary>
+		/// Structure for holding the information about the connected ESP32 together
+		/// </summary>
+		internal struct Info
+		{
+			/// <summary>
+			/// Version of the esptool.py
+			/// </summary>
+			internal Version ToolVersion { get; private set; }
+
+			/// <summary>
+			/// Name of the ESP32 chip
+			/// </summary>
+			internal string ChipName { get; private set; }
+
+			/// <summary>
+			/// ESP32 chip features
+			/// </summary>
+			internal string ChipFeatures { get; private set; }
+
+			/// <summary>
+			/// ID of the ESP32 chip
+			/// </summary>
+			internal long ChipId { get; private set; }
+
+			/// <summary>
+			/// MAC address of the ESP32 chip
+			/// </summary>
+			internal PhysicalAddress ChipMacAddress { get; private set; }
+
+			/// <summary>
+			/// Flash manufacturer ID: See http://code.coreboot.org/p/flashrom/source/tree/HEAD/trunk/flashchips.h for more details
+			/// </summary>
+			internal byte FlashManufacturerId { get; private set; }
+
+			/// <summary>
+			/// Flash device type ID: See http://code.coreboot.org/p/flashrom/source/tree/HEAD/trunk/flashchips.h for more details
+			/// </summary>
+			internal short FlashDeviceModelId { get; private set; }
+
+			/// <summary>
+			/// The size of the flash in bytes; 4 MB = 0x40000 bytes
+			/// </summary>
+			internal int FlashSize { get; private set; }
+
+			/// <summary>
+			/// Constructor
+			/// </summary>
+			/// <param name="toolVersion">Version of the esptool.py</param>
+			/// <param name="chipName">Name of the ESP32 chip</param>
+			/// <param name="chipFeatures">ESP32 chip features</param>
+			/// <param name="chipId">ID of the ESP32 chip</param>
+			/// <param name="chipMacAddress">MAC address of the ESP32 chip</param>
+			/// <param name="flashManufacturerId">Flash manufacturer ID: See http://code.coreboot.org/p/flashrom/source/tree/HEAD/trunk/flashchips.h for more details</param>
+			/// <param name="flashDeviceModelId">Flash device type ID: See http://code.coreboot.org/p/flashrom/source/tree/HEAD/trunk/flashchips.h for more details</param>
+			/// <param name="flashSize">The size of the flash in bytes; 4 MB = 0x40000 bytes</param>
+			internal Info(Version toolVersion, string chipName, string chipFeatures, long chipId, PhysicalAddress chipMacAddress, byte flashManufacturerId, short flashDeviceModelId, int flashSize)
+			{
+				ToolVersion = toolVersion;
+				ChipName = chipName;
+				ChipFeatures = chipFeatures;
+				ChipId = chipId;
+				ChipMacAddress = chipMacAddress;
+				FlashManufacturerId = flashManufacturerId;
+				FlashDeviceModelId = flashDeviceModelId;
+				FlashSize = flashSize;
+			}
+		}
+
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="serialPort">The serial port over which all the communication goes.</param>
+		/// <param name="baudRate">The baud rate for the serial port.</param>
+		/// <param name="chipType">ESP chip type. Only ESP32 and ESP8266 are allowed.</param>
+		/// <param name="flashMode">The flash mode for the esptool: See https://github.com/espressif/esptool#flash-modes for more details.</param>
+		/// <param name="flashFrequency">The flash frequency for the esptool: See https://github.com/espressif/esptool#flash-modes for more details.</param>
+		internal EspTool(string serialPort, int baudRate, string chipType, string flashMode, int flashFrequency)
+		{
+			// test serial port settings
+			if (string.IsNullOrEmpty(serialPort))
+			{
+				throw new ArgumentNullException("serialPort");
+			}
+			// open/close the port to see if it is available
+			using (SerialPort test = new SerialPort(serialPort, baudRate))
+			{
+				test.Open();
+				test.Close();
+			}
+
+			// save the settings
+			_serialPort = serialPort;
+			_baudRate = baudRate;
+			_chipType = chipType;
+			_flashMode = flashMode;
+			_flashFrequency = flashFrequency;
+
+			// extract esptool.zip if not already done
+			if (!Directory.Exists("esptool"))
+			{
+				Console.WriteLine("Extracting esptool ...");
+				ZipFile.ExtractToDirectory("esptool.zip", "esptool");
+			}
+		}
+
+		/// <summary>
+		/// Tests the connection to the ESP32 chip
+		/// </summary>
+		/// <returns>The filled info structure with all the information about the connected ESP32 chip or null if an error occured</returns>
+		internal Info? TestChip()
+		{
+			string messages;
+			
+			// execute chip_id command and parse the result
+			if (!RunEspTool("chip_id", out messages))
+			{
+				Console.WriteLine(messages);
+				return null;
+			}
+			Match match = Regex.Match(messages, "(esptool.py v)(?<version>[0-9.]+)(.*?[\r\n]*)*(Chip is )(?<name>.*)(.*?[\r\n]*)*(Features: )(?<features>.*)(.*?[\r\n]*)*(Chip ID: )(?<id>.*)");
+			if (!match.Success)
+			{
+				Console.WriteLine(messages);
+				return null;
+			}
+			// that gives us the version of the esptool.py, the chip name and the chip ID
+			string version = match.Groups["version"].ToString().Trim();
+			string name = match.Groups["name"].ToString().Trim();
+			string features = match.Groups["features"].ToString().Trim();
+			string id = match.Groups["id"].ToString().Trim();
+			Console.WriteLine($"Executed esptool.py version {version}");
+			Console.WriteLine($"Found {name} with ID {id} and features {features}");
+
+			// execute read_mac command and parse the result
+			if (!RunEspTool("read_mac", out messages))
+			{
+				Console.WriteLine(messages);
+				return null;
+			}
+			match = Regex.Match(messages, "(MAC: )(?<mac>.*)");
+			if (!match.Success)
+			{
+				Console.WriteLine(messages);
+				return null;
+			}
+			// that gives us the MAC address
+			string mac = match.Groups["mac"].ToString().Trim();
+			Console.WriteLine($"MAC address: {mac}");
+
+			// execute flash_id command and parse the result
+			if (!RunEspTool("flash_id", out messages))
+			{
+				Console.WriteLine(messages);
+				return null;
+			}
+			match = Regex.Match(messages, $"(Manufacturer: )(?<manufacturer>.*)(.*?[\r\n]*)*(Device: )(?<device>.*)(.*?[\r\n]*)*(Detected flash size: )(?<size>.*)");
+			if (!match.Success)
+			{
+				Console.WriteLine(messages);
+				return null;
+			}
+			// that gives us the flash manufacturer, flash device type ID and flash size
+			string manufacturer = match.Groups["manufacturer"].ToString().Trim();
+			string device = match.Groups["device"].ToString().Trim();
+			string size = match.Groups["size"].ToString().Trim();
+			Console.WriteLine($"Flash information: manufacturer 0x{manufacturer} device 0x{device} size {size}");
+
+			// collect and return all information
+			// convert the flash size from megabytes into bytes
+			_flashSize = int.Parse(size.Remove(size.Length - 2)) * 0x100000;
+			return new Info(
+				new Version(version), // esptool.py version
+				name, // ESP32 name
+				features, // ESP32 chip features
+				long.Parse(id.Substring(2), NumberStyles.HexNumber), // ESP32 Chip-ID
+				PhysicalAddress.Parse(mac.Replace(':', '-').ToUpperInvariant()), // ESP32 MAC address
+				byte.Parse(manufacturer, NumberStyles.AllowHexSpecifier), // flash manufacturer ID
+				short.Parse(device, NumberStyles.HexNumber),  // flash device ID
+				_flashSize);  // flash size in bytes (converted from megabytes)
+		}
+
+		/// <summary>
+		/// Erase the entire flash of the ESP32 chip
+		/// </summary>
+		/// <returns>true if successful</returns>
+		internal bool EraseFlash()
+		{
+			string messages;
+			// execute erase_flash command and parse the result
+			if (!RunEspTool("erase_flash", out messages))
+			{
+				Console.WriteLine(messages);
+				return false;
+			}
+			Match match = Regex.Match(messages, "(\\(this may take a while\\))(.*?\n)(?<message>.*)(.*?\n)*");
+			if (!match.Success)
+			{
+				Console.WriteLine(messages);
+				return false;
+			}
+			Console.WriteLine(match.Groups["message"].ToString().Trim());
+			return true;
+		}
+
+		internal bool WriteFlash(Dictionary<int, string> partsToWrite)
+		{
+			// put the parts to flash together and prepare the regex for parsing the output
+			StringBuilder partsArguments = new StringBuilder();
+			StringBuilder regexPattern = new StringBuilder("(?<params>Flash params.*)(.*?[\r\n]*)*");
+			int counter = 1;
+			List<string> regexGroupNames = new List<string>();
+			regexGroupNames.Add("params");
+			foreach (KeyValuePair<int, string> part in partsToWrite)
+			{
+				// start address followed by filename
+				partsArguments.Append($"0x{part.Key:X} {part.Value} ");
+				// test for message in output
+				regexPattern.Append($"(?<wrote{counter}>Wrote.*[\r\n]*Hash of data verified.)(.*?[\r\n]*)*");
+				regexGroupNames.Add($"wrote{counter}");
+				counter++;
+			}
+			string messages;
+			// if flash size was detected already use it for the --flash_size parameter; otherwise use the default "detect"
+			string flashSize = _flashSize != -1 ? $"{_flashSize / 0x100000}MB" : "detect";
+			// execute write_flash command and parse the result
+			if (!RunEspTool($"write_flash --flash_mode {_flashMode} --flash_freq {_flashFrequency / 1000000}m --flash_size {flashSize} {partsArguments.ToString().Trim()}", out messages))
+			{
+				Console.WriteLine(messages);
+				return false;
+			}
+			Match match = Regex.Match(messages, regexPattern.ToString());
+			if (!match.Success)
+			{
+				Console.WriteLine(messages);
+				return false;
+			}
+			foreach (string groupName in regexGroupNames)
+			{
+				Console.WriteLine(match.Groups[groupName].ToString().Trim());
+			}
+			return true;
+		}
+
+		/// <summary>
+		/// Run the esptool one time
+		/// </summary>
+		/// <param name="commandWithArguments">the esptool command (e.g. write_flash) incl. all arguments (if needed)</param>
+		/// <param name="messages">StandardOutput and StandardError messages that the esptool prints out</param>
+		/// <returns>true if the esptool exit code was 0; false otherwise</returns>
+		private bool RunEspTool(string commandWithArguments, out string messages)
+		{
+			// create the process start info
+			Process espTool = new Process();
+			espTool.StartInfo = new ProcessStartInfo(@"esptool\esptool.exe", $"--port {_serialPort} --baud {_baudRate} --chip {_chipType.ToLowerInvariant()} --after no_reset {commandWithArguments}");
+			espTool.StartInfo.UseShellExecute = false;
+			espTool.StartInfo.RedirectStandardError = true;
+			espTool.StartInfo.RedirectStandardOutput = true;
+
+			// start esptool and wait for exit
+			if (espTool.Start())
+			{
+				espTool.WaitForExit();
+			}
+			else
+			{
+				Console.WriteLine("Error starting esptool!");
+			}
+
+			// collect all messages
+			messages = string.Concat(espTool.StandardOutput.ReadToEnd(), Environment.NewLine, espTool.StandardError.ReadToEnd());
+			// true if exit code was 0 (success)
+			return espTool.ExitCode == 0;
+		}
+	}
+}
