@@ -9,20 +9,37 @@ build_script:
 - ps: >-
     nuget restore nanoFramework.Tools.Hex2Dfu\nanoFramework.Tools.Hex2Dfu.sln
 
+    nuget restore EspFirmwareFlasher\EspFirmwareFlasher.sln
+
     msbuild nanoFramework.Tools.Hex2Dfu\nanoFramework.Tools.Hex2Dfu.sln /p:Configuration=Release /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+    msbuild EspFirmwareFlasher\EspFirmwareFlasher.sln /p:Configuration=Release /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
 artifacts:
 - path: '**\bin\Release\hex2dfu.exe'
   name: hex2dfu_executable
+- path: '**\bin\Release\EspFirmwareFlasher.exe'
+  name: espfirmwareflasher_executable
+
 
 deploy:
 - provider: GitHub
   tag: v$(appveyor_build_version)
-  release: nanoFramework Tools v$(appveyor_build_version)
+  release: nanoFramework hex2dfu v$(appveyor_build_version)
   description: add description here
   auth_token:
     secure: DNixoFFE+pGlwyhj7McfZoln42vOmj0iY1iNV9zXEr3y0NpXlOIgL8k5ehzlFM1S
   artifact: hex2dfu_executable
+  draft: true
+  prerelease: true
+  force_update: true
+- provider: GitHub
+  tag: v$(appveyor_build_version)
+  release: nanoFramework ESP32 firmware flasher v$(appveyor_build_version)
+  description: add description here
+  auth_token:
+    secure: DNixoFFE+pGlwyhj7McfZoln42vOmj0iY1iNV9zXEr3y0NpXlOIgL8k5ehzlFM1S
+  artifact: espfirmwareflasher_executable
   draft: true
   prerelease: true
   force_update: true
