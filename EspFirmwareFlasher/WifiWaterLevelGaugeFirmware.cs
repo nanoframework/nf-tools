@@ -1,4 +1,9 @@
-﻿using System;
+﻿//
+// Copyright (c) 2018 The nanoFramework project contributors
+// See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -24,12 +29,12 @@ namespace EspFirmwareFlasher
 		/// <summary>
 		/// The WifiWaterLevelGauge is only for the ESP8266
 		/// </summary>
-		internal override string[] SupportedChipTypes { get { return new string[] { "ESP8266" }; } }
+		internal override string[] SupportedChipTypes { get { return new string[] { Program.ESP8266 }; } }
 
 		/// <summary>
 		/// The WifiWaterLevelGauge is only for 512KB flash size
 		/// </summary>
-		internal override int[] SupportedFlashSizes { get { return new int[] { 0x8000 }; } }
+		internal override int[] SupportedFlashSizes { get { return new int[] { 0x80000 }; } }
 
 		/// <summary>
 		/// Constructor
@@ -55,7 +60,7 @@ namespace EspFirmwareFlasher
 			}
 
 			// delete the destination directory if exists
-			_firmwareDirectory = new DirectoryInfo("WifiWaterLevelGauge");
+			_firmwareDirectory = new DirectoryInfo(Program.WifiWaterLevelGauge);
 			if (_firmwareDirectory.Exists)
 			{
 				_firmwareDirectory.Delete(true);

@@ -1,7 +1,7 @@
 # EspFirmwareFlasher
 
 ## A little command line tool that does the upload of the nanoCLR automatically
-
+It makes use of the esptool. You can find the esptool usage and license information here: See usage and license information at http://github.com/espressif/esptool
 ### Usage
 1. Unzip it into a folder
 2. Bring your ESP32 into download mode, connect it via USB cable to your PC and find out on which serial port it is connected
@@ -18,6 +18,8 @@ If the tool will be used as part of an automatic process the return code can be 
 -4: The firmware couldn't downloaded
 -5: Error during flash erase
 -6: Error during writing to flash
+-7: Error during flash backup
+-8: Can't find the backup file
 ```
 
 ### What it does
@@ -34,7 +36,10 @@ You can deliver the following command line arguments as name=value pairs:
 --port or -p for the serial port to use (e.g. --port=COM1).
 --baud or -b for the baud rate to use for the serial port (e.g. --baud=921600).
 --chip or -c for the connected ESP chip type (e.g. --chip=ESP32). Only ESP32 and ESP8266 are allowed.
---flash_mode or -fm for the flash mode to use (e.g. --flash_mode=dio). See https://github.com/espressif/esptool#flash-modes for more details.
---flash_freq or -ff for the flash frequency to use (e.g. --flash_freq=40m). See https://github.com/espressif/esptool#flash-modes for more details.
+--flash_mode or -m for the flash mode to use (e.g. --flash_mode=dio). See https://github.com/espressif/esptool#flash-modes for more details.
+--flash_freq or -f for the flash frequency to use (e.g. --flash_freq=40m). See https://github.com/espressif/esptool#flash-modes for more details.
+--backup or -s for backup the entire flash into a bin file for later restore (e.g. --backup=LastKnownGood). The backup file will be created in the subdirectory "Backup" with the name %ChipType%_%ChipId%_%Filename%.bin (e.g. ESP32_0x12345678_LastKnownGood.bin). If this file already exists it will be overwritten!
+--backup_only or -o if present only the backup will be stored. Makes only senses if the --backup/-s option is also present.
+--restore or -r restore the entire flash from a backup file that's created with the --backup/-s parameter (e.g. --restore=LastKnownGood). The backup should be in the \"Backup\" subdirectory an should be named %ChipType%_%ChipId%_%Filename%.bin or %Filename%.bin
 ```
 If no arguments are delivered the tool asks for the serial port at the command line. Then it uses the baudrate 921600, the flash mode "dio" and the flash frequency "40m". You can set other default values via EspFirmwareFlasher.exe.config (application configuration) file.
