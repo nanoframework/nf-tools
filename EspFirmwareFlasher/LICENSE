@@ -1,0 +1,4 @@
+Copyright (c) 2018 The nanoFramework project contributors
+The EspFirmwareFlaher contains the esptool from espressif.
+You can find the usage and license information here: https://github.com/espressif/esptool
+See LICENSE file in the project root for full license information.

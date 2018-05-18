@@ -1,4 +1,9 @@
-﻿using System;
+﻿//
+// Copyright (c) 2018 The nanoFramework project contributors
+// See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -30,7 +35,7 @@ namespace EspFirmwareFlasher
 		/// <summary>
 		/// The nanoCLR is only for the ESP32
 		/// </summary>
-		internal override string[] SupportedChipTypes { get { return new string[] { "ESP32" }; } }
+		internal override string[] SupportedChipTypes { get { return new string[] { Program.ESP32 }; } }
 
 		/// <summary>
 		/// The nanoCLR is only for 2MB and 4MB flash sizes
