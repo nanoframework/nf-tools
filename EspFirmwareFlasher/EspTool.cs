@@ -162,6 +162,18 @@ namespace EspFirmwareFlasher
 				File.WriteAllBytes("esptool.zip", Resources.esptool);
 				ZipFile.ExtractToDirectory("esptool.zip", "esptool");
 			}
+			// if we flash the ESP8266 we need the default data and a blank block
+			if (_chipType == Program.ESP8266)
+			{
+				if (!File.Exists(@"esptool\esp_init_data_default.bin"))
+				{
+					File.WriteAllBytes(@"esptool\esp_init_data_default.bin", Resources.esp_init_data_default);
+				}
+				if (!File.Exists(@"esptool\blank.bin"))
+				{
+					File.WriteAllBytes(@"esptool\blank.bin", Resources.blank);
+				}
+			}
 		}
 
 		/// <summary>

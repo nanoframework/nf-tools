@@ -63,6 +63,26 @@ namespace EspFirmwareFlasher.Properties {
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Byte[].
         /// </summary>
+        internal static byte[] blank {
+            get {
+                object obj = ResourceManager.GetObject("blank", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Byte[].
+        /// </summary>
+        internal static byte[] esp_init_data_default {
+            get {
+                object obj = ResourceManager.GetObject("esp_init_data_default", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Byte[].
+        /// </summary>
         internal static byte[] esptool {
             get {
                 object obj = ResourceManager.GetObject("esptool", resourceCulture);

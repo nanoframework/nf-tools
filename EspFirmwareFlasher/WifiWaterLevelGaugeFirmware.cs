@@ -126,6 +126,9 @@ namespace EspFirmwareFlasher
 			partsToFlash.Add(0x00000, filenameBootloader);
 			// firmware goes to 0x10000
 			partsToFlash.Add(0x10000, filenameFirmware);
+			// we also need to flash the default data and the blank block
+			partsToFlash.Add(0x7C000, @"esptool\esp_init_data_default.bin");
+			partsToFlash.Add(0x7E000, @"esptool\blank.bin");
 			return partsToFlash;
 		}
 	}

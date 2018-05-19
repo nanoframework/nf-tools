@@ -62,9 +62,11 @@
     <None Include="CreateEspToolZip.targets">
       <SubType>Designer</SubType>
     </None>
-    <None Include="esptool.zip" />
     <None Include="LICENSE" />
     <None Include="README.md" />
+    <None Include="Resources\blank.bin" />
+    <None Include="Resources\esptool.zip" />
+    <None Include="Resources\esp_init_data_default.bin" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">

@@ -13,7 +13,7 @@
 			<Code Type="Fragment" Language="cs">
 				<![CDATA[
 // don't recreate esptool.zip if it's allready there
-if (File.Exists("esptool.zip"))
+if (File.Exists(@"Resources\esptool.zip"))
 {
 	Log.LogMessage(MessageImportance.High, "The esptool.zip is already there and will not be recreated.");
 	return _Success;
@@ -35,7 +35,7 @@ process = Process.Start("pyinstaller", @"--distpath obj\esptool-python\dist --wo
 process.WaitForExit();
 
 // create a zip file from the package
-ZipFile.CreateFromDirectory(@"obj\esptool-python\dist\esptool", "esptool.zip");
+ZipFile.CreateFromDirectory(@"obj\esptool-python\dist\esptool", @"Resources\esptool.zip");
 return _Success;
 ]]>
 			</Code>
