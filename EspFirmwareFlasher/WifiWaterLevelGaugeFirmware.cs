@@ -34,7 +34,7 @@ namespace EspFirmwareFlasher
 		/// <summary>
 		/// The WifiWaterLevelGauge is only for 512KB flash size
 		/// </summary>
-		internal override int[] SupportedFlashSizes { get { return new int[] { 0x80000 }; } }
+		internal override int[] SupportedFlashSizes { get { return new int[] { 0x80000, 0x100000, 0x200000, 0x400000 }; } }
 
 		/// <summary>
 		/// Constructor
@@ -127,8 +127,28 @@ namespace EspFirmwareFlasher
 			// firmware goes to 0x10000
 			partsToFlash.Add(0x10000, filenameFirmware);
 			// we also need to flash the default data and the blank block
-			partsToFlash.Add(0x7C000, @"esptool\esp_init_data_default.bin");
-			partsToFlash.Add(0x7E000, @"esptool\blank.bin");
+			// different start addresses depending on the flash size
+			switch (flashSize)
+			{
+				case 0x80000:
+					partsToFlash.Add(0x7C000, @"esptool\esp_init_data_default.bin");
+					partsToFlash.Add(0x7E000, @"esptool\blank.bin");
+					break;
+				case 0x100000:
+					partsToFlash.Add(0xFC000, @"esptool\esp_init_data_default.bin");
+					partsToFlash.Add(0xFE000, @"esptool\blank.bin");
+					break;
+				case 0x200000:
+					partsToFlash.Add(0x1FC000, @"esptool\esp_init_data_default.bin");
+					partsToFlash.Add(0x1FE000, @"esptool\blank.bin");
+					break;
+				case 0x400000:
+					partsToFlash.Add(0x3FC000, @"esptool\esp_init_data_default.bin");
+					partsToFlash.Add(0x3FE000, @"esptool\blank.bin");
+					break;
+				default:
+					throw new NotSupportedException($"unsupported flash size: {flashSize}");
+			}
 			return partsToFlash;
 		}
 	}
