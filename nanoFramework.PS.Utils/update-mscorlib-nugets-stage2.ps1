@@ -40,11 +40,8 @@ foreach($file in $filesToUpdateCollection)
     $filecontent = Get-Content($file)
     attrib $file -r
 
-    # replace mscorlib
-    $filecontent -replace $previousCorlibVersion, $newCorlibVersion | Out-File $file -Encoding utf8
-
-    # replace RuntimeEvents
-    $filecontent -replace $previousRuntimeEventsVersion, $newRuntimeEventsVersion | Out-File $file -Encoding utf8
+    # replace mscorlib and RuntimeEvents
+    $filecontent -replace $previousCorlibVersion, $newCorlibVersion -replace $previousRuntimeEventsVersion, $newRuntimeEventsVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
@@ -74,11 +71,8 @@ foreach($file in $filesToUpdateCollection)
     $filecontent = Get-Content($file)
     attrib $file -r
 
-    # replace mscorlib
-    $filecontent -replace $previousCorlibVersion, $newCorlibVersion | Out-File $file -Encoding utf8
-
-    # replace Storage.Streams
-    $filecontent -replace $previousStorageStreamsVersion, $newStorageStreamsVersion | Out-File $file -Encoding utf8
+    # replace mscorlib and Storage.Streams
+    $filecontent -replace $previousCorlibVersion, $newCorlibVersion -replace $previousStorageStreamsVersion, $newStorageStreamsVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
@@ -108,14 +102,8 @@ foreach($file in $filesToUpdateCollection)
     $filecontent = Get-Content($file)
     attrib $file -r
 
-    # replace mscorlib
-    $filecontent -replace $previousCorlibVersion, $newCorlibVersion | Out-File $file -Encoding utf8
-
-    # replace RuntimeEvents
-    $filecontent -replace $previousRuntimeEventsVersion, $newRuntimeEventsVersion | Out-File $file -Encoding utf8
-
-    # replace Runtime.Native
-    $filecontent -replace $previousRuntimeNativeVersion, $newRuntimeNativeVersion | Out-File $file -Encoding utf8
+    # replace mscorlib, RuntimeEvents and Runtime.Native
+    $filecontent -replace $previousCorlibVersion, $newCorlibVersion -replace $previousRuntimeEventsVersion, $newRuntimeEventsVersion -replace $previousRuntimeNativeVersion, $newRuntimeNativeVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
