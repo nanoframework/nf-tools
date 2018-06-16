@@ -4,21 +4,25 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory)]
-    [string]$previousCorlibVersion,
+    [string]$previous_CorlibVersion,
     [Parameter(Mandatory)]
-    [string]$newCorlibVersion,
+    [string]$new_CorlibVersion,
     [Parameter(Mandatory)]
-    [string]$previousRuntimeEventsVersion,
+    [string]$previous_RuntimeEventsVersion,
     [Parameter(Mandatory)]
-    [string]$newRuntimeEventsVersion,
+    [string]$new_RuntimeEventsVersion,
     [Parameter(Mandatory)]
-    [string]$previousStorageStreamsVersion,
+    [string]$previous_StorageStreamsVersion,
     [Parameter(Mandatory)]
-    [string]$newStorageStreamsVersion,
+    [string]$new_StorageStreamsVersion,
     [Parameter(Mandatory)]
-    [string]$previousRuntimeNativeVersion,
+    [string]$previous_RuntimeNativeVersion,
     [Parameter(Mandatory)]
-    [string]$newRuntimeNativeVersion
+    [string]$new_RuntimeNativeVersion,
+    [Parameter(Mandatory)]
+    [string]$previous_DevicesGpioVersion,
+    [Parameter(Mandatory)]
+    [string]$new_DevicesGpioVersion
 )
 
 PowerShellGet\Install-Module posh-git -Scope CurrentUser -Force 
@@ -41,12 +45,12 @@ foreach($file in $filesToUpdateCollection)
     attrib $file -r
 
     # replace mscorlib and RuntimeEvents
-    $filecontent -replace $previousCorlibVersion, $newCorlibVersion -replace $previousRuntimeEventsVersion, $newRuntimeEventsVersion | Out-File $file -Encoding utf8
+    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_RuntimeEventsVersion, $new_RuntimeEventsVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
 git add -A 2>&1
-git commit -m "Update Nugets" -m "- Update mscorlib Nuget to $newCorlibVersion" -m "- Update Runtime.Events Nuget to $newRuntimeEventsVersion"   -q
+git commit -m "Update Nugets" -m "- Update mscorlib Nuget to $new_CorlibVersion" -m "- Update Runtime.Events Nuget to $new_RuntimeEventsVersion"   -q
 git push --set-upstream origin update_nugets
 git push origin -q
 
@@ -72,12 +76,12 @@ foreach($file in $filesToUpdateCollection)
     attrib $file -r
 
     # replace mscorlib and Storage.Streams
-    $filecontent -replace $previousCorlibVersion, $newCorlibVersion -replace $previousStorageStreamsVersion, $newStorageStreamsVersion | Out-File $file -Encoding utf8
+    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_StorageStreamsVersion, $new_StorageStreamsVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
 git add -A 2>&1
-git commit -m "Update Nugets" -m "- Update mscorlib Nuget to $newCorlibVersion" -m "- Update Storage.Streams Nuget to $newStorageStreamsVersion"   -q
+git commit -m "Update Nugets" -m "- Update mscorlib Nuget to $new_CorlibVersion" -m "- Update Storage.Streams Nuget to $new_StorageStreamsVersion"   -q
 git push --set-upstream origin update_nugets
 git push origin -q
 
@@ -103,12 +107,12 @@ foreach($file in $filesToUpdateCollection)
     attrib $file -r
 
     # replace mscorlib, RuntimeEvents and Runtime.Native
-    $filecontent -replace $previousCorlibVersion, $newCorlibVersion -replace $previousRuntimeEventsVersion, $newRuntimeEventsVersion -replace $previousRuntimeNativeVersion, $newRuntimeNativeVersion | Out-File $file -Encoding utf8
+    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_RuntimeEventsVersion, $new_RuntimeEventsVersion -replace $previous_RuntimeNativeVersion, $new_RuntimeNativeVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
 git add -A 2>&1
-git commit -m "Update Nugets" -m "- Update mscorlib Nuget to $newCorlibVersion" -m "- Update Runtime.Events Nuget to $newRuntimeEventsVersion" -m "- Update Runtime.Native Nuget to $newRuntimeNativeVersion"  -q
+git commit -m "Update Nugets" -m "- Update mscorlib Nuget to $new_CorlibVersion" -m "- Update Runtime.Events Nuget to $new_RuntimeEventsVersion" -m "- Update Runtime.Native Nuget to $new_RuntimeNativeVersion"  -q
 git push --set-upstream origin update_nugets
 git push origin -q
 
