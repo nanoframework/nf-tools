@@ -56,10 +56,11 @@ namespace EspFirmwareFlasher
 		/// <summary>
 		/// Download the firmware zip, extract this zip file, and get the firmware parts
 		/// </summary>
+		/// <param name="firmwareTag">if null the latest version will be downloaded; otherwise the version with this tag (e.g. 0.1.0-preview.738) will be downloaded.</param>
 		/// <param name="chipType">Only ESP32 is allowed</param>
 		/// <param name="flashSize">Flashsize in bytes: Only 0x200000 (2MB) and 0x400000 (4MB) is allowed</param>
 		/// <returns>a dictionary which keys are the start addresses and the values are the complete filenames (the bin files)</returns>
-		internal override Dictionary<int, string> DownloadAndExtract(string chipType, int flashSize)
+		internal override Dictionary<int, string> DownloadAndExtract(string firmwareTag, string chipType, int flashSize)
 		{
 			// check if chip type / flash size is supported
 			if (!CheckSupport(chipType, flashSize))
@@ -67,9 +68,9 @@ namespace EspFirmwareFlasher
 				return null;
 			}
 
-			// find out what the latest version is; that's written at the overview page
+			// find out what the latest version is or try for find a special version by tag; that's written at the overview page
 			WebClient webClient = new WebClient();
-			string latestVersionPage = webClient.DownloadString(string.Join("/", _downloadSource, _boardType, "_latestVersion"));
+			string latestVersionPage = webClient.DownloadString(string.Join("/", _downloadSource, _boardType, string.IsNullOrEmpty(firmwareTag) ? "_latestVersion" : firmwareTag));
 
 			// find the filename
 			Match match = Regex.Match(latestVersionPage, $"(/{_boardType}/)(?<filename>[\\d]+[^\"'/]*)");
@@ -100,13 +101,15 @@ namespace EspFirmwareFlasher
 			ZipFile.ExtractToDirectory(filenameWithExtension, _firmwareDirectory.FullName);
 
 			// Get the parts that should be written to ESP32 flash
-			Dictionary<int, string> partsToFlash = new Dictionary<int, string>();
-			// bootloader goes to 0x1000
-			partsToFlash.Add(0x1000, Path.Combine(_firmwareDirectory.FullName, "bootloader.bin"));
-			// nanoCLR goes to 0x10000
-			partsToFlash.Add(0x10000, Path.Combine(_firmwareDirectory.FullName, "NanoCLR.bin"));
-			// partition table goes to 0x8000; there is on partition tabel for 2MB flash and one for 4MB flash
-			partsToFlash.Add(0x8000, Path.Combine(_firmwareDirectory.FullName, flashSize == 0x200000 ? "partitions_2mb.bin" : "partitions_4mb.bin"));
+			Dictionary<int, string> partsToFlash = new Dictionary<int, string>()
+			{
+				// bootloader goes to 0x1000
+				{ 0x1000, Path.Combine(_firmwareDirectory.FullName, "bootloader.bin") },
+				// nanoCLR goes to 0x10000
+				{ 0x10000, Path.Combine(_firmwareDirectory.FullName, "NanoCLR.bin") },
+				// partition table goes to 0x8000; there is on partition table for 2MB flash and one for 4MB flash
+				{ 0x8000, Path.Combine(_firmwareDirectory.FullName, flashSize == 0x200000 ? "partitions_2mb.bin" : "partitions_4mb.bin") }
+			};
 			return partsToFlash;
 		}
 	}

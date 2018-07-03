@@ -48,11 +48,18 @@ namespace EspFirmwareFlasher
 		/// <summary>
 		/// Download the firmware and get the firmware parts
 		/// </summary>
+		/// <param name="firmwareTag">if null the latest version will be downloaded; otherwise the version with this tag (e.g. 0.1.0-preview.738) will be downloaded.</param>
 		/// <param name="chipType">Only ESP8266 is allowed</param>
 		/// <param name="flashSize">Flashsize in bytes: Only 0x8000 (512KB) is allowed</param>
 		/// <returns>a dictionary which keys are the start addresses and the values are the complete filenames (the bin files)</returns>
-		internal override Dictionary<int, string> DownloadAndExtract(string chipType, int flashSize)
+		internal override Dictionary<int, string> DownloadAndExtract(string firmwareTag, string chipType, int flashSize)
 		{
+			if (!string.IsNullOrEmpty(firmwareTag))
+			{
+				Console.WriteLine($"Downloading a special version is not supported!");
+				return null;
+			}
+
 			// check if chip type / flash size is supported
 			if (!CheckSupport(chipType, flashSize))
 			{
@@ -116,16 +123,17 @@ namespace EspFirmwareFlasher
 				Console.WriteLine($"Can't find the latest firmware version on {_downloadSource}!");
 				return null;
 			}
-			
+
 			// download the firmware files
 			webClient.DownloadFile(linkBootloader, filenameBootloader);
 			webClient.DownloadFile(linkFirmware, filenameFirmware);
 
-			Dictionary<int, string> partsToFlash = new Dictionary<int, string>();
-			// bootloader goes to 0x00000
-			partsToFlash.Add(0x00000, filenameBootloader);
-			// firmware goes to 0x10000
-			partsToFlash.Add(0x10000, filenameFirmware);
+			Dictionary<int, string> partsToFlash = new Dictionary<int, string>() {
+				// bootloader goes to 0x00000
+				{ 0x00000, filenameBootloader },
+				// firmware goes to 0x10000
+				{ 0x10000, filenameFirmware }
+			};
 			// we also need to flash the default data and the blank block
 			// different start addresses depending on the flash size
 			switch (flashSize)

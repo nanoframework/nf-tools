@@ -58,6 +58,11 @@ namespace EspFirmwareFlasher
 		private int _flashSize = -1;
 
 		/// <summary>
+		/// true if the stub program is already active and we can use the --before no_reset_no_sync parameter 
+		/// </summary>
+		private bool _isStubActive = false;
+
+		/// <summary>
 		/// Structure for holding the information about the connected ESP32 together
 		/// </summary>
 		internal struct Info
@@ -76,11 +81,6 @@ namespace EspFirmwareFlasher
 			/// ESP32/ESP8266 chip features
 			/// </summary>
 			internal string ChipFeatures { get; private set; }
-
-			/// <summary>
-			/// ID of the ESP32/ESP8266 chip
-			/// </summary>
-			internal long ChipId { get; private set; }
 
 			/// <summary>
 			/// MAC address of the ESP32/ESP8266 chip
@@ -108,17 +108,15 @@ namespace EspFirmwareFlasher
 			/// <param name="toolVersion">Version of the esptool.py</param>
 			/// <param name="chipName">Name of the ESP32/ESP8266 chip</param>
 			/// <param name="chipFeatures">ESP32/ESP8266 chip features</param>
-			/// <param name="chipId">ID of the ESP32/ESP8266 chip</param>
 			/// <param name="chipMacAddress">MAC address of the ESP32/ESP8266 chip</param>
 			/// <param name="flashManufacturerId">Flash manufacturer ID: See http://code.coreboot.org/p/flashrom/source/tree/HEAD/trunk/flashchips.h for more details</param>
 			/// <param name="flashDeviceModelId">Flash device type ID: See http://code.coreboot.org/p/flashrom/source/tree/HEAD/trunk/flashchips.h for more details</param>
 			/// <param name="flashSize">The size of the flash in bytes; e.g. 4 MB = 0x40000 bytes</param>
-			internal Info(Version toolVersion, string chipName, string chipFeatures, long chipId, PhysicalAddress chipMacAddress, byte flashManufacturerId, short flashDeviceModelId, int flashSize)
+			internal Info(Version toolVersion, string chipName, string chipFeatures, PhysicalAddress chipMacAddress, byte flashManufacturerId, short flashDeviceModelId, int flashSize)
 			{
 				ToolVersion = toolVersion;
 				ChipName = chipName;
 				ChipFeatures = chipFeatures;
-				ChipId = chipId;
 				ChipMacAddress = chipMacAddress;
 				FlashManufacturerId = flashManufacturerId;
 				FlashDeviceModelId = flashDeviceModelId;
@@ -182,44 +180,28 @@ namespace EspFirmwareFlasher
 		/// <returns>The filled info structure with all the information about the connected ESP32/ESP8266 chip or null if an error occured</returns>
 		internal Info? TestChip()
 		{
-			// execute chip_id command and parse the result
-			if (!RunEspTool("chip_id", true, null, out string messages))
+			// execute read_mac command and parse the result
+			if (!RunEspTool("read_mac", true, false, null, out string messages))
 			{
 				Console.WriteLine(messages);
 				return null;
 			}
-			Match match = Regex.Match(messages, "(esptool.py v)(?<version>[0-9.]+)(.*?[\r\n]*)*(Chip is )(?<name>.*)(.*?[\r\n]*)*(Features: )(?<features>.*)(.*?[\r\n]*)*(Chip ID: )(?<id>.*)");
+			Match match = Regex.Match(messages, "(esptool.py v)(?<version>[0-9.]+)(.*?[\r\n]*)*(Chip is )(?<name>.*)(.*?[\r\n]*)*(Features: )(?<features>.*)(.*?[\r\n]*)*(MAC: )(?<mac>.*)");
 			if (!match.Success)
 			{
 				Console.WriteLine(messages);
 				return null;
 			}
-			// that gives us the version of the esptool.py, the chip name and the chip ID
+			// that gives us the version of the esptool.py, the chip name and the MAC address
 			string version = match.Groups["version"].ToString().Trim();
 			string name = match.Groups["name"].ToString().Trim();
 			string features = match.Groups["features"].ToString().Trim();
-			string id = match.Groups["id"].ToString().Trim();
-			Console.WriteLine($"Executed esptool.py version {version}");
-			Console.WriteLine($"Found {name} with ID {id} and features {features}");
-
-			// execute read_mac command and parse the result
-			if (!RunEspTool("read_mac", true, null, out messages))
-			{
-				Console.WriteLine(messages);
-				return null;
-			}
-			match = Regex.Match(messages, "(MAC: )(?<mac>.*)");
-			if (!match.Success)
-			{
-				Console.WriteLine(messages);
-				return null;
-			}
-			// that gives us the MAC address
 			string mac = match.Groups["mac"].ToString().Trim();
-			Console.WriteLine($"MAC address: {mac}");
-
+			Console.WriteLine($"Executed esptool.py version {version}");
+			Console.WriteLine($"Found {name} with MAC address {mac} and features {features}");
+			
 			// execute flash_id command and parse the result
-			if (!RunEspTool("flash_id", true, null, out messages))
+			if (!RunEspTool("flash_id", true, false, null, out messages))
 			{
 				Console.WriteLine(messages);
 				return null;
@@ -244,7 +226,6 @@ namespace EspFirmwareFlasher
 				new Version(version), // esptool.py version
 				name, // ESP32/ESP8266 name
 				features, // ESP32/ESP8266 chip features
-				long.Parse(id.Substring(2), NumberStyles.HexNumber), // ESP32/ESP8266 Chip-ID
 				PhysicalAddress.Parse(mac.Replace(':', '-').ToUpperInvariant()), // ESP32/ESP8266 MAC address
 				byte.Parse(manufacturer, NumberStyles.AllowHexSpecifier), // flash manufacturer ID
 				short.Parse(device, NumberStyles.HexNumber),  // flash device ID
@@ -260,7 +241,7 @@ namespace EspFirmwareFlasher
 		internal bool BackupFlash(string backupFilename, int flashSize)
 		{
 			// execute read_flash command and parse the result; progress message can be found be searching for backspaces (ASCII code 8)
-			if (!RunEspTool($"read_flash 0 0x{flashSize:X} \"{backupFilename}\"", false, (char)8, out string messages))
+			if (!RunEspTool($"read_flash 0 0x{flashSize:X} \"{backupFilename}\"", false, false, (char)8, out string messages))
 			{
 				Console.WriteLine(messages);
 				return false;
@@ -282,7 +263,7 @@ namespace EspFirmwareFlasher
 		internal bool EraseFlash()
 		{
 			// execute erase_flash command and parse the result
-			if (!RunEspTool("erase_flash", false, null, out string messages))
+			if (!RunEspTool("erase_flash", false, false, null, out string messages))
 			{
 				Console.WriteLine(messages);
 				return false;
@@ -329,7 +310,7 @@ namespace EspFirmwareFlasher
 				flashSize = $"{_flashSize / 0x400}KB";
 			}
 			// execute write_flash command and parse the result; progress message can be found be searching for linefeed
-			if (!RunEspTool($"write_flash --flash_mode {_flashMode} --flash_freq {_flashFrequency / 1000000}m --flash_size {flashSize} {partsArguments.ToString().Trim()}", false, '\r', out string messages))
+			if (!RunEspTool($"write_flash --flash_mode {_flashMode} --flash_freq {_flashFrequency / 1000000}m --flash_size {flashSize} {partsArguments.ToString().Trim()}", false, true, '\r', out string messages))
 			{
 				Console.WriteLine(messages);
 				return false;
@@ -352,16 +333,19 @@ namespace EspFirmwareFlasher
 		/// </summary>
 		/// <param name="commandWithArguments">the esptool command (e.g. write_flash) incl. all arguments (if needed)</param>
 		/// <param name="noStub">if true --no-stub will be added; the chip_id, read_mac and flash_id commands can be quicker executes without uploading the stub program to the chip</param>
-		/// <param name="tryToShowProgress">Tries to show progress every second if possible</param>
+		/// <param name="hardResetAfterCommand">if true the chip will execute a hard reset via DTR signal</param>
+		/// <param name="progressTestChar">If not null: After each of this char a progress message will be printed out</param>
 		/// <param name="messages">StandardOutput and StandardError messages that the esptool prints out</param>
 		/// <returns>true if the esptool exit code was 0; false otherwise</returns>
-		private bool RunEspTool(string commandWithArguments, bool noStub, char? progressTestChar, out string messages)
+		private bool RunEspTool(string commandWithArguments, bool noStub, bool hardResetAfterCommand, char? progressTestChar, out string messages)
 		{
 			// create the process start info
 			// if we can directly talt to the ROM bootloader without a stub program use the --no-stub option
 			// --nostub requires to not change the baudrate (ROM doesn't support changing baud rate. Keeping initial baud rate 115200)
 			string noStubParameter = null;
 			string baudRateParameter = null;
+			string beforeParameter = null;
+			string afterParameter = hardResetAfterCommand ? "hard_reset" : "no_reset";
 			if (noStub)
 			{
 				// using no stub and can't change the baud rate
@@ -372,13 +356,21 @@ namespace EspFirmwareFlasher
 				// using the stub that supports changing the baudrate
 				baudRateParameter = $"--baud {_baudRate}";
 			}
+			// only for the ESP8266: if the stub program is already running we can use the --before no_reset_no_sync option
+			if (_chipType == Program.ESP8266 && _isStubActive)
+			{
+				beforeParameter = "--before no_reset_no_sync";
+			}
 
 			// prepare the process start of the esptool
 			Process espTool = new Process();
-			espTool.StartInfo = new ProcessStartInfo(@"esptool\esptool.exe", $"--port {_serialPort} {baudRateParameter} --chip {_chipType.ToLowerInvariant()} {noStubParameter} --after no_reset {commandWithArguments}");
-			espTool.StartInfo.UseShellExecute = false;
-			espTool.StartInfo.RedirectStandardError = true;
-			espTool.StartInfo.RedirectStandardOutput = true;
+			string parameter = $"--port {_serialPort} {baudRateParameter} --chip {_chipType.ToLowerInvariant()} {noStubParameter} {beforeParameter} --after {afterParameter} {commandWithArguments}";
+			espTool.StartInfo = new ProcessStartInfo(@"esptool\esptool.exe", parameter)
+			{
+				UseShellExecute = false,
+				RedirectStandardError = true,
+				RedirectStandardOutput = true
+			};
 
 			// start esptool and wait for exit
 			if (espTool.Start())
@@ -435,8 +427,12 @@ namespace EspFirmwareFlasher
 				messageBuilder.AppendLine(espTool.StandardOutput.ReadToEnd());
 				messageBuilder.Append(espTool.StandardError.ReadToEnd());
 			}
-			// true if exit code was 0 (success)
 			messages = messageBuilder.ToString();
+
+			// if the stub program was used then we don't need to transfer ist again
+			_isStubActive = !noStub;
+			
+			// true if exit code was 0 (success)
 			return espTool.ExitCode == 0;
 		}
 
