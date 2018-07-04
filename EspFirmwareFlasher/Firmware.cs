@@ -27,10 +27,11 @@ namespace EspFirmwareFlasher
 		/// <summary>
 		/// Download the firmware and extract it if needed
 		/// </summary>
+		/// <param name="firmwareTag">if null the latest version will be downloaded; otherwise the version with this tag (e.g. 0.1.0-preview.738) will be downloaded.</param>
 		/// <param name="chipType">ESP chip types</param>
 		/// <param name="flashSize">Flashsize in bytes</param>
 		/// <returns>dictionary which keys are the start addresses and the values are the complete filenames (the bin files); or null if not successfully downloaded/extracted</returns>
-		internal abstract Dictionary<int, string> DownloadAndExtract(string chipType, int flashSize);
+		internal abstract Dictionary<int, string> DownloadAndExtract(string firmwareTag, string chipType, int flashSize);
 
 		/// <summary>
 		/// Checks if there is a firmware theoretically (not checked in the internet) available for the combination of ESP chip type and flash size

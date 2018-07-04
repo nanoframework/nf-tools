@@ -34,7 +34,7 @@ namespace EspFirmwareFlasher
 		/// <summary>
 		/// The WifiWaterLevelGauge is only for 512KB flash size
 		/// </summary>
-		internal override int[] SupportedFlashSizes { get { return new int[] { 0x80000 }; } }
+		internal override int[] SupportedFlashSizes { get { return new int[] { 0x80000, 0x100000, 0x200000, 0x400000 }; } }
 
 		/// <summary>
 		/// Constructor
@@ -48,11 +48,18 @@ namespace EspFirmwareFlasher
 		/// <summary>
 		/// Download the firmware and get the firmware parts
 		/// </summary>
+		/// <param name="firmwareTag">if null the latest version will be downloaded; otherwise the version with this tag (e.g. 0.1.0-preview.738) will be downloaded.</param>
 		/// <param name="chipType">Only ESP8266 is allowed</param>
 		/// <param name="flashSize">Flashsize in bytes: Only 0x8000 (512KB) is allowed</param>
 		/// <returns>a dictionary which keys are the start addresses and the values are the complete filenames (the bin files)</returns>
-		internal override Dictionary<int, string> DownloadAndExtract(string chipType, int flashSize)
+		internal override Dictionary<int, string> DownloadAndExtract(string firmwareTag, string chipType, int flashSize)
 		{
+			if (!string.IsNullOrEmpty(firmwareTag))
+			{
+				Console.WriteLine($"Downloading a special version is not supported!");
+				return null;
+			}
+
 			// check if chip type / flash size is supported
 			if (!CheckSupport(chipType, flashSize))
 			{
@@ -116,16 +123,40 @@ namespace EspFirmwareFlasher
 				Console.WriteLine($"Can't find the latest firmware version on {_downloadSource}!");
 				return null;
 			}
-			
+
 			// download the firmware files
 			webClient.DownloadFile(linkBootloader, filenameBootloader);
 			webClient.DownloadFile(linkFirmware, filenameFirmware);
 
-			Dictionary<int, string> partsToFlash = new Dictionary<int, string>();
-			// bootloader goes to 0x00000
-			partsToFlash.Add(0x00000, filenameBootloader);
-			// firmware goes to 0x10000
-			partsToFlash.Add(0x10000, filenameFirmware);
+			Dictionary<int, string> partsToFlash = new Dictionary<int, string>() {
+				// bootloader goes to 0x00000
+				{ 0x00000, filenameBootloader },
+				// firmware goes to 0x10000
+				{ 0x10000, filenameFirmware }
+			};
+			// we also need to flash the default data and the blank block
+			// different start addresses depending on the flash size
+			switch (flashSize)
+			{
+				case 0x80000:
+					partsToFlash.Add(0x7C000, @"esptool\esp_init_data_default.bin");
+					partsToFlash.Add(0x7E000, @"esptool\blank.bin");
+					break;
+				case 0x100000:
+					partsToFlash.Add(0xFC000, @"esptool\esp_init_data_default.bin");
+					partsToFlash.Add(0xFE000, @"esptool\blank.bin");
+					break;
+				case 0x200000:
+					partsToFlash.Add(0x1FC000, @"esptool\esp_init_data_default.bin");
+					partsToFlash.Add(0x1FE000, @"esptool\blank.bin");
+					break;
+				case 0x400000:
+					partsToFlash.Add(0x3FC000, @"esptool\esp_init_data_default.bin");
+					partsToFlash.Add(0x3FE000, @"esptool\blank.bin");
+					break;
+				default:
+					throw new NotSupportedException($"unsupported flash size: {flashSize}");
+			}
 			return partsToFlash;
 		}
 	}
