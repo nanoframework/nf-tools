@@ -201,7 +201,7 @@ namespace EspFirmwareFlasher
 			Console.WriteLine($"Found {name} with MAC address {mac} and features {features}");
 			
 			// execute flash_id command and parse the result
-			if (!RunEspTool("flash_id", true, false, null, out messages))
+			if (!RunEspTool("flash_id", false, false, null, out messages))
 			{
 				Console.WriteLine(messages);
 				return null;
