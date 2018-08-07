@@ -68,7 +68,7 @@ foreach($file in $filesToUpdateCollection)
     attrib $file -r
 
     # replace mscorlib and Storage.Streams
-    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_StorageStreamsVersion, $new_StorageStreamsVersion | Out-File $file -Encoding utf8
+    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_StorageStreamsVersion, $new_StorageStreamsVersion -replace $previous_RuntimeEventsVersion, $new_RuntimeEventsVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
