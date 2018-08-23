@@ -1,0 +1,14 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/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",
+    "FUNCTIONS_EXTENSION_VERSION": "~1",
+    "ScmType": "None",
+    "GITHUB_CREDENTIALS": "bmZib3Q6MDQzZDM5ZmM3Y2QyMmJjMGZiYThiMWQ4NDdiYmMxYTRkZDlkZTIzZg==",
+    "WEBSITE_AUTH_ENABLED": "False",
+    "REMOTEDEBUGGINGVERSION": "11.0.611103.400",
+    "AzureWebJobsDashboard": "DefaultEndpointsProtocol=https;AccountName=nanoframework;AccountKey=06LRiWRF6xItxmoLZVvFgpAbjKHtgRmHM+Y2XoT7XbNIi7MooKpg/WGhELbauSVPyZU0ZN7zbRqTDFkLltGxEA==",
+    "WEBSITE_SITE_NAME": "NanoFramework-GitHubBot",
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=nanoframework;AccountKey=06LRiWRF6xItxmoLZVvFgpAbjKHtgRmHM+Y2XoT7XbNIi7MooKpg/WGhELbauSVPyZU0ZN7zbRqTDFkLltGxEA=="
+  }
+}
