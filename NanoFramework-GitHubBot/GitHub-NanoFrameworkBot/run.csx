@@ -28,6 +28,16 @@ public static async Task Run(dynamic payload, TraceWriter log)
     {
         log.Info($"Processing new PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
 
+        ////////////////////////////////////////////////////////////
+        // processing exceptions
+
+        // dependabot BOT
+        if(payload.pull_request.user.login == "dependabot[bot]")
+        {
+            return;
+        }
+        ////////////////////////////////////////////////////////////
+
         // post comment with thank you message
         string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
         await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
