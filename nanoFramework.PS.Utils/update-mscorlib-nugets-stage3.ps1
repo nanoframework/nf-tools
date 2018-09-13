@@ -1,5 +1,5 @@
-﻿# Second step of a mscorlib update
-# Can only run after the first step is completed and all Nuget packages are available
+﻿# Third step of a mscorlib update
+# Can only run after the first and second steps are completed and all Nuget packages are available
 
 [CmdletBinding()]
 param (

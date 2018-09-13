@@ -14,15 +14,7 @@ param (
     [Parameter(Mandatory)]
     [string]$previous_StorageStreamsVersion,
     [Parameter(Mandatory)]
-    [string]$new_StorageStreamsVersion,
-    [Parameter(Mandatory)]
-    [string]$previous_RuntimeNativeVersion,
-    [Parameter(Mandatory)]
-    [string]$new_RuntimeNativeVersion,
-    [Parameter(Mandatory)]
-    [string]$previous_DevicesGpioVersion,
-    [Parameter(Mandatory)]
-    [string]$new_DevicesGpioVersion
+    [string]$new_StorageStreamsVersion
 )
 
 PowerShellGet\Install-Module posh-git -Scope CurrentUser -Force 
@@ -76,7 +68,7 @@ foreach($file in $filesToUpdateCollection)
     attrib $file -r
 
     # replace mscorlib and Storage.Streams
-    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_StorageStreamsVersion, $new_StorageStreamsVersion | Out-File $file -Encoding utf8
+    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_StorageStreamsVersion, $new_StorageStreamsVersion -replace $previous_RuntimeEventsVersion, $new_RuntimeEventsVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
@@ -106,13 +98,13 @@ foreach($file in $filesToUpdateCollection)
     $filecontent = Get-Content($file)
     attrib $file -r
 
-    # replace mscorlib, RuntimeEvents and Runtime.Native
-    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_RuntimeEventsVersion, $new_RuntimeEventsVersion -replace $previous_RuntimeNativeVersion, $new_RuntimeNativeVersion | Out-File $file -Encoding utf8
+    # replace mscorlib and RuntimeEvents
+    $filecontent -replace $previous_CorlibVersion, $new_CorlibVersion -replace $previous_RuntimeEventsVersion, $new_RuntimeEventsVersion | Out-File $file -Encoding utf8
 }
 
 # commit changes
 git add -A 2>&1
-git commit -m "Update Nugets" -m "- Update mscorlib Nuget to $new_CorlibVersion" -m "- Update Runtime.Events Nuget to $new_RuntimeEventsVersion" -m "- Update Runtime.Native Nuget to $new_RuntimeNativeVersion"  -q
+git commit -m "Update Nugets" -m "- Update mscorlib Nuget to $new_CorlibVersion" -m "- Update Runtime.Events Nuget to $new_RuntimeEventsVersion" -q
 git push --set-upstream origin update_nugets
 git push origin -q
 

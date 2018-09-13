@@ -12,14 +12,17 @@ param (
 PowerShellGet\Install-Module posh-git -Scope CurrentUser -Force 
 
 # all managed class libraries that depend on mscorlib ONLY
+# the order is set to make the ones required for next step available first
 
 $reposToUpdate = ("lib-nanoFramework.Runtime.Events",
 "lib-nanoFramework.Runtime.Native",
+"lib-Windows.Storage.Streams",
 "lib-Windows.Devices.Adc",
 "lib-Windows.Devices.I2c",
 "lib-Windows.Devices.Pwm",
 "lib-Windows.Devices.Spi",
-"lib-Windows.Storage.Streams")
+"lib-nanoFramework.Networking.Sntp"
+)
 
 foreach($repo in $reposToUpdate)
 {
