@@ -159,5 +159,17 @@ namespace EspFirmwareFlasher
 			}
 			return partsToFlash;
 		}
+
+		/// <summary>
+		/// Gets the start address for the application that runs on top of the firmware
+		/// </summary>
+		/// <param name="chipType">ESP chip type</param>
+		/// <param name="flashSize">Flashsize in bytes</param>
+		/// <returns>start address for the application that runs on top of the firmware</returns>
+		/// <exception cref="NotSupportedException">Always because that's not supported for WifiWaterLevelGaugeFirmware</exception>
+		internal override int GetApplicationStartAddress(string chipType, int flashSize)
+		{
+			throw new NotSupportedException();
+		}
 	}
 }
