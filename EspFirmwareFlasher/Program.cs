@@ -53,6 +53,9 @@ namespace EspFirmwareFlasher
 		[Argument('t', "firmware_tag")]
 		private static string FirmwareTag { get; set; } = null;
 
+		[Argument('a', "application")]
+		private static string ApplicationFilename { get; set; } = null;
+
 		private static string FirmwareType { get; set; } = nanoCLR;
 
 		private static string DownloadSource { get; set; } = "https://bintray.com/nfbot/nanoframework-images-dev";
@@ -75,6 +78,7 @@ namespace EspFirmwareFlasher
 		/// --restore or -r restore the entire flash from a backup file that's created with the --backup/-s parameter (e.g. --restore=LastKnownGood).
 		/// The backup should be in the "Backup" subdirectory an should be named %ChipType%_%ChipId%_%Filename%.bin or %Filename%.bin
 		/// --firmware_tag or -t if present the firmware with this tag (e.g. 0.1.0-preview.738) will be downloaded; if not present the latest version will be used.
+		/// --application or -a for the application binary that runs on top of nanoFramework (e.g. --application=MyAwesomeApp.bin)
 		/// </param>
 		/// <remarks>
 		/// If no arguments are delivered the tool asks for the serial port at the command line. Then it uses the baudrate 921600, the flash mode "dio" and the flash frequency "40m".
@@ -89,6 +93,7 @@ namespace EspFirmwareFlasher
 		/// -6: Error during writing to flash
 		/// -7: Error during flash backup
 		/// -8: Can't find the backup file
+		/// -9: Can't find the application binary
 		/// </returns>
 		private static int Main(string[] args)
 		{
@@ -163,6 +168,7 @@ namespace EspFirmwareFlasher
 					Console.WriteLine();
 					Console.WriteLine("If no arguments are delivered the tool asks for the serial port at the command line. Then it uses the baudrate 921600, the flash mode \"dio\" and the flash frequency \"40m\".");
 					Console.WriteLine("You can set other default values via EspFirmwareFlasher.exe.config (application configuration) file. You can find an example for such a file in the source code file App.config.");
+					Console.WriteLine("--application or -a for the application binary that runs on top of nanoFramework (e.g. --application=MyAwesomeApp.bin)");
 					Console.WriteLine();
 					Console.WriteLine("The tool delivers the following exit codes:");
 					Console.WriteLine("0: successful executed; no error");
@@ -174,7 +180,15 @@ namespace EspFirmwareFlasher
 					Console.WriteLine("-6: Error during writing to flash");
 					Console.WriteLine("-7: Error during flash backup");
 					Console.WriteLine("-8: Can't find the backup file");
+					Console.WriteLine("-9: Can't find the application binary");
 					return 0;
+				}
+
+				// if ApplicationFilename is set then the application should exists
+				if (ApplicationFilename != null && !File.Exists(ApplicationFilename))
+				{
+					Console.WriteLine($"Application file not found!");
+					return -9;
 				}
 
 				// determine the serial port
@@ -284,6 +298,14 @@ namespace EspFirmwareFlasher
 					if (firmwareParts == null)
 					{
 						return -4;
+					}
+
+					// add application file?
+					if (ApplicationFilename != null)
+					{
+						int applicationStartAddress = firmware.GetApplicationStartAddress(ChipType, info.Value.FlashSize);
+						string applicationBinary = new FileInfo(ApplicationFilename).FullName;
+						firmwareParts.Add(applicationStartAddress, applicationBinary);
 					}
 				}
 

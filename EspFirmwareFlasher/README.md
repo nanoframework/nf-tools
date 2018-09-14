@@ -20,6 +20,7 @@ If the tool will be used as part of an automatic process the return code can be 
 -6: Error during writing to flash
 -7: Error during flash backup
 -8: Can't find the backup file
+-9: Can't find the application binary
 ```
 
 ### What it does
@@ -27,7 +28,7 @@ If the tool will be used as part of an automatic process the return code can be 
 2. Connect via esptool to the ESP32 and find out information about the connected chip
 3. Download the latest firmware from https://bintray.com/nfbot/nanoframework-images-dev and unzip it
 4. Erase the entire flash
-5. Write the bootloader, nanoCLR and partitionTable into the ESP32 flash
+5. Write the bootloader, nanoCLR, partitionTable and optinally the application that runs on top the nanoFramework into the ESP32 flash
 
 ### Optional configuration
 You can deliver the following command line arguments as name=value pairs:
@@ -41,5 +42,7 @@ You can deliver the following command line arguments as name=value pairs:
 --backup or -s for backup the entire flash into a bin file for later restore (e.g. --backup=LastKnownGood). The backup file will be created in the subdirectory "Backup" with the name %ChipType%_%ChipId%_%Filename%.bin (e.g. ESP32_0x12345678_LastKnownGood.bin). If this file already exists it will be overwritten!
 --backup_only or -o if present only the backup will be stored. Makes only senses if the --backup/-s option is also present.
 --restore or -r restore the entire flash from a backup file that's created with the --backup/-s parameter (e.g. --restore=LastKnownGood). The backup should be in the \"Backup\" subdirectory an should be named %ChipType%_%ChipId%_%Filename%.bin or %Filename%.bin
+--firmware_tag or -t if present the firmware with this tag (e.g. 0.1.0-preview.738) will be downloaded; if not present the latest version will be used.
+--application or -a for the application binary that runs on top of nanoFramework (e.g. --application=MyAwesomeApp.bin)
 ```
 If no arguments are delivered the tool asks for the serial port at the command line. Then it uses the baudrate 921600, the flash mode "dio" and the flash frequency "40m". You can set other default values via EspFirmwareFlasher.exe.config (application configuration) file.

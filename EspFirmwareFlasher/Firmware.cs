@@ -54,5 +54,13 @@ namespace EspFirmwareFlasher
 			}
 			return true;
 		}
+
+		/// <summary>
+		/// Gets the start address for the application that runs on top of the firmware
+		/// </summary>
+		/// <param name="chipType">ESP chip type</param>
+		/// <param name="flashSize">Flashsize in bytes</param>
+		/// <returns>start address for the application that runs on top of the firmware</returns>
+		internal abstract int GetApplicationStartAddress(string chipType, int flashSize);
 	}
 }
