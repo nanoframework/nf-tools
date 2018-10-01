@@ -36,6 +36,11 @@ public static async Task Run(dynamic payload, TraceWriter log)
         {
             return;
         }
+        // nfbot
+        else if (payload.pull_request.user.login == "nfbot")
+        {
+            return;
+        }
         ////////////////////////////////////////////////////////////
 
         // post comment with thank you message
