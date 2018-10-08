@@ -42,13 +42,13 @@ public static async Task Run(dynamic payload, TraceWriter log)
         // post comment with thank you message, except if it's from nfbot
         if (payload.pull_request.user.login != "nfbot")
         {
+            log.Info($"Comment with thank you note.");
+
             string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
             await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
             // add thumbs up reaction in PR main message
             await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/reactions", "{ \"content\" : \"+1\" }", log, "application/vnd.github.squirrel-girl-preview");
-
-            //log.Info($"{payload.pull_request.user.login} submitted pull request #{payload.pull_request.number}:{payload.pull_request.title}. Comment with thank you note.");
         }
 
         // special processing for nfbot commits
@@ -58,10 +58,10 @@ public static async Task Run(dynamic payload, TraceWriter log)
             string prBody = payload.pull_request.body;
             if (prBody.Contains("[version update]"))
             {
+                log.Info($"Adding 'Type: dependencies' label to PR.");
+
                 // add the Type: dependency label
                 await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"Type: dependencies\" ]", log, "application/vnd.github.squirrel-girl-preview");
-
-                //log.Info($"Adding label to pull request #{payload.pull_request.number}:{payload.pull_request.title}.");
             }
         }
     }
@@ -72,12 +72,9 @@ public static async Task Run(dynamic payload, TraceWriter log)
     #region process push event
 
     // process push
-    if (payload.push != null)
+    if (payload.commits != null && payload.pusher != null)
     {
-        // nfbot commits
-        if (payload.push.sender.login == "nfbot")
-        {
-        }
+        log.Info($"Processing push event...");
     }
 
     #endregion
