@@ -1,0 +1,30 @@
+{
+    "id": "f6b0f82b-5241-459f-af57-9b6c0ea76a33",
+    "name": "InstallnFBuildComponents",
+    "friendlyName": "Install nanoFramework MSBuild components",
+    "description": "Install nanoFramework MSBuild components allowing building a nanoFramework C# application with msbuild.",
+    "helpMarkDown": "",
+    "category": "Tool",
+    "minimumAgentVersion": "2.115.0",
+    "runsOn": [
+        "Agent",
+        "DeploymentGroup"
+    ],
+    "demands": [],
+    "author": "nanoFramework Project Contributors",
+    "version": {
+        "Major": 1,
+        "Minor": 0,
+        "Patch": 15
+    },
+    "preview": true,
+    "instanceNameFormat": "Install nanoFramework MSBuild components",
+    "execution": {
+        "PowerShell3": {
+            "target": "install-nf-build-components.ps1",
+            "platforms": [
+                "windows"
+            ]
+        }
+    }
+}
