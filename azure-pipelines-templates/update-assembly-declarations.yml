@@ -1,0 +1,92 @@
+# Copyright (c) 2018 The nanoFramework project contributors
+# See LICENSE file in the project root for full license information.
+
+parameters:
+  sourceFile: ''
+  repoName: ''
+
+steps:
+- powershell: |
+
+    # name of source file with the native declaration
+    $nativeFile = "${{ parameters.sourceFile }}"
+    $repoName = "${{ parameters.repoName }}"
+
+    #  find assembly declaration
+    $assemblyDeclarationPath = (Get-ChildItem -Path ".\*" -Include $nativeFile -Recurse)
+    $filecontent = Get-Content($assemblyDeclarationPath)
+    $assemblyChecksum  = $filecontent -match '(0x.{8})'
+    $assemblyChecksum  = $assemblyChecksum -replace "," , ""
+    $assemblyChecksum  = $assemblyChecksum -replace "    " , ""
+
+    # clone nf-interpreter repo (only a shallow clone with last commit)
+    git clone https://github.com/nanoframework/nf-interpreter -b develop --depth 1 -q
+    cd nf-interpreter > $null
+
+    # new branch name
+    $newBranch = "$env:APPVEYOR_REPO_BRANCH-nfbot/update-version/$repoName/$env:MY_NUGET_VERSION"
+
+    # create branch to perform updates
+    git checkout -b "$newBranch" develop -q
+    
+    # replace version in assembly declaration
+    $newVersion = $env:NBGV_Version -replace "\." , ", "
+    $newVersion = "{ $newVersion }"
+    
+    $versionRegex = "\{\s*\d+\,\s*\d+\,\s*\d+\,\s*\d+\s*}"
+    $assemblyFiles = (Get-ChildItem -Path ".\*" -Include $nativeFile -Recurse)
+
+    foreach($file in $assemblyFiles)
+    {
+        # replace checksum
+        $filecontent = Get-Content($file)
+        attrib $file -r
+        $filecontent -replace  "0x.{8}", $assemblyChecksum | Out-File $file -Encoding utf8
+
+        # replace version
+        $filecontent = Get-Content($file)
+        attrib $file -r
+        $filecontent -replace $versionRegex, $newVersion | Out-File $file -Encoding utf8
+    }
+    
+    # check if anything was changed
+    $repoStatus = "$(git status --short --porcelain)"
+
+    if ($repoStatus -ne "")
+    {
+      echo "##vso[task.setvariable variable=SUBMIT_PR;isOutput=true]true"
+    }
+  name: 'updateAssembly'
+  condition: and( succeeded(), contains(variables['Build.SourceBranchName'], 'tags') )
+  displayName: Update assembly version in nf-interpreter
+
+- powershell: |
+
+    cd nf-interpreter > $null
+
+    $commitMessage = "Update $repoName version to $env:MY_NUGET_VERSION"
+
+    Write-Host "$("##vso[task.setvariable variable=COMMIT_MESSAGE]")$commitMessage"
+
+    # commit changes
+    git add -A 2>&1
+    git commit -m"$commitMessage ***NO_CI***" -m"[version update]" -q
+    git push --set-upstream origin "$newBranch" --porcelain -q > $null
+
+
+    $prRequestBody = @{title="$commitMessage";body="$commitMessage`n`nStarted from https://github.com/$env:Build_SourceBranchName/commit/$env:APPVEYOR_REPO_COMMIT`n`n[version update]`n`n***NO_CI***";head="$newBranch";base="develop"} | ConvertTo-Json
+    Write-Host "$("##vso[task.setvariable variable=PR_REQUEST_BODY]")$prRequestBody"
+
+  condition: eq(variables['updateAssembly.SUBMIT_PR'], 'true')
+  displayName: Update assembly version in nf-interpreter
+
+- task: InvokeRESTAPI@1
+  inputs:
+    connectionType: 'connectedServiceName'
+    serviceConnection: 'nfbot'
+    method: 'POST'
+    headers: '{Content-Type:application/json, AuthToken: $(system.AccessToken)}' 
+    urlSuffix: 'repos/nanoframework/nf-interpreter/pulls'
+    body: $(PR_REQUEST_BODY)
+  condition: eq(variables['updateAssembly.SUBMIT_PR'], 'true')
+  displayName: Submit PR to GitHub
