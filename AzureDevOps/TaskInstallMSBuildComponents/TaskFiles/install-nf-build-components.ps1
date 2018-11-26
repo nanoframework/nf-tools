@@ -32,6 +32,6 @@ Invoke-VstsTool -FileName $sevenZip -Arguments " x $vsixPath -bd -o$env:Agent_Te
 # copy build files to msbuild location
 Write-Debug "Copy build files to msbuild location"
 $msbuildPath = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild"
-Copy-Item -Path "$env:Agent_TempDirectory\nf-extension\`$MSBuild\nanoFramework" -Destination msbuildPath -Recurse
+Copy-Item -Path "$env:Agent_TempDirectory\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
 
 Trace-VstsLeavingInvocation $MyInvocation
