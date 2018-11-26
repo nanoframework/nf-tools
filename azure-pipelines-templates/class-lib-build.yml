@@ -4,6 +4,7 @@
 
 parameters:
   sourceFileName: ''
+  classLibName: ''
   gitUser: 'nfbot'
   gitEmail: 'nfbot@users.noreply.github.com'
 
@@ -201,7 +202,7 @@ steps:
 - task: UpdateNativeAssemblyDeclaration@1
   inputs:
     sourceFileName: '${{ parameters.sourceFileName }}'
-    classLibName: $(classLibName)
+    classLibName: '${{ parameters.classLibName }}'
     gitHubToken: $(GitHubToken)
     nuGetVersion: $(MY_NUGET_VERSION)
     assemblyVersion: $(NBGV_Version)
