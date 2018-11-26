@@ -2,14 +2,19 @@
 # Portions Copyright (c) Sankarsan Kampa (a.k.a. k3rn31p4nic).  All rights reserved.
 # See LICENSE file in the project root for full license information.
 
+parameters:
+  sourceFileName: ''
+  gitUser: 'nfbot'
+  gitEmail: 'nfbot@users.noreply.github.com'
+
 steps:
 # need this here in order to persist GitHub credentials 
 - checkout: self
   persistCredentials: true
 
 - script: |
-    git config --global user.email "nfbot@users.noreply.github.com"
-    git config --global user.name "nfbot"
+    git config --global user.email "${{ parameters.gitUser }}"
+    git config --global user.name "${{ parameters.gitEmail }}"
   displayName: Setup git identity
 
 - task: NuGetToolInstaller@0
@@ -195,7 +200,7 @@ steps:
 # update assembly declaration in nf-interpreter
 - task: UpdateNativeAssemblyDeclaration@1
   inputs:
-    sourceFileName: 'nf_networking_sntp.cpp'
+    sourceFileName: '${{ parameters.sourceFileName }}'
     classLibName: $(classLibName)
     gitHubToken: $(GitHubToken)
     nuGetVersion: $(MY_NUGET_VERSION)
