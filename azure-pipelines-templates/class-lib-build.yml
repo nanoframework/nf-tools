@@ -196,7 +196,7 @@ steps:
 - task: UpdateNativeAssemblyDeclaration@1
   inputs:
     sourceFileName: 'nf_networking_sntp.cpp'
-    classLibName: $(nugetPackageName)
+    classLibName: $(classLibName)
     gitHubToken: $(GitHubToken)
     nuGetVersion: $(MY_NUGET_VERSION)
     assemblyVersion: $(NBGV_Version)
