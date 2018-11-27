@@ -6,7 +6,7 @@ parameters:
   sourceFileName: ''
   classLibName: ''
   gitUser: 'nfbot'
-  gitEmail: 'nfbot@users.noreply.github.com'
+  gitEmail: 'nanoframework@outlook.com'
 
 steps:
 # need this here in order to persist GitHub credentials 
