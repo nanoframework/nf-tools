@@ -168,7 +168,7 @@ steps:
     githubRepositoryName: $(repoName)
     githubTag: v$(MY_NUGET_VERSION)
     githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
-    githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><h4>Install from nanoFramework MyGet development feed</h4>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
+    githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from nanoFramework MyGet development feed</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     githubTargetCommitsh: $(Build.SourceVersion)
     githubReleaseDraft: true
     githubReleasePrerelease: true
@@ -187,7 +187,7 @@ steps:
     githubRepositoryName: $(repoName)
     githubTag: v$(MY_NUGET_VERSION)
     githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
-    githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><h4>Install from NuGet</h4>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
+    githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     githubTargetCommitsh: $(Build.SourceVersion)
     githubReleaseDraft: true
     githubReleasePrerelease: false
