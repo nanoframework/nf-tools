@@ -7,17 +7,12 @@ parameters:
   classLibName: ''
   skipNativeUpdate : false
   gitUser: 'nfbot'
-  gitEmail: 'nanoframework@outlook.com'
+  gitEmail: 'nfbot@users.noreply.github.com'
 
 steps:
 # need this here in order to persist GitHub credentials 
 - checkout: self
   persistCredentials: true
-
-- script: |
-    git config --global user.email "${{ parameters.gitUser }}"
-    git config --global user.name "${{ parameters.gitEmail }}"
-  displayName: Setup git identity
 
 - task: NuGetToolInstaller@0
 
@@ -94,7 +89,11 @@ steps:
 
 # push new changelog to GitHub repo
 - script: |
+      git config user.email "${{ parameters.gitUser }}"
+      git config user.name "${{ parameters.gitEmail }}"
+
       git add CHANGELOG.md
+
       git commit -m "Update CHANGELOG for v$(NBGV_Version)" -m"***NO_CI***"
       git push origin "HEAD:$(Build.SourceBranchName)" --porcelain
   workingDirectory: $(System.DefaultWorkingDirectory)
