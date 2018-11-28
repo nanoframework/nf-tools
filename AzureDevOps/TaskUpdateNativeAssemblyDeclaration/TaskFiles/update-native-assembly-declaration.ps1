@@ -90,7 +90,7 @@ if ($repoStatus -ne "")
     
     git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranch
 
-    $prRequestBody = @{title="$commitMessage";body="$commitMessage`n`nStarted from $env:Build_Repository_Uri/releases/tag/$nuGetVersion`n`n[version update]";head="$newBranch";base="develop"} | ConvertTo-Json
+    $prRequestBody = @{title="$commitMessage";body="$commitMessage`n`nStarted from $env:Build_Repository_Uri/releases/tag/v$nuGetVersion`n`n[version update]";head="$newBranch";base="develop"} | ConvertTo-Json
 
     # start PR
     Write-Debug "Starting PR with updates."

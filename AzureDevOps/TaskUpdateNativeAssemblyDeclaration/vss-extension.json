@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "update-native-assembly-declaration",
     "name": "Update native assembly declaration",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "publisher": "nanoframework",
     "targets": [
         {
