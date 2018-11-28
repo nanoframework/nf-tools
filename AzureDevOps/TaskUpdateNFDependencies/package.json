@@ -1,0 +1,28 @@
+{
+  "name": "nanoframework-update-nf-dependencies",
+  "version": "1.0.4",
+  "description": "Update nanoFramework dependencies",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "nanoFramework Project Contributors",
+  "license": "Apache 2.0",
+  "dependencies": {
+    "azure-pipelines-task-lib": "^2.7.1",
+    "vss-web-extension-sdk": "^5.141.0"
+  },
+  "devDependencies": {
+    "@types/jasmine": "^2.8.9",
+    "@types/node": "^10.12.2",
+    "@types/q": "^1.5.1",
+    "jasmine-core": "^3.3.0",
+    "karma": "^3.1.1",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-jasmine": "^1.1.2",
+    "karma-webpack": "^3.0.5",
+    "ts-loader": "^5.3.0",
+    "typescript": "^3.1.6",
+    "webpack": "^4.23.1",
+    "webpack-dev-server": "^3.1.10"
+  }
+}
