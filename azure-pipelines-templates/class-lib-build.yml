@@ -207,5 +207,5 @@ steps:
     gitHubToken: $(GitHubToken)
     nuGetVersion: $(MY_NUGET_VERSION)
     assemblyVersion: $(NBGV_Version)
-  condition: and( succeeded(), ${{ parameters.skipNativeUpdate }},startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
+  condition: and( succeeded(), not( ${{ parameters.skipNativeUpdate }} ), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
   displayName: Update assembly declaration in nf-interpreter
