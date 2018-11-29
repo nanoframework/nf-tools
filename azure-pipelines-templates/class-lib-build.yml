@@ -5,7 +5,7 @@
 parameters:
   sourceFileName: ''
   classLibName: ''
-  skipNativeUpdate : false
+  skipNativeUpdate: false
   gitUser: 'nfbot'
   gitEmail: 'nanoframework@outlook.com'
 
