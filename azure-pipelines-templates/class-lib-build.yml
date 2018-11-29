@@ -6,6 +6,7 @@ parameters:
   sourceFileName: ''
   classLibName: ''
   skipNativeUpdate: false
+  skipNuGetRestore: false
   gitUser: 'nfbot'
   gitEmail: 'nanoframework@outlook.com'
 
@@ -26,6 +27,8 @@ steps:
     restoreSolution: '$(solution)'
     feedsToUse: config
     nugetConfigPath: source/NuGet.config
+  condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ) )
+  displayName: NuGet restore
 
 - task: InstallnFBuildComponents@1
   displayName: Install nanoFramework MSBuild components
