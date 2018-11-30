@@ -11,7 +11,7 @@ Import-VstsLocStrings "$PSScriptRoot\Task.json"
 [string]$repositoriesToUpdate = Get-VstsInput -Name RepositoriesToUpdate -Require
 [string]$gitHubToken = Get-VstsInput -Name GitHubToken -Require
 
-Write-Debug "repositories to update:`n $repositoriesToUpdate"
+Write-Debug "repositories to update:`n$repositoriesToUpdate"
 
 # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
 # 'encoded token' is the Base64 of the string "nfbot:personal-token"
@@ -43,10 +43,18 @@ ForEach($library in $librariesToUpdate)
     cd "$env:Agent_TempDirectory" > $null
 
     # clone library repo and checkout develop branch
-    "Cloning $library" | Write-Host
-    git clone "https://github.com/nanoframework/$library" -b develop --depth 1 -q
-    cd $library
-    cd source
+    Write-Debug "Init and featch $library repo"
+    git init "$env:Agent_TempDirectory\$library"
+    cd "$library" > $null
+    git remote add origin https://github.com/nanoframework/$library
+    git config gc.auto 0
+    git config user.name nfbot
+    git config user.email nfbot@users.noreply.github.com
+    git -c http.extraheader="AUTHORIZATION: $auth" fetch --progress --depth=1 origin
+    git checkout develop
+
+    # done, move to source directory
+    cd "source"
 
     # find solution file in repository
     $solutionFile = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
@@ -224,10 +232,10 @@ ForEach($library in $librariesToUpdate)
         $commitMessage += "### :warning: This is an automated update. Merge only after all tests pass. :warning:`n"
 
         # create branch to perform updates
-        git branch $newBranchName -q
+        git branch $newBranchName
         
         # checkout branch
-        git checkout $newBranchName -q
+        git checkout $newBranchName
 
         # commit changes
         git add -A 2>&1
@@ -235,19 +243,17 @@ ForEach($library in $librariesToUpdate)
         # commit message with a different title if one or more dependencies are updated
         if ($updateCount -gt 1)
         {
-            git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage" -q
+            git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage"
 
             # fix PR title
             $prTitle = "Update $updateCount NuGet dependencies"
         }
         else 
         {
-            git commit -m "$prTitle ***NO_CI***" -m "$commitMessage" -q
+            git commit -m "$prTitle ***NO_CI***" -m "$commitMessage"
         }
 
-        git config gc.auto 0
-
-        git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName --porcelain -q
+        git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName --porcelain
 
         # start PR
         # we are hardcoding to 'develop' branch to have a fixed one
