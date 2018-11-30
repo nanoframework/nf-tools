@@ -11,6 +11,8 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -63,10 +65,12 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="LICENSE" />
+    <None Include="packages.config" />
     <None Include="README.md" />
     <None Include="Resources\blank.bin" />
     <None Include="Resources\esptool.zip" />
     <None Include="Resources\esp_init_data_default.bin" />
+    <None Include="version.json" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -78,5 +82,12 @@
   <Import Project="CreateEspToolZip.targets" />
   <Target Name="BeforeBuild">
     <CreateEspToolZip />
+  </Target>
+  <Import Project="packages\Nerdbank.GitVersioning.2.2.33\build\Nerdbank.GitVersioning.targets" Condition="Exists('packages\Nerdbank.GitVersioning.2.2.33\build\Nerdbank.GitVersioning.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\Nerdbank.GitVersioning.2.2.33\build\Nerdbank.GitVersioning.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Nerdbank.GitVersioning.2.2.33\build\Nerdbank.GitVersioning.targets'))" />
   </Target>
 </Project>
