@@ -16,8 +16,8 @@ steps:
   persistCredentials: true
 
 - script: |
-    git config --global user.email ${{ parameters.gitUser }}
-    git config --global user.name ${{ parameters.gitEmail }}
+    git config --global user.email ${{ parameters.gitEmail }}
+    git config --global user.name ${{ parameters.gitUser }}
   displayName: Setup git identity
 
 - task: NuGetToolInstaller@0
