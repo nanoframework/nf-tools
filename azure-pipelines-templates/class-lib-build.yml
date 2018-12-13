@@ -98,7 +98,12 @@ steps:
 - script: |
       git add CHANGELOG.md
       git commit -m "Update CHANGELOG for v$(NBGV_Version)" -m"***NO_CI***"
-      git push origin "HEAD:$(Build.SourceBranchName)" --porcelain
+
+      git config user.email ${{ parameters.gitEmail }}
+      git config user.name ${{ parameters.gitUser }}
+      
+      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$(GitHubToken)"))))"
+      git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)" --porcelain
   workingDirectory: $(System.DefaultWorkingDirectory)
   condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ) )
   displayName: Push changelog to GitHub
@@ -166,7 +171,7 @@ steps:
 # create or update GitHub release
 - task: GitHubReleasePublish@1
   inputs:
-    githubEndpoint: 'nfbot'
+    githubEndpoint: 'nanoframework'
     githubOwner: 'nanoframework'
     githubRepositoryName: $(repoName)
     githubTag: v$(MY_NUGET_VERSION)
@@ -185,7 +190,7 @@ steps:
 # create or update GitHub release ON tags from release or master branches
 - task: GitHubReleasePublish@1
   inputs:
-    githubEndpoint: 'nfbot'
+    githubEndpoint: 'nanoframework'
     githubOwner: 'nanoframework'
     githubRepositoryName: $(repoName)
     githubTag: v$(MY_NUGET_VERSION)
