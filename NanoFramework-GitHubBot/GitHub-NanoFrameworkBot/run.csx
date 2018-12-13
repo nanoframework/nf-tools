@@ -96,14 +96,18 @@ public static async Task Run(dynamic payload, TraceWriter log)
     else if (payload.review != null && payload.action == "submitted")
     {
         // check for PR related with [version update] authored by nfbot
-        if (payload.pull_request.body.ToString().Contains("[version update]") && payload.pull_request.user.login == "nfbot")
+        if(payload.pull_request.body.ToString().Contains("[version update]") && payload.pull_request.user.login == "nfbot")
         {
             log.Info($"Processing review submitted event...");
 
             // get PR combined status 
             var prStatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.review.commit_id}/status", log);
 
-            if (prStatus.state == "success")
+            // get status checks for PR
+            var checkSatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.pull_request.head.sha}/check-runs", log);
+
+            // there is only one check status for now, so we are good with hardcoding this
+            if (checkSatus.check_runs[0].conclusion == "success")
             {
                 // PR is now approved and checks are all successful
                 // merge PR with squash
@@ -114,35 +118,38 @@ public static async Task Run(dynamic payload, TraceWriter log)
 
     #endregion
 
-    # region process check state
+    # region process check run
 
-    else if (payload.state == "success" && payload.commit.commit.author.name == "nfbot" && payload.commit.commit.message.ToString().Contains("[version update]"))
+    else if (payload.check_run != null  && payload.check_run.conclusion == "success")
     {
         // serious candidate of a PR check
         log.Info($"Processing check success event...");
 
         // list all open PRs from nfbot
-        JArray openPrs = (JArray)(await GetGitHubRequest($"{payload.repository.url.ToString()}/pulls?user=nfbot", log));
-
+        JArray openPrs = (JArray)(await GetGitHubRequest($"{payload.repository.url.ToString()}/pulls?user=nfbot", log)); 
+ 
         var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"] == payload.commit.sha);
         //var pr = from p in openPrs.Children()["head"].sha select p == payload.commit.sha;
 
-        if (matchingPr != null)
+        if(matchingPr != null)
         {
             // get PR
             var pr = await GetGitHubRequest($"{matchingPr["url"].ToString()}", log);
 
-            // list reviews for this PR
-            JArray prReviews = (JArray)(await GetGitHubRequest($"{matchingPr["url"].ToString()}/reviews", log));
-
-            // list APPROVED reviews
-            var approvedReviews = prReviews.Where(r => r["state"].ToString() == "APPROVED");
-
-            if (approvedReviews.Count() >= 1)
+            if(pr.user.login == "nfbot" && pr.body.ToString().Contains("[version update]"))
             {
-                // PR is approved and checks are all successful
-                // merge PR with squash
-                await MergePR(pr, log);
+                // list reviews for this PR
+                JArray prReviews = (JArray)(await GetGitHubRequest($"{matchingPr["url"].ToString()}/reviews", log));
+
+                // list APPROVED reviews
+                var approvedReviews = prReviews.Where(r => r["state"].ToString() == "APPROVED");
+
+                if(approvedReviews.Count() >= 1)
+                {
+                    // PR is approved and checks are all successful
+                    // merge PR with squash
+                    await MergePR(pr, log);
+                }
             }
         }
     }
@@ -347,6 +354,8 @@ public static async Task<dynamic> GetGitHubRequest(string url, TraceWriter log)
 {
     using (var client = new HttpClient())
     {
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.antiope-preview+json"));
+
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("username", "version"));
 
         // Add the GITHUB_CREDENTIALS as an app setting, Value for the app setting is a base64 encoded string in the following format
