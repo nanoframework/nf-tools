@@ -164,15 +164,17 @@ steps:
   condition: succeeded()
   displayName: Push NuGet packages to MyGet
 
-# # push NuGet class lib package to NuGet (happens on tag builds for any branch)
-# - task: NuGetCommand@2
-#   inputs:
-#     command: push
-#     nuGetFeedType: external
-#     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-#     publishFeedCredentials: 'NuGet'
-#   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
-#   displayName: Push NuGet packages to NuGet
+# push NuGet class lib package to NuGet (happens on tag builds for any branch)
+- task: NuGetCommand@2
+  inputs:
+    command: push
+    nuGetFeedType: external
+    allowPackageConflicts: true
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+    publishFeedCredentials: 'NuGet'
+  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
+  continueOnError: true
+  displayName: Push NuGet packages to NuGet
 
 # create or update GitHub release
 - task: GitHubReleasePublish@1
