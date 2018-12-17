@@ -125,11 +125,11 @@ public static async Task Run(dynamic payload, TraceWriter log)
         // serious candidate of a PR check
         log.Info($"Processing check success event...");
 
+
         // list all open PRs from nfbot
         JArray openPrs = (JArray)(await GetGitHubRequest($"{payload.repository.url.ToString()}/pulls?user=nfbot", log)); 
- 
-        var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"] == payload.commit.sha);
-        //var pr = from p in openPrs.Children()["head"].sha select p == payload.commit.sha;
+
+        var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"] == payload.check_run.head_sha);
 
         if(matchingPr != null)
         {
