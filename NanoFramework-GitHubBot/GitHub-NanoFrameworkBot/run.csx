@@ -33,7 +33,7 @@ public static async Task Run(dynamic payload, TraceWriter log)
         // processing exceptions
 
         // dependabot BOT
-        if (payload.pull_request.user.login == "dependabot[bot]")
+        if(payload.pull_request.user.login == "dependabot[bot]")
         {
             return;
         }
@@ -78,7 +78,7 @@ public static async Task Run(dynamic payload, TraceWriter log)
             // get origin branch
             var originBranch = payload.pull_request.head.label.ToString().Replace("nanoframework:", "");
 
-            if (originBranch.Contains("develop-nfbot/update-version") ||
+            if (originBranch.Contains("develop-nfbot/update-version") || 
                 originBranch.Contains("develop-nfbot/update-dependencies"))
             {
                 // delete this branch
