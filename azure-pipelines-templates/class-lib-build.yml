@@ -223,6 +223,6 @@ steps:
     classLibName: '${{ parameters.classLibName }}'
     gitHubToken: $(GitHubToken)
     nuGetVersion: $(MY_NUGET_VERSION)
-    assemblyVersion: $(NBGV_Version)
+    assemblyVersion: $(NBGV_AssemblyVersion)
   condition: and( succeeded(), not( ${{ parameters.skipNativeUpdate }} ), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
   displayName: Update assembly declaration in nf-interpreter
