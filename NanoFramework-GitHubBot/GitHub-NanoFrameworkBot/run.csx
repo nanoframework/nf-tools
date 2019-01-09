@@ -105,13 +105,16 @@ public static async Task Run(dynamic payload, TraceWriter log)
 
             // get status checks for PR
             var checkSatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.pull_request.head.sha}/check-runs", log);
-
+                
             // there is only one check status for now, so we are good with hardcoding this
-            if (checkSatus.check_runs[0].conclusion == "success")
+            if (((JArray)checkSatus.check_runs).Count() > 0)
             {
-                // PR is now approved and checks are all successful
-                // merge PR with squash
-                await MergePR(payload.pull_request, log);
+                if (checkSatus.check_runs[0].conclusion == "success")
+                {
+                    // PR is now approved and checks are all successful
+                    // merge PR with squash
+                    await MergePR(payload.pull_request, log);
+                }
             }
         }
     }
