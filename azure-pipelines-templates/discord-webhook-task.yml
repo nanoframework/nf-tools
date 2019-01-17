@@ -72,7 +72,7 @@ steps:
         ""color"": $env:EMBED_COLOR,
         ""author"": {
           ""name"": ""Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $env:STATUS_MESSAGE - $env:Build_Repository_Name"",
-          ""url"": ""https://dev.azure.com/nanoframework/nf-interpreter/_build/results?buildId=$env:Build_BuildId&view=results"",
+          ""url"": ""$env:Build_BuildUri"",
           ""icon_url"": ""$AVATAR""
         },
         ""title"": ""$env:COMMIT_SUBJECT"",
