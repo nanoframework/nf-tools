@@ -16,11 +16,16 @@ function DownloadVsixFile($fileUrl, $downloadFileName)
     $webClient.DownloadFile($fileUrl,$downloadFileName)
 }
 
+# get extension information from MyGet VSIX feed
+$vsixFeedXml = Join-Path  $($env:Agent_TempDirectory) "vs-extension-feed.xml"
+$webClient.DownloadFile("https://www.myget.org/F/nanoframework-dev/vsix", $vsixFeedXml)
+[xml]$feedDetails = Get-Content $vsixFeedXml
+
 # download VS extension
 $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2017.Extension.zip"
 # this was the original download URL that provides the last version, but the marketplace is blocking access to it
 # "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/vs-publisher-1470366/vsextensions/nanoFrameworkVS2017Extension/0/vspackage
-DownloadVsixFile "https://www.myget.org/F/nanoframework-dev/vsix/47973986-ed3c-4b64-ba40-a9da73b44ef7-1.0.1.0.vsix" $vsixPath
+DownloadVsixFile $feedDetails.feed.entry.content.src $vsixPath
 
 # get path to 7zip
 $sevenZip = "$PSScriptRoot\7zip\7z.exe"
