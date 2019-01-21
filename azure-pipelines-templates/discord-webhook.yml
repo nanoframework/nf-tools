@@ -71,7 +71,7 @@ steps:
         ""color"": $env:EMBED_COLOR,
         ""author"": {
           ""name"": ""Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $env:STATUS_MESSAGE - $env:Build_Repository_Name"",
-          ""url"": ""$env:Build_BuildUri"",
+          ""url"": ""https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"",
           ""icon_url"": ""$AVATAR""
         },
         ""title"": ""$env:COMMIT_SUBJECT"",
