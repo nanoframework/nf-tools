@@ -1,0 +1,48 @@
+{
+    "manifestVersion": 1,
+    "id": "update-nf-dependencies",
+    "name": "Update nanoFramework dependencies",
+    "version": "1.0.27",
+    "publisher": "nanoframework",
+    "targets": [
+        {
+            "id": "Microsoft.VisualStudio.Services"
+        }
+    ],    
+    "description": "Update nanoFramework dependencies (NuGet packages) on organization repositories following a class library tagging.",
+    "categories": [
+        "Azure Pipelines"
+    ],
+    "icons": {
+        "default": "extension-icon.png"        
+    }, 
+    "files": [
+        {
+            "path": "TaskFiles"
+        }
+    ],
+    "contributions": [
+        {
+            "id": "update-nf-dependencies",
+            "type": "ms.vss-distributed-task.task",
+            "targets": [
+                "ms.vss-distributed-task.tasks"
+            ],
+            "properties": {
+                "name": "TaskFiles"
+            }
+        }
+    ],
+    "content": {
+        "details": {
+            "path": "overview.md"
+        }
+    },    
+    "galleryFlags": [
+        "Private",
+        "Preview"
+    ],
+    "CustomerQnASupport": {
+        "enableqna":"true"
+    }
+}

@@ -1,0 +1,121 @@
+# Copyright (c) 2018 The nanoFramework project contributors
+# See LICENSE file in the project root for full license information.
+
+parameters:
+  sourceFile: ''
+  classLibName: ''
+
+steps:
+- powershell: |
+
+    # name of source file with the native declaration
+    $nativeFile = "${{ parameters.sourceFile }}"
+
+    #  find assembly declaration
+    $assemblyDeclarationPath = (Get-ChildItem -Path "$(Build.SourcesDirectory)\*" -Include $nativeFile -Recurse)
+    $filecontent = Get-Content($assemblyDeclarationPath)
+    $assemblyChecksum  = $filecontent -match '(0x.{8})'
+    $assemblyChecksum  = $assemblyChecksum -replace "," , ""
+    $assemblyChecksum  = $assemblyChecksum -replace "    " , ""
+
+    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$(GitHubToken)"))))"
+
+    mkdir nf-interpreter > $null
+    cd nf-interpreter > $null
+    git init
+    git remote add origin https://github.com/nanoframework/nf-interpreter
+    git config gc.auto 0
+    git config user.name nfbot
+    git config user.email nfbot@users.noreply.github.com
+    git -c http.extraheader="AUTHORIZATION: $auth" fetch --depth 1 origin
+
+    # new branch name
+    $newBranch = "develop-nfbot/update-version/$(nugetPackageName)/$env:MY_NUGET_VERSION"
+    Write-Host "$("##vso[task.setvariable variable=NEW_BRANCH_NAME]")$newBranch"
+
+    # create branch to perform updates
+    git checkout develop
+    git checkout -b $newBranch develop
+   
+    # replace version in assembly declaration
+    $newVersion = $env:NBGV_Version -replace "\." , ", "
+    $newVersion = "{ $newVersion }"
+    
+    $versionRegex = "\{\s*\d+\,\s*\d+\,\s*\d+\,\s*\d+\s*}"
+    $assemblyFiles = (Get-ChildItem -Path ".\*" -Include $nativeFile -Recurse)
+
+    foreach($file in $assemblyFiles)
+    {
+        # replace checksum
+        $filecontent = Get-Content($file)
+        attrib $file -r
+        $filecontent -replace  "0x.{8}", $assemblyChecksum | Out-File $file -Encoding utf8
+
+        # replace version
+        $filecontent = Get-Content($file)
+        attrib $file -r
+        $filecontent -replace $versionRegex, $newVersion | Out-File $file -Encoding utf8
+    }
+  workingDirectory: $(Agent.TempDirectory)
+  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
+  displayName: Update assembly version in nf-interpreter (step 1)
+
+- powershell: |
+
+    cd '$(Agent.TempDirectory)\nf-interpreter'
+    
+    # check if anything was changed
+    $repoStatus = "$(git status --short --porcelain)"
+
+    if ($repoStatus -ne "")
+    {
+      echo "##vso[task.setvariable variable=SUBMIT_PR;isOutput=true]true"
+
+      $commitMessage = "Update ${{ parameters.classLibName }} version to $env:MY_NUGET_VERSION"
+
+      Write-Host "$("##vso[task.setvariable variable=COMMIT_MESSAGE]")$commitMessage"
+
+      $nativeFile = "${{ parameters.sourceFile }}"
+
+      git add "**/$nativeFile"
+      git commit -m"$commitMessage ***NO_CI***" -m"[version update]"
+
+      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
+      
+      git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $env:NEW_BRANCH_NAME
+    }
+
+  name: 'updateAssembly'
+  workingDirectory: '$(Agent.TempDirectory)\nf-interpreter'
+  displayName: Update assembly version in nf-interpreter (step 2)
+
+- powershell: |
+
+    $prRequestBody = @{title="$env:COMMIT_MESSAGE";body="$env:COMMIT_MESSAGE`n`nStarted from $env:Build_Repository_Uri/commit/$env:Build_SourceVersion`n`n[version update]";head="$env:NEW_BRANCH_NAME";base="develop"} | ConvertTo-Json
+
+    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
+
+    # start PR
+    $githubApiEndpoint = "https://api.github.com/repos/nanoframework/nf-interpreter/pulls"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    try 
+    {
+        $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $githubApiEndpoint -Header @{"Authorization"="$auth"} -ContentType "application/json" -Body $prRequestBody
+        'Started PR with version update...' | Write-Host -ForegroundColor White -NoNewline
+        'OK' | Write-Host -ForegroundColor Green
+    }
+    catch 
+    {
+        $result = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($result)
+        $reader.BaseStream.Position = 0
+        $reader.DiscardBufferedData()
+        $responseBody = $reader.ReadToEnd();
+
+        "Error starting PR: $responseBody" | Write-Host -ForegroundColor Red
+    }
+
+  condition: eq(variables['updateAssembly.SUBMIT_PR'], 'true')
+  workingDirectory: $(Agent.TempDirectory)
+  displayName: Submit PR to GitHub

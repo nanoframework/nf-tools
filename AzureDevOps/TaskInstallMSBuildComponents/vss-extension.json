@@ -1,0 +1,48 @@
+{
+    "manifestVersion": 1,
+    "id": "install-nanoframework-msbuild-components",
+    "name": "Install nanoFramework MSBuild components",
+    "version": "1.0.23",
+    "publisher": "nanoframework",
+    "targets": [
+        {
+            "id": "Microsoft.VisualStudio.Services"
+        }
+    ],    
+    "description": "Install nanoFramework MSBuild components allowing building a nanoFramework C# application with msbuild.",
+    "categories": [
+        "Azure Pipelines"
+    ],
+    "icons": {
+        "default": "extension-icon.png"        
+    }, 
+    "files": [
+        {
+            "path": "TaskFiles"
+        }
+    ],
+    "contributions": [
+        {
+            "id": "install-nanoframework-msbuild-components",
+            "type": "ms.vss-distributed-task.task",
+            "targets": [
+                "ms.vss-distributed-task.tasks"
+            ],
+            "properties": {
+                "name": "TaskFiles"
+            }
+        }
+    ],
+    "content": {
+        "details": {
+            "path": "overview.md"
+        }
+    },    
+    "galleryFlags": [
+        "Private",
+        "Preview"
+    ],
+    "CustomerQnASupport": {
+        "enableqna":"true"
+    }
+}

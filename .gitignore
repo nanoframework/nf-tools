@@ -1,11 +1,14 @@
 # Visual Studio
-
 .vs/
-
 [Bb]in/
 [Oo]bj/
-
 packages/
-
 *.suo
 *.user
+NanoFramework-GitHubBot - Web Deploy.pubxml
+
+# AzureDevOps tasks
+ps_modules
+7zip
+*.vsix
+*.zip

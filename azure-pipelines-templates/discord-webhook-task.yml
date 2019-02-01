@@ -1,0 +1,100 @@
+# Copyright (c) 2018 The nanoFramework project contributors
+# Portions Copyright (c) Sankarsan Kampa (a.k.a. k3rn31p4nic).  All rights reserved.
+# See LICENSE file in the project root for full license information.
+
+parameters:
+  status: 'failure'
+  webhookUrl: ''
+  message: ''
+
+steps:
+- powershell: |
+    $STATUS = "${{ parameters.status }}"
+
+    Switch ($STATUS) {
+      "success" {
+        $EMBED_COLOR=3066993
+        $STATUS_MESSAGE="Passed"
+        Break
+      }
+      "failure" {
+        $EMBED_COLOR=15158332
+        $STATUS_MESSAGE="Failed"
+        Break
+      }
+      "warning" {
+        $EMBED_COLOR=12370112
+        $STATUS_MESSAGE="Warning"
+        Break
+      }  
+      default {
+        Write-Output "Default!"
+        Break
+      }
+    }
+
+    Write-Host "$("##vso[task.setvariable variable=EMBED_COLOR]")$EMBED_COLOR"
+    Write-Host "$("##vso[task.setvariable variable=STATUS_MESSAGE]")$STATUS_MESSAGE"
+
+    $AUTHOR_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%aN")"
+    $COMMITTER_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%cN")"
+    $COMMIT_SUBJECT="$(git log -1 "$env:Build_SourceVersion" --pretty="%s")"
+    $COMMIT_MESSAGE="$(git log -1 "$env:Build_SourceVersion" --pretty="%b")"
+
+    Write-Host "$("##vso[task.setvariable variable=COMMIT_SUBJECT]")$COMMIT_SUBJECT"
+    Write-Host "$("##vso[task.setvariable variable=COMMIT_MESSAGE]")$COMMIT_MESSAGE"
+
+    if ($AUTHOR_NAME -eq $COMMITTER_NAME)
+    {
+      $CREDITS = "$AUTHOR_NAME authored & committed"
+    }
+    else
+    {
+      $CREDITS = "$AUTHOR_NAME authored & $COMMITTER_NAME committed"
+    }
+
+    Write-Host "$("##vso[task.setvariable variable=CREDITS]")$CREDITS"
+  condition: failed()
+  displayName: Setup Discord request
+
+- powershell: |
+    $WEBHOOK_URL = "${{ parameters.webhookUrl }}"
+    $MESSAGE = "${{ parameters.message }}"
+
+    if ($env:System_PullRequest_PullRequestNumber) {
+      $URL="https://github.com/$env:Build_Repository_Name/pull/$env:System_PullRequest_PullRequestNumber"
+    }
+   
+    $BUILD_VERSION = [uri]::EscapeDataString($env:Build_BuildNumber)
+
+    $WEBHOOK_DATA="{
+      ""embeds"": [ {
+        ""color"": $env:EMBED_COLOR,
+        ""author"": {
+          ""name"": ""Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $env:STATUS_MESSAGE - $env:Build_Repository_Name"",
+          ""url"": ""https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"",
+          ""icon_url"": ""$AVATAR""
+        },
+        ""title"": ""$env:COMMIT_SUBJECT"",
+        ""url"": ""$env:URL"",
+        ""description"": ""$env:COMMIT_MESSAGE`\n$env:CREDITS`\n$MESSAGE"",
+        ""fields"": [
+          {
+            ""name"": ""Commit"",
+            ""value"": ""[``$($env:Build_SourceVersion.substring(0, 7))``](https://github.com/$env:Build_Repository_Name/commit/$env:Build_SourceVersion)"",
+            ""inline"": true
+          },
+          {
+            ""name"": ""Branch/Tag"",
+            ""value"": ""[``$env:Build_SourceBranchName``](https://github.com/$env:Build_Repository_Name/tree/$env:Build_SourceBranchName)"",
+            ""inline"": true
+          }
+        ]
+      } ],
+      ""content"" : """",
+      ""file"": """"
+    }"
+
+    Invoke-RestMethod -Uri $WEBHOOK_URL -Method POST -UserAgent AzurePipelines-Webhook -ContentType 'application/json' -Body $WEBHOOK_DATA
+  condition: failed()
+  displayName: Call Discord webhook

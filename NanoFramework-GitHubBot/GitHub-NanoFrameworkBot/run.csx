@@ -6,6 +6,7 @@
 #r "Newtonsoft.Json"
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Configuration;
 using System.Net;
 using System.Net.Http;
@@ -38,14 +39,132 @@ public static async Task Run(dynamic payload, TraceWriter log)
         }
         ////////////////////////////////////////////////////////////
 
-        // post comment with thank you message
-        string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
-        await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
 
-        // add thumbs up reaction in PR main message
-        await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/reactions", "{ \"content\" : \"+1\" }", log, "application/vnd.github.squirrel-girl-preview");
+        // post comment with thank you message, except if it's from nfbot
+        if (payload.pull_request.user.login != "nfbot")
+        {
+            log.Info($"Comment with thank you note.");
 
-        //log.Info($"{payload.pull_request.user.login} submitted pull request #{payload.pull_request.number}:{payload.pull_request.title}. Comment with thank you note.");
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
+            await SendGitHubRequest(payload.pull_request.comments_url.ToString(), comment, log);
+
+            // add thumbs up reaction in PR main message
+            await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/reactions", "{ \"content\" : \"+1\" }", log, "application/vnd.github.squirrel-girl-preview");
+        }
+
+        // special processing for nfbot commits
+        if (payload.pull_request.user.login == "nfbot")
+        {
+            // this is a [version update] commit
+            string prBody = payload.pull_request.body;
+            if (prBody.Contains("[version update]"))
+            {
+                log.Info($"Adding 'Type: dependencies' label to PR.");
+
+                // add the Type: dependency label
+                await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", "[ \"Type: dependencies\" ]", log, "application/vnd.github.squirrel-girl-preview");
+            }
+        }
+    }
+
+    // process PR closed
+    else if (payload.pull_request != null && payload.action == "closed")
+    {
+        log.Info($"Processing PR closed event...");
+
+        // check for PR related with [version update] authored by nfbot
+        if (payload.pull_request.body.ToString().Contains("[version update]") && payload.pull_request.user.login == "nfbot")
+        {
+            // get origin branch
+            var originBranch = payload.pull_request.head.label.ToString().Replace("nanoframework:", "");
+
+            if (originBranch.Contains("develop-nfbot/update-version") || 
+                originBranch.Contains("develop-nfbot/update-dependencies"))
+            {
+                // delete this branch
+                await SendGitHubDeleteRequest($"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}", log);
+            }
+        }
+    }
+
+    #endregion
+
+
+    #region process review
+
+    // process review submitted
+    else if (payload.review != null && payload.action == "submitted")
+    {
+        // check for PR related with [version update] authored by nfbot
+        if(payload.pull_request.body.ToString().Contains("[version update]") && payload.pull_request.user.login == "nfbot")
+        {
+            log.Info($"Processing review submitted event...");
+
+            // get PR combined status 
+            var prStatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.review.commit_id}/status", log);
+
+            // get status checks for PR
+            var checkSatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.pull_request.head.sha}/check-runs", log);
+                
+            // there is only one check status for now, so we are good with hardcoding this
+            if (((JArray)checkSatus.check_runs).Count() > 0)
+            {
+                if (checkSatus.check_runs[0].conclusion == "success")
+                {
+                    // PR is now approved and checks are all successful
+                    // merge PR with squash
+                    await MergePR(payload.pull_request, log);
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    # region process check run
+
+    else if (payload.check_run != null  && payload.check_run.conclusion == "success")
+    {
+        // serious candidate of a PR check
+        log.Info($"Processing check success event...");
+
+
+        // list all open PRs from nfbot
+        JArray openPrs = (JArray)(await GetGitHubRequest($"{payload.repository.url.ToString()}/pulls?user=nfbot", log)); 
+
+        var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"] == payload.check_run.head_sha);
+
+        if(matchingPr != null)
+        {
+            // get PR
+            var pr = await GetGitHubRequest($"{matchingPr["url"].ToString()}", log);
+
+            if(pr.user.login == "nfbot" && pr.body.ToString().Contains("[version update]"))
+            {
+                // list reviews for this PR
+                JArray prReviews = (JArray)(await GetGitHubRequest($"{matchingPr["url"].ToString()}/reviews", log));
+
+                // list APPROVED reviews
+                var approvedReviews = prReviews.Where(r => r["state"].ToString() == "APPROVED");
+
+                if(approvedReviews.Count() >= 1)
+                {
+                    // PR is approved and checks are all successful
+                    // merge PR with squash
+                    await MergePR(pr, log);
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    #region process push event
+
+    // process push
+    else if (payload.commits != null && payload.pusher != null)
+    {
+        log.Info($"Processing push event...");
     }
 
     #endregion
@@ -189,18 +308,20 @@ public static async Task SendGitHubDeleteRequest(string url, TraceWriter log)
         // "Username:Password" or "Username:PersonalAccessToken"
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Environment.GetEnvironmentVariable("GITHUB_CREDENTIALS"));
 
-        //log.Info($"Delete URL {url}");
+        log.Info($"Delete URL {url}");
 
         HttpResponseMessage response = await client.DeleteAsync(url);
 
-        //log.Info($"Delete result {response.StatusCode} content {await response.Content.ReadAsStringAsync()} .");
+        log.Info($"Delete result {response.StatusCode} content {await response.Content.ReadAsStringAsync()} .");
     }
 }
 
-public static async Task SendGitHubRequest(string url, string requestBody, TraceWriter log, string acceptHeader = null)
+public static async Task SendGitHubRequest(string url, string requestBody, TraceWriter log, string acceptHeader = null, string verb = "POST")
 {
     using (var client = new HttpClient())
     {
+        HttpResponseMessage response = null;
+
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("username", "version"));
 
         // Add the GITHUB_CREDENTIALS as an app setting, Value for the app setting is a base64 encoded string in the following format
@@ -216,13 +337,19 @@ public static async Task SendGitHubRequest(string url, string requestBody, Trace
         log.Info($"Request URL {url}");
 
         var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-        log.Info($"Request content >>{content.ReadAsStringAsync()}<<");
+        log.Info($"Request content >>{await content.ReadAsStringAsync()}<<");
 
-        HttpResponseMessage response = await client.PostAsync(url, content);
-
+        if (verb == "POST")
+        {
+            response = await client.PostAsync(url, content);
+        }
+        else if (verb == "PUT")
+        {
+            response = await client.PutAsync(url, content);
+        }
 
         log.Info($"Request result {response.StatusCode}");
-        //log.Info($"Request result {response.StatusCode} content >>{await response.Content.ReadAsStringAsync()}<< .");
+        log.Info($"Request result {response.StatusCode} content >>{await response.Content.ReadAsStringAsync()}<< .");
     }
 }
 
@@ -230,16 +357,40 @@ public static async Task<dynamic> GetGitHubRequest(string url, TraceWriter log)
 {
     using (var client = new HttpClient())
     {
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.antiope-preview+json"));
+
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("username", "version"));
 
         // Add the GITHUB_CREDENTIALS as an app setting, Value for the app setting is a base64 encoded string in the following format
         // "Username:Password" or "Username:PersonalAccessToken"
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Environment.GetEnvironmentVariable("GITHUB_CREDENTIALS"));
 
-        //log.Info($"comment: {requestBody}to {url} ");
+        log.Info($"Request URL {url}");
 
         HttpResponseMessage response = await client.GetAsync(url);
 
         return JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync());
+    }
+}
+
+public static async Task MergePR(dynamic pull_request, TraceWriter log)
+{
+    log.Info($"Merge PR {pull_request.title}");
+
+    // if the repo is nf-interpreter need to skip CI because a build will be manually triggered after the last version is updated
+    // the message has to include ***NO_CI*** so 
+    if (pull_request.head.repo.name == "nf-interpreter")
+    {
+        string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title} ***NO_CI***\", \"commit_message\": \"\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
+
+        // request need to be a PUT
+        await SendGitHubRequest($"{pull_request.url.ToString()}/merge", mergeRequest, log, "application/vnd.github.squirrel-girl-preview", "PUT");
+    }
+    else
+    {
+        string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
+
+        // request need to be a PUT
+        await SendGitHubRequest($"{pull_request.url.ToString()}/merge", mergeRequest, log, "application/vnd.github.squirrel-girl-preview", "PUT");
     }
 }
