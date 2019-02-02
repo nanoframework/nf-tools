@@ -158,7 +158,7 @@ jobs:
   # create or update GitHub release
   - task: GitHubReleasePublish@1
     inputs:
-      githubEndpoint: 'nfbot'
+      githubEndpoint: 'nanoFramework'
       githubOwner: 'nanoframework'
       githubRepositoryName: 'nf-tools'
       githubTag: v$(NBGV_Version)
