@@ -24,7 +24,7 @@ resources:
     - repository: templates
       type: github
       name: nanoframework/nf-tools
-      endpoint: nfbot
+      endpoint: nanoframework
 
 jobs:
 
@@ -38,8 +38,8 @@ jobs:
 
     # get commint message
   - powershell: |
-      git config --global user.email "nfbot"
-      git config --global user.name "nanoframework@outlook.com"
+      git config --global user.email "nanoframework@outlook.com"
+      git config --global user.name "nfbot"
 
       $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$(GitHubToken)"))))"
 
@@ -115,8 +115,8 @@ jobs:
     condition: eq(variables['GO'], true)
 
   - script: |
-      git config --global user.email "nfbot"
-      git config --global user.name "nanoframework@outlook.com"
+      git config --global user.email "nanoframework@outlook.com"
+      git config --global user.name "nfbot"
     displayName: Setup git identity
     condition: eq(variables['GO'], true)
 
