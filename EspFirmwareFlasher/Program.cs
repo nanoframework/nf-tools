@@ -60,7 +60,7 @@ namespace EspFirmwareFlasher
 
 		private static string DownloadSource { get; set; } = "https://bintray.com/nfbot/nanoframework-images-dev";
 
-		private static string BoardType { get; set; } = "ESP32_DEVKITC";
+		private static string BoardType { get; set; } = "ESP32_WROOM_32";
 
 		/// <summary>
 		/// Entry point

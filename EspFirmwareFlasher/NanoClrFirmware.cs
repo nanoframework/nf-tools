@@ -23,7 +23,7 @@ namespace EspFirmwareFlasher
 		private readonly string _downloadSource;
 
 		/// <summary>
-		/// Board type: currently ESP32_DEVKITC
+		/// Board type: currently ESP32_WROOM_32
 		/// </summary>
 		private readonly string _boardType;
 
@@ -46,7 +46,7 @@ namespace EspFirmwareFlasher
 		/// Constructor
 		/// </summary>
 		/// <param name="downloadSource">Download source: currently https://bintray.com/nfbot/nanoframework-images-dev </param>
-		/// <param name="boardType">Board type: currently ESP32_DEVKITC</param>
+		/// <param name="boardType">Board type: currently ESP32_WROOM_32</param>
 		internal NanoClrFirmware(string downloadSource, string boardType)
 		{
 			_downloadSource = downloadSource;
@@ -106,7 +106,7 @@ namespace EspFirmwareFlasher
 				// bootloader goes to 0x1000
 				{ 0x1000, Path.Combine(_firmwareDirectory.FullName, "bootloader.bin") },
 				// nanoCLR goes to 0x10000
-				{ 0x10000, Path.Combine(_firmwareDirectory.FullName, "NanoCLR.bin") },
+				{ 0x10000, Path.Combine(_firmwareDirectory.FullName, "nanoCLR.bin") },
 				// partition table goes to 0x8000; there is on partition table for 2MB flash and one for 4MB flash
 				{ 0x8000, Path.Combine(_firmwareDirectory.FullName, flashSize == 0x200000 ? "partitions_2mb.bin" : "partitions_4mb.bin") }
 			};
