@@ -2,6 +2,9 @@
 
 ## A little command line tool that does the upload of the nanoCLR automatically
 It makes use of the esptool. You can find the esptool usage and license information here: See usage and license information at http://github.com/espressif/esptool
+
+The latest release is here: https://github.com/nanoframework/nf-tools/tags
+
 ### Usage
 1. Unzip it into a folder
 2. Bring your ESP32 into download mode, connect it via USB cable to your PC and find out on which serial port it is connected
