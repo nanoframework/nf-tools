@@ -89,9 +89,7 @@ steps:
             ""inline"": true
           }
         ]
-      } ],
-      ""content"": """",
-      ""file"": """"
+      } ]
     }"
     
     Write-Host ">>$WEBHOOK_DATA<<"
