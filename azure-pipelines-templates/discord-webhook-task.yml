@@ -95,6 +95,8 @@ steps:
       ""file"": """"
     }"
 
+    Write-Host ">>$WEBHOOK_DATA<<"
+
     Invoke-RestMethod -Uri $WEBHOOK_URL -Method POST -UserAgent AzurePipelines-Webhook -ContentType 'application/json' -Body $WEBHOOK_DATA
   condition: failed()
   displayName: Call Discord webhook
