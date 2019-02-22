@@ -73,35 +73,54 @@ steps:
           
             $BUILD_VERSION = [uri]::EscapeDataString($env:Build_BuildNumber)
 
-            $WEBHOOK_DATA="{
-              ""embeds"": [ {
-                ""color"": $env:EMBED_COLOR,
-                ""author"": {
-                  ""name"": ""Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $env:STATUS_MESSAGE - $env:Build_Repository_Name"",
-                  ""url"": ""https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"",
-                  ""icon_url"": ""$AVATAR""
-                },
-                ""title"": ""$env:COMMIT_SUBJECT"",
-                ""url"": ""$env:URL"",
-                ""description"": ""$env:COMMIT_MESSAGE`\n$env:CREDITS`\n$MESSAGE"",
-                ""fields"": [
-                  {
-                    ""name"": ""Commit"",
-                    ""value"": ""[``$($env:Build_SourceVersion.substring(0, 7))``](https://github.com/$env:Build_Repository_Name/commit/$env:Build_SourceVersion)"",
-                    ""inline"": true
-                  },
-                  {
-                    ""name"": ""Branch/Tag"",
-                    ""value"": ""[``$env:Build_SourceBranchName``](https://github.com/$env:Build_Repository_Name/tree/$env:Build_SourceBranchName)"",
-                    ""inline"": true
-                  }
-                ]
-              } ]
-            }"
+            [System.Collections.ArrayList]$embedArray = @()
 
-            Write-Host ">>$WEBHOOK_DATA<<"
+            $name = "Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $env:STATUS_MESSAGE - $env:Build_Repository_Name"
+            $url = "https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"
+            $description = "$env:COMMIT_MESSAGE`\n$env:CREDITS`\n$MESSAGE"
 
-            Invoke-RestMethod -Uri $WEBHOOK_URL -Method POST -UserAgent AzurePipelines-Webhook -ContentType 'application/json' -Body "$WEBHOOK_DATA"
+            $authorObject = [PSCustomObject]@{
+                name = $name
+                url = $url
+                icon_url = $AVATAR
+            }
+
+            $field1Value = "[``$($env:Build_SourceVersion.substring(0, 7))``](https://github.com/$env:Build_Repository_Name/commit/$env:Build_SourceVersion)"
+
+            $field1Object = [PSCustomObject]@{
+                name = "Commit"
+                value = $field1Value
+                inline = 'true'
+            }
+           
+            $field2Value = "[``$env:Build_SourceBranchName``](https://github.com/$env:Build_Repository_Name/tree/$env:Build_SourceBranchName)"
+
+            $field2Object = [PSCustomObject]@{
+                name = "Branch/Tag"
+                value = $field2Value
+                inline = 'true'
+            }
+
+            [System.Collections.ArrayList]$fieldsArray = @()
+            $fieldsArray.Add($field1Object)
+            $fieldsArray.Add($field2Object)
+
+            $embedObject = [PSCustomObject]@{
+                color = $env:EMBED_COLOR
+                author = $authorObject
+                title = $env:COMMIT_SUBJECT
+                url = $env:URL
+                description = $description
+                fields = $fieldsArray
+            }
+
+            $embedArray.Add($embedObject)
+            
+            $payload = [PSCustomObject]@{
+                embeds = $embedArray
+            }
+
+            Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType 'application/json'
 
     condition: failed()
     displayName: Call Discord webhook
