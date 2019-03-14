@@ -120,10 +120,10 @@ steps:
               embeds = $embedArray
           }
 
-          # output to aid debugging
-          Write-Host ($payload | ConvertTo-Json -Depth 4)
-
           Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType 'application/json'
+
+          # output to aid debugging
+          Write-Host "($payload | ConvertTo-Json -Depth 4)"
 
     errorActionPreference: 'silentlyContinue'    
   displayName: Call Discord webhook
