@@ -125,7 +125,7 @@ steps:
 
           Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType 'application/json'
 
-      errorActionPreference: 'silentlyContinue'    
-  condition: failed()
-  displayName: Call Discord webhook
-
+      errorActionPreference: 'silentlyContinue'
+  
+    condition: failed()
+    displayName: Call Discord webhook
