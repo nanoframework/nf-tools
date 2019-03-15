@@ -123,7 +123,7 @@ steps:
           Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType 'application/json'
 
           # output to aid debugging
-          Write-Host "($payload | ConvertTo-Json -Depth 4)"
+          Write-Host ($payload | ConvertTo-Json -Depth 4)
 
       errorActionPreference: 'silentlyContinue'
   
