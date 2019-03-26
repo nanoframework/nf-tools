@@ -14,7 +14,7 @@ steps:
 - script: |
     git config --global user.email ${{ parameters.gitEmail }}
     git config --global user.name ${{ parameters.gitUser }}
-    git config core.autocrlf true
+    git config --global core.autocrlf true
   displayName: Setup git identity
 
 - task: NuGetToolInstaller@0
