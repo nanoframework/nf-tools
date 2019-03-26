@@ -1,0 +1,54 @@
+# Copyright (c) 2019 The nanoFramework project contributors
+# See LICENSE file in the project root for full license information.
+
+parameters:
+  sourceFileName: ''
+  classLibName: ''
+  skipNativeUpdate: false
+  skipNuGetRestore: false
+  gitUser: 'nfbot'
+  gitEmail: 'nanoframework@outlook.com'
+
+steps:
+
+# publish artifacts (only possible if this is not a PR originated on a fork)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: deployables
+    ArtifactType: Container
+  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true) )
+  displayName: Publish deployables artifacts
+
+# push NuGet packages to MyGet feed (always happens except on PR builds)
+- task: NuGetCommand@2
+  inputs:
+    command: push
+    nuGetFeedType: external
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+    publishFeedCredentials: 'MyGet'
+  condition: succeeded()
+  displayName: Push NuGet packages to MyGet
+
+# push NuGet class lib package to NuGet (happens on tag builds for any branch)
+- task: NuGetCommand@2
+  inputs:
+    command: push
+    nuGetFeedType: external
+    allowPackageConflicts: true
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+    publishFeedCredentials: 'NuGet'
+  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
+  continueOnError: true
+  displayName: Push NuGet packages to NuGet
+
+# update assembly declaration in nf-interpreter
+- task: UpdateNativeAssemblyDeclaration@1
+  inputs:
+    sourceFileName: '${{ parameters.sourceFileName }}'
+    classLibName: '${{ parameters.classLibName }}'
+    gitHubToken: $(GitHubToken)
+    nuGetVersion: $(MY_NUGET_VERSION)
+    assemblyVersion: $(NBGV_AssemblyVersion)
+  condition: and( succeeded(), not( ${{ parameters.skipNativeUpdate }} ), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
+  displayName: Update assembly declaration in nf-interpreter

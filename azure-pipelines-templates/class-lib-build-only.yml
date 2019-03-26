@@ -1,0 +1,131 @@
+# Copyright (c) 2019 The nanoFramework project contributors
+# Portions Copyright (c) Sankarsan Kampa (a.k.a. k3rn31p4nic).  All rights reserved.
+# See LICENSE file in the project root for full license information.
+
+parameters:
+  skipNuGetRestore: false
+  gitUser: 'nfbot'
+  gitEmail: 'nanoframework@outlook.com'
+
+steps:
+# need this here in order to persist GitHub credentials 
+- checkout: self
+
+- script: |
+    git config --global user.email ${{ parameters.gitEmail }}
+    git config --global user.name ${{ parameters.gitUser }}
+  displayName: Setup git identity
+
+- task: NuGetToolInstaller@0
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+    feedsToUse: config
+    nugetConfigPath: source/NuGet.config
+  condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ) )
+  displayName: NuGet restore
+
+- task: InstallnFBuildComponents@1
+  displayName: Install nanoFramework MSBuild components
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    msbuildArgs: '/p:PublicRelease=true'
+    configuration: '$(buildConfiguration)'
+
+# we don't have tests (yet)
+# - task: VSTest@2
+#   inputs:
+#     platform: '$(buildPlatform)'
+#     configuration: '$(buildConfiguration)'
+
+- task: PowerShell@2
+  inputs:
+      targetType: 'inline'
+      script: |
+          $MyNuGetVersion = $env:NBGV_NuGetPackageVersion -replace "\-g$env:NBGV_GitCommitIdShort", ""
+
+          # replace preview with alpha if this is a PR build
+          if($env:Build_Reason -eq 'PullRequest')
+          {
+            $MyNuGetVersion = $MyNuGetVersion -replace "preview", "alpha"
+          }
+
+          Write-Host "NuGet build number is $MyNuGetVersion"
+
+          Write-Host "$("##vso[task.setvariable variable=MY_NUGET_VERSION]")$MyNuGetVersion"
+  condition: succeeded()
+  displayName: Get NuGet build number
+
+- task: UseRubyVersion@0
+  inputs:
+    versionSpec: '>= 2.4' 
+    addToPath: true
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ) )
+  displayName: Setup Ruby
+
+# generate change log
+- powershell: |
+      gem install github_changelog_generator --quiet --no-ri --no-rdoc
+      # need to call it passing both cache options with full path otherwise it won't work
+      github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) )
+  displayName: Generate change log
+
+# generate change log including future version
+- powershell: |
+      gem install github_changelog_generator --quiet --no-ri --no-rdoc
+      # need to call it passing both cache options with full path otherwise it won't work
+      github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --future-release v$env:MY_NUGET_VERSION
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) )
+  displayName: Generate change log
+
+# copy change log to artifacts directory
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(System.DefaultWorkingDirectory)'
+    Contents: 'CHANGELOG.md'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) )
+  displayName: Copy Changelog
+
+# push new changelog to GitHub repo
+- task: PowerShell@2
+  inputs:
+      targetType: 'inline'
+      script: |
+          git add CHANGELOG.md
+          git commit -m "Update CHANGELOG for v$(NBGV_Version)" -m"***NO_CI***"
+
+          git config user.email ${{ parameters.gitEmail }}
+          git config user.name ${{ parameters.gitUser }}
+          
+          # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
+          # 'encoded token' is the Base64 of the string "nfbot:personal-token"
+          $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
+
+          git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
+
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) )
+  displayName: Push changelog to GitHub
+
+# update could build number (only possible if this is not a PR from a fork)
+- task: PowerShell@2
+  inputs:
+      targetType: 'inline'
+      script: Write-Host "$("##vso[build.updatebuildnumber]")$env:NBGV_NuGetPackageVersion"
+  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true) )
+  displayName: Update cloud build number
+
+- task: CopyFiles@1
+  inputs:
+    sourceFolder: $(Build.SourcesDirectory)
+    Contents: |
+      **\CHANGELOG.md
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    flattenFolders: true
+  condition: succeeded()
+  displayName: Collecting deployable artifacts

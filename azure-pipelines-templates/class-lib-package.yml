@@ -1,0 +1,25 @@
+# Copyright (c) 2019 The nanoFramework project contributors
+# Portions Copyright (c) Sankarsan Kampa (a.k.a. k3rn31p4nic).  All rights reserved.
+# See LICENSE file in the project root for full license information.
+
+parameters:
+  nugetPackageName: ''
+
+steps:
+
+- task: NuGetCommand@2
+  inputs:
+    command: 'custom' 
+    arguments: 'pack source\${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -Symbols'
+  condition: succeeded()
+  displayName: Pack NuGet with class library
+
+- task: CopyFiles@1
+  inputs:
+    sourceFolder: $(Build.SourcesDirectory)
+    Contents: |
+      **\${{ parameters.nugetPackageName }}*.nupkg
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    flattenFolders: true
+  condition: succeeded()
+  displayName: Collecting deployable artifacts
