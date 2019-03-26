@@ -47,9 +47,10 @@ ForEach($library in $librariesToUpdate)
     git init "$env:Agent_TempDirectory\$library"
     cd "$library" > $null
     git remote add origin https://github.com/nanoframework/$library
-    git config gc.auto 0
-    git config user.name nfbot
-    git config user.email nfbot@users.noreply.github.com
+    git config --global gc.auto 0
+    git config --global user.name nfbot
+    git config --global user.email nanoframework@outlook.com
+    git config --global core.autocrlf true
     git -c http.extraheader="AUTHORIZATION: $auth" fetch --progress --depth=1 origin
     git checkout develop
 
@@ -155,13 +156,16 @@ ForEach($library in $librariesToUpdate)
   
                 $updateCount = $updateCount + 1;
 
-                #  find csproj
-                $projectPath = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
+                #  find csproj(s)
+                $projectFiles = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
 
                 # replace NFMDP_PE_LoadHints
-                $filecontent = Get-Content($projectPath)
-                attrib $projectPath -r
-                $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $projectPath -Encoding utf8
+                foreach ($project in $projectFiles)
+                {
+                    $filecontent = Get-Content($project)
+                    attrib $project -r
+                    $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8
+                }
 
                 # update nuspec files, if any
                 $nuspecFiles = (Get-ChildItem -Path ".\" -Include "*.nuspec" -Recurse)
@@ -238,22 +242,22 @@ ForEach($library in $librariesToUpdate)
         git checkout $newBranchName
 
         # commit changes
-        git add -A 2>&1
+        git add -A 2>&1 > $null
 
         # commit message with a different title if one or more dependencies are updated
         if ($updateCount -gt 1)
         {
-            git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage"
+            git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage" -q > $null
 
             # fix PR title
             $prTitle = "Update $updateCount NuGet dependencies"
         }
         else 
         {
-            git commit -m "$prTitle ***NO_CI***" -m "$commitMessage"
+            git commit -m "$prTitle ***NO_CI***" -m "$commitMessage" -q > $null
         }
 
-        git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName --porcelain
+        git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName -q > $null
 
         # start PR
         # we are hardcoding to 'develop' branch to have a fixed one
