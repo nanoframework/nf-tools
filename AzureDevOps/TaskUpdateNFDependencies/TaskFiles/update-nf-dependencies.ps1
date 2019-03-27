@@ -159,6 +159,8 @@ ForEach($library in $librariesToUpdate)
                 #  find csproj(s)
                 $projectFiles = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
 
+                Write-Debug "Updating NFMDP_PE LoadHints"
+
                 # replace NFMDP_PE_LoadHints
                 foreach ($project in $projectFiles)
                 {
@@ -169,10 +171,14 @@ ForEach($library in $librariesToUpdate)
 
                 # update nuspec files, if any
                 $nuspecFiles = (Get-ChildItem -Path ".\" -Include "*.nuspec" -Recurse)
+                
+                Write-Debug "Updating nuspec files"
 
                 foreach ($nuspec in $nuspecFiles)
                 {
-                    [xml]$nuspecDoc = Get-Content $nuspec
+                    Write-Debug "Nuspec file is " 
+
+                    [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
 
                     $nodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
 
@@ -205,7 +211,6 @@ ForEach($library in $librariesToUpdate)
                 
                 # build commit message
                 $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion.`n"
-
                 # build PR title
                 $prTitle = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion"
 
@@ -235,29 +240,42 @@ ForEach($library in $librariesToUpdate)
         # better add this warning line               
         $commitMessage += "### :warning: This is an automated update. Merge only after all tests pass. :warning:`n"
 
+        
+        Write-Debug "Git branch" 
+
         # create branch to perform updates
         git branch $newBranchName
+
+        Write-Debug "Checkout branch" 
         
         # checkout branch
         git checkout $newBranchName
 
+        Write-Debug "Add chnages" 
+        
         # commit changes
-        git add -A 2>&1 > $null
+        git add -A 2>&1
 
         # commit message with a different title if one or more dependencies are updated
         if ($updateCount -gt 1)
         {
-            git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage" -q > $null
+            Write-Debug "Commit changed file" 
+
+            git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage" > $null
 
             # fix PR title
             $prTitle = "Update $updateCount NuGet dependencies"
         }
         else 
         {
-            git commit -m "$prTitle ***NO_CI***" -m "$commitMessage" -q > $null
+            Write-Debug "Commit changed files"
+ 
+            git commit -m "$prTitle ***NO_CI***" -m "$commitMessage" > $null
         }
 
-        git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName -q > $null
+        Write-Debug "Push changes"
+
+        git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName > $null
 
         # start PR
         # we are hardcoding to 'develop' branch to have a fixed one
