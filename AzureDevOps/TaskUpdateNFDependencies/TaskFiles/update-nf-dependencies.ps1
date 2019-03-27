@@ -251,10 +251,10 @@ ForEach($library in $librariesToUpdate)
         # checkout branch
         git checkout $newBranchName
 
-        Write-Debug "Add chnages" 
+        Write-Debug "Add changes" 
         
         # commit changes
-        git add -A 2>&1
+        git add -A > $null
 
         # commit message with a different title if one or more dependencies are updated
         if ($updateCount -gt 1)
