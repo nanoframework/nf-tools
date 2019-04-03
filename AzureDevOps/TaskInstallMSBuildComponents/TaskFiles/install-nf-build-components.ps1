@@ -21,11 +21,27 @@ $vsixFeedXml = Join-Path  $($env:Agent_TempDirectory) "vs-extension-feed.xml"
 $webClient.DownloadFile("https://www.myget.org/F/nanoframework-dev/vsix", $vsixFeedXml)
 [xml]$feedDetails = Get-Content $vsixFeedXml
 
+Write-Output "Host OS is $([System.Environment]::OSVersion.Version)"
+
+# feed list VS2017 and VS2019 extensions
+# index 0 is for VS2017, running on Windows Server 2016
+if([System.Environment]::OSVersion.Version.Major -eq "10")
+{
+    $extensionUrl = $feedDetails.feed.entry[0].content.src
+    $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2017.Extension.zip"
+    # this was the original download URL that provides the last version, but the marketplace is blocking access to it
+    # "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/vs-publisher-1470366/vsextensions/nanoFrameworkVS2017Extension/0/vspackage 
+}
+
+# index 1 is for VS2019, running on Windows Server 2019
+if([System.Environment]::OSVersion.Version.Major -eq "11")
+{
+    $extensionUrl = $feedDetails.feed.entry[1].content.src
+    $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2019.Extension.zip"
+}
+
 # download VS extension
-$vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2017.Extension.zip"
-# this was the original download URL that provides the last version, but the marketplace is blocking access to it
-# "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/vs-publisher-1470366/vsextensions/nanoFrameworkVS2017Extension/0/vspackage
-DownloadVsixFile $feedDetails.feed.entry.content.src $vsixPath
+DownloadVsixFile $extensionUrl $vsixPath
 
 # get path to 7zip
 $sevenZip = "$PSScriptRoot\7zip\7z.exe"

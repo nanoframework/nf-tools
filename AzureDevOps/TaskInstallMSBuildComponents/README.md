@@ -8,6 +8,7 @@ Required components to build/pack the installer:
 - [VstsTaskSdk](https://github.com/Microsoft/azure-pipelines-task-lib/tree/master/powershell) inside TaskFile\ps_modules\VstsTaskSdk
 - [7zip](https://www.npmjs.com/package/7zip) inside TaskFiles\7zip
 
+Steps to package/publish the task in the "Add a build or release task" [tutorial](https://docs.microsoft.com/en-us/azure/devops/extend/develop/add-build-task?view=vsts#packageext).
 
 TO-DO:
 - automate the vsix packaging and versioning 
