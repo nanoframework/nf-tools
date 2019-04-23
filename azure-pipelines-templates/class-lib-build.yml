@@ -216,14 +216,3 @@ steps:
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
   displayName: Create/Update GitHub release
-
-# update assembly declaration in nf-interpreter
-- task: UpdateNativeAssemblyDeclaration@1
-  inputs:
-    sourceFileName: '${{ parameters.sourceFileName }}'
-    classLibName: '${{ parameters.classLibName }}'
-    gitHubToken: $(GitHubToken)
-    nuGetVersion: $(MY_NUGET_VERSION)
-    assemblyVersion: $(NBGV_AssemblyVersion)
-  condition: and( succeeded(), not( ${{ parameters.skipNativeUpdate }} ), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
-  displayName: Update assembly declaration in nf-interpreter
