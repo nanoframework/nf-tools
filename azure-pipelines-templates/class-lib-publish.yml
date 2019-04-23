@@ -2,9 +2,6 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  sourceFileName: ''
-  classLibName: ''
-  skipNativeUpdate: false
   skipNuGetRestore: false
   gitUser: 'nfbot'
   gitEmail: 'nanoframework@outlook.com'
@@ -41,14 +38,3 @@ steps:
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
-
-# update assembly declaration in nf-interpreter
-- task: UpdateNativeAssemblyDeclaration@1
-  inputs:
-    sourceFileName: '${{ parameters.sourceFileName }}'
-    classLibName: '${{ parameters.classLibName }}'
-    gitHubToken: $(GitHubToken)
-    nuGetVersion: $(MY_NUGET_VERSION)
-    assemblyVersion: $(NBGV_AssemblyVersion)
-  condition: and( succeeded(), not( ${{ parameters.skipNativeUpdate }} ), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
-  displayName: Update assembly declaration in nf-interpreter
