@@ -206,9 +206,29 @@ steps:
     githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     githubTargetCommitsh: $(Build.SourceVersion)
     githubReleaseDraft: false
+    githubReleasePrerelease: true
+    githubReuseDraftOnly: false
+    githubReuseRelease: true
+    githubEditRelease: true
+    githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
+  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), contains(variables['Build.SourceBranch'], 'preview') )
+  displayName: Create/Update GitHub PREVIEW release 
+
+# create or update GitHub release ON tags from release or master branches
+- task: GitHubReleasePublish@1
+  inputs:
+    githubEndpoint: 'nanoframework'
+    githubOwner: 'nanoframework'
+    githubRepositoryName: $(repoName)
+    githubTag: v$(MY_NUGET_VERSION)
+    githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
+    githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
+    githubTargetCommitsh: $(Build.SourceVersion)
+    githubReleaseDraft: false
+    githubReleasePrerelease: false
     githubReuseDraftOnly: false
     githubReuseRelease: true
     githubEditRelease: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
-  displayName: Create/Update GitHub release
+  displayName: Create/Update GitHub stable release
