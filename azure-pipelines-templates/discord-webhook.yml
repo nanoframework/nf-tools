@@ -120,7 +120,7 @@ steps:
               embeds = $embedArray
           }
 
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls11
           Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method 'Post' -ContentType 'application/json'
 
     errorActionPreference: 'silentlyContinue'    
