@@ -232,3 +232,4 @@ steps:
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ) )
   displayName: Create/Update GitHub stable release
+
