@@ -130,3 +130,4 @@ steps:
     flattenFolders: true
   condition: succeeded()
   displayName: Collecting deployable artifacts
+
