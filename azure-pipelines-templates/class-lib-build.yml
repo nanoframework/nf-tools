@@ -23,7 +23,7 @@ steps:
     SonarCloud: 'soundcloud'
     organization: 'nanoframework'
     scannerMode: 'MSBuild'
-    projectKey: {{ parameters.soundCloudProject }}
+    projectKey: '${{ parameters.soundCloudProject }}'
   displayName: 'Prepare analysis on SonarCloud'
 
 - task: NuGetToolInstaller@0
