@@ -6,6 +6,7 @@ parameters:
   skipNuGetRestore: false
   gitUser: 'nfbot'
   gitEmail: 'nanoframework@outlook.com'
+  soundCloudProject: 'dummy-key'
 
 steps:
 # need this here in order to persist GitHub credentials 
@@ -16,6 +17,14 @@ steps:
     git config --global user.name ${{ parameters.gitUser }}
     git config --global core.autocrlf true
   displayName: Setup git identity
+
+- task: SonarCloudPrepare@1
+  inputs:
+    SonarCloud: 'soundcloud'
+    organization: 'nanoframework'
+    scannerMode: 'MSBuild'
+    projectKey: {{ parameters.soundCloudProject }}
+  displayName: 'Prepare analysis on SonarCloud'
 
 - task: NuGetToolInstaller@0
 
@@ -60,6 +69,14 @@ steps:
           Write-Host "$("##vso[task.setvariable variable=MY_NUGET_VERSION]")$MyNuGetVersion"
   condition: succeeded()
   displayName: Get NuGet build number
+
+- task: SonarCloudAnalyze@1
+  displayName: 'Run Code Analysis'
+
+- task: SonarCloudPublish@1
+  inputs:
+    pollingTimeoutSec: '300'
+  displayName: 'Publish Quality Gate Result'
 
 - task: UseRubyVersion@0
   inputs:
