@@ -6,7 +6,7 @@ parameters:
   skipNuGetRestore: false
   gitUser: 'nfbot'
   gitEmail: 'nanoframework@outlook.com'
-  soundCloudProject: 'dummy-key'
+  sonarCloudProject: 'dummy-key'
 
 steps:
 # need this here in order to persist GitHub credentials 
@@ -23,7 +23,7 @@ steps:
     SonarCloud: 'sonarcloud'
     organization: 'nanoframework'
     scannerMode: 'MSBuild'
-    projectKey: '${{ parameters.soundCloudProject }}'
+    projectKey: '${{ parameters.sonarCloudProject }}'
   displayName: 'Prepare analysis on SonarCloud'
 
 - task: NuGetToolInstaller@0
