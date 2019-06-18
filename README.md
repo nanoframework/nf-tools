@@ -13,7 +13,9 @@ This repo contains various tools that are required in **nanoFramework** developm
 * [Azure Pipelines Templates](azure-pipelines-templates) Azure Pipelines templates for our repositories.
 * [EspFirmwareFlasher](EspFirmwareFlasher) Console app to flash an ESP32 with the bootloader and the nanoCLR images.
 * [GitHub-bot](AzureFunction-github-bot) Azure Function project for **nanoFramework** GitHub bot which help with managing various aspects of communication and the pull requests workflow.
-* [Hex2Dfu](nanoFramework.Tools.Hex2Dfu) Console app to convert and/or pack HEX or BIN files in DFU packages (required to update some target boards).
+
+Moved:
+* [Hex2Dfu](https://github.com/nanoframework/nf-tool-hex2dfu) Console app to convert and/or pack HEX or BIN files in DFU packages (required to update some target boards).
 
 Deprecated:
 
