@@ -1,1 +1,1 @@
-This tool has been moved to it's own repository [here](https://github.com/nanoframework/nf-tool-esp32-firmware-flasher).
+This tool has been moved to it's own repository [here](https://github.com/nanoframework/esp32-firmware-flasher).
