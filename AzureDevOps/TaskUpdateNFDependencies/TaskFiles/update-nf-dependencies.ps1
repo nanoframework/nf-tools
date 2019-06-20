@@ -63,254 +63,254 @@ ForEach($library in $librariesToUpdate)
     # find packages.config
     $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse)
 
-    # load packages.config as XML doc
-    [xml]$packagesDoc = Get-Content $packagesConfig
-
-    $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
-
-    $packageList = @(,@())
-
-    Write-Debug "Building package list to update"
-
-    foreach ($node in $nodes)
+    foreach ($packageFile in $packagesConfig)
     {
-        # filter out Nerdbank.GitVersioning package
-        if($node.id -notlike "Nerdbank.GitVersioning*")
+        # load packages.config as XML doc
+        [xml]$packagesDoc = Get-Content $packageFile
+
+        $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
+
+        $packageList = @(,@())
+
+        Write-Debug "Building package list to update"
+
+        foreach ($node in $nodes)
         {
-            Write-Debug "Adding $node.id $node.version"
-
-            if($packageList)
+            # filter out Nerdbank.GitVersioning package
+            if($node.id -notlike "Nerdbank.GitVersioning*")
             {
-                $packageList += , ($node.id,  $node.version)
-            }
-            else
-            {
-                $packageList = , ($node.id,  $node.version)
-            }
-        }
-    }
+                Write-Debug "Adding $node.id $node.version"
 
-    if ($packageList.length -gt 0)
-    {
-        "NuGet packages to update:" | Write-Host
-        $packageList | Write-Host
-
-        # restore NuGet packages, need to do this before anything else
-        nuget restore $solutionFile[0] -Source https://www.myget.org/F/nanoframework-dev/api/v3/index.json -Source https://api.nuget.org/v3/index.json                
-
-        # rename nfproj files to csproj
-        Get-ChildItem -Path ".\" -Include "*.nfproj" -Recurse |
-            Foreach-object {
-                $OldName = $_.name; 
-                $NewName = $_.name -replace 'nfproj','csproj'; 
-                Rename-Item  -Path $_.fullname -Newname $NewName; 
-            }
-
-        # update all packages
-        foreach ($package in $packageList)
-        {
-            # get package name and target version
-            $packageName = $package[0]
-            $packageOriginVersion = $package[1]
-
-            # update package, only on the first pass
-            if($updatePackageOutput -eq $null)
-            {
-                Write-Debug "Updating packages"
-
-                if ($env:Build_SourceBranchName -like '*release*' -or $env:Build_SourceBranchName -like '*master*')
+                if($packageList)
                 {
-                    # don't allow prerelease for release and master branches
-                    $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://api.nuget.org/v3/index.json -Source https://api.nuget.org/v3/index.json
+                    $packageList += , ($node.id,  $node.version)
                 }
                 else
                 {
-                    # allow prerelease for all others
-                    $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://www.myget.org/F/nanoframework-dev/api/v3/index.json -Source https://api.nuget.org/v3/index.json -PreRelease
+                    $packageList = , ($node.id,  $node.version)
                 }
             }
+        }
 
-            # need to get target version
-            # load packages.config as XML doc
-            [xml]$packagesDoc = Get-Content $packagesConfig
+        if ($packageList.length -gt 0)
+        {
+            "NuGet packages to update:" | Write-Host
+            $packageList | Write-Host
 
-            $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
+            # restore NuGet packages, need to do this before anything else
+            nuget restore $solutionFile[0] -Source https://www.myget.org/F/nanoframework-dev/api/v3/index.json -Source https://api.nuget.org/v3/index.json                
 
-            foreach ($node in $nodes)
-            {
-                # find this package
-                if($node.id -match $packageName)
-                {
-                    $packageTargetVersion = $node.version
-                }
-            }
-
-            # sanity check
-            if($packageTargetVersion -eq $packageOriginVersion)
-            {
-                "Skip update of $packageName because it has the same version as before: $packageOriginVersion."
-            }
-            else
-            {
-                "Bumping $packageName from $packageOriginVersion to $packageTargetVersion." | Write-Host -ForegroundColor Cyan                
-  
-                $updateCount = $updateCount + 1;
-
-                #  find csproj(s)
-                $projectFiles = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
-
-                Write-Debug "Updating NFMDP_PE LoadHints"
-
-                # replace NFMDP_PE_LoadHints
-                foreach ($project in $projectFiles)
-                {
-                    $filecontent = Get-Content($project)
-                    attrib $project -r
-                    $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8
+            # rename nfproj files to csproj
+            Get-ChildItem -Path ".\" -Include "*.nfproj" -Recurse |
+                Foreach-object {
+                    $OldName = $_.name; 
+                    $NewName = $_.name -replace 'nfproj','csproj'; 
+                    Rename-Item  -Path $_.fullname -Newname $NewName; 
                 }
 
-                # update nuspec files, if any
-                $nuspecFiles = (Get-ChildItem -Path ".\" -Include "*.nuspec" -Recurse)
-                
-                Write-Debug "Updating nuspec files"
+            # update all packages
+            foreach ($package in $packageList)
+            {
+                # get package name and target version
+                $packageName = $package[0]
+                $packageOriginVersion = $package[1]
 
-                foreach ($nuspec in $nuspecFiles)
+                # update package, only on the first pass
+                if($updatePackageOutput -eq $null)
                 {
-                    Write-Debug "Nuspec file is " 
+                    Write-Debug "Updating packages"
 
-                    [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
-
-                    $nodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
-
-                    foreach ($node in $nodes)
+                    if ($env:Build_SourceBranchName -like '*release*' -or $env:Build_SourceBranchName -like '*master*')
                     {
-                        if($node.Name -eq "metadata")
+                        # don't allow prerelease for release and master branches
+                        $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://api.nuget.org/v3/index.json -Source https://api.nuget.org/v3/index.json
+                    }
+                    else
+                    {
+                        # allow prerelease for all others
+                        $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://www.myget.org/F/nanoframework-dev/api/v3/index.json -Source https://api.nuget.org/v3/index.json -PreRelease
+                    }
+                }
+
+                # need to get target version
+                # load packages.config as XML doc
+                [xml]$packagesDoc = Get-Content $packageFile
+
+                $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
+
+                foreach ($node in $nodes)
+                {
+                    # find this package
+                    if($node.id -match $packageName)
+                    {
+                        $packageTargetVersion = $node.version
+                    }
+                }
+
+                # sanity check
+                if($packageTargetVersion -eq $packageOriginVersion)
+                {
+                    "Skip update of $packageName because it has the same version as before: $packageOriginVersion."
+                }
+                else
+                {
+                    "Bumping $packageName from $packageOriginVersion to $packageTargetVersion." | Write-Host -ForegroundColor Cyan                
+    
+                    $updateCount = $updateCount + 1;
+
+                    #  find csproj(s)
+                    $projectFiles = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
+
+                    Write-Debug "Updating NFMDP_PE LoadHints"
+
+                    # replace NFMDP_PE_LoadHints
+                    foreach ($project in $projectFiles)
+                    {
+                        $filecontent = Get-Content($project)
+                        attrib $project -r
+                        $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8
+                    }
+
+                    # update nuspec files, if any
+                    $nuspecFiles = (Get-ChildItem -Path ".\" -Include "*.nuspec" -Recurse)
+                    
+                    Write-Debug "Updating nuspec files"
+
+                    foreach ($nuspec in $nuspecFiles)
+                    {
+                        Write-Debug "Nuspec file is " 
+
+                        [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
+
+                        $nodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
+
+                        foreach ($node in $nodes)
                         {
-                            foreach ($metadataItem in $node.ChildNodes)
-                            {                          
-                                if($metadataItem.Name -eq "dependencies")
-                                {
-                                    foreach ($dependency in $metadataItem.ChildNodes)
+                            if($node.Name -eq "metadata")
+                            {
+                                foreach ($metadataItem in $node.ChildNodes)
+                                {                          
+                                    if($metadataItem.Name -eq "dependencies")
                                     {
-                                        if($dependency.Attributes["id"].value -eq $packageName)
+                                        foreach ($dependency in $metadataItem.ChildNodes)
                                         {
-                                            $dependency.Attributes["version"].value = "[$packageTargetVersion]"
+                                            if($dependency.Attributes["id"].value -eq $packageName)
+                                            {
+                                                $dependency.Attributes["version"].value = "[$packageTargetVersion]"
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+
+                        $nuspecDoc.Save($nuspec[0].FullName)
                     }
 
-                    $nuspecDoc.Save($nuspec[0].FullName)
+                    #  update branch name
+                    $tempPackageName = $packageName -replace "(nanoFramework.)", ""
+                    $newBranchName += "/$tempPackageName.$packageTargetVersion"
+                    
+                    # build commit message
+                    $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion.`n"
+                    # build PR title
+                    $prTitle = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion"
+
                 }
 
-                #  update branch name
-                $tempPackageName = $packageName -replace "(nanoFramework.)", ""
-                $newBranchName += "/$tempPackageName.$packageTargetVersion"
-                
-                # build commit message
-                $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion.`n"
-                # build PR title
-                $prTitle = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion"
-
+                #clear 
+                $updatePackageOutput = $null
             }
 
-            #clear 
-            $updatePackageOutput = $null
-        }
+            # rename csproj files back to nfproj
+            Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse |
+            Foreach-object {
+                $OldName = $_.name; 
+                $NewName = $_.name -replace 'csproj','nfproj'; 
+                Rename-Item  -Path $_.fullname -Newname $NewName; 
+                }
 
-        # rename csproj files back to nfproj
-        Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse |
-        Foreach-object {
-            $OldName = $_.name; 
-            $NewName = $_.name -replace 'csproj','nfproj'; 
-            Rename-Item  -Path $_.fullname -Newname $NewName; 
-            }
-        
-        if($updateCount -eq 0)
-        {
-            # something went wrong as no package was updated and it should be at least one
-            throw "No packages were updated..."
-        }
-
-        # need this line so nfbot flags the PR appropriately
-        $commitMessage += "`n[version update]`n`n"
-
-        # better add this warning line               
-        $commitMessage += "### :warning: This is an automated update. Merge only after all tests pass. :warning:`n"
-
-        
-        Write-Debug "Git branch" 
-
-        # create branch to perform updates
-        git branch $newBranchName
-
-        Write-Debug "Checkout branch" 
-        
-        # checkout branch
-        git checkout $newBranchName
-
-        Write-Debug "Add changes" 
-        
-        # commit changes
-        git add -A > $null
-
-        # commit message with a different title if one or more dependencies are updated
-        if ($updateCount -gt 1)
-        {
-            Write-Debug "Commit changed file" 
-
-            git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage" > $null
-
-            # fix PR title
-            $prTitle = "Update $updateCount NuGet dependencies"
-        }
-        else 
-        {
-            Write-Debug "Commit changed files"
- 
-            git commit -m "$prTitle ***NO_CI***" -m "$commitMessage" > $null
-        }
-
-        Write-Debug "Push changes"
-
-        git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName > $null
-
-        # start PR
-        # we are hardcoding to 'develop' branch to have a fixed one
-        # this is very important for tags (which don't have branch information)
-        # considering that the base branch can be changed at the PR ther is no big deal about this 
-        $prRequestBody = @{title="$prTitle";body="$commitMessage";head="$newBranchName";base="develop"} | ConvertTo-Json
-        $githubApiEndpoint = "https://api.github.com/repos/nanoframework/$library/pulls"
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-        $headers = @{}
-        $headers.Add("Authorization","$auth")
-        $headers.Add("Accept","application/vnd.github.symmetra-preview+json")
-
-        try 
-        {
-            $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $githubApiEndpoint -Header $headers -ContentType "application/json" -Body $prRequestBody
-            'Started PR with dependencies update...' | Write-Host -NoNewline
-            'OK' | Write-Host -ForegroundColor Green
-        }
-        catch 
-        {
-            $result = $_.Exception.Response.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($result)
-            $reader.BaseStream.Position = 0
-            $reader.DiscardBufferedData()
-            $responseBody = $reader.ReadToEnd();
-
-            "Error starting PR: $responseBody" | Write-Host -ForegroundColor Red
         }
     }
-    else
+
+    if($updateCount -eq 0)
     {
-        # nothing to update???
-        "Couldn't find anything to update..." | Write-Host -ForegroundColor Black -BackgroundColor Yellow
+        # something went wrong as no package was updated and it should be at least one
+        throw "No packages were updated..."
     }
+
+    # need this line so nfbot flags the PR appropriately
+    $commitMessage += "`n[version update]`n`n"
+
+    # better add this warning line               
+    $commitMessage += "### :warning: This is an automated update. Merge only after all tests pass. :warning:`n"
+
+    
+    Write-Debug "Git branch" 
+
+    # create branch to perform updates
+    git branch $newBranchName
+
+    Write-Debug "Checkout branch" 
+    
+    # checkout branch
+    git checkout $newBranchName
+
+    Write-Debug "Add changes" 
+    
+    # commit changes
+    git add -A > $null
+
+    # commit message with a different title if one or more dependencies are updated
+    if ($updateCount -gt 1)
+    {
+        Write-Debug "Commit changed file" 
+
+        git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage" > $null
+
+        # fix PR title
+        $prTitle = "Update $updateCount NuGet dependencies"
+    }
+    else 
+    {
+        Write-Debug "Commit changed files"
+
+        git commit -m "$prTitle ***NO_CI***" -m "$commitMessage" > $null
+    }
+
+    Write-Debug "Push changes"
+
+    git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName > $null
+
+    # start PR
+    # we are hardcoding to 'develop' branch to have a fixed one
+    # this is very important for tags (which don't have branch information)
+    # considering that the base branch can be changed at the PR ther is no big deal about this 
+    $prRequestBody = @{title="$prTitle";body="$commitMessage";head="$newBranchName";base="develop"} | ConvertTo-Json
+    $githubApiEndpoint = "https://api.github.com/repos/nanoframework/$library/pulls"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    $headers = @{}
+    $headers.Add("Authorization","$auth")
+    $headers.Add("Accept","application/vnd.github.symmetra-preview+json")
+
+    try 
+    {
+        $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $githubApiEndpoint -Header $headers -ContentType "application/json" -Body $prRequestBody
+        'Started PR with dependencies update...' | Write-Host -NoNewline
+        'OK' | Write-Host -ForegroundColor Green
+    }
+    catch 
+    {
+        $result = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($result)
+        $reader.BaseStream.Position = 0
+        $reader.DiscardBufferedData()
+        $responseBody = $reader.ReadToEnd();
+
+        "Error starting PR: $responseBody" | Write-Host -ForegroundColor Red
+    }
+
 }
 
 Trace-VstsLeavingInvocation $MyInvocation
