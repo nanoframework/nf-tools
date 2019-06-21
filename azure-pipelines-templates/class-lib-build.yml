@@ -27,6 +27,9 @@ steps:
   displayName: 'Prepare analysis on SonarCloud'
 
 - task: NuGetToolInstaller@0
+  inputs:
+    versionSpec: '4.9.3'
+  displayName: 'Install specifc version of NuGet'
 
 - task: NuGetCommand@2
   inputs:
