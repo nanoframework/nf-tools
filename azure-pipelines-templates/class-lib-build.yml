@@ -168,9 +168,12 @@ steps:
   inputs:
       targetType: 'inline'
       script: |
-          $nupecFiles = (Get-ChildItem -Path ".\*" -Include "*.nuspec" -Recurse)
 
-          foreach($file in $nupecFiles)
+          $nuspecFiles = (Get-ChildItem -Path ".\*" -Include "*.nuspec" -Recurse)
+
+          Write-Debug "Found nuspecs: $nuspecFiles."
+
+          foreach($file in $nuspecFiles)
           {
               Write-Debug "Updating nuspec with assembly declaration: $file."
 
@@ -180,7 +183,7 @@ steps:
               $filecontent -replace  "\$nativeVersion\$", "$(ASSEMBLY_NATIVE_VERSION)" | Out-File $file -Encoding utf8
           }
   condition: succeeded()
-  displayName: Add native assembly version to NuGet release notes
+  displayName: Add native assembly version to NuGet description
 
 - task: NuGetCommand@2
   inputs:
