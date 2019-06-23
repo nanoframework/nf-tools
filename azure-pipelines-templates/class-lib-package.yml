@@ -7,28 +7,10 @@ parameters:
 
 steps:
 
-- task: PowerShell@2
-  inputs:
-      targetType: 'inline'
-      script: |
-          $nupecFiles = (Get-ChildItem -Path ".\*" -Include "*.nuspec" -Recurse)
-
-          foreach($file in $nupecFiles)
-          {
-              Write-Debug "Updating source file with assembly declaration: $file."
-
-              # update release notes with native assembly version
-              $filecontent = Get-Content($file)
-              attrib $file -r
-              $filecontent -replace  "\$nativeVersion\$", "$(ASSEMBLY_NATIVE_VERSION)" | Out-File $file -Encoding utf8
-          }
-  condition: succeeded()
-  displayName: Add native assembly version to NuGet release notes
-
 - task: NuGetCommand@2
   inputs:
     command: 'custom' 
-    arguments: 'pack source\${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -Symbols'
+    arguments: 'pack source\${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -Symbols -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)"'
   condition: succeeded()
   displayName: Pack NuGet with class library
 

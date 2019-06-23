@@ -164,31 +164,10 @@ steps:
   condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true) )
   displayName: Update cloud build number
 
-- task: PowerShell@2
-  inputs:
-      targetType: 'inline'
-      script: |
-
-          $nuspecFiles = (Get-ChildItem -Path ".\*" -Include "*.nuspec" -Recurse)
-
-          Write-Debug "Found nuspecs: $nuspecFiles."
-
-          foreach($file in $nuspecFiles)
-          {
-              Write-Debug "Updating nuspec with assembly declaration: $file."
-
-              # update release notes with native assembly version
-              $filecontent = Get-Content($file)
-              attrib $file -r
-              $filecontent -replace  "\$nativeVersion\$", "$(ASSEMBLY_NATIVE_VERSION)" | Out-File $file -Encoding utf8
-          }
-  condition: succeeded()
-  displayName: Add native assembly version to NuGet description
-
 - task: NuGetCommand@2
   inputs:
     command: 'custom' 
-    arguments: 'pack source\$(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols'
+    arguments: 'pack source\$(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)"'
   condition: succeeded()
   displayName: Pack NuGet with class library
 
