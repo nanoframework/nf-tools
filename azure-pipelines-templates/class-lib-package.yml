@@ -10,7 +10,7 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'custom' 
-    arguments: 'pack source\${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -Symbols -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)" commit="$(BUILD_SOURCEVERSION)"'
+    arguments: 'pack source\${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -Symbols -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)" commit="$(Build_SourceVersion)"'
   condition: succeeded()
   displayName: Pack NuGet with class library
 
