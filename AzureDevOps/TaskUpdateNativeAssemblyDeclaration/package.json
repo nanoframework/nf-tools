@@ -1,6 +1,6 @@
 {
   "name": "nanoframework-update-native-assembly-declaration",
-  "version": "1.0.4",
+  "version": "1.0.10",
   "description": "Update native assembly declaration",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

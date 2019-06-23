@@ -196,7 +196,7 @@ ForEach($library in $librariesToUpdate)
                                         {
                                             if($dependency.Attributes["id"].value -eq $packageName)
                                             {
-                                                $dependency.Attributes["version"].value = "[$packageTargetVersion]"
+                                                $dependency.Attributes["version"].value = "$packageTargetVersion"
                                             }
                                         }
                                     }
