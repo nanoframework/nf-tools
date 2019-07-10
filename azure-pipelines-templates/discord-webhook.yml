@@ -120,9 +120,9 @@ steps:
               embeds = $embedArray
           }
 
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls11
-          Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method 'Post' -ContentType 'application/json'
-
+          [Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'
+          $sC = Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method 'Post' -ContentType 'application/json'
+          Write-Host "Status: $sC"
     errorActionPreference: 'silentlyContinue'    
   displayName: Call Discord webhook
 
