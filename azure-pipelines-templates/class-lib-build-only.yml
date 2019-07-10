@@ -7,6 +7,7 @@ parameters:
   gitUser: 'nfbot'
   gitEmail: 'nanoframework@outlook.com'
   sonarCloudProject: 'dummy-key'
+  nugetConfigPath: 'source/NuGet.config'
 
 steps:
 # need this here in order to persist GitHub credentials 
@@ -35,7 +36,7 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
     feedsToUse: config
-    nugetConfigPath: source/NuGet.config
+    nugetConfigPath: ${{ parameters.nugetConfigPath }}
   condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ) )
   displayName: NuGet restore
 
