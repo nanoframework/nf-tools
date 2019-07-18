@@ -253,6 +253,26 @@ steps:
   continueOnError: true
   displayName: Push NuGet packages to NuGet
 
+- powershell: |
+    # get subject and commit message for commit
+    $commitMessage = git log --format='%B' -1
+
+    # need to flatten message by removing new lines
+    $commitMessage = $commitMessage -replace "`r`n", " "
+
+    if($commitMessage -like "***PUBLISH_RELEASE***")
+    {
+      # set variable
+      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT]")True"
+    }
+    else
+    {
+      # set variable
+      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT]")False"
+    }
+
+  displayName: set release draft var
+
 # create or update GitHub release
 - task: GitHubReleasePublish@1
   inputs:
@@ -263,7 +283,7 @@ steps:
     githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
     githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from nanoFramework MyGet development feed</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.myget.org/feed/nanoframework-dev/package/nuget/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     githubTargetCommitsh: $(Build.SourceVersion)
-    githubReleaseDraft: not( contains(variables['Build.SourceVersionMessage'], '***PUBLISH_RELEASE***') ) 
+    githubReleaseDraft: $(RELEASE_DRAFT)
     githubReleasePrerelease: true
     githubReuseDraftOnly: true
     githubReuseRelease: true
@@ -283,7 +303,7 @@ steps:
     githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
     githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     githubTargetCommitsh: $(Build.SourceVersion)
-    githubReleaseDraft: not( contains(variables['Build.SourceVersionMessage'], '***PUBLISH_RELEASE***') ) 
+    githubReleaseDraft: $(RELEASE_DRAFT)
     githubReleasePrerelease: true
     githubReuseDraftOnly: false
     githubReuseRelease: true
@@ -312,4 +332,3 @@ steps:
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ) )
   displayName: Create/Update GitHub stable release
-
