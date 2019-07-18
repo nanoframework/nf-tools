@@ -286,8 +286,8 @@ steps:
     githubReleaseDraft: not( contains(variables['Build.SourceVersionMessage'], '***PUBLISH_RELEASE***') ) 
     githubReleasePrerelease: true
     githubReuseDraftOnly: false
-    githubReuseRelease: false
-    githubEditRelease: false
+    githubReuseRelease: true
+    githubEditRelease: true
     githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), contains(variables['Build.SourceBranch'], 'preview') )
