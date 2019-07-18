@@ -19,6 +19,10 @@ private const string allCommitsHaveObviousFixString = "All commits have an obvio
 private const string allCommitsHaveSignOffOrObviousFixString = "All commits have a DCO Signed-off-by or an obvious fix statement.";
 private const string commitsMissingSignOffOrObviousFixString = "Some commits are missing the DCO Signed-off-by or obvious fix statement.";
 
+// labels
+private const string _updateDependentsLabelName = "CI: Update Dependents";
+private const string _publishReleaseLabelName = "CI: Publish Release";
+
 public static async Task Run(dynamic payload, TraceWriter log)
 {
 
@@ -377,18 +381,36 @@ public static async Task MergePR(dynamic pull_request, TraceWriter log)
 {
     log.Info($"Merge PR {pull_request.title}");
 
+    // place holder for commit message (if any)
+    string commitMessage = "";
+
+    // get labels for this PR
+    JArray prLabels = (JArray)pull_request.labels; 
+
+    var updateDependentsLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _updateDependentsLabelName);
+    if(updateDependentsLabel != null)
+    {
+        commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
+    }
+
+    var publishReleaseLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _publishReleaseLabelName);
+    if(publishReleaseLabel != null)
+    {
+        commitMessage += "\\r\\n***PUBLISH_RELEASE***";
+    }
+
     // if the repo is nf-interpreter need to skip CI because a build will be manually triggered after the last version is updated
     // the message has to include ***NO_CI*** so 
     if (pull_request.head.repo.name == "nf-interpreter")
     {
-        string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title} ***NO_CI***\", \"commit_message\": \"\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
+        string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title} ***NO_CI***\", \"commit_message\": \"{commitMessage}\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
 
         // request need to be a PUT
         await SendGitHubRequest($"{pull_request.url.ToString()}/merge", mergeRequest, log, "application/vnd.github.squirrel-girl-preview", "PUT");
     }
     else
     {
-        string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
+        string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"{commitMessage}\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
 
         // request need to be a PUT
         await SendGitHubRequest($"{pull_request.url.ToString()}/merge", mergeRequest, log, "application/vnd.github.squirrel-girl-preview", "PUT");
