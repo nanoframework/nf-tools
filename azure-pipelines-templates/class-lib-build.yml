@@ -283,7 +283,7 @@ steps:
     githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
     githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     githubTargetCommitsh: $(Build.SourceVersion)
-    githubReleaseDraft: false
+    githubReleaseDraft: not( contains(variables['Build.SourceVersionMessage'], '***PUBLISH_RELEASE***') ) 
     githubReleasePrerelease: true
     githubReuseDraftOnly: false
     githubReuseRelease: false
