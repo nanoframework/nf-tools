@@ -268,6 +268,7 @@ steps:
     githubReuseDraftOnly: true
     githubReuseRelease: true
     githubEditRelease: true
+    githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ) )
   displayName: Create/Update GitHub release
@@ -285,8 +286,9 @@ steps:
     githubReleaseDraft: false
     githubReleasePrerelease: true
     githubReuseDraftOnly: false
-    githubReuseRelease: true
-    githubEditRelease: true
+    githubReuseRelease: false
+    githubEditRelease: false
+    githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), contains(variables['Build.SourceBranch'], 'preview') )
   displayName: Create/Update GitHub PREVIEW release 
@@ -304,8 +306,9 @@ steps:
     githubReleaseDraft: false
     githubReleasePrerelease: false
     githubReuseDraftOnly: false
-    githubReuseRelease: true
-    githubEditRelease: true
+    githubReuseRelease: false
+    githubEditRelease: false
+    githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ) )
   displayName: Create/Update GitHub stable release
