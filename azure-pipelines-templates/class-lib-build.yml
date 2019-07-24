@@ -261,6 +261,7 @@ steps:
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'MyGet'
   condition: succeeded()
+  continueOnError: true
   displayName: Push NuGet packages to MyGet
 
 # push NuGet class lib package to NuGet (happens on tag builds for any branch)
