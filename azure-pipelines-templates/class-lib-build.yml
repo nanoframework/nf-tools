@@ -253,16 +253,16 @@ steps:
   condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true) )
   displayName: Publish deployables artifacts
 
-# push NuGet packages to MyGet feed (always happens except on PR builds)
+# push NuGet packages to AzureArtifacts feed (always happens except on PR builds)
 - task: NuGetCommand@2
   inputs:
     command: push
     nuGetFeedType: external
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-    publishFeedCredentials: 'MyGet'
+    publishFeedCredentials: 'AzureArtifacts'
   condition: succeeded()
   continueOnError: true
-  displayName: Push NuGet packages to MyGet
+  displayName: Push NuGet packages to AzureArtifacts
 
 # push NuGet class lib package to NuGet (happens on tag builds for any branch)
 - task: NuGetCommand@2
@@ -284,7 +284,7 @@ steps:
     githubRepositoryName: $(repoName)
     githubTag: v$(MY_NUGET_VERSION)
     githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
-    githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from nanoFramework MyGet development feed</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.myget.org/feed/nanoframework-dev/package/nuget/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
+    githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from nanoFramework Azure DevOps development feed</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://dev.azure.com/nanoframework/feed/_packaging?_a=package&feed=sandbox&view=overview&package=$(nugetPackageName)&protocolType=NuGet&version=$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     githubTargetCommitsh: $(Build.SourceVersion)
     githubReleaseDraft: $(RELEASE_DRAFT)
     githubReleasePrerelease: true
