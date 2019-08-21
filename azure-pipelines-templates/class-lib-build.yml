@@ -223,14 +223,14 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'custom' 
-    arguments: 'pack source\$(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)"'
+    arguments: 'pack source\$(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)"'
   condition: succeeded()
   displayName: Pack NuGet with class library
 
 # - task: NuGetCommand@2
 #   inputs:
 #     command: 'custom' 
-#     arguments: 'pack source\$(nugetPackageName).DELIVERABLES.nuspec -Version $(MY_NUGET_VERSION) -Symbols'
+#     arguments: 'pack source\$(nugetPackageName).DELIVERABLES.nuspec -Version $(MY_NUGET_VERSION)'
 #     displayName: Pack NuGet with build deliverables class library
 
 - task: CopyFiles@1
