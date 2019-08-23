@@ -172,7 +172,7 @@ steps:
       gem install github_changelog_generator --quiet --no-ri --no-rdoc
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache
-  condition: and( succeeded(), not( eq(variables['SetReleaseDraftVar.RELEASE_DRAFT'], 'false') ), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) )
+  condition: and( succeeded(), not( eq(variables['SetReleaseDraftVar.RELEASE_DRAFT'], 'false') ), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) )
   displayName: Generate change log
 
 # generate change log including future version
