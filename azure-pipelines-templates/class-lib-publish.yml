@@ -27,7 +27,7 @@ steps:
   condition: succeeded()
   displayName: Push NuGet packages to AzureArtifacts
 
-# push NuGet class lib package to NuGet (happens on tag builds for any branch)
+# push NuGet class lib package to NuGet (happens on tag builds for any branch or when building a non draft release)
 - task: NuGetCommand@2
   inputs:
     command: push
@@ -35,6 +35,6 @@ steps:
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet'
-  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') )
+  condition: and( succeeded(), or( eq(variables['SetReleaseDraftVar.RELEASE_DRAFT'], 'false'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
