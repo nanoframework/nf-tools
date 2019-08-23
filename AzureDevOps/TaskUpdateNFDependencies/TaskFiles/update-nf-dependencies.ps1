@@ -98,7 +98,7 @@ ForEach($library in $librariesToUpdate)
             $packageList | Write-Host
 
             # restore NuGet packages, need to do this before anything else
-            nuget restore $solutionFile[0] -Source https://www.myget.org/F/nanoframework-dev/api/v3/index.json -Source https://api.nuget.org/v3/index.json                
+            nuget restore $solutionFile[0] -Source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json                
 
             # rename nfproj files to csproj
             Get-ChildItem -Path ".\" -Include "*.nfproj" -Recurse |
@@ -123,12 +123,12 @@ ForEach($library in $librariesToUpdate)
                     if ($env:Build_SourceBranchName -like '*release*' -or $env:Build_SourceBranchName -like '*master*')
                     {
                         # don't allow prerelease for release and master branches
-                        $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://api.nuget.org/v3/index.json -Source https://api.nuget.org/v3/index.json
+                        $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json
                     }
                     else
                     {
                         # allow prerelease for all others
-                        $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://www.myget.org/F/nanoframework-dev/api/v3/index.json -Source https://api.nuget.org/v3/index.json -PreRelease
+                        $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json -PreRelease
                     }
                 }
 
