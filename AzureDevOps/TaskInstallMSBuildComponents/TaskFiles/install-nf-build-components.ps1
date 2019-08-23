@@ -16,9 +16,9 @@ function DownloadVsixFile($fileUrl, $downloadFileName)
     $webClient.DownloadFile($fileUrl,$downloadFileName)
 }
 
-# get extension information from MyGet VSIX feed
+# get extension information from Open VSIX Gallery feed
 $vsixFeedXml = Join-Path  $($env:Agent_TempDirectory) "vs-extension-feed.xml"
-$webClient.DownloadFile("https://www.myget.org/F/nanoframework-dev/vsix", $vsixFeedXml)
+$webClient.DownloadFile("http://vsixgallery.com/feed/author/nanoframework", $vsixFeedXml)
 [xml]$feedDetails = Get-Content $vsixFeedXml
 
 Write-Output "Host OS is $([System.Environment]::OSVersion.Version)"

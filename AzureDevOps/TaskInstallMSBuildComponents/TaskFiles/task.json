@@ -5,7 +5,7 @@
     "description": "Install nanoFramework MSBuild components allowing building a nanoFramework C# application with msbuild.",
     "helpMarkDown": "",
     "category": "Tool",
-    "minimumAgentVersion": "2.115.0",
+    "minimumAgentVersion": "2.116.0",
     "runsOn": [
         "Agent",
         "DeploymentGroup"
