@@ -141,12 +141,14 @@ steps:
     {
       # set variable
       Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")False"
+      Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")True"
       Write-Host "Release draft: FALSE"
     }
     else
     {
       # set variable
       Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")True"
+      Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")False"
       Write-Host "Release draft: TRUE"
     }
   name: SetReleaseDraftVar
@@ -180,7 +182,7 @@ steps:
       gem install github_changelog_generator --quiet --no-ri --no-rdoc
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --future-release v$env:MY_NUGET_VERSION
-  condition: and( succeeded(), or( not(variables['SetReleaseDraftVar.RELEASE_DRAFT']), and ( not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ) )
+  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], and ( not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ) )
   displayName: Generate change log
 
 # copy change log to artifacts directory
@@ -272,7 +274,7 @@ steps:
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet'
-  condition: and( succeeded(), or( not( variables['SetReleaseDraftVar.RELEASE_DRAFT'] ), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ) )
+  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
 
