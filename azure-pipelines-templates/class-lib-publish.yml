@@ -25,6 +25,7 @@ steps:
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'AzureArtifacts'
   condition: succeeded()
+  continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
 
 # push NuGet class lib package to NuGet (happens on tag builds for any branch or when building a non draft release)
