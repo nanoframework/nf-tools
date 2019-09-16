@@ -63,7 +63,7 @@ steps:
 - powershell: |
     cd source > $null
 
-    git checkout develop
+    git checkout -b develop origin/develop
 
     "nbgv prepare-release $env:NBGV_PARAMETERS"
 
