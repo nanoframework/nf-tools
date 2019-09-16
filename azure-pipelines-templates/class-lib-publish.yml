@@ -14,7 +14,7 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: deployables
     ArtifactType: Container
-  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), not(variables['START_RELEASE_CANDIDATE']) )
+  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), not(variables['StartReleaseCandidate']) )
   displayName: Publish deployables artifacts
 
 # push NuGet packages to AzureArtifacts feed (always happens except on PR builds)
@@ -24,7 +24,7 @@ steps:
     nuGetFeedType: external
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'AzureArtifacts'
-  condition: and( succeeded(), not(variables['START_RELEASE_CANDIDATE']) )
+  condition: and( succeeded(), not(variables['StartReleaseCandidate']) )
   continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
 
@@ -36,6 +36,6 @@ steps:
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet'
-  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not(variables['START_RELEASE_CANDIDATE']) )
+  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not(variables['StartReleaseCandidate']) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
