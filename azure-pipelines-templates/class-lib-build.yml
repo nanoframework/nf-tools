@@ -62,7 +62,7 @@ steps:
 
 - script: |
     cd source > $null
-    nbgv prepare-release $env:NBGV_PARAMETERS
+    ./nbgv prepare-release $env:NBGV_PARAMETERS
   condition: variables['START_RELEASE_CANDIDATE']
   displayName: NBGV prepare release
 
@@ -80,7 +80,7 @@ steps:
 
     git -c http.extraheader="AUTHORIZATION: $auth" push --all origin
   condition: variables['START_RELEASE_CANDIDATE']
-  displayName: Push all changes to GitHub
+  displayName: Push all release prep changes to GitHub
 
 - task: SonarCloudPrepare@1
   inputs:
