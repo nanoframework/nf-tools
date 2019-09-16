@@ -11,7 +11,7 @@ steps:
   inputs:
     command: 'custom' 
     arguments: 'pack source\${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)"'
-  condition: succeeded()
+  condition: and( succeeded(), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Pack NuGet with class library
 
 - task: CopyFiles@1
@@ -21,5 +21,5 @@ steps:
       **\${{ parameters.nugetPackageName }}*.nupkg
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
-  condition: succeeded()
+  condition: and( succeeded(), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Collecting deployable artifacts

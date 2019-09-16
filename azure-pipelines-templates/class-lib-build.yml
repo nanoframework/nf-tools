@@ -52,17 +52,49 @@ steps:
   name: getCommitMessage
   displayName: grab commit message
 
+- task: DotNetCoreCLI@2  
+  inputs:
+    command: custom
+    custom: tool
+    arguments: install --tool-path . nbgv
+  conditions: or( variables['START_RELEASE_CANDIDATE'], ne(variables['system.pullrequest.isfork'], true) )
+  displayName: Install NBGV tool
+
+- script: |
+    cd source > $null
+    nbgv prepare-release ${{ parameters.nbgvParameters }}
+  conditions: variables['START_RELEASE_CANDIDATE']
+  displayName: NBGV prepare release
+
+- script: |
+
+    # get commit message for the merge
+    $commitMessage = git log -1 --pretty=%B
+
+    # amend commit message to skip build
+    git commit --amend -m "$commitMessage" -m "***NO_CI***" > $null
+
+    # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
+    # 'encoded token' is the Base64 of the string "nfbot:personal-token"
+    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
+
+    git -c http.extraheader="AUTHORIZATION: $auth" push --all origin
+  conditions: variables['START_RELEASE_CANDIDATE']
+  displayName: Push all changes to GitHub
+
 - task: SonarCloudPrepare@1
   inputs:
     SonarCloud: 'sonarcloud'
     organization: 'nanoframework'
     scannerMode: 'MSBuild'
     projectKey: '${{ parameters.sonarCloudProject }}'
+  conditions: not(variables['START_RELEASE_CANDIDATE'])
   displayName: 'Prepare analysis on SonarCloud'
 
 - task: NuGetToolInstaller@0
   inputs:
     versionSpec: '4.9.3'
+  conditions: not(variables['START_RELEASE_CANDIDATE'])
   displayName: 'Install specific version of NuGet'
 
 - task: NuGetCommand@2
@@ -70,10 +102,11 @@ steps:
     restoreSolution: '$(solution)'
     feedsToUse: config
     nugetConfigPath: ${{ parameters.nugetConfigPath }}
-  condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ) )
+  condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: NuGet restore
 
 - task: InstallnFBuildComponents@1
+  conditions: not(variables['START_RELEASE_CANDIDATE'])
   displayName: Install nanoFramework MSBuild components
 
 - task: VSBuild@1
@@ -82,12 +115,14 @@ steps:
     platform: '$(buildPlatform)'
     msbuildArgs: '/p:PublicRelease=true'
     configuration: '$(buildConfiguration)'
+  conditions: not(variables['START_RELEASE_CANDIDATE'])
 
 # we don't have tests (yet)
 # - task: VSTest@2
 #   inputs:
 #     platform: '$(buildPlatform)'
 #     configuration: '$(buildConfiguration)'
+#   conditions: not(variables['START_RELEASE_CANDIDATE'])
 
 - task: PowerShell@2
   inputs:
@@ -104,7 +139,7 @@ steps:
           Write-Host "NuGet build number is $MyNuGetVersion"
 
           Write-Host "$("##vso[task.setvariable variable=MY_NUGET_VERSION]")$MyNuGetVersion"
-  condition: succeeded()
+  condition: and( succeeded(), not(variables['START_RELEASE_CANDIDATE']))
   displayName: Get NuGet build number
 
 - task: PowerShell@2
@@ -127,7 +162,7 @@ steps:
           Write-Host "AssemblyNativeVersion is $nativeVersion"
 
           Write-Host "$("##vso[task.setvariable variable=ASSEMBLY_NATIVE_VERSION]")$nativeVersion"
-  condition: succeeded()
+  condition: and( succeeded(), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Get AssemblyNativeVersion version
 
 - powershell: |
@@ -152,21 +187,24 @@ steps:
       Write-Host "Release draft: TRUE"
     }
   name: SetReleaseDraftVar
-  displayName: set release draft var
+  conditions: not(variables['START_RELEASE_CANDIDATE'])
+  displayName: Set release draft var
 
 - task: SonarCloudAnalyze@1
+  conditions: not(variables['START_RELEASE_CANDIDATE'])
   displayName: 'Run Code Analysis'
 
 - task: SonarCloudPublish@1
   inputs:
     pollingTimeoutSec: '300'
+  conditions: not(variables['START_RELEASE_CANDIDATE'])
   displayName: 'Publish Quality Gate Result'
 
 - task: UseRubyVersion@0
   inputs:
     versionSpec: '= 2.5' 
     addToPath: true
-  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ) )
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Setup Ruby
 
 # generate change log
@@ -174,7 +212,7 @@ steps:
       gem install github_changelog_generator --quiet --no-ri --no-rdoc
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache
-  condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) )
+  condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Generate change log
 
 # generate change log including future version
@@ -182,7 +220,7 @@ steps:
       gem install github_changelog_generator --quiet --no-ri --no-rdoc
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --future-release v$env:MY_NUGET_VERSION
-  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], and ( not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ) )
+  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], and ( not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Generate change log
 
 # copy change log to artifacts directory
@@ -191,7 +229,7 @@ steps:
     SourceFolder: '$(System.DefaultWorkingDirectory)'
     Contents: 'CHANGELOG.md'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) )
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Copy Changelog
 
 # push new changelog to GitHub repo
@@ -211,7 +249,7 @@ steps:
 
           git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
 
-  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) )
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Push changelog to GitHub
 
 # update could build number (only possible if this is not a PR from a fork)
@@ -219,14 +257,14 @@ steps:
   inputs:
       targetType: 'inline'
       script: Write-Host "$("##vso[build.updatebuildnumber]")$env:NBGV_NuGetPackageVersion"
-  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true) )
+  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Update cloud build number
 
 - task: NuGetCommand@2
   inputs:
     command: 'custom' 
     arguments: 'pack source\$(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)"'
-  condition: succeeded()
+  condition: and( succeeded(), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Pack NuGet with class library
 
 # - task: NuGetCommand@2
@@ -243,7 +281,7 @@ steps:
       **\CHANGELOG.md
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
-  condition: succeeded()
+  condition: and( succeeded(), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Collecting deployable artifacts
 
 # publish artifacts (only possible if this is not a PR originated on a fork)
@@ -252,7 +290,7 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: deployables
     ArtifactType: Container
-  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true) )
+  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Publish deployables artifacts
 
 # push NuGet packages to AzureArtifacts feed (always happens except on PR builds)
@@ -262,7 +300,7 @@ steps:
     nuGetFeedType: external
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'AzureArtifacts'
-  condition: succeeded()
+  condition: and( succeeded(), not(variables['START_RELEASE_CANDIDATE']) )
   continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
 
@@ -274,7 +312,7 @@ steps:
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet'
-  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ) )
+  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not(variables['START_RELEASE_CANDIDATE']) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
 
@@ -295,7 +333,7 @@ steps:
     githubEditRelease: true
     githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
-  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ) )
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Create/Update GitHub release
 
 # create or update GitHub release ON tags from release or master branches
@@ -315,7 +353,7 @@ steps:
     githubEditRelease: true
     githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
-  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), contains(variables['Build.SourceBranch'], 'preview') )
+  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), contains(variables['Build.SourceBranch'], 'preview'), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Create/Update GitHub PREVIEW release 
 
 # create or update GitHub release ON tags from release or master branches
@@ -335,5 +373,5 @@ steps:
     githubEditRelease: false
     githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
-  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ) )
+  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ), not(variables['START_RELEASE_CANDIDATE']) )
   displayName: Create/Update GitHub stable release
