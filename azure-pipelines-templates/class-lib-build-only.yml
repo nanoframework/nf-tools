@@ -62,7 +62,10 @@ steps:
 
 - powershell: |
     cd source > $null
-    nbgv prepare-release ${{ parameters.nbgvParameters }}
+    git checkout develop
+
+    "nbgv prepare-release $env:NBGV_PARAMETERS"
+
   condition: variables['START_RELEASE_CANDIDATE']
   displayName: NBGV prepare release
 
