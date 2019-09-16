@@ -60,13 +60,13 @@ steps:
   condition: or( variables['START_RELEASE_CANDIDATE'], ne(variables['system.pullrequest.isfork'], true) )
   displayName: Install NBGV tool
 
-- script: |
+- powershell: |
     cd source > $null
     ./nbgv prepare-release ${{ parameters.nbgvParameters }}
   condition: variables['START_RELEASE_CANDIDATE']
   displayName: NBGV prepare release
 
-- script: |
+- powershell: |
 
     # get commit message for the merge
     $commitMessage = git log -1 --pretty=%B
