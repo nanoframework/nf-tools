@@ -62,7 +62,7 @@ steps:
 
 - script: |
     cd source > $null
-    nbgv prepare-release ${{ parameters.nbgvParameters }}
+    nbgv prepare-release $(NBGV_PARAMETERS)
   conditions: variables['START_RELEASE_CANDIDATE']
   displayName: NBGV prepare release
 
