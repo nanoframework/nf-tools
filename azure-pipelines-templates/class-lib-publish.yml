@@ -14,19 +14,19 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: deployables
     ArtifactType: Container
-  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), not(variables['StartReleaseCandidate']) )
+  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Publish deployables artifacts
 
-# push NuGet packages to AzureArtifacts feed (always happens except on PR builds)
+# push NuGet packages to Azure Artifacts feed (always happens except on PR builds)
 - task: NuGetCommand@2
   inputs:
     command: push
     nuGetFeedType: external
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'AzureArtifacts'
-  condition: and( succeeded(), not(variables['StartReleaseCandidate']) )
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   continueOnError: true
-  displayName: Push NuGet packages to AzureArtifacts
+  displayName: Push NuGet packages to Azure Artifacts
 
 # push NuGet class lib package to NuGet (happens on tag builds for any branch or when building a non draft release)
 - task: NuGetCommand@2
@@ -36,6 +36,6 @@ steps:
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet'
-  condition: and( succeeded(), or( variables['SetReleaseDraftVar.RELEASE_VERSION'], startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not(variables['StartReleaseCandidate']) )
+  condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), ne( variables['StartReleaseCandidate'], true ) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
