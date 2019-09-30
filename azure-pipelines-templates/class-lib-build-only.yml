@@ -215,7 +215,7 @@ steps:
 
 - task: UseRubyVersion@0
   inputs:
-    versionSpec: '= 2.4.6' 
+    versionSpec: '= 2.5.5' 
     addToPath: true
   condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Setup Ruby
