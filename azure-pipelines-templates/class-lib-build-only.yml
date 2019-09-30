@@ -222,7 +222,7 @@ steps:
 
 # generate change log
 - powershell: |
-      gem install github_changelog_generator -v 1.15.0.pre.rc --quiet --no-ri --no-rdoc
+      gem install github_changelog_generator -v 1.15.0.pre.rc --quiet --no-rdoc
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
   condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
@@ -230,7 +230,7 @@ steps:
 
 # generate change log including future version
 - powershell: |
-      gem install github_changelog_generator -v 1.15.0.pre.rc --quiet --no-ri --no-rdoc
+      gem install github_changelog_generator -v 1.15.0.pre.rc --quiet --no-rdoc
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels --future-release v$env:MY_NUGET_VERSION
   condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), and ( not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ), ne( variables['StartReleaseCandidate'], true ) )
