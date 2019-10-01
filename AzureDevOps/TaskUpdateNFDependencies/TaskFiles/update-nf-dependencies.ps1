@@ -10,19 +10,36 @@ Import-VstsLocStrings "$PSScriptRoot\Task.json"
 # Get the inputs
 [string]$repositoriesToUpdate = Get-VstsInput -Name RepositoriesToUpdate -Require
 [string]$gitHubToken = Get-VstsInput -Name GitHubToken -Require
+[string]$pathsToSolutions = Get-VstsInput -Name PathsToSolutions -Default ""
 
 Write-Debug "repositories to update:`n$repositoriesToUpdate"
+
+Write-Debug "specified paths for solutions:`n$pathsToSolutions" 
 
 # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
 # 'encoded token' is the Base64 of the string "nfbot:personal-token"
 $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$gitHubToken"))))"
 
 # because it can take sometime for the package to become available on the NuGet providers
-# need to hange here for 5 minutes (5 * 60)
+# need to hang here for 5 minutes (5 * 60)
 "Waiting 5 minutes to let package process flow in NuGet providers..." | Write-Host
 Start-Sleep -Seconds 300 
 
 $librariesToUpdate = $repositoriesToUpdate.Split([environment]::NewLine)
+$paths = $pathsToSolutions.Split([environment]::NewLine)
+
+Write-Debug "changing directory to:`n$paths[$repoCount]"
+
+# sanity check for matching count of repos and solution paths
+if($paths.Count -gt 0)
+{
+    if($paths.Count -ne $librariesToUpdate.Count)
+    {
+        Write-VstsTaskError "Specified paths count ($paths.Count) doesn't match number of repositories to update ($librariesToUpdate.Count)."
+    }
+}
+
+[int16]$repoCount = 0
 
 ForEach($library in $librariesToUpdate)
 {
@@ -54,8 +71,26 @@ ForEach($library in $librariesToUpdate)
     git -c http.extraheader="AUTHORIZATION: $auth" fetch --progress --depth=1 origin
     git checkout develop
 
-    # done, move to source directory
-    cd "source"
+    # done, move to source directory, or diferent one if specified
+    if($paths.Count -gt 0)
+    {
+        # remove quotes, if any
+        $paths[$repoCount] = $paths[$repoCount] -replace "'", ""
+        # remove spaces, if any
+        $paths[$repoCount] = $paths[$repoCount] -replace " ", ""
+
+        Write-Debug "changing directory to:`n$paths[$repoCount]"
+
+        # change directory to specified path
+        cd $paths[$repoCount]
+
+        $repoCount++
+    }
+    else
+    {
+        # no alternative path specified, use default
+        cd "source"
+    }
 
     # find solution file in repository
     $solutionFile = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
