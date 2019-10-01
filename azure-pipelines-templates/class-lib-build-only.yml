@@ -188,15 +188,15 @@ steps:
     if($commitMessage -like "*PUBLISH_RELEASE*")
     {
       # set variable
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")False"
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")True"
+      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")false"
+      Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")true"
       Write-Host "Release draft: FALSE"
     }
     else
     {
       # set variable
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")True"
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")False"
+      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")true"
+      Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")false"
       Write-Host "Release draft: TRUE"
     }
   name: SetReleaseDraftVar
