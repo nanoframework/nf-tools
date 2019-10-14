@@ -328,7 +328,7 @@ steps:
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet'
-  condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), ne( variables['StartReleaseCandidate'], true ) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
 
