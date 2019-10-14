@@ -270,7 +270,9 @@ steps:
 - task: PowerShell@2
   inputs:
       targetType: 'inline'
-      script: Write-Host "$("##vso[build.updatebuildnumber]")$env:NBGV_NuGetPackageVersion"
+      script: |
+        Write-Host "$("##vso[build.updatebuildnumber]")$env:MY_NUGET_VERSION"
+        Write-Host "Build version is $env:NBGV_AssemblyVersion"
   condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Update cloud build number
 
