@@ -267,7 +267,7 @@ ForEach($library in $librariesToUpdate)
     if($updateCount -eq 0)
     {
         # something went wrong as no package was updated and it should be at least one
-        throw "No packages were updated..."
+        'No packages were updated...' | Write-Host -ForegroundColor Yellow
     }
 
     # need this line so nfbot flags the PR appropriately
