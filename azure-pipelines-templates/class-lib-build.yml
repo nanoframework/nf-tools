@@ -8,6 +8,7 @@ parameters:
   gitEmail: 'nanoframework@outlook.com'
   sonarCloudProject: 'dummy-key'
   nugetConfigPath: 'source/NuGet.config'
+  msbuildExtraParams: ' '
 
 steps:
 # need this here in order to persist GitHub credentials 
@@ -156,7 +157,7 @@ steps:
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
-    msbuildArgs: '/p:PublicRelease=true'
+    msbuildArgs: '/p:PublicRelease=true ${{ parameters.msbuildExtraParams }}'
     configuration: '$(buildConfiguration)'
   condition: ne( variables['StartReleaseCandidate'], true )
 
