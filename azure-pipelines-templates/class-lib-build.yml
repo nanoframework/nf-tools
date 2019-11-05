@@ -375,7 +375,7 @@ steps:
     githubTargetCommitsh: $(Build.SourceVersion)
     githubReleaseDraft: $(RELEASE_DRAFT)
     githubReleasePrerelease: true
-    githubReuseDraftOnly: true
+    githubReuseDraftOnly: false
     githubReuseRelease: true
     githubEditRelease: true
     githubDeleteEmptyTag: true
