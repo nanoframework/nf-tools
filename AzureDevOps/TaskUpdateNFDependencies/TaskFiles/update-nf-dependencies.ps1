@@ -37,6 +37,7 @@ ForEach($library in $librariesToUpdate)
     $prTitle = ""
     $projectPath = ""
     $newBranchName = "develop-nfbot/update-dependencies"
+    $workingPath = '.\'
 
     # working directory is agent temp directory
     Write-Debug "Changing working directory to $env:Agent_TempDirectory"
@@ -60,9 +61,6 @@ ForEach($library in $librariesToUpdate)
     # paho.mqtt.m2mqtt 
     if ($library -like "paho.mqtt.m2mqtt")
     {
-        # checkout nanoFramework branch
-        git checkout nanoFramework
-
         # solution is at root
 
         # find solution file in repository
@@ -78,6 +76,9 @@ ForEach($library in $librariesToUpdate)
     {
         # move to source directory
         cd "source"
+
+        # need to set working path
+        $workingPath = '.\nanoFramework.Json', '.\Test\nanoFramework'
 
         # find solution file in repository
         $solutionFile = (Get-ChildItem -Path ".\" -Include "Json.nanoFramework.sln" -Recurse)
@@ -136,10 +137,10 @@ ForEach($library in $librariesToUpdate)
             $packageList | Write-Host
 
             # restore NuGet packages, need to do this before anything else
-            nuget restore $solutionFile[0] -Source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json                
+            nuget restore $solutionFile[0] -Source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json
 
             # rename nfproj files to csproj
-            Get-ChildItem -Path ".\" -Include "*.nfproj" -Recurse |
+            Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
                 Foreach-object {
                     $OldName = $_.name; 
                     $NewName = $_.name -replace 'nfproj','csproj'; 
@@ -261,7 +262,7 @@ ForEach($library in $librariesToUpdate)
             }
 
             # rename csproj files back to nfproj
-            Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse |
+            Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
             Foreach-object {
                 $OldName = $_.name; 
                 $NewName = $_.name -replace 'csproj','nfproj'; 
