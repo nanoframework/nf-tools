@@ -55,6 +55,9 @@ ForEach($library in $librariesToUpdate)
     git checkout develop
 
     # check for special repos that have sources on different location
+    
+    ######################################
+    # paho.mqtt.m2mqtt 
     if ($library -like "paho.mqtt.m2mqtt")
     {
         # checkout nanoFramework branch
@@ -69,7 +72,9 @@ ForEach($library in $librariesToUpdate)
         $packagesConfig = (Get-ChildItem -Path ".\M2Mqtt" -Include "packages.config" -Recurse)
 
     }
-    elseif ($library -like "paho.mqtt.m2mqtt")
+    ########################################
+    # Json.NetMF
+    elseif ($library -like "Json.NetMF")
     {
         # move to source directory
         cd "source"
@@ -81,6 +86,8 @@ ForEach($library in $librariesToUpdate)
         $packagesConfig = (Get-ChildItem -Path ".\nanoFramework.Json" -Include "packages.config" -Recurse)
         
     }
+    ########################################
+    # now all the rest
     else 
     {
         # move to source directory
