@@ -346,7 +346,7 @@ steps:
     command: push
     nuGetFeedType: external
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-    publishFeedCredentials: 'AzureArtifacts'
+    publishFeedCredentials: 'AzureArtifacts-$(Build.DefinitionName)'
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
@@ -358,7 +358,7 @@ steps:
     nuGetFeedType: external
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-    publishFeedCredentials: 'NuGet'
+    publishFeedCredentials: 'NuGet-$(Build.DefinitionName)'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), ne( variables['StartReleaseCandidate'], true ) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
