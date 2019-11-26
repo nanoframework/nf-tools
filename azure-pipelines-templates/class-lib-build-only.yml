@@ -126,7 +126,7 @@ steps:
 
 - task: SonarCloudPrepare@1
   inputs:
-    SonarCloud: 'sonarcloud-$(Build.DefinitionName)'
+    SonarCloud: 'sonarcloud-$(System.DefinitionId)'
     organization: 'nanoframework'
     scannerMode: 'MSBuild'
     projectKey: '${{ parameters.sonarCloudProject }}'
