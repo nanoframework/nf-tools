@@ -128,7 +128,7 @@ steps:
 
 - task: SonarCloudPrepare@1
   inputs:
-    SonarCloud: 'sonarcloud-$(System.DefinitionId)'
+    SonarCloud: 'sonarcloud-$(System.TeamProject)'
     organization: 'nanoframework'
     scannerMode: 'MSBuild'
     projectKey: '${{ parameters.sonarCloudProject }}'
@@ -346,7 +346,7 @@ steps:
     command: push
     nuGetFeedType: external
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-    publishFeedCredentials: 'AzureArtifacts-$(System.DefinitionId)'
+    publishFeedCredentials: 'AzureArtifacts-$(System.TeamProject)'
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
@@ -358,7 +358,7 @@ steps:
     nuGetFeedType: external
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-    publishFeedCredentials: 'NuGet-$(System.DefinitionId)'
+    publishFeedCredentials: 'NuGet-$(System.TeamProject)'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), ne( variables['StartReleaseCandidate'], true ) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
