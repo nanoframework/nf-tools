@@ -62,44 +62,46 @@ steps:
   displayName: Install NBGV tool
 
 - powershell: |
-
     # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
     # 'encoded token' is the Base64 of the string "nfbot:personal-token"
     $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
 
     cd "$env:Agent_TempDirectory" > $null
 
-    git init "$env:Agent_TempDirectory\repo"
+    Write-Host "Cloning from: $env:BUILD_REPOSITORY_URI"
+
+    git clone $env:BUILD_REPOSITORY_URI repo
     cd repo > $null
-    git remote add origin "$env:Build_Repository_Uri"
     git config --global gc.auto 0
     git config --global user.name nfbot
     git config --global user.email nanoframework@outlook.com
     git config --global core.autocrlf true
-    git -c http.extraheader="AUTHORIZATION: $auth" fetch --progress origin
     
-    git checkout develop
-    
-    cd source
+    Write-Host "Checkout develop branch..."
+    git checkout --quiet develop  > $null
 
     # prepare release and capture output
-    $release = nbgv prepare-release
- 
+    Write-Host "Prepare release with NBGV..."
+    $release = nbgv prepare-release -p source
+
+    Write-Host "Prepare commit..."
     # get commit message for the merge
     $commitMessage = git log -1 --pretty=%B
 
     # amend commit message to skip build
     git commit --amend -m "$commitMessage" -m "***NO_CI***" > $null
 
+    Write-Host "Pushing changes to GitHub..."
     # push all changes to github
-    git -c http.extraheader="AUTHORIZATION: $auth" push --all origin
+    git -c http.extraheader="AUTHORIZATION: $auth" push --quiet --all origin
 
     # get release branch name
     $branch = $release.Split(' ')[0]
 
+    Write-Host "Prepare PR..."
     # start PR for release
     $prRequestBody = @{title="Release $branch";body="";head="$branch";base="master"} | ConvertTo-Json
-    $githubApiEndpoint = "https://api.github.com/repos/$env:Build_Repository_Name/pulls"
+    $githubApiEndpoint = "https://api.github.com/repos/$env:BUILD_REPOSITORY_NAME/pulls"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
     $headers = @{}
@@ -122,7 +124,8 @@ steps:
 
         "Error starting PR: $responseBody" | Write-Host -ForegroundColor Red
     }
-
+  workingDirectory: $(Agent.TempDirectory)
+  ignoreLASTEXITCODE: true
   condition: eq( variables['StartReleaseCandidate'], true )
   displayName: NBGV prepare release
 
