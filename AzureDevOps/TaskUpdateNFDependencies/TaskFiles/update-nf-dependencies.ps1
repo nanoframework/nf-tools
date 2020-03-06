@@ -41,20 +41,22 @@ ForEach($library in $librariesToUpdate)
 
     # working directory is agent temp directory
     Write-Debug "Changing working directory to $env:Agent_TempDirectory"
-    cd "$env:Agent_TempDirectory" > $null
+    Set-Location "$env:Agent_TempDirectory" | Out-Null
 
     # clone library repo and checkout develop branch
     Write-Debug "Init and featch $library repo"
-    git init "$env:Agent_TempDirectory\$library"
-    cd "$library" > $null
-    git remote add origin https://github.com/nanoframework/$library
+
+    
+    git clone --depth 1 https://github.com/nanoframework/$library $library
+    Set-Location "$library" | Out-Null
     git config --global gc.auto 0
     git config --global user.name nfbot
     git config --global user.email nanoframework@outlook.com
     git config --global core.autocrlf true
-    git -c http.extraheader="AUTHORIZATION: $auth" fetch --progress --depth=1 origin
-    git checkout develop
 
+    Write-Host "Checkout develop branch..."
+    git checkout --quiet develop | Out-Null
+    
     # check for special repos that have sources on different location
     
     ######################################
@@ -75,7 +77,7 @@ ForEach($library in $librariesToUpdate)
     elseif ($library -like "Json.NetMF")
     {
         # move to source directory
-        cd "source"
+        Set-Location "source" | Out-Null
 
         # need to set working path
         $workingPath = '.\nanoFramework.Json', '.\Test\nanoFramework'
@@ -92,7 +94,7 @@ ForEach($library in $librariesToUpdate)
     else 
     {
         # move to source directory
-        cd "source"
+        Set-Location "source" | Out-Null
 
         # find solution file in repository
         $solutionFile = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
@@ -137,7 +139,7 @@ ForEach($library in $librariesToUpdate)
             $packageList | Write-Host
 
             # restore NuGet packages, need to do this before anything else
-            nuget restore $solutionFile[0] -Source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json
+            nuget restore $solutionFile[0] -ConfigFile NuGet.Config
 
             # rename nfproj files to csproj
             Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
@@ -154,21 +156,17 @@ ForEach($library in $librariesToUpdate)
                 $packageName = $package[0]
                 $packageOriginVersion = $package[1]
 
-                # update package, only on the first pass
-                if($updatePackageOutput -eq $null)
-                {
-                    Write-Debug "Updating packages"
+                Write-Debug "Updating package $packageName"
 
-                    if ($env:Build_SourceBranchName -like '*release*' -or $env:Build_SourceBranchName -like '*master*')
-                    {
-                        # don't allow prerelease for release and master branches
-                        $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json
-                    }
-                    else
-                    {
-                        # allow prerelease for all others
-                        $updatePackageOutput = nuget update $solutionFile[0].FullName -Source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json -PreRelease
-                    }
+                if ($env:Build_SourceBranchName -like '*release*' -or $env:Build_SourceBranchName -like '*master*')
+                {
+                    # don't allow prerelease for release and master branches
+                    nuget update $solutionFile[0].FullName -Id "$packageName" -ConfigFile NuGet.Config
+                }
+                else
+                {
+                    # allow prerelease for all others
+                    nuget update $solutionFile[0].FullName -Id "$packageName" -ConfigFile NuGet.Config -PreRelease
                 }
 
                 # need to get target version
@@ -257,8 +255,6 @@ ForEach($library in $librariesToUpdate)
 
                 }
 
-                #clear 
-                $updatePackageOutput = $null
             }
 
             # rename csproj files back to nfproj
