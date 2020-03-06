@@ -10,6 +10,10 @@ Required components to build/pack the installer:
 
 Steps to package/publish the task in the "Add a build or release task" [tutorial](https://docs.microsoft.com/en-us/azure/devops/extend/develop/add-build-task?view=vsts#packageext).
 
+## Pack and publish
+
+` tfx extension publish --publisher nanoframework --manifest-globs vss-extension.json --share-with nanoframework`
+
 TO-DO:
 - automate the vsix packaging and versioning 
 - improve marketplace stuff (description, links, etc.)
