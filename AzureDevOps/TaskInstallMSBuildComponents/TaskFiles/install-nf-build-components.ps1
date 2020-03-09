@@ -21,7 +21,7 @@ $vsixFeedXml = Join-Path  $($env:Agent_TempDirectory) "vs-extension-feed.xml"
 $webClient.DownloadFile("http://vsixgallery.com/feed/author/nanoframework", $vsixFeedXml)
 [xml]$feedDetails = Get-Content $vsixFeedXml
 
-Write-Output "Host OS is $([System.Environment]::OSVersion.Version)"
+Write-Debug "Host OS is $([System.Environment]::OSVersion.Version)"
 
 # feed list VS2017 and VS2019 extensions
 # index 0 is for VS2017, running on Windows Server 2016
@@ -31,6 +31,7 @@ if([System.Environment]::OSVersion.Version.Major -eq "10")
     $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2017.Extension.zip"
     # this was the original download URL that provides the last version, but the marketplace is blocking access to it
     # "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/vs-publisher-1470366/vsextensions/nanoFrameworkVS2017Extension/0/vspackage 
+    $extensionVersion = $feedDetails.feed.entry[0].Vsix.Version
 }
 
 # index 1 is for VS2019, running on Windows Server 2019
@@ -38,6 +39,7 @@ if([System.Environment]::OSVersion.Version.Major -eq "11")
 {
     $extensionUrl = $feedDetails.feed.entry[1].content.src
     $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2019.Extension.zip"
+    $extensionVersion = $feedDetails.feed.entry[1].Vsix.Version
 }
 
 # download VS extension
@@ -54,5 +56,7 @@ Invoke-VstsTool -FileName $sevenZip -Arguments " x $vsixPath -bd -o$env:Agent_Te
 Write-Debug "Copy build files to msbuild location"
 $msbuildPath = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild"
 Copy-Item -Path "$env:Agent_TempDirectory\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
+
+Write-Output "Installed VS extension v$extensionVersion"
 
 Trace-VstsLeavingInvocation $MyInvocation
