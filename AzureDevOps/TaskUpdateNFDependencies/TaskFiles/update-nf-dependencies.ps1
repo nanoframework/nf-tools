@@ -36,7 +36,7 @@ ForEach($library in $librariesToUpdate)
     $commitMessage = ""
     $prTitle = ""
     $projectPath = ""
-    $newBranchName = "develop-nfbot/update-dependencies"
+    $newBranchName = "develop-nfbot/update-dependencies/" + [guid]::NewGuid().ToString()
     $workingPath = '.\'
 
     # working directory is agent temp directory
@@ -244,10 +244,6 @@ ForEach($library in $librariesToUpdate)
                         $nuspecDoc.Save($nuspec[0].FullName)
                     }
 
-                    #  update branch name
-                    $tempPackageName = $packageName -replace "(nanoFramework.)", ""
-                    $newBranchName += "/$tempPackageName.$packageTargetVersion"
-                    
                     # build commit message
                     $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion.`n"
                     # build PR title
