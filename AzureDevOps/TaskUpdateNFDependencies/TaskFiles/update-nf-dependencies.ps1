@@ -95,12 +95,19 @@ ForEach($library in $librariesToUpdate)
     {
         # solution is at root
 
+        # need to set working path
+        $workingPath = '.\nanoFramework', '.\Examples\Device\Device.SmallMemory.nanoFramework', '.\Examples\Device\Device.Thermometer.nanoFramework'
+
         # find solution file in repository
         $solutionFile = (Get-ChildItem -Path ".\" -Include "amqp-nanoFramework.sln" -Recurse)
 
         # find packages.config
         $packagesConfig = (Get-ChildItem -Path ".\nanoFramework" -Include "packages.config" -Recurse)
 
+        # CD-CI branch is not 'develop'
+        Write-Host "Checkout cd-nanoframework branch..."
+        git checkout --quiet cd-nanoframework | Out-Null
+    
     }
     ########################################
     # now all the rest
