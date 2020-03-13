@@ -298,7 +298,7 @@ ForEach($library in $librariesToUpdate)
         {
             Write-Debug "Commit changed file" 
 
-            git commit -m "Update $updateCount NuGet dependencies ***NO_CI***" -m"$commitMessage" > $null
+            git commit -m "Update $updateCount NuGet dependencies" -m"$commitMessage" > $null
 
             # fix PR title
             $prTitle = "Update $updateCount NuGet dependencies"
@@ -307,7 +307,7 @@ ForEach($library in $librariesToUpdate)
         {
             Write-Debug "Commit changed files"
 
-            git commit -m "$prTitle ***NO_CI***" -m "$commitMessage" > $null
+            git commit -m "$prTitle" -m "$commitMessage" > $null
         }
 
         Write-Debug "Push changes"
