@@ -89,6 +89,19 @@ ForEach($library in $librariesToUpdate)
         $packagesConfig = (Get-ChildItem -Path ".\nanoFramework.Json" -Include "packages.config" -Recurse)
         
     }
+    ######################################
+    # AMQPLite
+    if ($library -like "amqpnetlite")
+    {
+        # solution is at root
+
+        # find solution file in repository
+        $solutionFile = (Get-ChildItem -Path ".\" -Include "amqp-nanoFramework.sln" -Recurse)
+
+        # find packages.config
+        $packagesConfig = (Get-ChildItem -Path ".\nanoFramework" -Include "packages.config" -Recurse)
+
+    }
     ########################################
     # now all the rest
     else 
