@@ -91,7 +91,7 @@ ForEach($library in $librariesToUpdate)
     }
     ######################################
     # AMQPLite
-    if ($library -like "amqpnetlite")
+    elseif ($library -like "amqpnetlite")
     {
         # solution is at root
 

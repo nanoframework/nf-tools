@@ -1,6 +1,6 @@
 {
   "name": "nanoframework-update-nf-dependencies",
-  "version": "1.1.46",
+  "version": "1.1.47",
   "description": "Update nanoFramework dependencies",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
