@@ -36,6 +36,7 @@ ForEach($library in $librariesToUpdate)
     $commitMessage = ""
     $prTitle = ""
     $projectPath = ""
+    $baseBranch = "develop"
     $newBranchName = "develop-nfbot/update-dependencies/" + [guid]::NewGuid().ToString()
     $workingPath = '.\'
 
@@ -53,10 +54,7 @@ ForEach($library in $librariesToUpdate)
     git config --global user.name nfbot
     git config --global user.email nanoframework@outlook.com
     git config --global core.autocrlf true
-
-    Write-Host "Checkout develop branch..."
-    git checkout --quiet develop | Out-Null
-    
+   
     # check for special repos that have sources on different location
     
     ######################################
@@ -96,7 +94,7 @@ ForEach($library in $librariesToUpdate)
         # solution is at root
 
         # need to set working path
-        $workingPath = '.\nanoFramework', '.\Examples\Device\Device.SmallMemory.nanoFramework', '.\Examples\Device\Device.Thermometer.nanoFramework'
+        $workingPath = '.\nanoFramework', '.\Examples\Device\Device.SmallMemory.nanoFramework', '.\Examples\Device\Device.Thermometer.nanoFramework', '.\Examples\ServiceBus\ServiceBus.EventHub.nanoFramework'
 
         # find solution file in repository
         $solutionFile = (Get-ChildItem -Path ".\" -Include "amqp-nanoFramework.sln" -Recurse)
@@ -105,8 +103,7 @@ ForEach($library in $librariesToUpdate)
         $packagesConfig = (Get-ChildItem -Path ".\nanoFramework" -Include "packages.config" -Recurse)
 
         # CD-CI branch is not 'develop'
-        Write-Host "Checkout cd-nanoframework branch..."
-        git checkout --quiet cd-nanoframework | Out-Null
+        $baseBranch = "cd-nanoframework"
     
     }
     ########################################
@@ -122,7 +119,11 @@ ForEach($library in $librariesToUpdate)
         # find packages.config
         $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse)
         
+        $baseBranch = "develop"
     }
+
+    Write-Host "Checkout base branch: $baseBranch..."
+    git checkout --quiet "$baseBranch" | Out-Null
 
     foreach ($packageFile in $packagesConfig)
     {
@@ -335,10 +336,10 @@ ForEach($library in $librariesToUpdate)
         git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $newBranchName > $null
 
         # start PR
-        # we are hardcoding to 'develop' branch to have a fixed one
+        # we are hardcoding to the repo base branch (usually 'develop') to have a fixed one
         # this is very important for tags (which don't have branch information)
-        # considering that the base branch can be changed at the PR ther is no big deal about this 
-        $prRequestBody = @{title="$prTitle";body="$commitMessage";head="$newBranchName";base="develop"} | ConvertTo-Json
+        # considering that the base branch can be changed at the PR there is no big deal about this 
+        $prRequestBody = @{title="$prTitle";body="$commitMessage";head="$newBranchName";base="$baseBranch"} | ConvertTo-Json
         $githubApiEndpoint = "https://api.github.com/repos/nanoframework/$library/pulls"
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
