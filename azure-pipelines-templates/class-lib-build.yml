@@ -343,7 +343,7 @@ steps:
   condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Publish deployables artifacts
 
-# push NuGet packages to AzureArtifacts feed (always happens except on PR builds)
+# push NuGet packages to AzureArtifacts feed (always happens)
 - task: NuGetCommand@2
   inputs:
     command: push
@@ -354,7 +354,7 @@ steps:
   continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
 
-# push NuGet class lib package to NuGet (happens on tag builds for any branch or when building a non draft release)
+# push NuGet class lib package to NuGet (happens on every build except PRs)
 - task: NuGetCommand@2
   inputs:
     command: push
@@ -362,31 +362,11 @@ steps:
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet-$(System.TeamProject)'
-  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), ne( variables['StartReleaseCandidate'], true ) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
 
 # create or update GitHub release
-- task: GitHubReleasePublish@1
-  inputs:
-    githubEndpoint: 'nanoframework'
-    githubOwner: 'nanoframework'
-    githubRepositoryName: $(repoName)
-    githubTag: v$(MY_NUGET_VERSION)
-    githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
-    githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from nanoFramework Azure DevOps development feed</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://dev.azure.com/nanoframework/feed/_packaging?_a=package&feed=sandbox&view=overview&package=$(nugetPackageName)&protocolType=NuGet&version=$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
-    githubTargetCommitsh: $(Build.SourceVersion)
-    githubReleaseDraft: $(RELEASE_DRAFT)
-    githubReleasePrerelease: true
-    githubReuseDraftOnly: false
-    githubReuseRelease: true
-    githubEditRelease: true
-    githubDeleteEmptyTag: true
-    githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
-  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Create/Update GitHub release
-
-# create or update GitHub release ON tags from release or master branches
 - task: GitHubReleasePublish@1
   inputs:
     githubEndpoint: 'nanoframework'
@@ -403,8 +383,8 @@ steps:
     githubEditRelease: true
     githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
-  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), contains(variables['Build.SourceBranch'], 'preview'), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Create/Update GitHub PREVIEW release 
+  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Create/Update GitHub PREVIEW release
 
 # create or update GitHub release ON tags from release or master branches
 - task: GitHubReleasePublish@1
