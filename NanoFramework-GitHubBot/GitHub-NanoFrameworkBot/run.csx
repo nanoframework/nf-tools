@@ -399,20 +399,8 @@ public static async Task MergePR(dynamic pull_request, TraceWriter log)
         commitMessage += "\\r\\n***PUBLISH_RELEASE***";
     }
 
-    // if the repo is nf-interpreter need to skip CI because a build will be manually triggered after the last version is updated
-    // the message has to include ***NO_CI*** so 
-    if (pull_request.head.repo.name == "nf-interpreter")
-    {
-        string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title} ***NO_CI***\", \"commit_message\": \"{commitMessage}\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
+    string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"{commitMessage}\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
 
-        // request need to be a PUT
-        await SendGitHubRequest($"{pull_request.url.ToString()}/merge", mergeRequest, log, "application/vnd.github.squirrel-girl-preview", "PUT");
-    }
-    else
-    {
-        string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"{commitMessage}\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
-
-        // request need to be a PUT
-        await SendGitHubRequest($"{pull_request.url.ToString()}/merge", mergeRequest, log, "application/vnd.github.squirrel-girl-preview", "PUT");
-    }
+    // request need to be a PUT
+    await SendGitHubRequest($"{pull_request.url.ToString()}/merge", mergeRequest, log, "application/vnd.github.squirrel-girl-preview", "PUT");
 }
