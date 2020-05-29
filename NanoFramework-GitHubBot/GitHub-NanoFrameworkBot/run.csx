@@ -145,18 +145,28 @@ public static async Task Run(dynamic payload, TraceWriter log)
 
             if(pr.user.login == "nfbot" && pr.body.ToString().Contains("[version update]"))
             {
-                // list reviews for this PR
-                JArray prReviews = (JArray)(await GetGitHubRequest($"{matchingPr["url"].ToString()}/reviews", log));
+                log.Info($"Adding 'Publish release flag to PR.");
 
-                // list APPROVED reviews
-                var approvedReviews = prReviews.Where(r => r["state"].ToString() == "APPROVED");
+                // add the Type: dependency label
+                await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_publishReleaseLabelName}\" ]", log, "application/vnd.github.squirrel-girl-preview");
 
-                if(approvedReviews.Count() >= 1)
+                // list labels for repository
+                JArray repoLabels = (JArray)(await GetGitHubRequest($"{payload.repository.url.ToString()}/labels", log));
+
+                var updateDependentsLabel = repoLabels.FirstOrDefault(l => l["name"] == _updateDependentsLabelName);
+
+                if(updateDependentsLabel != null)
                 {
-                    // PR is approved and checks are all successful
-                    // merge PR with squash
-                    await MergePR(pr, log);
+                    // this repo has dependents, add label
+                    log.Info($"Adding 'update dependents flag to PR.");
+
+                    // add the Type: dependency label
+                    await SendGitHubRequest($"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_updateDependentsLabelName}\" ]", log, "application/vnd.github.squirrel-girl-preview");
                 }
+
+                // checks are all successful
+                // merge PR with squash
+                await MergePR(pr, log);
             }
         }
     }
