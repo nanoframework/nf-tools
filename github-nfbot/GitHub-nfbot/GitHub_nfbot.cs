@@ -26,8 +26,9 @@ namespace nanoFramework.Tools.GitHub
         // strings to be used in messages and comments
 
         // labels
-        private const string _updateDependentsLabelName = "CI: Update Dependents";
-        private const string _publishReleaseLabelName = "CI: Publish Release";
+        private const string _labelUpdateDependentsName = "CI: Update Dependents";
+        private const string _labelPublishReleaseName = "CI: Publish Release";
+        private const string _labelTypeDependenciesName = "Type: dependencies";
 
         [FunctionName("GitHub-nfbot")]
         public static async Task<IActionResult> Run(
@@ -82,11 +83,11 @@ namespace nanoFramework.Tools.GitHub
                     string prBody = payload.pull_request.body;
                     if (prBody.Contains("[version update]"))
                     {
-                        log.LogInformation($"Adding 'Type: dependencies' label to PR.");
+                        log.LogInformation($"Adding {_labelTypeDependenciesName} label to PR.");
 
                         // add the Type: dependency label
                         await SendGitHubRequest(
-                            $"{payload.pull_request.issue_url.ToString()}/labels", "[ \"Type: dependencies\" ]",
+                            $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
                             log,
                             "application/vnd.github.squirrel-girl-preview");
                     }
@@ -177,7 +178,7 @@ namespace nanoFramework.Tools.GitHub
 
                             // add the Publish release label
                             await SendGitHubRequest(
-                                $"{pr.issue_url.ToString()}/labels", $"[ \"{_publishReleaseLabelName}\" ]",
+                                $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelPublishReleaseName}\" ]",
                                 log,
                                 "application/vnd.github.squirrel-girl-preview");
 
@@ -186,7 +187,7 @@ namespace nanoFramework.Tools.GitHub
                                 $"{payload.repository.url.ToString()}/labels",
                                 log));
 
-                            var updateDependentsLabel = repoLabels.FirstOrDefault(l => l["name"].ToString() == _updateDependentsLabelName);
+                            var updateDependentsLabel = repoLabels.FirstOrDefault(l => l["name"].ToString() == _labelUpdateDependentsName);
 
                             if (updateDependentsLabel != null)
                             {
@@ -195,7 +196,7 @@ namespace nanoFramework.Tools.GitHub
 
                                 // add the Type: dependency label
                                 await SendGitHubRequest(
-                                    $"{pr.issue_url.ToString()}/labels", $"[ \"{_updateDependentsLabelName}\" ]",
+                                    $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelUpdateDependentsName}\" ]",
                                     log,
                                     "application/vnd.github.squirrel-girl-preview");
                             }
@@ -457,13 +458,13 @@ namespace nanoFramework.Tools.GitHub
             // get labels for this PR
             JArray prLabels = (JArray)pull_request.labels;
 
-            var updateDependentsLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _updateDependentsLabelName);
+            var updateDependentsLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelUpdateDependentsName);
             if (updateDependentsLabel != null)
             {
                 commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
             }
 
-            var publishReleaseLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _publishReleaseLabelName);
+            var publishReleaseLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelPublishReleaseName);
             if (publishReleaseLabel != null)
             {
                 commitMessage += "\\r\\n***PUBLISH_RELEASE***";
