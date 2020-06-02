@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,11 +25,36 @@ namespace nanoFramework.Tools.GitHub
     public static class GitHub_nfbot
     {
         // strings to be used in messages and comments
+        private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whathever is wrong or missing and feel free to reopen the issue.";
+        private const string _issueCommentInvalidDeviceCaps = ":disappointed: Make sure to include the complete Device Capabilities output. After doing that feel free to reopen the issue.";
+        private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\r\nMake sure you're used one of the templates and have include all the required information. After doing that feel free to reopen the issue.\r\n\r\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
+
+        // strings for issues content
+        private const string _issueContentRemoveContentInstruction = ":exclamation: Remove the content above here and fill out details below. :exclamation:";
+        private const string _issueContentBeforePosting = "**Before posting the issue**";
+        private const string _issueContentAdditionalContext = "Add any other context";
+        private const string _issueContentAttemptPRInstructions1 = "Attempt to submit a [Pull Request (PR)]";
+        private const string _issueContentAttemptPRInstructions2 = "If you know how to add whatever you're suggesting";
+        private const string _issueContentAttemptPRInstructions3 = "Even if the feature is a good idea and viable";
+        private const string _issueContentExpectedBehaviour = "A clear and concise description of what you expected to happen.";
+        private const string _issueContentBugDescription = "A clear and concise description of what the bug is.";
+        private const string _issueContentDescribeAlternatives = "A clear and concise description of any alternative solutions or features you've considered.";
+
+        private const string _issueArea = "nanoFramework area:";
+        private const string _issueFeatureRequest = "### Is your feature request related to a problem?";
+        private const string _issueTargetId = "**Target:";
+        private const string _issueFwVersion = "**Firmware image version:";
+        private const string _issueDeviceCaps = "**Device capabilities output:";
+        private const string _issueDescription = "### Description";
 
         // labels
-        private const string _labelUpdateDependentsName = "CI: Update Dependents";
-        private const string _labelPublishReleaseName = "CI: Publish Release";
+        private const string _labelCiUpdateDependentsName = "CI: Update Dependents";
+        private const string _labelCiPublishReleaseName = "CI: Publish Release";
+
         private const string _labelTypeDependenciesName = "Type: dependencies";
+        private const string _labelTypeFeatureRequestName = "Type: Feature Request";
+
+        private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
 
         [FunctionName("GitHub-nfbot")]
         public static async Task<IActionResult> Run(
@@ -118,6 +144,24 @@ namespace nanoFramework.Tools.GitHub
 
             #endregion
 
+            #region process issues
+
+            else if (payload.issue != null)
+            {
+                if (payload.action == "opened" ||
+                     payload.action == "edited" ||
+                     payload.action == "reopened")
+                {
+                    return await ProcessOpenOrEditIssueAsync(payload, log);
+                }
+                else if (payload.action == "closed")
+                {
+                    return await ProcessClosedIssueAsync(payload, log);
+                }
+            }
+
+            #endregion
+
             #region process review
 
             // process review submitted
@@ -178,7 +222,7 @@ namespace nanoFramework.Tools.GitHub
 
                             // add the Publish release label
                             await SendGitHubRequest(
-                                $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelPublishReleaseName}\" ]",
+                                $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelCiPublishReleaseName}\" ]",
                                 log,
                                 "application/vnd.github.squirrel-girl-preview");
 
@@ -187,7 +231,7 @@ namespace nanoFramework.Tools.GitHub
                                 $"{payload.repository.url.ToString()}/labels",
                                 log));
 
-                            var updateDependentsLabel = repoLabels.FirstOrDefault(l => l["name"].ToString() == _labelUpdateDependentsName);
+                            var updateDependentsLabel = repoLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiUpdateDependentsName);
 
                             if (updateDependentsLabel != null)
                             {
@@ -196,7 +240,7 @@ namespace nanoFramework.Tools.GitHub
 
                                 // add the Type: dependency label
                                 await SendGitHubRequest(
-                                    $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelUpdateDependentsName}\" ]",
+                                    $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelCiUpdateDependentsName}\" ]",
                                     log,
                                     "application/vnd.github.squirrel-girl-preview");
                             }
@@ -288,6 +332,203 @@ namespace nanoFramework.Tools.GitHub
             return new OkObjectResult("");
         }
 
+        private static async Task<IActionResult> ProcessClosedIssueAsync(dynamic payload, ILogger log)
+        {
+
+            // get issue
+            dynamic issue = await GetGitHubRequest(
+                payload.issue.url.ToString(),
+                log);
+
+            if (issue != null)
+            {
+                // TODO
+                // need to find out the details on how to recognize this as a closed by a commit
+                return new OkObjectResult("");
+            }
+
+            return new UnprocessableEntityObjectResult("Failed to get issue details");
+        }
+
+        private static async Task<IActionResult> ProcessOpenOrEditIssueAsync(dynamic payload, ILogger log)
+        {
+            // check for content that shouldn't be there and shows that the author hadn't read the instructions or is being lazy
+
+            // flag that this is a open/reopen event
+            bool isOpenAction = payload.action == "opened" || payload.action == "reopened";
+
+            // flag if author is member or owner
+            bool authorIsMemberOrOwner = payload.author_association == "MEMBER" || payload.author_association == "OWNER";
+
+            // get issue
+            dynamic issue = await GetGitHubRequest(
+                payload.issue.url.ToString(),
+                log);
+
+            if (issue != null)
+            {
+                string issueBody = issue.body;
+
+                // check unwanted content
+                if (issueBody.Contains(_issueContentBeforePosting) ||
+                     issueBody.Contains(_issueContentRemoveContentInstruction) ||
+                     issueBody.Contains(_issueContentAdditionalContext) ||
+                     issueBody.Contains(_issueContentAttemptPRInstructions1) ||
+                     issueBody.Contains(_issueContentAttemptPRInstructions2) ||
+                     issueBody.Contains(_issueContentAttemptPRInstructions3) ||
+                     issueBody.Contains(_issueContentExpectedBehaviour) ||
+                     issueBody.Contains(_issueContentBugDescription) ||
+                     issueBody.Contains(_issueContentDescribeAlternatives))
+                {
+                    log.LogInformation($"Unwanted content on issue. Adding comment before closing.");
+
+                    string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.\" }}";
+                    await SendGitHubRequest(
+                        payload.issue.url.ToString(),
+                        comment,
+                        log);
+
+                    // close issue
+                    await CloseIssue(
+                        payload.issue.url.ToString(),
+                        log);
+
+                    return new OkObjectResult("");
+                }
+
+                // check for expected/mandatory content
+
+                bool issueIsFeatureRequest = false;
+                bool issueIsBugReport = false;
+
+                if (issueBody.Contains(_issueArea) ||
+                     issueBody.Contains(_issueFeatureRequest))
+                {
+                    // looks like a feature request
+                    issueIsFeatureRequest = true;
+                }
+                else if (issueBody.Contains(_issueArea) ||
+                          issueBody.Contains(_issueDescription))
+                {
+                    // has to be a bug report
+
+                    if (issueBody.Contains(_issueDeviceCaps))
+                    {
+                        // check for valid content
+                        if (issueBody.Contains("System Information") &&
+                            issueBody.Contains("HAL build info:") &&
+                            issueBody.Contains("Firmware build Info:") &&
+                            issueBody.Contains("Assemblies:") &&
+                            issueBody.Contains("Native Assemblies:") &&
+                            issueBody.Contains("++ Memory Map ++") &&
+                            issueBody.Contains("++ Flash Sector Map ++") &&
+                            issueBody.Contains("++ Storage Usage Map ++"))
+                        {
+                            // device caps seems complete
+                        }
+                        else
+                        {
+                            log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
+
+                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}.\" }}";
+                            await SendGitHubRequest(
+                                payload.issue.url.ToString(),
+                                comment,
+                                log);
+
+                            // close issue
+                            await CloseIssue(
+                                payload.issue.url.ToString(),
+                                log);
+
+                            return new OkObjectResult("");
+                        }
+                    }
+
+                    // looks good
+                    issueIsBugReport = true;
+                }
+
+                if (!authorIsMemberOrOwner)
+                {
+                    // process this only if author is NOT member or owner
+
+                    if (isOpenAction)
+                    {
+                        // does this issue look legit?
+                        if (issueIsFeatureRequest)
+                        {
+                            // OK to flag for feature request
+                            log.LogInformation($"Adding 'feature request label.");
+
+                            // add label
+                            await SendGitHubRequest(
+                                $"{payload.issue.url.ToString()}/labels", $"[ \"{_labelTypeFeatureRequestName}\" ]",
+                                log,
+                                "application/vnd.github.squirrel-girl-preview");
+                        }
+                        else if (issueIsBugReport)
+                        {
+                            // OK to flag for triage
+                            log.LogInformation($"Adding 'triage label.");
+
+                            // add the triage label
+                            await SendGitHubRequest(
+                                $"{payload.issue.url.ToString()}/labels", $"[ \"{_labelStatusWaitingTriageName}\" ]",
+                                log,
+                                "application/vnd.github.squirrel-girl-preview");
+                        }
+                        else
+                        {
+                            // not sure what this is about...
+                            log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
+
+                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}.\" }}";
+                            await SendGitHubRequest(
+                                payload.issue.url.ToString(),
+                                comment,
+                                log);
+
+                            // close issue
+                            await CloseIssue(
+                                payload.issue.url.ToString(),
+                                log);
+
+                            return new OkObjectResult("");
+                        }
+                    }
+                    else
+                    {
+                        // remove any previous comment from nfbot
+
+                        // skip this if there are no comments
+                        if ((int)payload.issue.comments > 0)
+                        {
+                            // list all comments from nfbot
+                            JArray comments = (JArray)await GetGitHubRequest(
+                                                        payload.issue.comments_url,
+                                                        log);
+
+                            var commentsToRemove = comments.Where(c => c["user"]["login"].ToString() == "nfbot");
+
+                            foreach (var c in commentsToRemove)
+                            {
+                                await SendGitHubRequest(
+                                    c["url"].ToString(),
+                                    "",
+                                    log,
+                                    "DELETE"
+                                    );
+                            }
+                        }
+                    }
+                }
+
+                return new OkObjectResult("");
+            }
+
+            return new UnprocessableEntityObjectResult("Failed to get issue details");
+        }
 
         public static async Task<Tuple<int, int, bool>> CheckCommitMessages(
             dynamic commitsCollection,
@@ -458,13 +699,13 @@ namespace nanoFramework.Tools.GitHub
             // get labels for this PR
             JArray prLabels = (JArray)pull_request.labels;
 
-            var updateDependentsLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelUpdateDependentsName);
+            var updateDependentsLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiUpdateDependentsName);
             if (updateDependentsLabel != null)
             {
                 commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
             }
 
-            var publishReleaseLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelPublishReleaseName);
+            var publishReleaseLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiPublishReleaseName);
             if (publishReleaseLabel != null)
             {
                 commitMessage += "\\r\\n***PUBLISH_RELEASE***";
@@ -478,6 +719,23 @@ namespace nanoFramework.Tools.GitHub
                 mergeRequest, 
                 log, 
                 "application/vnd.github.squirrel-girl-preview", "PUT");
+        }
+
+        public static async Task CloseIssue(
+            dynamic issue,
+            ILogger log)
+        {
+            log.LogInformation($"Close Issue {issue.title}");
+
+            string closeRequest = $"{{ \"state\": \"close\" , \"labels\": \"[ ]\" }}";
+
+            // request need to be a PATCH
+            await SendGitHubRequest(
+                $"{issue.url.ToString()}",
+                closeRequest,
+                log,
+                "",
+                "PATCH");
         }
     }
 }
