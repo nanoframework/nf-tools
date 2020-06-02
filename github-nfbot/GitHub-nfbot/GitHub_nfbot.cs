@@ -554,7 +554,7 @@ namespace nanoFramework.Tools.GitHub
             bool isOpenAction = payload.action == "opened" || payload.action == "reopened";
 
             // flag if author is member or owner
-            bool authorIsMemberOrOwner = payload.author_association == "MEMBER" || payload.author_association == "OWNER";
+            bool authorIsMemberOrOwner = payload.issue.author_association == "MEMBER" || payload.issue.author_association == "OWNER";
 
             // get issue
             dynamic issue = await GetGitHubRequest(
