@@ -28,6 +28,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whathever is wrong or missing and feel free to reopen the issue.";
         private const string _issueCommentInvalidDeviceCaps = ":disappointed: Make sure to include the complete Device Capabilities output. After doing that feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\r\nMake sure you're used one of the templates and have include all the required information. After doing that feel free to reopen the issue.\r\n\r\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
+        private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm affraid you'll have to use the PR template like the rest of us...\r\nMake sure you've used the template and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
 
         // strings for issues content
         private const string _issueContentRemoveContentInstruction = ":exclamation: Remove the content above here and fill out details below. :exclamation:";
@@ -47,12 +48,23 @@ namespace nanoFramework.Tools.GitHub
         private const string _issueDeviceCaps = "**Device capabilities output:";
         private const string _issueDescription = "### Description";
 
+        // strings for PR content
+        private const string _prDescription = "## Description";
+        private const string _prTypesOfChanges = "## Types of changes";
+        private const string _prChecklist = "## Checklist:";
+        private const string _prChanges = "## Checklist:";
+
         // labels
+        private const string _labelConfigAndBuildName = "Area: Config-and-Build";
+        private const string _labelBreakingChangeName = "Breaking-change";
+
         private const string _labelCiUpdateDependentsName = "CI: Update Dependents";
         private const string _labelCiPublishReleaseName = "CI: Publish Release";
 
         private const string _labelTypeDependenciesName = "Type: dependencies";
         private const string _labelTypeFeatureRequestName = "Type: Feature Request";
+        private const string _labelTypeBugName = "Type: bug";
+        private const string _labelTypeEnhancementName = "Type: enhancement";
 
         private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
 
@@ -69,9 +81,11 @@ namespace nanoFramework.Tools.GitHub
             #region process PR events
 
             // process PR opened
-            if (payload.pull_request != null && payload.action == "opened")
+            if (payload.pull_request != null && 
+                payload.action == "opened" ||
+                payload.action == "edited")
             {
-                log.LogInformation($"Processing new PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
+                log.LogInformation($"Processing PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
 
                 ////////////////////////////////////////////////////////////
                 // processing exceptions
@@ -82,25 +96,6 @@ namespace nanoFramework.Tools.GitHub
                     return new OkObjectResult(""); ;
                 }
                 ////////////////////////////////////////////////////////////
-
-                // post comment with thank you message, except if it's from nfbot
-                if (payload.pull_request.user.login != "nfbot")
-                {
-                    log.LogInformation($"Comment with thank you note.");
-
-                    string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
-                    await SendGitHubRequest(
-                        payload.pull_request.comments_url.ToString(),
-                        comment,
-                        log);
-
-                    // add thumbs up reaction in PR main message
-                    await SendGitHubRequest(
-                        $"{payload.pull_request.issue_url.ToString()}/reactions",
-                        "{ \"content\" : \"+1\" }",
-                        log,
-                        "application/vnd.github.squirrel-girl-preview");
-                }
 
                 // special processing for nfbot commits
                 if (payload.pull_request.user.login == "nfbot")
@@ -117,6 +112,42 @@ namespace nanoFramework.Tools.GitHub
                             log,
                             "application/vnd.github.squirrel-girl-preview");
                     }
+                }
+                else
+                {
+                    // check for PR ignoring template
+                    if (await ValidatePRContentAsync(payload, log))
+                    {
+                        // post comment with thank you message if this is a new PR
+                        if (payload.action == "opened")
+                        {
+                            log.LogInformation($"Comment with thank you note.");
+
+                            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
+                            await SendGitHubRequest(
+                                payload.pull_request.comments_url.ToString(),
+                                comment,
+                                log);
+
+                            // add thumbs up reaction in PR main message
+                            await SendGitHubRequest(
+                                $"{payload.pull_request.issue_url.ToString()}/reactions",
+                                "{ \"content\" : \"+1\" }",
+                                log,
+                                "application/vnd.github.squirrel-girl-preview");
+                        }
+                    }
+
+                    await FixCheckListAsync(payload, log);
+
+                    bool linkedIssuesReference = await CheckLinkedIssuesAsync(payload, log);
+
+                    await ManageLabelsAsync(payload, log);
+
+                    // everything looks OK, remove all comments from nfbot
+                    await RemovenfbotCommentsAsync(
+                        payload.pull_request.comments_url.ToString(),
+                        log);
                 }
             }
 
@@ -332,6 +363,171 @@ namespace nanoFramework.Tools.GitHub
             return new OkObjectResult("");
         }
 
+        private static async Task ManageLabelsAsync(dynamic payload, ILogger log)
+        {
+            // get PR body
+            string prBody = payload.pull_request.body;
+
+            if (prBody.Contains("[x] Bug fix", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // add the Type: dependency label
+                await SendGitHubRequest(
+                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelTypeBugName}\" ]",
+                    log,
+                    "application/vnd.github.squirrel-girl-preview");
+            }
+
+            if (
+                prBody.Contains("[x] Improvement", StringComparison.InvariantCultureIgnoreCase) ||
+                prBody.Contains("[x] New feature", StringComparison.InvariantCultureIgnoreCase) )
+            {
+                // add the Type: enhancement label
+                await SendGitHubRequest(
+                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelTypeEnhancementName}\" ]",
+                    log,
+                    "application/vnd.github.squirrel-girl-preview");
+            }
+
+            if (prBody.Contains("[x] Breaking change", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // add the Type: Breaking change label
+                await SendGitHubRequest(
+                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelBreakingChangeName}\" ]",
+                    log,
+                    "application/vnd.github.squirrel-girl-preview");
+            }
+
+            if (prBody.Contains("[x] Config and build", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // add the Type: Breaking change label
+                await SendGitHubRequest(
+                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelConfigAndBuildName}\" ]",
+                    log,
+                    "application/vnd.github.squirrel-girl-preview");
+            }
+
+            if (prBody.Contains("[x] Dependencies", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // add the Type: Breaking change label
+                await SendGitHubRequest(
+                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
+                    log,
+                    "application/vnd.github.squirrel-girl-preview");
+            }
+        }
+
+        private static async Task<bool> CheckLinkedIssuesAsync(dynamic payload, ILogger log)
+        {
+            // get PR body
+            string prBody = payload.pull_request.body;
+
+            string commentContent;
+
+            // check for invalid link to issues
+            if (prBody.Contains("- Fixes/Closes/Resolves nanoFramework/Home#NNNN"))
+            {
+                commentContent = ":disappointed: If this PR does address any issue, you have to remove the content *Fixes/Closes/Resolves(...)* under 'Motivation and Context'";
+            }
+            else if ( prBody.Contains("Fixes/Closes/Resolves"))
+            {
+                commentContent = ":disappointed: You have to make up your mind on how this PR addresses the issue. It either **fixes**, **closes** or **resolves** it. Can't have them all...";
+            }
+            else if ( ( prBody.Contains("Fixes") ||
+                        prBody.Contains("Closes") ||
+                        prBody.Contains("Resolves")) &&
+                        !prBody.Contains("nanoFramework/Home#"))
+            {
+                commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
+            }
+            else
+            {
+                return true;
+            }
+
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{commentContent}\" }}";
+            
+            await SendGitHubRequest(
+                payload.pull_request.comments_url.ToString(),
+                comment,
+                log);
+
+            return false;
+        }
+
+        private static async Task FixCheckListAsync(dynamic payload, ILogger log)
+        {
+            // get PR body
+            string prBody = payload.pull_request.body;
+
+            // save hash for PR body
+            var prBodyHash = prBody.GetHashCode();
+
+            // fix any typos in check lists
+            string prBodyFixed = prBody.Replace("[ x]", "[x]", StringComparison.InvariantCultureIgnoreCase).Replace("[x ]", "[x]", StringComparison.InvariantCultureIgnoreCase);
+
+            if(prBodyHash != prBodyFixed.GetHashCode())
+            {
+                string requestContent = $"{{ \"body\": \"{prBodyFixed}\" }}"; ;
+
+                await SendGitHubRequest(
+                    payload.pull_request.url.ToString(),
+                    requestContent,
+                    log,
+                    "null",
+                    "PATCH");
+            }
+        }
+
+        private static async Task<bool> ValidatePRContentAsync(dynamic payload, ILogger log)
+        {
+            // get PR body
+            string prBody = payload.pull_request.body;
+
+            // check for expected/mandatory content
+
+            // check for master PR template
+            if  (prBody.Contains(_prDescription) &&
+                 prBody.Contains(_prTypesOfChanges) &&
+                 prBody.Contains(_prChecklist))
+            {
+                // content looks good
+                return true;
+            }
+            else
+            {
+                // community targets is not using template
+                if (payload.pull_request.repository.name == "nf-Community-Targets")
+                {
+                    // don't perform any template check here
+                    return true;
+                }
+                else if (payload.pull_request.repository.name == "nf-Community-Contributions")
+                {
+                    // check content
+                    if ( prBody.Contains(_prChecklist))
+                    { 
+                    }
+                }
+                // user seems to have ignored the template
+
+                log.LogInformation($"User ignoring PR template. Adding comment before closing.");
+
+                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentUserIgnoringTemplateContent}.\" }}";
+
+                await SendGitHubRequest(
+                    payload.pull_request.url.ToString(),
+                    comment,
+                    log);
+
+                // close PR
+                await ClosePR(
+                    payload.pull_request.url.ToString(),
+                    log);
+
+                return false;
+            }
+        }
+
         private static async Task<IActionResult> ProcessClosedIssueAsync(dynamic payload, ILogger log)
         {
 
@@ -504,22 +700,8 @@ namespace nanoFramework.Tools.GitHub
                         // skip this if there are no comments
                         if ((int)payload.issue.comments > 0)
                         {
-                            // list all comments from nfbot
-                            JArray comments = (JArray)await GetGitHubRequest(
-                                                        payload.issue.comments_url,
-                                                        log);
-
-                            var commentsToRemove = comments.Where(c => c["user"]["login"].ToString() == "nfbot");
-
-                            foreach (var c in commentsToRemove)
-                            {
-                                await SendGitHubRequest(
-                                    c["url"].ToString(),
-                                    "",
-                                    log,
-                                    "DELETE"
-                                    );
-                            }
+                            // remove any comments from nfbot
+                            await RemovenfbotCommentsAsync(payload.issue.comments_url.ToString(), log);
                         }
                     }
                 }
@@ -528,6 +710,26 @@ namespace nanoFramework.Tools.GitHub
             }
 
             return new UnprocessableEntityObjectResult("Failed to get issue details");
+        }
+
+        private static async Task RemovenfbotCommentsAsync(string comments_url, ILogger log)
+        {
+            // list all comments from nfbot
+            JArray comments = (JArray)await GetGitHubRequest(
+                                        comments_url,
+                                        log);
+
+            var commentsToRemove = comments.Where(c => c["user"]["login"].ToString() == "nfbot");
+
+            foreach (var c in commentsToRemove)
+            {
+                await SendGitHubRequest(
+                    c["url"].ToString(),
+                    "",
+                    log,
+                    "DELETE"
+                    );
+            }
         }
 
         public static async Task<Tuple<int, int, bool>> CheckCommitMessages(
@@ -732,6 +934,23 @@ namespace nanoFramework.Tools.GitHub
             // request need to be a PATCH
             await SendGitHubRequest(
                 $"{issue.url.ToString()}",
+                closeRequest,
+                log,
+                "",
+                "PATCH");
+        }
+
+        public static async Task ClosePR(
+            dynamic pr,
+            ILogger log)
+        {
+            log.LogInformation($"Close PR {pr.title}");
+
+            string closeRequest = $"{{ \"state\": \"close\" }}";
+
+            // request need to be a PATCH
+            await SendGitHubRequest(
+                $"{pr.url.ToString()}",
                 closeRequest,
                 log,
                 "",
