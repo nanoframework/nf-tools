@@ -364,6 +364,37 @@ namespace nanoFramework.Tools.GitHub
 
             #endregion
 
+            #region process sponsorship event 
+
+            else if (payload.sponsorship != null && payload.action == "created")
+            {
+                // we have a new sponsor
+                // send message to Discord channel
+
+                log.LogInformation($"Processing new repo stared event from {payload.sender.login.ToString()}");
+
+                var slackPayload = new
+                {
+                    text = $"GitHub user <{payload.sender.html_url.ToString()}|{payload.sender.login.ToString()}> just joined as sponsor with a monthly contribution of ${payload.sponsorship.tier.monthly_price_in_dollars.ToString()}.00 USD! Well done and thank you very much! :clap:",
+                    icon_url = payload.sender.avatar_url.ToString(),
+                };
+
+                // Add the DISCORD_CONTRIBUTIONS_WEBHOOK_URL as an app setting, Value for the app setting is the URL from Slack API integration
+                // this is possible because Discord webhooks API supports Slack compatible webhooks
+                // see https://discordapp.com/developers/docs/resources/webhook#execute-slackcompatible-webhook
+                using var client = new HttpClient();
+                var res = await client.PostAsync(
+                Environment.GetEnvironmentVariable("DISCORD_CONTRIBUTIONS_WEBHOOK_URL"),
+                new FormUrlEncodedContent(new[]
+                    {
+                        new KeyValuePair<string, string>("payload", JsonConvert.SerializeObject(slackPayload))
+                    })
+                );
+            }
+
+            #endregion
+
+
             return new OkObjectResult("");
         }
 
