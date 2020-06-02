@@ -147,10 +147,13 @@ namespace nanoFramework.Tools.GitHub
 
                         await ManageLabelsAsync(payload, log);
 
-                        // everything looks OK, remove all comments from nfbot
-                        await RemovenfbotCommentsAsync(
-                            payload.pull_request.comments_url.ToString(),
-                            log);
+                        if (linkedIssuesReference)
+                        {
+                            // everything looks OK, remove all comments from nfbot
+                            await RemovenfbotCommentsAsync(
+                                payload.pull_request.comments_url.ToString(),
+                                log);
+                        }
                     }
                 }
 
