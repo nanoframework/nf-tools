@@ -765,6 +765,7 @@ namespace nanoFramework.Tools.GitHub
                     c["url"].ToString(),
                     "",
                     log,
+                    null,
                     "DELETE"
                     );
             }
@@ -898,6 +899,14 @@ namespace nanoFramework.Tools.GitHub
                 else if (verb == "PUT")
                 {
                     response = await client.PutAsync(url, content);
+                }
+                else if (verb == "DELETE")
+                {
+                    response = await client.DeleteAsync(url);
+                }
+                else
+                {
+                    log.LogInformation($"Unknown verb when executing SendGitHubRequest.");
                 }
 
                 log.LogInformation($"Request result {response.StatusCode}");
