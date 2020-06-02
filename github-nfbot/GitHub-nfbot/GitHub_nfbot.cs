@@ -80,95 +80,99 @@ namespace nanoFramework.Tools.GitHub
 
             #region process PR events
 
-            // process PR opened
-            if (payload.pull_request != null && 
-                payload.action == "opened" ||
-                payload.action == "edited")
+            // process PR
+            if (payload.pull_request != null)
             {
-                log.LogInformation($"Processing PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
-
-                ////////////////////////////////////////////////////////////
-                // processing exceptions
-
-                // dependabot BOT
-                if (payload.pull_request.user.login == "dependabot[bot]")
+                // PR opened or edited
+                if (payload.action == "opened" ||
+                    payload.action == "edited")
                 {
-                    return new OkObjectResult(""); ;
-                }
-                ////////////////////////////////////////////////////////////
 
-                // special processing for nfbot commits
-                if (payload.pull_request.user.login == "nfbot")
-                {
-                    // this is a [version update] commit
-                    string prBody = payload.pull_request.body;
-                    if (prBody.Contains("[version update]"))
+                    log.LogInformation($"Processing PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
+
+                    ////////////////////////////////////////////////////////////
+                    // processing exceptions
+
+                    // dependabot BOT
+                    if (payload.pull_request.user.login == "dependabot[bot]")
                     {
-                        log.LogInformation($"Adding {_labelTypeDependenciesName} label to PR.");
-
-                        // add the Type: dependency label
-                        await SendGitHubRequest(
-                            $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
-                            log,
-                            "application/vnd.github.squirrel-girl-preview");
+                        return new OkObjectResult(""); ;
                     }
-                }
-                else
-                {
-                    // check for PR ignoring template
-                    if (await ValidatePRContentAsync(payload, log))
+                    ////////////////////////////////////////////////////////////
+
+                    // special processing for nfbot commits
+                    if (payload.pull_request.user.login == "nfbot")
                     {
-                        // post comment with thank you message if this is a new PR
-                        if (payload.action == "opened")
+                        // this is a [version update] commit
+                        string prBody = payload.pull_request.body;
+                        if (prBody.Contains("[version update]"))
                         {
-                            log.LogInformation($"Comment with thank you note.");
+                            log.LogInformation($"Adding {_labelTypeDependenciesName} label to PR.");
 
-                            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
+                            // add the Type: dependency label
                             await SendGitHubRequest(
-                                payload.pull_request.comments_url.ToString(),
-                                comment,
-                                log);
-
-                            // add thumbs up reaction in PR main message
-                            await SendGitHubRequest(
-                                $"{payload.pull_request.issue_url.ToString()}/reactions",
-                                "{ \"content\" : \"+1\" }",
+                                $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
                                 log,
                                 "application/vnd.github.squirrel-girl-preview");
                         }
                     }
-
-                    await FixCheckListAsync(payload, log);
-
-                    bool linkedIssuesReference = await CheckLinkedIssuesAsync(payload, log);
-
-                    await ManageLabelsAsync(payload, log);
-
-                    // everything looks OK, remove all comments from nfbot
-                    await RemovenfbotCommentsAsync(
-                        payload.pull_request.comments_url.ToString(),
-                        log);
-                }
-            }
-
-            // process PR closed
-            else if (payload.pull_request != null && payload.action == "closed")
-            {
-                log.LogInformation($"Processing PR closed event...");
-
-                // check for PR related with [version update] authored by nfbot
-                if (payload.pull_request.body.ToString().Contains("[version update]") && payload.pull_request.user.login == "nfbot")
-                {
-                    // get origin branch
-                    var originBranch = payload.pull_request.head.label.ToString().Replace("nanoframework:", "");
-
-                    if (originBranch.Contains("develop-nfbot/update-version") ||
-                        originBranch.Contains("develop-nfbot/update-dependencies"))
+                    else
                     {
-                        // delete this branch
-                        await SendGitHubDeleteRequest(
-                            $"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}",
+                        // check for PR ignoring template
+                        if (await ValidatePRContentAsync(payload, log))
+                        {
+                            // post comment with thank you message if this is a new PR
+                            if (payload.action == "opened")
+                            {
+                                log.LogInformation($"Comment with thank you note.");
+
+                                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
+                                await SendGitHubRequest(
+                                    payload.pull_request.comments_url.ToString(),
+                                    comment,
+                                    log);
+
+                                // add thumbs up reaction in PR main message
+                                await SendGitHubRequest(
+                                    $"{payload.pull_request.issue_url.ToString()}/reactions",
+                                    "{ \"content\" : \"+1\" }",
+                                    log,
+                                    "application/vnd.github.squirrel-girl-preview");
+                            }
+                        }
+
+                        await FixCheckListAsync(payload, log);
+
+                        bool linkedIssuesReference = await CheckLinkedIssuesAsync(payload, log);
+
+                        await ManageLabelsAsync(payload, log);
+
+                        // everything looks OK, remove all comments from nfbot
+                        await RemovenfbotCommentsAsync(
+                            payload.pull_request.comments_url.ToString(),
                             log);
+                    }
+                }
+
+                // PR closed
+                else if (payload.action == "closed")
+                {
+                    log.LogInformation($"Processing PR closed event...");
+
+                    // check for PR related with [version update] authored by nfbot
+                    if (payload.pull_request.body.ToString().Contains("[version update]") && payload.pull_request.user.login == "nfbot")
+                    {
+                        // get origin branch
+                        var originBranch = payload.pull_request.head.label.ToString().Replace("nanoframework:", "");
+
+                        if (originBranch.Contains("develop-nfbot/update-version") ||
+                            originBranch.Contains("develop-nfbot/update-dependencies"))
+                        {
+                            // delete this branch
+                            await SendGitHubDeleteRequest(
+                                $"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}",
+                                log);
+                        }
                     }
                 }
             }
