@@ -410,7 +410,7 @@ namespace nanoFramework.Tools.GitHub
             {
                 // add the Type: dependency label
                 await SendGitHubRequest(
-                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelTypeBugName}\" ]",
+                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeBugName}\" ]",
                     log,
                     "application/vnd.github.squirrel-girl-preview");
             }
@@ -421,7 +421,7 @@ namespace nanoFramework.Tools.GitHub
             {
                 // add the Type: enhancement label
                 await SendGitHubRequest(
-                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelTypeEnhancementName}\" ]",
+                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeEnhancementName}\" ]",
                     log,
                     "application/vnd.github.squirrel-girl-preview");
             }
@@ -430,7 +430,7 @@ namespace nanoFramework.Tools.GitHub
             {
                 // add the Type: Breaking change label
                 await SendGitHubRequest(
-                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelBreakingChangeName}\" ]",
+                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelBreakingChangeName}\" ]",
                     log,
                     "application/vnd.github.squirrel-girl-preview");
             }
@@ -439,7 +439,7 @@ namespace nanoFramework.Tools.GitHub
             {
                 // add the Type: Breaking change label
                 await SendGitHubRequest(
-                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelConfigAndBuildName}\" ]",
+                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelConfigAndBuildName}\" ]",
                     log,
                     "application/vnd.github.squirrel-girl-preview");
             }
@@ -448,7 +448,7 @@ namespace nanoFramework.Tools.GitHub
             {
                 // add the Type: Breaking change label
                 await SendGitHubRequest(
-                    $"{payload.pull_request.url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
+                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
                     log,
                     "application/vnd.github.squirrel-girl-preview");
             }
