@@ -473,7 +473,7 @@ namespace nanoFramework.Tools.GitHub
             else if ( ( prBody.Contains("Fixes") ||
                         prBody.Contains("Closes") ||
                         prBody.Contains("Resolves")) &&
-                        !prBody.Contains("nanoFramework/Home#"))
+                        prBody.Contains(" #"))
             {
                 commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
             }
@@ -635,13 +635,13 @@ namespace nanoFramework.Tools.GitHub
                 bool issueIsFeatureRequest = false;
                 bool issueIsBugReport = false;
 
-                if (issueBody.Contains(_issueArea) ||
+                if (issueBody.Contains(_issueArea) &&
                      issueBody.Contains(_issueFeatureRequest))
                 {
                     // looks like a feature request
                     issueIsFeatureRequest = true;
                 }
-                else if (issueBody.Contains(_issueArea) ||
+                else if (issueBody.Contains(_issueArea) &&
                           issueBody.Contains(_issueDescription))
                 {
                     // has to be a bug report
@@ -692,7 +692,7 @@ namespace nanoFramework.Tools.GitHub
                         // does this issue look legit?
                         if (issueIsFeatureRequest)
                         {
-                            // OK to flag for feature request
+                            // OK to label with feature request
                             log.LogInformation($"Adding 'feature request label.");
 
                             // add label
@@ -703,7 +703,16 @@ namespace nanoFramework.Tools.GitHub
                         }
                         else if (issueIsBugReport)
                         {
-                            // OK to flag for triage
+                            // OK to label with bug
+                            log.LogInformation($"Adding 'bug label.");
+
+                            // add label
+                            await SendGitHubRequest(
+                                $"{payload.issue.url.ToString()}/labels", $"[ \"{_labelTypeBugName}\" ]",
+                                log,
+                                "application/vnd.github.squirrel-girl-preview");
+
+                            // OK to label for triage
                             log.LogInformation($"Adding 'triage label.");
 
                             // add the triage label
