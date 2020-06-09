@@ -249,7 +249,7 @@ steps:
 
 - task: UseRubyVersion@0
   inputs:
-    versionSpec: '= 2.7.1' 
+    versionSpec: '>= 2.7' 
     addToPath: true
   condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Setup Ruby
@@ -260,7 +260,6 @@ steps:
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
   condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
-  ignoreLASTEXITCODE: true
   displayName: Generate change log
 
 # generate change log including future version
@@ -269,7 +268,6 @@ steps:
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels --future-release v$env:MY_NUGET_VERSION
   condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), and ( not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ), ne( variables['StartReleaseCandidate'], true ) )
-  ignoreLASTEXITCODE: true
   displayName: Generate change log
 
 # copy change log to artifacts directory
