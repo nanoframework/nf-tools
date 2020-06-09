@@ -252,6 +252,7 @@ namespace nanoFramework.Tools.GitHub
                             else
                             {
                                 // check failed, don't bother check others
+                                allChecksSuccessfull = false;
                                 break;
                             }
                         }
