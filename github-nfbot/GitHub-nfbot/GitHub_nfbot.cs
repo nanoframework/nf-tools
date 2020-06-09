@@ -81,8 +81,8 @@ namespace nanoFramework.Tools.GitHub
 
             #region process PR events
 
-            // process PR
-            if (payload.pull_request != null)
+            // process PR (make sure it's not a PR review)
+            if (payload.pull_request != null && payload.review == null)
             {
                 // PR opened or edited
                 if (payload.action == "opened" ||
@@ -203,11 +203,57 @@ namespace nanoFramework.Tools.GitHub
 
             #region process review
 
-            // process review submitted
-            else if (payload.review != null && payload.action == "submitted")
+            // process review
+            else if (payload.review != null)
             {
-                // serious candidate of a PR check
-                log.LogInformation($"Processing review submitted event...");
+                // submitted with approval
+                if (payload.action == "submitted" && payload.review.state == "approved")
+                {
+                    // check for PR in release branch
+                    // need to get PR head as JObject to access the 'ref' property because it's a C# keyword
+                    JObject prHead = payload.pull_request.head;
+
+                    if (prHead["ref"].ToString().StartsWith("release-"))
+                    {
+                        // get PR combined status 
+                        var prStatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.review.commit_id}/status", log);
+
+                        // get status checks for PR
+                        var checkSatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.pull_request.head.sha}/check-runs", log);
+
+                        bool allChecksSuccessfull = false;
+
+                        // iterate through all check status
+                        foreach (dynamic cr in (JArray)checkSatus.check_runs)
+                        {
+                            if (cr.conclusion == "success")
+                            {
+                                // check pass
+                                allChecksSuccessfull = true;
+                            }
+                            else
+                            {
+                                // check failed, don't bother check others
+                                allChecksSuccessfull = false;
+                                break;
+                            }
+                        }
+
+                        if (allChecksSuccessfull)
+                        {
+                            // check if the CI-PublishRelease is set 
+                            JArray prLabels = payload.pull_request.labels;
+
+                            if( prLabels.Count(l => l["name"].ToString() == _labelCiPublishReleaseName) > 0 )
+                            {
+                                // all checks are successful
+                                // PR flaged to Publish Release
+                                // merge PR
+                                await MergePR(payload.pull_request.url.ToString(), log);
+                            }
+                        }
+                    }
+                }
             }
 
             #endregion
@@ -230,6 +276,9 @@ namespace nanoFramework.Tools.GitHub
                 {
                     // get PR
                     var pr = await GetGitHubRequest($"{matchingPr["url"]}", log);
+                    
+                    // need to get PR head as JObject to access the 'ref' property because it's a C# keyword
+                    JObject prHead = payload.pull_request.head;
 
                     // check if PR it's a version update
                     if (pr.user.login == "nfbot" && pr.body.ToString().Contains("[version update]"))
@@ -288,7 +337,22 @@ namespace nanoFramework.Tools.GitHub
 
                             // checks are all successful
                             // merge PR with squash
-                            await MergePR(pr, log);
+                            await SquashAndMergePR(pr, log);
+                        }
+                    }
+                    else if (prHead["ref"].ToString().StartsWith("release-"))
+                    {
+                        // PR it's a release branch
+                        
+                        // check if the CI-PublishRelease is set 
+                        JArray prLabels = payload.pull_request.labels;
+
+                        if (prLabels.Count(l => l["name"].ToString() == _labelCiPublishReleaseName) > 0)
+                        {
+                            // all checks are successful
+                            // PR flaged to Publish Release
+                            // merge PR
+                            await MergePR(payload.pull_request.url.ToString(), log);
                         }
                     }
                 }
@@ -399,7 +463,6 @@ namespace nanoFramework.Tools.GitHub
             }
 
             #endregion
-
 
             return new OkObjectResult("");
         }
@@ -957,6 +1020,22 @@ namespace nanoFramework.Tools.GitHub
             ILogger log)
         {
             log.LogInformation($"Merge PR {pull_request.title}");
+
+            string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"merge\" }}";
+
+            // request need to be a PUT
+            await SendGitHubRequest(
+                $"{pull_request.url.ToString()}/merge",
+                mergeRequest,
+                log,
+                "application/vnd.github.squirrel-girl-preview", "PUT");
+        }
+
+        public static async Task SquashAndMergePR(
+            dynamic pull_request,
+            ILogger log)
+        {
+            log.LogInformation($"Squash and merge PR {pull_request.title}");
 
             // place holder for commit message (if any)
             string commitMessage = "";
