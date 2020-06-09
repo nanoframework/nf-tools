@@ -25,6 +25,7 @@ namespace nanoFramework.Tools.GitHub
     public static class GitHub_nfbot
     {
         // strings to be used in messages and comments
+        private const string _fixRequestTagComment = "\\r\\n<!--- nfbot fix request DO NOT REMOVE -->";
         private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whathever is wrong or missing and feel free to reopen the issue.";
         private const string _issueCommentInvalidDeviceCaps = ":disappointed: Make sure to include the complete Device Capabilities output. After doing that feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\r\nMake sure you're used one of the templates and have include all the required information. After doing that feel free to reopen the issue.\r\n\r\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
@@ -126,7 +127,7 @@ namespace nanoFramework.Tools.GitHub
                             {
                                 log.LogInformation($"Comment with thank you note.");
 
-                                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
+                                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:{_fixRequestTagComment}\" }}";
                                 await SendGitHubRequest(
                                     payload.pull_request.comments_url.ToString(),
                                     comment,
@@ -230,6 +231,7 @@ namespace nanoFramework.Tools.GitHub
                     // get PR
                     var pr = await GetGitHubRequest($"{matchingPr["url"]}", log);
 
+                    // check if PR it's a version update
                     if (pr.user.login == "nfbot" && pr.body.ToString().Contains("[version update]"))
                     {
                         // get status checks for PR
@@ -482,7 +484,7 @@ namespace nanoFramework.Tools.GitHub
                 return true;
             }
 
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{commentContent}\" }}";
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{commentContent}{_fixRequestTagComment}\" }}";
             
             await SendGitHubRequest(
                 payload.pull_request.comments_url.ToString(),
@@ -550,7 +552,7 @@ namespace nanoFramework.Tools.GitHub
 
                 log.LogInformation($"User ignoring PR template. Adding comment before closing.");
 
-                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentUserIgnoringTemplateContent}.\" }}";
+                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}\" }}";
 
                 await SendGitHubRequest(
                     payload.pull_request.url.ToString(),
@@ -616,7 +618,7 @@ namespace nanoFramework.Tools.GitHub
                 {
                     log.LogInformation($"Unwanted content on issue. Adding comment before closing.");
 
-                    string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.\" }}";
+                    string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}\" }}";
                     await SendGitHubRequest(
                         payload.issue.url.ToString(),
                         comment,
@@ -664,7 +666,7 @@ namespace nanoFramework.Tools.GitHub
                         {
                             log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
 
-                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}.\" }}";
+                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}.{_fixRequestTagComment}\" }}";
                             await SendGitHubRequest(
                                 payload.issue.url.ToString(),
                                 comment,
@@ -726,7 +728,7 @@ namespace nanoFramework.Tools.GitHub
                             // not sure what this is about...
                             log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
 
-                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}.\" }}";
+                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}.{_fixRequestTagComment}\" }}";
                             await SendGitHubRequest(
                                 payload.issue.url.ToString(),
                                 comment,
@@ -770,13 +772,17 @@ namespace nanoFramework.Tools.GitHub
 
             foreach (var c in commentsToRemove)
             {
-                await SendGitHubRequest(
-                    c["url"].ToString(),
-                    "",
-                    log,
-                    null,
-                    "DELETE"
-                    );
+                // check for fix request comment, remove only the ones that have it
+                if (c["body"].ToString().Contains(_fixRequestTagComment))
+                {
+                    await SendGitHubRequest(
+                        c["url"].ToString(),
+                        "",
+                        log,
+                        null,
+                        "DELETE"
+                        );
+                }
             }
         }
 
