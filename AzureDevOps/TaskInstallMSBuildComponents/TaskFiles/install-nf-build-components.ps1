@@ -22,6 +22,18 @@ $webClient.DownloadFile("http://vsixgallery.com/feed/author/nanoframework", $vsi
 [xml]$feedDetails = Get-Content $vsixFeedXml
 
 
+# find which entry corresponds to which VS version
+if($feedDetails.feed.entry[0].id -eq '455f2be5-bb07-451e-b351-a9faf3018dc9')
+{
+    $idVS2019 = 0
+    $idVS2017 = 1
+}
+else
+{
+    $idVS2019 = 1
+    $idVS2017 = 0
+}
+
 # this requires setting a variable VS_VERSION in the Azure Pipeline 
 # NULL or '2017' will install: VS2017
 # '2019' will install: VS2019
@@ -30,19 +42,17 @@ $webClient.DownloadFile("http://vsixgallery.com/feed/author/nanoframework", $vsi
 # index 0 is for VS2017, running on Windows Server 2016
 if(!$($env:VS_VERSION) -or $($env:VS_VERSION) -eq "2017")
 {
-    $extensionUrl = $feedDetails.feed.entry[0].content.src
+    $extensionUrl = $feedDetails.feed.entry[$idVS2017].content.src
     $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2017.Extension.zip"
     # this was the original download URL that provides the last version, but the marketplace is blocking access to it
     # "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/vs-publisher-1470366/vsextensions/nanoFrameworkVS2017Extension/0/vspackage 
-    $extensionVersion = $feedDetails.feed.entry[0].Vsix.Version
+    $extensionVersion = $feedDetails.feed.entry[$idVS2017].Vsix.Version
 }
-
-# index 1 is for VS2019, running on Windows Server 2019
-if($($env:VS_VERSION) -eq "2019")
+elseif($($env:VS_VERSION) -eq "2019")
 {
-    $extensionUrl = $feedDetails.feed.entry[1].content.src
+    $extensionUrl = $feedDetails.feed.entry[$idVS2019].content.src
     $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2019.Extension.zip"
-    $extensionVersion = $feedDetails.feed.entry[1].Vsix.Version
+    $extensionVersion = $feedDetails.feed.entry[$idVS2019].Vsix.Version
 }
 
 # download VS extension
