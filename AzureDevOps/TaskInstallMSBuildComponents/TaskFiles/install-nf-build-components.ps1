@@ -21,11 +21,14 @@ $vsixFeedXml = Join-Path  $($env:Agent_TempDirectory) "vs-extension-feed.xml"
 $webClient.DownloadFile("http://vsixgallery.com/feed/author/nanoframework", $vsixFeedXml)
 [xml]$feedDetails = Get-Content $vsixFeedXml
 
-Write-Debug "Host OS is $([System.Environment]::OSVersion.Version)"
+
+# this requires setting a variable VS_VERSION in the Azure Pipeline 
+# NULL or '2017' will install: VS2017
+# '2019' will install: VS2019
 
 # feed list VS2017 and VS2019 extensions
 # index 0 is for VS2017, running on Windows Server 2016
-if([System.Environment]::OSVersion.Version.Major -eq "10")
+if(!$($env:VS_VERSION) -or $($env:VS_VERSION) -eq "2017")
 {
     $extensionUrl = $feedDetails.feed.entry[0].content.src
     $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2017.Extension.zip"
@@ -35,7 +38,7 @@ if([System.Environment]::OSVersion.Version.Major -eq "10")
 }
 
 # index 1 is for VS2019, running on Windows Server 2019
-if([System.Environment]::OSVersion.Version.Major -eq "11")
+if($($env:VS_VERSION) -eq "2019")
 {
     $extensionUrl = $feedDetails.feed.entry[1].content.src
     $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2019.Extension.zip"

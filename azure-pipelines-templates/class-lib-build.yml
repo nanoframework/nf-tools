@@ -399,7 +399,7 @@ steps:
     githubReleasePrerelease: false
     githubReuseDraftOnly: false
     githubReuseRelease: true
-    githubEditRelease: false
+    githubEditRelease: true
     githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ), ne( variables['StartReleaseCandidate'], true ) )
