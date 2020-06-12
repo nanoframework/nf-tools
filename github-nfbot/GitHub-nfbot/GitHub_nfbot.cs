@@ -7,7 +7,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.Logging;
+using Microsoft.TeamFoundation.Build.WebApi;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -69,6 +73,10 @@ namespace nanoFramework.Tools.GitHub
 
         private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
 
+        // DevOps client
+        private const string _nfOrganizationUrl = "https://dev.azure.com/nanoframework";
+
+
         [FunctionName("GitHub-nfbot")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
@@ -101,18 +109,34 @@ namespace nanoFramework.Tools.GitHub
                     }
                     ////////////////////////////////////////////////////////////
 
+                    // check for PR in release branch
+                    // need to get PR head as JObject to access the 'ref' property because it's a C# keyword
+                    JObject prHead = payload.pull_request.head;
+
                     // special processing for nfbot commits
                     if (payload.pull_request.user.login == "nfbot")
                     {
-                        // this is a [version update] commit
                         string prBody = payload.pull_request.body;
+
                         if (prBody.Contains("[version update]"))
                         {
+                            // this is a [version update] commit
+
                             log.LogInformation($"Adding {_labelTypeDependenciesName} label to PR.");
 
                             // add the Type: dependency label
                             await SendGitHubRequest(
                                 $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
+                                log,
+                                "application/vnd.github.squirrel-girl-preview");
+                        }
+                        else if (prHead["ref"].ToString().StartsWith("release-"))
+                        {
+                            // this is a release candidate PR
+
+                            // add the Publish release label
+                            await SendGitHubRequest(
+                                $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelCiPublishReleaseName}\" ]",
                                 log,
                                 "application/vnd.github.squirrel-girl-preview");
                         }
@@ -163,20 +187,20 @@ namespace nanoFramework.Tools.GitHub
                 {
                     log.LogInformation($"Processing PR closed event...");
 
-                    // check for PR related with [version update] authored by nfbot
-                    if (payload.pull_request.body.ToString().Contains("[version update]") && payload.pull_request.user.login == "nfbot")
+                    // get PR
+                    var pr = await GetGitHubRequest(payload.pull_request.url.ToString(), log);
+
+
+                    // check for PR authored by nfbot
+                    if (pr.user.login == "nfbot")
                     {
                         // get origin branch
                         var originBranch = payload.pull_request.head.label.ToString().Replace("nanoframework:", "");
 
-                        if (originBranch.Contains("develop-nfbot/update-version") ||
-                            originBranch.Contains("develop-nfbot/update-dependencies"))
-                        {
-                            // delete this branch
-                            await SendGitHubDeleteRequest(
-                                $"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}",
-                                log);
-                        }
+                        // delete this branch
+                        await SendGitHubDeleteRequest(
+                            $"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}",
+                            log);
                     }
                 }
             }
@@ -187,15 +211,59 @@ namespace nanoFramework.Tools.GitHub
 
             else if (payload.issue != null)
             {
-                if (payload.action == "opened" ||
-                     payload.action == "edited" ||
-                     payload.action == "reopened")
+                if ( (payload.action == "opened" ||
+                      payload.action == "edited" ||
+                      payload.action == "reopened") &&
+                      payload.comment == null)
                 {
                     return await ProcessOpenOrEditIssueAsync(payload, log);
                 }
                 else if (payload.action == "closed")
                 {
                     return await ProcessClosedIssueAsync(payload, log);
+                }
+                else if(
+                    payload.action == "created" &&
+                    payload.comment != null)
+                {
+                    // this is a comment on an issue or PR
+                    // check for command to nfbot
+                    if(payload.comment.body.ToString().Contains("@nfbot"))
+                    {
+                        // sender if member
+                        // flag if author is member or owner
+                        if(payload.comment.author_association == "MEMBER" || payload.issue.author_association == "OWNER")
+                        {
+                            if (await ProcessCommandAsync(payload, log))
+                            {
+                                // add thumbs up reaction reaction to comment
+                                await SendGitHubRequest(
+                                    $"{payload.comment.url.ToString()}/reactions",
+                                    "{ \"content\" : \"+1\" }",
+                                    log,
+                                    "application/vnd.github.squirrel-girl-preview");
+                            }
+                            else
+                            {
+                                // add confuse reaction reaction to comment
+                                await SendGitHubRequest(
+                                    $"{payload.comment.url.ToString()}/reactions",
+                                    "{ \"content\" : \"confused\" }",
+                                    log,
+                                    "application/vnd.github.squirrel-girl-preview");
+                            }
+                        }
+                        else
+                        {
+                            // add thumbs down reaction to comment
+                            await SendGitHubRequest(
+                                $"{payload.comment.url.ToString()}/reactions",
+                                "{ \"content\" : \"-1\" }",
+                                log,
+                                "application/vnd.github.squirrel-girl-preview");
+                        }
+                    }
+
                 }
             }
 
@@ -249,7 +317,15 @@ namespace nanoFramework.Tools.GitHub
                                 // all checks are successful
                                 // PR flaged to Publish Release
                                 // merge PR
-                                await MergePR(payload.pull_request.url.ToString(), log);
+                                await MergePR(payload.pull_request, log);
+
+                                // get repository
+                                string repositoryName = payload.repository.name.ToString();
+                                // clear known prefixes
+                                repositoryName = repositoryName.Replace("lib-", "");
+
+                                // after merge to master need to queue a build
+                                await QueueBuildAsync(repositoryName, "master", log);
                             }
                         }
                     }
@@ -278,7 +354,7 @@ namespace nanoFramework.Tools.GitHub
                     var pr = await GetGitHubRequest($"{matchingPr["url"]}", log);
                     
                     // need to get PR head as JObject to access the 'ref' property because it's a C# keyword
-                    JObject prHead = payload.pull_request.head;
+                    JObject prHead = pr.head;
 
                     // check if PR it's a version update
                     if (pr.user.login == "nfbot" && pr.body.ToString().Contains("[version update]"))
@@ -321,20 +397,6 @@ namespace nanoFramework.Tools.GitHub
                                 $"{payload.repository.url.ToString()}/labels",
                                 log));
 
-                            var updateDependentsLabel = repoLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiUpdateDependentsName);
-
-                            if (updateDependentsLabel != null)
-                            {
-                                // this repo has dependents, add label
-                                log.LogInformation($"Adding 'update dependents flag to PR.");
-
-                                // add the Type: dependency label
-                                await SendGitHubRequest(
-                                    $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelCiUpdateDependentsName}\" ]",
-                                    log,
-                                    "application/vnd.github.squirrel-girl-preview");
-                            }
-
                             // checks are all successful
                             // merge PR with squash
                             await SquashAndMergePR(pr, log);
@@ -343,16 +405,73 @@ namespace nanoFramework.Tools.GitHub
                     else if (prHead["ref"].ToString().StartsWith("release-"))
                     {
                         // PR it's a release branch
-                        
-                        // check if the CI-PublishRelease is set 
-                        JArray prLabels = payload.pull_request.labels;
 
-                        if (prLabels.Count(l => l["name"].ToString() == _labelCiPublishReleaseName) > 0)
+                        // get status checks for PR
+                        var checkSatus = await GetGitHubRequest(
+                            $"{pr.head.repo.url.ToString()}/commits/{pr.head.sha}/check-runs",
+                            log);
+
+                        bool allChecksSuccessfull = false;
+
+                        // iterate through all check status
+                        foreach (dynamic cr in (JArray)checkSatus.check_runs)
                         {
-                            // all checks are successful
-                            // PR flaged to Publish Release
-                            // merge PR
-                            await MergePR(payload.pull_request.url.ToString(), log);
+                            if (cr.conclusion == "success")
+                            {
+                                // check pass
+                                allChecksSuccessfull = true;
+                            }
+                            else
+                            {
+                                // check failed, don't bother check others
+                                allChecksSuccessfull = false;
+                                break;
+                            }
+                        }
+
+                        if (allChecksSuccessfull)
+                        {
+                            // need an APPROVED review
+
+                            // list PR reviews
+                            JArray prReviews = (JArray)(await GetGitHubRequest(
+                                $"{pr.url.ToString()}/reviews",
+                                log));
+
+                            bool prApproved = false;
+
+                            // iterate through all reviews
+                            foreach (dynamic review in prReviews)
+                            {
+                                if (review.state == "APPROVED")
+                                {
+                                    // approved
+                                    prApproved = true;
+                                    break;
+                                }
+                            }
+
+                            if (prApproved)
+                            {
+                                // check if the CI-PublishRelease is set 
+                                JArray prLabels = pr.labels;
+
+                                if (prLabels.Count(l => l["name"].ToString() == _labelCiPublishReleaseName) > 0)
+                                {
+                                    // all checks are successful
+                                    // PR flaged to Publish Release
+                                    // merge PR
+                                    await MergePR(pr, log);
+
+                                    // get repository
+                                    string repositoryName = payload.repository.name.ToString();
+                                    // clear known prefixes
+                                    repositoryName = repositoryName.Replace("lib-", "");
+
+                                    // after merge to master need to queue a build
+                                    await QueueBuildAsync(repositoryName, "master", log);
+                                }
+                            }
                         }
                     }
                 }
@@ -465,6 +584,123 @@ namespace nanoFramework.Tools.GitHub
             #endregion
 
             return new OkObjectResult("");
+        }
+
+        private static async Task<bool> ProcessCommandAsync(dynamic payload, ILogger log)
+        {
+            // content has to follow this pattern:
+            // @nfbot ccccc a1 a2 a3
+            // start with nfbot
+            // a single space
+            // command
+            // arguments (optional)
+
+            // remove start of message
+            var command = payload.comment.body.ToString().Substring("@nfbot ".Length);
+
+            // get repository
+            string repositoryName = payload.repository.name.ToString();
+            // clear known prefixes
+            repositoryName = repositoryName.Replace("lib-", "");
+
+            // check commands
+            if (command.StartsWith("startrelease"))
+            {
+                return await StartReleaseCandidateAsync(repositoryName, log);
+            }
+
+            // unkown or invlaid command
+            return false;
+        }
+
+        private static async Task<bool> StartReleaseCandidateAsync(string repositoryName, ILogger log)
+        {
+            var personalAccessToken = "m6qi5mmpw4boodpy6tw5ewi33ji2m6266chii3ccfplid6mxlvja";
+
+            Uri nfOrganizationUri = new Uri(_nfOrganizationUrl);
+
+            // Create a connection
+            VssConnection connection = new VssConnection(
+                nfOrganizationUri, 
+                new VssBasicCredential(
+                    string.Empty, 
+                    personalAccessToken)
+                );
+
+            // Get an instance of the build client
+            BuildHttpClient buildClient = connection.GetClient<BuildHttpClient>();
+
+            var buildDefs = await buildClient.GetDefinitionsAsync(repositoryName);
+
+            // so far we only have projects with a single build definitio so check this and take the 1st one
+            if(buildDefs.Count == 1)
+            {
+                // compose build request
+                var buildRequest = new Build
+                {
+                    Definition = new DefinitionReference
+                    {
+                        Id = buildDefs[0].Id
+                    },
+                    Project = buildDefs[0].Project,
+                    Parameters = "{\"StartReleaseCandidate\":\"true\"}"
+                };
+
+                await buildClient.QueueBuildAsync(buildRequest);
+
+                return true;
+            }
+            else
+            {
+                log.LogError("Error processing DevOps build definition: more definition then expected");
+            }
+
+            return false;
+        }
+
+        private static async Task<bool> QueueBuildAsync(string repositoryName, string branchName, ILogger log)
+        {
+            var personalAccessToken = "m6qi5mmpw4boodpy6tw5ewi33ji2m6266chii3ccfplid6mxlvja";
+
+            Uri nfOrganizationUri = new Uri(_nfOrganizationUrl);
+
+            // Create a connection
+            VssConnection connection = new VssConnection(
+                nfOrganizationUri,
+                new VssBasicCredential(
+                    string.Empty,
+                    personalAccessToken)
+                );
+
+            // Get an instance of the build client
+            BuildHttpClient buildClient = connection.GetClient<BuildHttpClient>();
+
+            var buildDefs = await buildClient.GetDefinitionsAsync(repositoryName);
+
+            // so far we only have projects with a single build definitio so check this and take the 1st one
+            if (buildDefs.Count == 1)
+            {
+                // compose build request
+                var buildRequest = new Build
+                {
+                    Definition = new DefinitionReference
+                    {
+                        Id = buildDefs[0].Id
+                    },
+                    Project = buildDefs[0].Project,
+                    SourceBranch = branchName
+                };
+
+                await buildClient.QueueBuildAsync(buildRequest);
+
+                return true;
+            }
+            else
+            {
+                log.LogError("Error processing DevOps build definition: more definition then expected");
+            }
+
+            return false;
         }
 
         private static async Task ManageLabelsAsync(dynamic payload, ILogger log)
@@ -1021,7 +1257,25 @@ namespace nanoFramework.Tools.GitHub
         {
             log.LogInformation($"Merge PR {pull_request.title}");
 
-            string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"merge\" }}";
+            // place holder for commit message (if any)
+            string commitMessage = "";
+
+            // get labels for this PR
+            JArray prLabels = (JArray)pull_request.labels;
+
+            var updateDependentsLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiUpdateDependentsName);
+            if (updateDependentsLabel != null)
+            {
+                commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
+            }
+
+            var publishReleaseLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiPublishReleaseName);
+            if (publishReleaseLabel != null)
+            {
+                commitMessage += "\\r\\n***PUBLISH_RELEASE***";
+            }
+
+            string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"{commitMessage}\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"merge\" }}";
 
             // request need to be a PUT
             await SendGitHubRequest(
