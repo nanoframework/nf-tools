@@ -378,8 +378,8 @@ steps:
     githubReleaseDraft: $(RELEASE_DRAFT)
     githubReleasePrerelease: true
     githubReuseDraftOnly: false
-    githubReuseRelease: true
-    githubEditRelease: true
+    githubReuseRelease: false
+    githubEditRelease: false
     githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), ne( variables['StartReleaseCandidate'], true ) )
@@ -398,8 +398,8 @@ steps:
     githubReleaseDraft: false
     githubReleasePrerelease: false
     githubReuseDraftOnly: false
-    githubReuseRelease: true
-    githubEditRelease: true
+    githubReuseRelease: false
+    githubEditRelease: false
     githubDeleteEmptyTag: true
     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ), ne( variables['StartReleaseCandidate'], true ) )
