@@ -615,7 +615,7 @@ namespace nanoFramework.Tools.GitHub
 
         private static async Task<bool> StartReleaseCandidateAsync(string repositoryName, ILogger log)
         {
-            var personalAccessToken = "m6qi5mmpw4boodpy6tw5ewi33ji2m6266chii3ccfplid6mxlvja";
+            var personalAccessToken = Environment.GetEnvironmentVariable("DEVOPS_PATOKEN", EnvironmentVariableTarget.Process);
 
             Uri nfOrganizationUri = new Uri(_nfOrganizationUrl);
 
