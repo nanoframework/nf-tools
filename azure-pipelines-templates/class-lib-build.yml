@@ -222,14 +222,12 @@ steps:
     if($commitMessage -like "*PUBLISH_RELEASE*")
     {
       # set variable
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")false"
       Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")true"
       Write-Host "Release draft: FALSE"
     }
     else
     {
       # set variable
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")true"
       Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")false"
       Write-Host "Release draft: TRUE"
     }
@@ -259,7 +257,7 @@ steps:
       gem install github_changelog_generator --quiet --no-document
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
-  condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], ne(variables['Build.Reason'], 'PullRequest'), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), ne(variables['Build.Reason'], 'PullRequest'), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Generate change log
 
 # generate change log including future version
@@ -375,7 +373,7 @@ steps:
     githubReleaseTitle: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
     githubReleaseNotes: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     githubTargetCommitsh: $(Build.SourceVersion)
-    githubReleaseDraft: $(RELEASE_DRAFT)
+    githubReleaseDraft: false
     githubReleasePrerelease: true
     githubReuseDraftOnly: false
     githubReuseRelease: false
