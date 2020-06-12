@@ -319,6 +319,9 @@ namespace nanoFramework.Tools.GitHub
                                 // merge PR
                                 await MergePR(payload.pull_request, log);
 
+                                // need to pause a bit to allow merge to settle
+                                await Task.Delay(5000);
+
                                 // get repository
                                 string repositoryName = payload.repository.name.ToString();
                                 // clear known prefixes
@@ -462,6 +465,9 @@ namespace nanoFramework.Tools.GitHub
                                     // PR flaged to Publish Release
                                     // merge PR
                                     await MergePR(pr, log);
+
+                                    // need to pause a bit to allow merge to settle
+                                    await Task.Delay(5000);
 
                                     // get repository
                                     string repositoryName = payload.repository.name.ToString();
