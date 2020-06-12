@@ -608,6 +608,10 @@ namespace nanoFramework.Tools.GitHub
             {
                 return await StartReleaseCandidateAsync(repositoryName, log);
             }
+            else if (command.StartsWith("updatedependents"))
+            {
+                return await UpdateDependentsAsync(repositoryName, log);
+            }
 
             // unkown or invlaid command
             return false;
@@ -644,6 +648,51 @@ namespace nanoFramework.Tools.GitHub
                     },
                     Project = buildDefs[0].Project,
                     Parameters = "{\"StartReleaseCandidate\":\"true\"}"
+                };
+
+                await buildClient.QueueBuildAsync(buildRequest);
+
+                return true;
+            }
+            else
+            {
+                log.LogError("Error processing DevOps build definition: more definition then expected");
+            }
+
+            return false;
+        }
+
+        private static async Task<bool> UpdateDependentsAsync(string repositoryName, ILogger log)
+        {
+            var personalAccessToken = Environment.GetEnvironmentVariable("DEVOPS_PATOKEN", EnvironmentVariableTarget.Process);
+
+            Uri nfOrganizationUri = new Uri(_nfOrganizationUrl);
+
+            // Create a connection
+            VssConnection connection = new VssConnection(
+                nfOrganizationUri,
+                new VssBasicCredential(
+                    string.Empty,
+                    personalAccessToken)
+                );
+
+            // Get an instance of the build client
+            BuildHttpClient buildClient = connection.GetClient<BuildHttpClient>();
+
+            var buildDefs = await buildClient.GetDefinitionsAsync(repositoryName);
+
+            // so far we only have projects with a single build definitio so check this and take the 1st one
+            if (buildDefs.Count == 1)
+            {
+                // compose build request
+                var buildRequest = new Build
+                {
+                    Definition = new DefinitionReference
+                    {
+                        Id = buildDefs[0].Id
+                    },
+                    Project = buildDefs[0].Project,
+                    Parameters = "{\"UPDATE_DEPENDENTS\":\"true\"}"
                 };
 
                 await buildClient.QueueBuildAsync(buildRequest);
