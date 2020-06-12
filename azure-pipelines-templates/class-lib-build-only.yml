@@ -22,7 +22,7 @@ steps:
 # get commit message
 - powershell: |
 
-    if($env:Build_SourceBranch -like "refs/pull*")
+    if($env:Build_Reason -eq 'PullRequest')
     {
       # PR build, get PR message
 
@@ -251,7 +251,7 @@ steps:
   inputs:
     versionSpec: '>= 2.7' 
     addToPath: true
-  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Setup Ruby
 
 # generate change log
@@ -259,7 +259,7 @@ steps:
       gem install github_changelog_generator --quiet --no-document
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
-  condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], ne(variables['Build.Reason'], 'PullRequest'), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Generate change log
 
 # generate change log including future version
@@ -267,7 +267,7 @@ steps:
       gem install github_changelog_generator --quiet --no-document
       # need to call it passing both cache options with full path otherwise it won't work
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels --future-release v$env:MY_NUGET_VERSION
-  condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), and ( not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), and ( ne(variables['Build.Reason'], 'PullRequest'), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Generate change log
 
 # copy change log to artifacts directory
@@ -276,7 +276,7 @@ steps:
     SourceFolder: '$(System.DefaultWorkingDirectory)'
     Contents: 'CHANGELOG.md'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), ne(variables['Build.Reason'], 'PullRequest'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Copy Changelog
 
 # push new changelog to GitHub repo
@@ -296,7 +296,7 @@ steps:
 
           git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
 
-  condition: and( succeeded(), not( startsWith(variables['Build.SourceBranch'], 'refs/pull') ), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), ne(variables['Build.Reason'], 'PullRequest'), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Push changelog to GitHub
 
 # update could build number (only possible if this is not a PR from a fork)
