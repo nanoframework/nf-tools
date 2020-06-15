@@ -70,23 +70,6 @@ ForEach($library in $librariesToUpdate)
         $packagesConfig = (Get-ChildItem -Path ".\M2Mqtt" -Include "packages.config" -Recurse)
 
     }
-    ########################################
-    # Json.NetMF
-    elseif ($library -like "Json.NetMF")
-    {
-        # move to source directory
-        Set-Location "source" | Out-Null
-
-        # need to set working path
-        $workingPath = '.\nanoFramework.Json', '.\Test\nanoFramework'
-
-        # find solution file in repository
-        $solutionFile = (Get-ChildItem -Path ".\" -Include "Json.nanoFramework.sln" -Recurse)
-
-        # find packages.config
-        $packagesConfig = (Get-ChildItem -Path ".\nanoFramework.Json" -Include "packages.config" -Recurse)
-        
-    }
     ######################################
     # AMQPLite
     elseif ($library -like "amqpnetlite")
