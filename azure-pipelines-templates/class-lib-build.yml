@@ -183,7 +183,8 @@ steps:
             $MyNuGetVersion = $MyNuGetVersion -replace "preview", "alpha"
           }
 
-          Write-Host "NuGet build number is $MyNuGetVersion"
+          Write-Host "NuGet build is: $MyNuGetVersion"
+          Write-Host "Assembly version is: $env:NBGV_AssemblyVersion"
 
           Write-Host "$("##vso[task.setvariable variable=MY_NUGET_VERSION]")$MyNuGetVersion"
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
