@@ -910,7 +910,7 @@ namespace nanoFramework.Tools.GitHub
                 string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}\" }}";
 
                 await SendGitHubRequest(
-                    payload.pull_request.url.ToString(),
+                    payload.pull_request.comments_url.ToString(),
                     comment,
                     log);
 
@@ -975,7 +975,7 @@ namespace nanoFramework.Tools.GitHub
 
                     string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}\" }}";
                     await SendGitHubRequest(
-                        payload.issue.url.ToString(),
+                        payload.issue.comments_url.ToString(),
                         comment,
                         log);
 
@@ -1023,7 +1023,7 @@ namespace nanoFramework.Tools.GitHub
 
                             string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}.{_fixRequestTagComment}\" }}";
                             await SendGitHubRequest(
-                                payload.issue.url.ToString(),
+                                payload.issue.comments_url.ToString(),
                                 comment,
                                 log);
 
@@ -1085,7 +1085,7 @@ namespace nanoFramework.Tools.GitHub
 
                             string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}.{_fixRequestTagComment}\" }}";
                             await SendGitHubRequest(
-                                payload.issue.url.ToString(),
+                                payload.issue.comments_url.ToString(),
                                 comment,
                                 log);
 
