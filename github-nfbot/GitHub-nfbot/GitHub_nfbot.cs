@@ -30,10 +30,15 @@ namespace nanoFramework.Tools.GitHub
     {
         // strings to be used in messages and comments
         private const string _fixRequestTagComment = "\\r\\n<!--- nfbot fix request DO NOT REMOVE -->";
+        private const string _bugReportForClassLibTagComment = "<!--- bug-report-clas-lib-tag DO NOT REMOVE -->";
+        private const string _bugReportFirmwareTagComment = "<!--- bug-report-fw-tag DO NOT REMOVE -->";
+        private const string _bugReportToolsTagComment = "<!--- bug-report-tools-tag DO NOT REMOVE -->";
+        private const string _featureRequestTagComment = "<!--- feature-request-tag DO NOT REMOVE -->";
         private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whathever is wrong or missing and feel free to reopen the issue.";
         private const string _issueCommentInvalidDeviceCaps = ":disappointed: Make sure to include the complete Device Capabilities output. After doing that feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\r\nMake sure you're used one of the templates and have include all the required information. After doing that feel free to reopen the issue.\r\n\r\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
         private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm affraid you'll have to use the PR template like the rest of us...\r\nMake sure you've used the template and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
+        private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm affraid you'll left some tasks behind...\r\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
 
         // strings for issues content
         private const string _issueContentRemoveContentInstruction = ":exclamation: Remove the content above here and fill out details below. :exclamation:";
@@ -881,11 +886,20 @@ namespace nanoFramework.Tools.GitHub
             // check for expected/mandatory content
 
             // check for master PR template
-            if  (prBody.Contains(_prDescription) &&
+            if (
+                (prBody.Contains(_prDescription) &&
                  prBody.Contains(_prTypesOfChanges) &&
-                 prBody.Contains(_prChecklist))
+                 prBody.Contains(_prChecklist)) &&
+                 (prBody.Contains(_bugReportForClassLibTagComment) ||
+                  prBody.Contains(_bugReportFirmwareTagComment) ||
+                  prBody.Contains(_bugReportToolsTagComment)))
             {
                 // content looks good
+                return true;
+            }
+            else if(prBody.Contains(_featureRequestTagComment))
+            {
+                // content for feature request looks good
                 return true;
             }
             else
@@ -900,7 +914,25 @@ namespace nanoFramework.Tools.GitHub
                 {
                     // check content
                     if ( prBody.Contains(_prChecklist))
-                    { 
+                    {
+                        // check for missing check boxes
+                        if(prBody.Contains("[ ]"))
+                        {
+                            // developer has left un-checked items in the to-do list
+
+                            string myComment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}\" }}";
+
+                            await SendGitHubRequest(
+                                payload.pull_request.comments_url.ToString(),
+                                myComment,
+                                log);
+
+                            return true;
+                        }
+                        else
+                        {
+                            return true;
+                        }
                     }
                 }
                 // user seems to have ignored the template
