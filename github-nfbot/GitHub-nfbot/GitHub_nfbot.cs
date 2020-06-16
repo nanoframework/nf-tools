@@ -623,6 +623,25 @@ namespace nanoFramework.Tools.GitHub
             {
                 return await UpdateDependentsAsync(repositoryName, log);
             }
+            else if (command.StartsWith("runpipeline"))
+            {
+                // get branch name, if any
+
+                string branchName = command.Substring("runpipeline".Length);
+
+                if(!string.IsNullOrEmpty(branchName))
+                {
+                    // remove leading and trailing white spaces
+                    branchName = branchName.Trim();
+                }
+                else
+                {
+                    // set to default branch name: 'develop'
+                    branchName = "develop";
+                }
+
+                return await QueueBuildAsync(repositoryName, branchName, log);
+            }
 
             // unkown or invlaid command
             return false;
