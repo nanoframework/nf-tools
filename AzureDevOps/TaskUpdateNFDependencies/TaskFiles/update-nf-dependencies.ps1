@@ -279,8 +279,7 @@ ForEach($library in $librariesToUpdate)
         $commitMessage += "`n[version update]`n`n"
 
         # better add this warning line               
-        $commitMessage += "### :warning: This is an automated update. Merge only after all tests pass. :warning:`n"
-
+        $commitMessage += "### :warning: This is an automated update. :warning:`n"
         
         Write-Debug "Git branch" 
 
