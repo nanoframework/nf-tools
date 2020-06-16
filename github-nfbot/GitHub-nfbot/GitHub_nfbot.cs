@@ -905,12 +905,12 @@ namespace nanoFramework.Tools.GitHub
             else
             {
                 // community targets is not using template
-                if (payload.pull_request.repository.name == "nf-Community-Targets")
+                if (payload.repository.name == "nf-Community-Targets")
                 {
                     // don't perform any template check here
                     return true;
                 }
-                else if (payload.pull_request.repository.name == "nf-Community-Contributions")
+                else if (payload.repository.name == "nf-Community-Contributions")
                 {
                     // check content
                     if ( prBody.Contains(_prChecklist))
