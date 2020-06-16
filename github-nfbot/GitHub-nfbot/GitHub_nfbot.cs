@@ -839,6 +839,13 @@ namespace nanoFramework.Tools.GitHub
             {
                 commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
             }
+            else if ((prBody.Contains("Fixes") ||
+                        prBody.Contains("Closes") ||
+                        prBody.Contains("Resolves")) &&
+                        !prBody.Contains("nanoFramework/Home#"))
+            {
+                commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
+            }
             else
             {
                 return true;
