@@ -19,22 +19,24 @@ steps:
 
 # push NuGet packages to Azure Artifacts feed (always happens except on PR builds)
 - task: NuGetCommand@2
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  continueOnError: true
+  displayName: Push NuGet packages to Azure Artifacts
   inputs:
     command: push
     nuGetFeedType: external
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'AzureArtifacts-$(System.TeamProject)'
     allowPackageConflicts: true
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Push NuGet packages to Azure Artifacts
 
 # push NuGet class lib package to NuGet (always happens except on PR builds)
 - task: NuGetCommand@2
+  condition: and( succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne( variables['StartReleaseCandidate'], true ) )
+  continueOnError: true
+  displayName: Push NuGet packages to NuGet
   inputs:
     command: push
     nuGetFeedType: external
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet-$(System.TeamProject)'
-  condition: and( succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Push NuGet packages to NuGet
