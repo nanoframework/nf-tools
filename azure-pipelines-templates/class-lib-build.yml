@@ -350,6 +350,7 @@ steps:
   inputs:
     command: push
     nuGetFeedType: external
+    allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'AzureArtifacts-$(System.TeamProject)'
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
