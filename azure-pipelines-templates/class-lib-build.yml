@@ -89,7 +89,7 @@ steps:
     $commitMessage = git log -1 --pretty=%B
 
     # amend commit message to skip build
-    git commit --amend -m "$commitMessage" -m "***NO_CI***" > $null
+    git commit --amend -m "$commitMessage" > $null
 
     Write-Host "Pushing changes to GitHub..."
     # push all changes to github
@@ -181,6 +181,10 @@ steps:
           if($env:Build_Reason -eq 'PullRequest')
           {
             $MyNuGetVersion = $MyNuGetVersion -replace "preview", "alpha"
+          }
+          elseif ($env:Build_SourceBranchName -like '*release*')
+          {
+            $MyNuGetVersion = $MyNuGetVersion + "-rc." + $env:NBGV_VersionHeight
           }
 
           Write-Host "NuGet build is: $MyNuGetVersion"
@@ -303,7 +307,7 @@ steps:
   inputs:
       targetType: 'inline'
       script: |
-        Write-Host "$("##vso[build.updatebuildnumber]")$env:MY_NUGET_VERSION"
+        Write-Host "NuGet version is $("##vso[build.updatebuildnumber]")$env:MY_NUGET_VERSION"
         Write-Host "Build version is $env:NBGV_AssemblyVersion"
   condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Update cloud build number
