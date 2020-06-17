@@ -1057,25 +1057,27 @@ namespace nanoFramework.Tools.GitHub
                     issueIsToolBugReport = true;
                 }
 
-                if (
-                    issueIsClassLibBugReport ||
+                if (issueIsClassLibBugReport ||
                     issueIsFwBugReport ||
                     issueIsToolBugReport)
                 {
                     // check for mandatory content
-                    if (
-                        issueBody.Contains(_issueArea) &&
-                        issueBody.Contains(_issueDescription))
+                    if (issueBody.Contains(_issueDescription))
                     {
                         issueIsBugReport = true;
-                    }
 
+                        if ((issueIsClassLibBugReport ||
+                             issueIsToolBugReport) &&
+                            !issueBody.Contains(_issueArea))
+                        {
+                            issueIsBugReport = false;
+                        }
+                    }  
                 }
                 else if(issueBody.Contains(_featureRequestTagComment))
                 {
                     // check for mandatory content
-                    if (
-                        issueBody.Contains(_issueArea) &&
+                    if (issueBody.Contains(_issueArea) &&
                         issueBody.Contains(_issueFeatureRequest))
                     {
                         // looks like a feature request
@@ -1116,9 +1118,9 @@ namespace nanoFramework.Tools.GitHub
                         await CloseIssue(
                             payload.issue,
                             log);
-                    }
 
-                    return new OkObjectResult("");
+                        return new OkObjectResult("");
+                    }
                 }
 
                 if (!authorIsMemberOrOwner)
