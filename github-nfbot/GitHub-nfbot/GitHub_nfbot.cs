@@ -36,9 +36,9 @@ namespace nanoFramework.Tools.GitHub
         private const string _featureRequestTagComment = "<!--- feature-request-tag DO NOT REMOVE -->";
         private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whathever is wrong or missing and feel free to reopen the issue.";
         private const string _issueCommentInvalidDeviceCaps = ":disappointed: Make sure to include the complete Device Capabilities output. After doing that feel free to reopen the issue.";
-        private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\r\nMake sure you're used one of the templates and have include all the required information. After doing that feel free to reopen the issue.\r\n\r\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
-        private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm affraid you'll have to use the PR template like the rest of us...\r\nMake sure you've used the template and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
-        private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm affraid you'll left some tasks behind...\r\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
+        private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\\r\\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\\r\\n\\r\\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
+        private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm affraid you'll have to use the PR template like the rest of us...\\r\\nMake sure you've used the **template* and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
+        private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm affraid you'll left some tasks behind...\\r\\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
 
         // strings for issues content
         private const string _issueContentRemoveContentInstruction = ":exclamation: Remove the content above here and fill out details below. :exclamation:";
@@ -913,19 +913,11 @@ namespace nanoFramework.Tools.GitHub
 
             // check for master PR template
             if (
-                (prBody.Contains(_prDescription) &&
-                 prBody.Contains(_prTypesOfChanges) &&
-                 prBody.Contains(_prChecklist)) &&
-                 (prBody.Contains(_bugReportForClassLibTagComment) ||
-                  prBody.Contains(_bugReportFirmwareTagComment) ||
-                  prBody.Contains(_bugReportToolsTagComment)))
+                prBody.Contains(_prDescription) &&
+                prBody.Contains(_prTypesOfChanges) &&
+                prBody.Contains(_prChecklist))
             {
                 // content looks good
-                return true;
-            }
-            else if(prBody.Contains(_featureRequestTagComment))
-            {
-                // content for feature request looks good
                 return true;
             }
             else
@@ -1046,20 +1038,56 @@ namespace nanoFramework.Tools.GitHub
                 }
 
                 // check for expected/mandatory content
-
                 bool issueIsFeatureRequest = false;
                 bool issueIsBugReport = false;
+                bool issueIsToolBugReport = false;
+                bool issueIsClassLibBugReport = false;
+                bool issueIsFwBugReport = false;
 
-                if (issueBody.Contains(_issueArea) &&
-                     issueBody.Contains(_issueFeatureRequest))
+                if (issueBody.Contains(_bugReportForClassLibTagComment))
                 {
-                    // looks like a feature request
-                    issueIsFeatureRequest = true;
+                    issueIsClassLibBugReport = true;
                 }
-                else if (issueBody.Contains(_issueArea) &&
-                          issueBody.Contains(_issueDescription))
+                if (issueBody.Contains(_bugReportFirmwareTagComment))
                 {
-                    // has to be a bug report
+                    issueIsFwBugReport = true;
+                }
+                if (issueBody.Contains(_bugReportToolsTagComment))
+                {
+                    issueIsToolBugReport = true;
+                }
+
+                if (
+                    issueIsClassLibBugReport ||
+                    issueIsFwBugReport ||
+                    issueIsToolBugReport)
+                {
+                    // check for mandatory content
+                    if (
+                        issueBody.Contains(_issueArea) &&
+                        issueBody.Contains(_issueDescription))
+                    {
+                        issueIsBugReport = true;
+                    }
+
+                }
+                else if(issueBody.Contains(_featureRequestTagComment))
+                {
+                    // check for mandatory content
+                    if (
+                        issueBody.Contains(_issueArea) &&
+                        issueBody.Contains(_issueFeatureRequest))
+                    {
+                        // looks like a feature request
+                        issueIsFeatureRequest = true;
+                    }                    
+                }
+
+                if (issueIsBugReport &&
+                    (issueIsFwBugReport ||
+                     issueIsToolBugReport))
+                {
+                    // fw and class lib bug reports have to include device caps
 
                     if (issueBody.Contains(_issueDeviceCaps))
                     {
@@ -1075,27 +1103,22 @@ namespace nanoFramework.Tools.GitHub
                         {
                             // device caps seems complete
                         }
-                        else
-                        {
-                            log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
 
-                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}.{_fixRequestTagComment}\" }}";
-                            await SendGitHubRequest(
-                                payload.issue.comments_url.ToString(),
-                                comment,
-                                log);
+                        log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
 
-                            // close issue
-                            await CloseIssue(
-                                payload.issue.url.ToString(),
-                                log);
+                        string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}\\r\\n{_fixRequestTagComment}\" }}";
+                        await SendGitHubRequest(
+                            payload.issue.comments_url.ToString(),
+                            comment,
+                            log);
 
-                            return new OkObjectResult("");
-                        }
+                        // close issue
+                        await CloseIssue(
+                            payload.issue,
+                            log);
                     }
 
-                    // looks good
-                    issueIsBugReport = true;
+                    return new OkObjectResult("");
                 }
 
                 if (!authorIsMemberOrOwner)
@@ -1141,7 +1164,8 @@ namespace nanoFramework.Tools.GitHub
                             // not sure what this is about...
                             log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
 
-                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}.{_fixRequestTagComment}\" }}";
+                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}\\r\\n{_fixRequestTagComment}\" }}";
+
                             await SendGitHubRequest(
                                 payload.issue.comments_url.ToString(),
                                 comment,
@@ -1149,21 +1173,10 @@ namespace nanoFramework.Tools.GitHub
 
                             // close issue
                             await CloseIssue(
-                                payload.issue.url.ToString(),
+                                payload.issue,
                                 log);
 
                             return new OkObjectResult("");
-                        }
-                    }
-                    else
-                    {
-                        // remove any previous comment from nfbot
-
-                        // skip this if there are no comments
-                        if ((int)payload.issue.comments > 0)
-                        {
-                            // remove any comments from nfbot
-                            await RemovenfbotCommentsAsync(payload.issue.comments_url.ToString(), log);
                         }
                     }
                 }
@@ -1332,6 +1345,10 @@ namespace nanoFramework.Tools.GitHub
                 {
                     response = await client.DeleteAsync(url);
                 }
+                else if (verb == "PATCH")
+                {
+                    response = await client.PatchAsync(url, content);
+                }
                 else
                 {
                     log.LogInformation($"Unknown verb when executing SendGitHubRequest.");
@@ -1438,7 +1455,7 @@ namespace nanoFramework.Tools.GitHub
         {
             log.LogInformation($"Close Issue {issue.title}");
 
-            string closeRequest = $"{{ \"state\": \"close\" , \"labels\": \"[ ]\" }}";
+            string closeRequest = $"{{ \"state\": \"close\" , \"labels\": [ ] }}";
 
             // request need to be a PATCH
             await SendGitHubRequest(
