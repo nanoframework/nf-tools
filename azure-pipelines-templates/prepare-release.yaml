@@ -3,15 +3,9 @@
 
 steps:
 
-  - task: DotNetCoreCLI@2  
-    inputs:
-      command: custom
-      custom: tool
-      arguments: install -g nbgv
-    condition: or( eq( variables['StartReleaseCandidate'], true ), ne(variables['system.pullrequest.isfork'], true) )
-    displayName: Install NBGV tool
-
   - task: PowerShell@2
+    condition: eq( variables['StartReleaseCandidate'], true )
+    displayName: NBGV prepare release
     inputs:
       targetType: 'inline'
       script: |
@@ -79,5 +73,3 @@ steps:
         }
       workingDirectory: $(Agent.TempDirectory)
       ignoreLASTEXITCODE: true
-    condition: eq( variables['StartReleaseCandidate'], true )
-    displayName: NBGV prepare release
