@@ -11,7 +11,7 @@ Steps to package/publish the task in the "Add a build or release task" [tutorial
 
 ## Pack and publish
 
-` tfx extension publish --publisher nanoframework --manifest-globs vss-extension.json --share-with nanoframework`
+`tfx extension publish --publisher nanoframework --manifest-globs vss-extension.json --share-with nanoframework`
 
 TO-DO:
 - automate the vsix packaging and versioning 

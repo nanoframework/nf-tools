@@ -14,8 +14,8 @@
     "author": "nanoFramework Project Contributors",
     "version": {
         "Major": 1,
-        "Minor": 1,
-        "Patch": 48
+        "Minor": 5,
+        "Patch": 0
     },
     "inputs": [
         {
