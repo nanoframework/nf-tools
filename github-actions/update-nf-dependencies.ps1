@@ -16,6 +16,9 @@ $prTitle = ""
 $newBranchName = "develop-nfbot/update-dependencies/" + [guid]::NewGuid().ToString()
 $workingPath = '.\'
 
+# need this to remove definition of redirect stdErr (only on Azure Pipelines image fo VS2019)
+$env:GIT_REDIRECT_STDERR = '2>&1'
+
 # setup github stuff
 git config --global gc.auto 0
 git config --global user.name nfbot
@@ -245,35 +248,8 @@ else
     # better add this warning line               
     $commitMessage += "### :warning: This is an automated update. :warning:`n"
     
-    "Git branch" | Write-Host
-
-    # create branch to perform updates
-    git branch $newBranchName
-
-    # checkout branch
-    git checkout $newBranchName
-
-    Write-Debug "Add changes" 
-    
-    # commit changes
-    git add -A > $null
-
-    # commit message with a different title if one or more dependencies are updated
-    if ($updateCount -gt 1)
-    {
-        Write-Debug "Commit changed file" 
-
-        git commit -m "Update $updateCount NuGet dependencies" -m"$commitMessage" > $null
-
-        # fix PR title
-        $prTitle = "Update $updateCount NuGet dependencies"
-    }
-    else 
-    {
-        Write-Debug "Commit changed files"
-
-        git commit -m "$prTitle" -m "$commitMessage" > $null
-    }
+    # fix PR title
+    $prTitle = "Update dependencies"
 
     Write-Host "::set-env name=CREATE_PR::true"
     Write-Host "::set-env name=BRANCH_NAME::$newBranchName"
