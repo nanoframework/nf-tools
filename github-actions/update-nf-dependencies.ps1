@@ -3,11 +3,13 @@
 
 # This PS update the .NET nanoFramework dependencies on the repo where it's running
 
-
-"Updating " | Write-Host
-
 # remove quotes, if any
 $library = '${{ github.repository }}' -replace "nanoframework/", ""
+
+# need this to move to the 
+"Moving to 'main' folder" | Write-Host
+
+Set-Location "..\main" | Out-Null
 
 # init/reset these
 $updateCount = 0
