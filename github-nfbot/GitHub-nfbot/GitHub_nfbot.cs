@@ -1362,6 +1362,10 @@ namespace nanoFramework.Tools.GitHub
                 {
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.squirrel-girl-preview"));
                 }
+                else
+                {
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(acceptHeader));
+                }
 
                 log.LogInformation($"Request URL {url}");
 
