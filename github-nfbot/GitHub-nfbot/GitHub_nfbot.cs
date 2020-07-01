@@ -235,7 +235,7 @@ namespace nanoFramework.Tools.GitHub
                 {
                     // this is a comment on an issue or PR
                     // check for command to nfbot
-                    if(payload.comment.body.ToString().Contains("@nfbot"))
+                    if(payload.comment.body.ToString().StartsWith("@nfbot"))
                     {
                         // sender if member
                         // flag if author is member or owner
@@ -627,6 +627,12 @@ namespace nanoFramework.Tools.GitHub
             {
                 return await UpdateDependentsAsync(repositoryName, log);
             }
+            else if (command.StartsWith("updatedependencies"))
+            {
+                await UpdateDependenciesAsync(payload.repository.url.ToString(), log);
+
+                return true;
+            }
             else if (command.StartsWith("runpipeline"))
             {
                 // get branch name, if any
@@ -739,6 +745,18 @@ namespace nanoFramework.Tools.GitHub
             }
 
             return false;
+        }
+
+        private static async Task UpdateDependenciesAsync(string repoUrl, ILogger log)
+        {
+            string requestContent = $"{{ \"event_type\": \"update-dependencies\" }}";
+
+            await SendGitHubRequest(
+                repoUrl + "/dispatches",
+                requestContent,
+                log,
+                "application/vnd.github.v3+json",
+                "POST");
         }
 
         private static async Task<bool> QueueBuildAsync(string repositoryName, string branchName, ILogger log)
@@ -1340,7 +1358,7 @@ namespace nanoFramework.Tools.GitHub
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Environment.GetEnvironmentVariable("GITHUB_CREDENTIALS"));
 
                 // if specified, add Accept HTTP header for GitHub preview APIs
-                if (acceptHeader != null)
+                if (acceptHeader == null)
                 {
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.squirrel-girl-preview"));
                 }
