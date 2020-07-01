@@ -119,8 +119,9 @@ namespace nanoFramework.Tools.GitHub
                     // need to get PR head as JObject to access the 'ref' property because it's a C# keyword
                     JObject prHead = payload.pull_request.head;
 
-                    // special processing for nfbot commits
-                    if (payload.pull_request.user.login == "nfbot")
+                    // special processing for nfbot & github-actions[bot] commits
+                    if (payload.pull_request.user.login == "nfbot" ||
+                        payload.pull_request.user.login == "github-actions[bot]")
                     {
                         string prBody = payload.pull_request.body;
 
@@ -196,9 +197,9 @@ namespace nanoFramework.Tools.GitHub
                     // get PR
                     var pr = await GetGitHubRequest(payload.pull_request.url.ToString(), log);
 
-
-                    // check for PR authored by nfbot
-                    if (pr.user.login == "nfbot")
+                    // check for PR authored by nfbot or git-actions bot
+                    if (pr.user.login == "nfbot" ||
+                        pr.user.login == "github-actions[bot]")
                     {
                         // get origin branch
                         var originBranch = payload.pull_request.head.label.ToString().Replace("nanoframework:", "");
@@ -366,7 +367,9 @@ namespace nanoFramework.Tools.GitHub
                     JObject prHead = pr.head;
 
                     // check if PR it's a version update
-                    if (pr.user.login == "nfbot" && pr.body.ToString().Contains("[version update]"))
+                    if ((pr.user.login == "nfbot" ||
+                         pr.user.login == "github-actions[bot]") && 
+                         pr.body.ToString().Contains("[version update]"))
                     {
                         // get status checks for PR
                         var checkSatus = await GetGitHubRequest(
