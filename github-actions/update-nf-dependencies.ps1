@@ -244,12 +244,7 @@ if($updateCount -eq 0)
 }
 else
 {
-    # need this line so nfbot flags the PR appropriately
-    $commitMessage += "`n[version update]`n`n"
-
-    # better add this warning line               
-    $commitMessage += "### :warning: This is an automated update. :warning:`n"
-    
+   
     # fix PR title
     $prTitle = "Update dependencies"
 
