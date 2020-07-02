@@ -53,9 +53,9 @@ steps:
   name: getCommitMessage
   displayName: grab commit message
 
-- template: install-nbgv-tool.yaml
+- template: install-nbgv-tool.yml
 
-- template: prepare-release.yaml
+- template: prepare-release.yml
 
 - task: SonarCloudPrepare@1
   inputs:
