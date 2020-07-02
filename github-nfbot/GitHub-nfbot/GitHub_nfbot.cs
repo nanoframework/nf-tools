@@ -950,6 +950,12 @@ namespace nanoFramework.Tools.GitHub
                     // don't perform any template check here
                     return true;
                 }
+                // documentation repo is not using template
+                if (payload.repository.name == "nanoframework.github.io")
+                {
+                    // don't perform any template check here
+                    return true;
+                }
                 else if (payload.repository.name == "nf-Community-Contributions")
                 {
                     // check content
