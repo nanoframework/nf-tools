@@ -212,6 +212,9 @@ steps:
 
 # push new changelog to GitHub repo
 - task: PowerShell@2
+  condition: and( succeeded(), ne(variables['Build.Reason'], 'PullRequest'), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Push changelog to GitHub
+  continueOnError: true
   inputs:
       targetType: 'inline'
       script: |
@@ -226,9 +229,6 @@ steps:
           $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
 
           git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
-
-  condition: and( succeeded(), ne(variables['Build.Reason'], 'PullRequest'), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Push changelog to GitHub
 
 # update could build number (only possible if this is not a PR from a fork)
 - task: PowerShell@2
