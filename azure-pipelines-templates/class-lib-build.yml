@@ -58,13 +58,13 @@ steps:
 - template: prepare-release.yml
 
 - task: SonarCloudPrepare@1
+  condition: ne( variables['StartReleaseCandidate'], true )
+  displayName: 'Prepare analysis on SonarCloud'
   inputs:
     SonarCloud: 'sonarcloud-$(System.TeamProject)'
     organization: 'nanoframework'
     scannerMode: 'MSBuild'
     projectKey: '${{ parameters.sonarCloudProject }}'
-  condition: ne( variables['StartReleaseCandidate'], true )
-  displayName: 'Prepare analysis on SonarCloud'
 
 - task: NuGetToolInstaller@0
   inputs:
@@ -171,12 +171,12 @@ steps:
 - task: SonarCloudAnalyze@1
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: 'Run Code Analysis'
+  continueOnError: true
 
 - task: SonarCloudPublish@1
-  inputs:
-    pollingTimeoutSec: '300'
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: 'Publish Quality Gate Result'
+  continueOnError: true
 
 - task: UseRubyVersion@0
   inputs:
