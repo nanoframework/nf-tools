@@ -873,13 +873,14 @@ namespace nanoFramework.Tools.GitHub
             {
                 commentContent = ":disappointed: You have to make up your mind on how this PR addresses the issue. It either **fixes**, **closes** or **resolves** it. Can't have them all...";
             }
-            else if ( ( prBody.Contains("Fixes") ||
-                        prBody.Contains("Closes") ||
-                        prBody.Contains("Resolves")) &&
-                        prBody.Contains(" #"))
-            {
-                commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
-            }
+            // TODO replace this with a regex
+            //else if ( ( prBody.Contains("- Fixes") ||
+            //            prBody.Contains("- Closes") ||
+            //            prBody.Contains("- Resolves")) &&
+            //            prBody.Contains(" #"))
+            //{
+            //    commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
+            //}
             else if ((prBody.Contains("Fixes") ||
                         prBody.Contains("Closes") ||
                         prBody.Contains("Resolves")) &&
