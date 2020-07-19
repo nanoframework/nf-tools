@@ -1059,7 +1059,7 @@ namespace nanoFramework.Tools.GitHub
 
                     // close issue
                     await CloseIssue(
-                        payload.issue.url.ToString(),
+                        payload.issue,
                         log);
 
                     return new OkObjectResult("");
