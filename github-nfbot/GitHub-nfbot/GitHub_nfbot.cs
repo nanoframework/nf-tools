@@ -1365,7 +1365,7 @@ namespace nanoFramework.Tools.GitHub
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Environment.GetEnvironmentVariable("GITHUB_CREDENTIALS"));
 
                 // if specified, add Accept HTTP header for GitHub preview APIs
-                if (acceptHeader == null)
+                if (string.IsNullOrEmpty(acceptHeader))
                 {
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.squirrel-girl-preview"));
                 }
