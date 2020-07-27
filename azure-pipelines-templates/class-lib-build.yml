@@ -7,7 +7,7 @@ parameters:
   gitUser: 'nfbot'
   gitEmail: 'nanoframework@outlook.com'
   sonarCloudProject: 'dummy-key'
-  nugetConfigPath: 'source/NuGet.config'
+  nugetConfigPath: 'NuGet.config'
   msbuildExtraParams: ' '
 
 steps:
