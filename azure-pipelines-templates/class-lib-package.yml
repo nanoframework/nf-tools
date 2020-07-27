@@ -10,7 +10,7 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'custom' 
-    arguments: 'pack ${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)"'
+    arguments: 'pack ${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)"'
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Pack NuGet with class library
 
@@ -19,6 +19,7 @@ steps:
     sourceFolder: $(Build.SourcesDirectory)
     Contents: |
       **\${{ parameters.nugetPackageName }}*.nupkg
+      **\${{ parameters.nugetPackageName }}*.snupkg
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
