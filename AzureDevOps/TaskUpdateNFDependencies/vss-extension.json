@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "update-nf-dependencies",
     "name": "Update nanoFramework dependencies",
-    "version": "1.5",
+    "version": "1.6",
     "publisher": "nanoframework",
     "targets": [
         {
