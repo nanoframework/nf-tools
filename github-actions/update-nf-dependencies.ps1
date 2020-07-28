@@ -68,9 +68,6 @@ elseif ($library -like "amqpnetlite")
 # now all the rest
 else 
 {
-    # move to source directory
-    Set-Location "source" | Out-Null
-
     # find solution file in repository
     $solutionFile = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
