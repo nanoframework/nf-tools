@@ -23,7 +23,7 @@ steps:
 # get commit message
 - powershell: |
 
-    if($env:System_PullRequest_PullRequestId -ne '')
+    if($env:System_PullRequest_PullRequestId -ne $null)
     {
       # PR build, get PR message
 
@@ -106,10 +106,11 @@ steps:
           $MyNuGetVersion = $env:NBGV_NuGetPackageVersion -replace "\-g$env:NBGV_GitCommitIdShort", ""
 
           # replace preview with alpha if this is a PR build
-          if($env:System_PullRequest_PullRequestId -ne '')
+          if($env:System_PullRequest_PullRequestId -ne $null)
           {
             $MyNuGetVersion = $MyNuGetVersion -replace "preview", "alpha"
           }
+
           if ($env:System_PullRequest_SourceBranch -like 'release*')
           {
             $MyNuGetVersion = $MyNuGetVersion + "-rc." + $env:NBGV_VersionHeight
