@@ -36,8 +36,9 @@ namespace nanoFramework.Tools.GitHub
         private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whathever is wrong or missing and feel free to reopen the issue.";
         private const string _issueCommentInvalidDeviceCaps = ":disappointed: Make sure to include the complete Device Capabilities output. After doing that feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\\r\\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\\r\\n\\r\\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
-        private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm affraid you'll have to use the PR template like the rest of us...\\r\\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
-        private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm affraid you'll left some tasks behind...\\r\\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
+        private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm afraid you'll have to use the PR template like the rest of us...\\r\\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
+        private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\\r\\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
+        private const string _fixCheckListComment = "I've fixed the checklist for you.\\r\\nFYI, the correct format is [x], no spaces inside brackets.";
 
         // strings for issues content
         private const string _issueContentRemoveContentInstruction = ":exclamation: Remove the content above here and fill out details below. :exclamation:";
@@ -156,10 +157,11 @@ namespace nanoFramework.Tools.GitHub
                             {
                                 log.LogInformation($"Comment with thank you note.");
 
-                                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:{_fixRequestTagComment}\" }}";
+                                dynamic comment = new { body = $"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:{_fixRequestTagComment}" };
+
                                 await SendGitHubRequest(
                                     payload.pull_request.comments_url.ToString(),
-                                    comment,
+                                    JsonConvert.SerializeObject(comment),
                                     log);
 
                                 // add thumbs up reaction in PR main message
@@ -884,18 +886,18 @@ namespace nanoFramework.Tools.GitHub
                         prBody.Contains("Resolves")) &&
                         !prBody.Contains("nanoFramework/Home#", StringComparison.InvariantCultureIgnoreCase))
             {
-                commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
+                commentContent = ":thinking: All our issues are tracked in Home repo. If this PR addresses an issue that's mentioned there, please make sure it references it using the correct pattern: `nanoFramework/Home#NNNN`.";
             }
             else
             {
                 return true;
             }
 
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{commentContent}{_fixRequestTagComment}\" }}";
-            
+            dynamic comment = new { body = $"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{commentContent}{_fixRequestTagComment}" };
+
             await SendGitHubRequest(
                 payload.pull_request.comments_url.ToString(),
-                comment,
+                JsonConvert.SerializeObject(comment),
                 log);
 
             return false;
@@ -910,18 +912,30 @@ namespace nanoFramework.Tools.GitHub
             var prBodyHash = prBody.GetHashCode();
 
             // fix any typos in check lists
-            string prBodyFixed = prBody.Replace("[ x]", "[x]", StringComparison.InvariantCultureIgnoreCase).Replace("[x ]", "[x]", StringComparison.InvariantCultureIgnoreCase);
+            string prBodyFixed = prBody.
+                Replace("[ x]", "[x]", StringComparison.InvariantCultureIgnoreCase).
+                Replace("[x ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
+                Replace("[ X]", "[x]", StringComparison.InvariantCultureIgnoreCase).
+                Replace("[X ]", "[x]", StringComparison.InvariantCultureIgnoreCase);
 
             if(prBodyHash != prBodyFixed.GetHashCode())
             {
-                string requestContent = $"{{ \"body\": \"{prBodyFixed}\" }}"; ;
+                dynamic requestContent = new { body = prBodyFixed};
 
                 await SendGitHubRequest(
                     payload.pull_request.url.ToString(),
-                    requestContent,
+                    JsonConvert.SerializeObject(requestContent),
                     log,
-                    "null",
+                    null,
                     "PATCH");
+
+                // add comment with information to the user
+                dynamic comment = new { body = $"@{payload.pull_request.user.login} {_fixCheckListComment}" };
+
+                await SendGitHubRequest(
+                    payload.pull_request.comments_url.ToString(),
+                    JsonConvert.SerializeObject(comment),
+                    log);
             }
         }
 
@@ -941,63 +955,62 @@ namespace nanoFramework.Tools.GitHub
                 // content looks good
                 return true;
             }
-            else
+
+            // community targets is not using template
+            if (payload.repository.name == "nf-Community-Targets")
             {
-                // community targets is not using template
-                if (payload.repository.name == "nf-Community-Targets")
+                // don't perform any template check here
+                return true;
+            }
+            // documentation repo is not using template
+            if (payload.repository.name == "nanoframework.github.io")
+            {
+                // don't perform any template check here
+                return true;
+            }
+            else if (payload.repository.name == "nf-Community-Contributions")
+            {
+                // check content
+                if ( prBody.Contains(_prChecklist))
                 {
-                    // don't perform any template check here
-                    return true;
-                }
-                // documentation repo is not using template
-                if (payload.repository.name == "nanoframework.github.io")
-                {
-                    // don't perform any template check here
-                    return true;
-                }
-                else if (payload.repository.name == "nf-Community-Contributions")
-                {
-                    // check content
-                    if ( prBody.Contains(_prChecklist))
+                    // check for missing check boxes
+                    if(prBody.Contains("[ ]"))
                     {
-                        // check for missing check boxes
-                        if(prBody.Contains("[ ]"))
-                        {
-                            // developer has left un-checked items in the to-do list
+                        // developer has left un-checked items in the to-do list
 
-                            string myComment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}\" }}";
+                        dynamic myComment = new { body = $"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}" };
 
-                            await SendGitHubRequest(
-                                payload.pull_request.comments_url.ToString(),
-                                myComment,
-                                log);
+                        await SendGitHubRequest(
+                            payload.pull_request.comments_url.ToString(),
+                            JsonConvert.SerializeObject(myComment),
+                            log);
 
-                            return true;
-                        }
-                        else
-                        {
-                            return true;
-                        }
+                        return true;
+                    }
+                    else
+                    {
+                        return true;
                     }
                 }
-                // user seems to have ignored the template
-
-                log.LogInformation($"User ignoring PR template. Adding comment before closing.");
-
-                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}\" }}";
-
-                await SendGitHubRequest(
-                    payload.pull_request.comments_url.ToString(),
-                    comment,
-                    log);
-
-                // close PR
-                await ClosePR(
-                    payload.pull_request.url.ToString(),
-                    log);
-
-                return false;
             }
+
+            // user seems to have ignored the template
+
+            log.LogInformation($"User ignoring PR template. Adding comment before closing.");
+
+            dynamic comment = new { body = $"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}" };
+
+            await SendGitHubRequest(
+                payload.pull_request.comments_url.ToString(),
+                JsonConvert.SerializeObject(comment),
+                log);
+
+            // close PR
+            await ClosePR(
+                payload.pull_request.url.ToString(),
+                log);
+
+            return false;
         }
 
         private static async Task<IActionResult> ProcessClosedIssueAsync(dynamic payload, ILogger log)
@@ -1050,10 +1063,11 @@ namespace nanoFramework.Tools.GitHub
                 {
                     log.LogInformation($"Unwanted content on issue. Adding comment before closing.");
 
-                    string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}\" }}";
+                    dynamic comment = new { body = $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}" };
+
                     await SendGitHubRequest(
                         payload.issue.comments_url.ToString(),
-                        comment,
+                        JsonConvert.SerializeObject(comment),
                         log);
 
                     // close issue
@@ -1140,10 +1154,11 @@ namespace nanoFramework.Tools.GitHub
 
                         log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
 
-                        string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}\\r\\n{_fixRequestTagComment}\" }}";
+                        dynamic comment = new { body = $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}\\r\\n{_fixRequestTagComment}" };
+
                         await SendGitHubRequest(
                             payload.issue.comments_url.ToString(),
-                            comment,
+                            JsonConvert.SerializeObject(comment),
                             log);
 
                         // close issue
@@ -1204,11 +1219,11 @@ namespace nanoFramework.Tools.GitHub
                             // not sure what this is about...
                             log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
 
-                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}\\r\\n{_fixRequestTagComment}\" }}";
+                            dynamic comment = new { body = $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}\\r\\n{_fixRequestTagComment}" };
 
                             await SendGitHubRequest(
                                 payload.issue.comments_url.ToString(),
-                                comment,
+                                JsonConvert.SerializeObject(comment),
                                 log);
 
                             // close issue
