@@ -33,8 +33,8 @@ namespace nanoFramework.Tools.GitHub
         private const string _bugReportToolsTagComment = "<!-- bug-report-tools-tag DO NOT REMOVE -->";
         private const string _featureRequestTagComment = "<!-- feature-request-tag DO NOT REMOVE -->";
         private const string _todoTagComment = "<!-- todo-tag DO NOT REMOVE -->";
-        private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whathever is wrong or missing and feel free to reopen the issue.";
-        private const string _issueCommentInvalidDeviceCaps = ":disappointed: Make sure to include the complete Device Capabilities output. After doing that feel free to reopen the issue.";
+        private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whatever is wrong or missing and feel free to reopen the issue.";
+        private const string _issueCommentInvalidDeviceCaps = ":disappointed: If that's relevant, make sure to include the complete Device Capabilities output.\\r\\n.If it's, not just remove it.\\r\\nAfter fixing that, feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\\r\\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\\r\\n\\r\\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
         private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm afraid you'll have to use the PR template like the rest of us...\\r\\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
         private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\\r\\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
@@ -157,12 +157,7 @@ namespace nanoFramework.Tools.GitHub
                             {
                                 log.LogInformation($"Comment with thank you note.");
 
-                                dynamic comment = new { body = $"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:{_fixRequestTagComment}" };
-
-                                await SendGitHubRequest(
-                                    payload.pull_request.comments_url.ToString(),
-                                    JsonConvert.SerializeObject(comment),
-                                    log);
+                                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:{_fixRequestTagComment}\" }}";
 
                                 // add thumbs up reaction in PR main message
                                 await SendGitHubRequest(
@@ -893,11 +888,11 @@ namespace nanoFramework.Tools.GitHub
                 return true;
             }
 
-            dynamic comment = new { body = $"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{commentContent}{_fixRequestTagComment}" };
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{commentContent}{_fixRequestTagComment}\" }}";
 
             await SendGitHubRequest(
                 payload.pull_request.comments_url.ToString(),
-                JsonConvert.SerializeObject(comment),
+                comment,
                 log);
 
             return false;
@@ -978,11 +973,11 @@ namespace nanoFramework.Tools.GitHub
                     {
                         // developer has left un-checked items in the to-do list
 
-                        dynamic myComment = new { body = $"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}" };
+                        string myComment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}\" }}";
 
                         await SendGitHubRequest(
                             payload.pull_request.comments_url.ToString(),
-                            JsonConvert.SerializeObject(myComment),
+                            myComment,
                             log);
 
                         return true;
@@ -998,11 +993,11 @@ namespace nanoFramework.Tools.GitHub
 
             log.LogInformation($"User ignoring PR template. Adding comment before closing.");
 
-            dynamic comment = new { body = $"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}" };
+            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}\" }}";
 
             await SendGitHubRequest(
                 payload.pull_request.comments_url.ToString(),
-                JsonConvert.SerializeObject(comment),
+                comment,
                 log);
 
             // close PR
@@ -1063,11 +1058,11 @@ namespace nanoFramework.Tools.GitHub
                 {
                     log.LogInformation($"Unwanted content on issue. Adding comment before closing.");
 
-                    dynamic comment = new { body = $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}" };
+                    string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}\" }}";
 
                     await SendGitHubRequest(
                         payload.issue.comments_url.ToString(),
-                        JsonConvert.SerializeObject(comment),
+                        comment,
                         log);
 
                     // close issue
@@ -1154,11 +1149,11 @@ namespace nanoFramework.Tools.GitHub
 
                         log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
 
-                        dynamic comment = new { body = $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}\\r\\n{_fixRequestTagComment}" };
+                        string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}\\r\\n{_fixRequestTagComment}\" }}";
 
                         await SendGitHubRequest(
                             payload.issue.comments_url.ToString(),
-                            JsonConvert.SerializeObject(comment),
+                            comment,
                             log);
 
                         // close issue
@@ -1219,11 +1214,11 @@ namespace nanoFramework.Tools.GitHub
                             // not sure what this is about...
                             log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
 
-                            dynamic comment = new { body = $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}\\r\\n{_fixRequestTagComment}" };
+                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}\\r\\n{_fixRequestTagComment}\" }}";
 
                             await SendGitHubRequest(
                                 payload.issue.comments_url.ToString(),
-                                JsonConvert.SerializeObject(comment),
+                                comment,
                                 log);
 
                             // close issue
