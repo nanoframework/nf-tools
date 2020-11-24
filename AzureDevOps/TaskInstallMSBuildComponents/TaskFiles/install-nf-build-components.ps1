@@ -34,13 +34,16 @@ else
     $idVS2017 = 0
 }
 
-# this requires setting a variable VS_VERSION in the Azure Pipeline 
-# NULL or '2017' will install: VS2017
-# '2019' will install: VS2019
+# find which VS version is installed
+$VsWherePath = "${env:PROGRAMFILES(X86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+Write-Output "VsWherePath is: $VsWherePath"
+
+$VsInstance = $(&$VSWherePath -latest -property displayName)
 
 # feed list VS2017 and VS2019 extensions
 # index 0 is for VS2017, running on Windows Server 2016
-if(!$($env:VS_VERSION) -or $($env:VS_VERSION) -eq "2017")
+if($vsInstance.Contains('2017'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2017].content.src
     $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2017.Extension.zip"
@@ -48,7 +51,7 @@ if(!$($env:VS_VERSION) -or $($env:VS_VERSION) -eq "2017")
     # "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/vs-publisher-1470366/vsextensions/nanoFrameworkVS2017Extension/0/vspackage 
     $extensionVersion = $feedDetails.feed.entry[$idVS2017].Vsix.Version
 }
-elseif($($env:VS_VERSION) -eq "2019")
+elseif($vsInstance.Contains('2019'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2019].content.src
     $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2019.Extension.zip"
@@ -66,8 +69,12 @@ Write-Debug "Unzip extension content"
 Invoke-VstsTool -FileName $sevenZip -Arguments " x $vsixPath -bd -o$env:Agent_TempDirectory\nf-extension" > $null
 
 # copy build files to msbuild location
+$VsPath = $(&$VsWherePath -latest -property installationPath)
+
 Write-Debug "Copy build files to msbuild location"
-$msbuildPath = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild"
+
+$msbuildPath = $VsPath + "\MSBuild"
+
 Copy-Item -Path "$env:Agent_TempDirectory\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
 
 Write-Output "Installed VS extension v$extensionVersion"
