@@ -925,11 +925,11 @@ namespace nanoFramework.Tools.GitHub
                     "PATCH");
 
                 // add comment with information to the user
-                dynamic comment = new { body = $"@{payload.pull_request.user.login} {_fixCheckListComment}" };
+                string comment = $"{{ \"body\": \"@{payload.pull_request.user.login} {_fixCheckListComment}\" }}";
 
                 await SendGitHubRequest(
                     payload.pull_request.comments_url.ToString(),
-                    JsonConvert.SerializeObject(comment),
+                    comment,
                     log);
             }
         }
