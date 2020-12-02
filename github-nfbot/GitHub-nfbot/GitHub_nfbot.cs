@@ -38,6 +38,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\\r\\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\\r\\n\\r\\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
         private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm afraid you'll have to use the PR template like the rest of us...\\r\\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
         private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\\r\\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
+        private const string _prCommunityTargetMissingTargetContent = ":disappointed: You need to check which targets are affected in the list...\\r\\nMake sure you follow the PR template. After doing that feel free to reopen the PR.\\r\\nIf you have questions we are here to help.";
         private const string _fixCheckListComment = "I've fixed the checklist for you.\\r\\nFYI, the correct format is [x], no spaces inside brackets.";
 
         // strings for issues content
@@ -149,6 +150,8 @@ namespace nanoFramework.Tools.GitHub
                     }
                     else
                     {
+                        await FixCheckListAsync(payload, log);
+
                         // check for PR ignoring template
                         if (await ValidatePRContentAsync(payload, log))
                         {
@@ -167,8 +170,6 @@ namespace nanoFramework.Tools.GitHub
                                     "application/vnd.github.squirrel-girl-preview");
                             }
                         }
-
-                        await FixCheckListAsync(payload, log);
 
                         bool linkedIssuesReference = await CheckLinkedIssuesAsync(payload, log);
 
@@ -954,8 +955,43 @@ namespace nanoFramework.Tools.GitHub
             // community targets is not using template
             if (payload.repository.name == "nf-Community-Targets")
             {
-                // don't perform any template check here
-                return true;
+                // community targets need to have ALL or at least one target selected for build
+                if(
+                    prBody.Contains("[x] MBN_QUAIL") ||
+                    prBody.Contains("[x] GHI_FEZ_CERB40_NF") ||
+                    prBody.Contains("[x] I2M_ELECTRON_NF") ||
+                    prBody.Contains("[x] I2M_OXYGEN_NF") ||
+                    prBody.Contains("[x] ST_NUCLEO64_F401RE_NF") ||
+                    prBody.Contains("[x] ST_NUCLEO64_F411RE_NF") ||
+                    prBody.Contains("[x] ST_STM32F411_DISCOVERY") ||
+                    prBody.Contains("[x] ST_NUCLEO144_F412ZG_NF") ||
+                    prBody.Contains("[x] ST_NUCLEO144_F746ZG") ||
+                    prBody.Contains("[x] ST_STM32F4_DISCOVERY") ||
+                    prBody.Contains("[x] ST_NUCLEO144_F439ZI") ||
+                    prBody.Contains("[x] TI_CC1352P1_LAUNCHXL") ||
+                    prBody.Contains("[x] ALL"))
+                {
+                    // should be OK
+                    return true;
+                }
+                else
+                {
+                    // 
+                    string myComment = $"{{ \"body\": \"{_prCommunityTargetMissingTargetContent}\" }}";
+
+                    await SendGitHubRequest(
+                        payload.pull_request.comments_url.ToString(),
+                        myComment,
+                        log);
+
+
+                    // close PR
+                    await ClosePR(
+                        payload.pull_request.url.ToString(),
+                        log);
+
+                    return false;
+                }
             }
             // documentation repo is not using template
             if (payload.repository.name == "nanoframework.github.io")
