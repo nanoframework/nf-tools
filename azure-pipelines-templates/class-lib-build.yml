@@ -286,8 +286,8 @@ steps:
     .\SignClient "Sign" `
     --baseDirectory "$(Build.ArtifactStagingDirectory)" `
     --input "**/*.nupkg" `
-    --config "$(Pipeline.Workspace)\config\SignClient.json" `
-    --filelist "$(Pipeline.Workspace)\config\filelist.txt" `
+    --config "$(Build.Repository.LocalPath)\config\SignClient.json" `
+    --filelist "$(Build.Repository.LocalPath)\config\filelist.txt" `
     --user "$(SignClientUser)" `
     --secret '$(SignClientSecret)' `
     --name "$(nugetPackageName)" `
