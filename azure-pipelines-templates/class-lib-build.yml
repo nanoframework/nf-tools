@@ -275,6 +275,27 @@ steps:
   condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Publish deployables artifacts
 
+- task: DotNetCoreCLI@2
+  displayName: Install SignTool tool
+  inputs:
+    command: custom
+    custom: tool
+    arguments: install --tool-path . SignClient
+
+- pwsh: |
+    .\SignClient "Sign" `
+    --baseDirectory "$(Build.ArtifactStagingDirectory)" `
+    --input "**/*.nupkg" `
+    --config "$(Pipeline.Workspace)\config\SignClient.json" `
+    --filelist "$(Pipeline.Workspace)\config\filelist.txt" `
+    --user "$(SignClientUser)" `
+    --secret '$(SignClientSecret)' `
+    --name "$(nugetPackageName)" `
+    --description "$(nugetPackageName)" `
+    --descriptionUrl "https://github.com/$env:Build_Repository_Name"
+  displayName: Sign packages
+
+
 # push NuGet packages to AzureArtifacts feed (always happens)
 - task: NuGetCommand@2
   inputs:
