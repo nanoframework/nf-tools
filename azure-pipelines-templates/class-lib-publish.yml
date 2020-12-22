@@ -10,6 +10,7 @@ steps:
 
 - task: DotNetCoreCLI@2
   displayName: Install SignTool tool
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], '') )
   inputs:
     command: custom
     custom: tool
@@ -27,6 +28,7 @@ steps:
     --description "$(nugetPackageName)" `
     --descriptionUrl "https://github.com/$env:Build_Repository_Name"
   displayName: Sign packages
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], '') )
 
 # publish artifacts (only possible if this is not a PR originated on a fork)
 - task: PublishBuildArtifacts@1
