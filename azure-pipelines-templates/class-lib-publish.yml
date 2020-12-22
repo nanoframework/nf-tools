@@ -8,15 +8,6 @@ parameters:
 
 steps:
 
-# publish artifacts (only possible if this is not a PR originated on a fork)
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: deployables
-    ArtifactType: Container
-  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Publish deployables artifacts
-
 - task: DotNetCoreCLI@2
   displayName: Install SignTool tool
   inputs:
@@ -36,6 +27,15 @@ steps:
     --description "$(nugetPackageName)" `
     --descriptionUrl "https://github.com/$env:Build_Repository_Name"
   displayName: Sign packages
+
+# publish artifacts (only possible if this is not a PR originated on a fork)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: deployables
+    ArtifactType: Container
+  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Publish deployables artifacts
 
 # push NuGet packages to Azure Artifacts feed (always happens except on PR builds)
 - task: NuGetCommand@2
