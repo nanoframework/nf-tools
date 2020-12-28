@@ -108,7 +108,8 @@ steps:
           # replace preview with alpha if this is a PR build
           if($env:System_PullRequest_PullRequestId -ne $null)
           {
-            $MyNuGetVersion = $MyNuGetVersion -replace "preview", "alpha-pr" + $env:System_PullRequest_PullRequestId + "." + $env:NBGV_VersionHeight
+            $alphaPrString = "alpha-pr" + $env:System_PullRequest_PullRequestId + "." + $env:NBGV_VersionHeight
+            $MyNuGetVersion = $MyNuGetVersion -replace "preview", $alphaPrString
           }
 
           if ($env:System_PullRequest_SourceBranch -like 'release*')
