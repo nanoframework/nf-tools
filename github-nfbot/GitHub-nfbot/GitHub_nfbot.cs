@@ -33,8 +33,8 @@ namespace nanoFramework.Tools.GitHub
         private const string _bugReportToolsTagComment = "<!-- bug-report-tools-tag DO NOT REMOVE -->";
         private const string _featureRequestTagComment = "<!-- feature-request-tag DO NOT REMOVE -->";
         private const string _todoTagComment = "<!-- todo-tag DO NOT REMOVE -->";
-        private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care or forgot to add something required or haven't cleanup the instructions. Please make sure to follow the template and fix whatever is wrong or missing and feel free to reopen the issue.";
-        private const string _issueCommentInvalidDeviceCaps = ":disappointed: If that's relevant, make sure to include the complete Device Capabilities output.\\r\\n.If it's, not just remove it.\\r\\nAfter fixing that, feel free to reopen the issue.";
+        private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care and forgot to cleanup the instructions. Please make sure to follow the template and remove all instruction comments and any sections that are not relevant. After doing so, feel free to reopen the issue.";
+        private const string _issueCommentInvalidDeviceCaps = ":disappointed: If that's relevant, make sure to include the complete Device Capabilities output.\\r\\n.If it's, just remove the section completely.\\r\\nAfter fixing that, feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\\r\\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\\r\\n\\r\\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
         private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm afraid you'll have to use the PR template like the rest of us...\\r\\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
         private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\\r\\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
@@ -239,7 +239,7 @@ namespace nanoFramework.Tools.GitHub
                         {
                             if (await ProcessCommandAsync(payload, log))
                             {
-                                // add thumbs up reaction reaction to comment
+                                // add thumbs up reaction to comment
                                 await SendGitHubRequest(
                                     $"{payload.comment.url.ToString()}/reactions",
                                     "{ \"content\" : \"+1\" }",
@@ -248,7 +248,7 @@ namespace nanoFramework.Tools.GitHub
                             }
                             else
                             {
-                                // add confuse reaction reaction to comment
+                                // add confuse reaction to comment
                                 await SendGitHubRequest(
                                     $"{payload.comment.url.ToString()}/reactions",
                                     "{ \"content\" : \"confused\" }",
@@ -882,7 +882,7 @@ namespace nanoFramework.Tools.GitHub
                         prBody.Contains("Resolves")) &&
                         !prBody.Contains("nanoFramework/Home#", StringComparison.InvariantCultureIgnoreCase))
             {
-                commentContent = ":thinking: All our issues are tracked in Home repo. If this PR addresses an issue that's mentioned there, please make sure it references it using the correct pattern: `nanoFramework/Home#NNNN`.";
+                commentContent = ":eyes: All our issues are tracked in Home repo. If this PR addresses an issue that's mentioned there, please make sure it references it using the correct pattern: `nanoFramework/Home#NNNN`.";
             }
             else
             {
@@ -977,7 +977,7 @@ namespace nanoFramework.Tools.GitHub
                 else
                 {
                     // 
-                    string myComment = $"{{ \"body\": \"{_prCommunityTargetMissingTargetContent}\" }}";
+                    string myComment = $"{{ \"body\": \"{_prCommunityTargetMissingTargetContent} {_fixCheckListComment}\" }}";
 
                     await SendGitHubRequest(
                         payload.pull_request.comments_url.ToString(),
@@ -1266,6 +1266,11 @@ namespace nanoFramework.Tools.GitHub
                         }
                     }
                 }
+
+                // everything looks OK, remove all comments from nfbot
+                await RemovenfbotCommentsAsync(
+                    payload.issue.comments_url.ToString(),
+                    log);
 
                 return new OkObjectResult("");
             }
