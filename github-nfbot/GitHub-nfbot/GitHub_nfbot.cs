@@ -33,8 +33,9 @@ namespace nanoFramework.Tools.GitHub
         private const string _bugReportToolsTagComment = "<!-- bug-report-tools-tag DO NOT REMOVE -->";
         private const string _featureRequestTagComment = "<!-- feature-request-tag DO NOT REMOVE -->";
         private const string _todoTagComment = "<!-- todo-tag DO NOT REMOVE -->";
-        private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care and forgot to cleanup the instructions. Please make sure to follow the template and remove all instruction comments and any sections that are not relevant. After doing so, feel free to reopen the issue.";
-        private const string _issueCommentInvalidDeviceCaps = ":disappointed: If that's relevant, make sure to include the complete Device Capabilities output.\\r\\n.If it's, just remove the section completely.\\r\\nAfter fixing that, feel free to reopen the issue.";
+        private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care and forgot to cleanup the instructions. Please make sure to follow the template and remove only the instruction comments and any sections that are not relevant. After doing so, feel free to reopen the issue.";
+        private const string _issueMissingAreaContent = ":disappointed: Information about the nanoFramework area is missing. Please make sure to follow the template and remove only the instruction comments and any sections that are not relevant. After doing so, feel free to reopen the issue.";
+        private const string _issueCommentInvalidDeviceCaps = ":disappointed: If that's relevant, make sure to include the complete Device Capabilities output.\\r\\n.If it isn't, just remove the section completely.\\r\\nAfter fixing that, feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\\r\\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\\r\\n\\r\\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, do not open an issue here. It is best to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag or to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T).";
         private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm afraid you'll have to use the PR template like the rest of us...\\r\\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
         private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\\r\\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
@@ -1148,14 +1149,30 @@ namespace nanoFramework.Tools.GitHub
                             !issueBody.Contains(_issueArea))
                         {
                             issueIsBugReport = false;
+
+                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueMissingAreaContent}\\r\\n{_fixRequestTagComment}\" }}";
+
+                            await SendGitHubRequest(
+                                payload.issue.comments_url.ToString(),
+                                comment,
+                                log);
                         }
                     }  
                 }
                 else if(issueBody.Contains(_featureRequestTagComment))
                 {
                     // check for mandatory content
-                    if (issueBody.Contains(_issueArea) &&
-                        issueBody.Contains(_issueFeatureRequest))
+                    if (!issueBody.Contains(_issueArea))
+                    {
+
+                        string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueMissingAreaContent}\\r\\n{_fixRequestTagComment}\" }}";
+
+                        await SendGitHubRequest(
+                            payload.issue.comments_url.ToString(),
+                            comment,
+                            log);
+                    }
+                    else
                     {
                         // looks like a feature request
                         issueIsFeatureRequest = true;
