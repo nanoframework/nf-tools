@@ -42,7 +42,7 @@ $env:GIT_REDIRECT_STDERR = '2>&1'
 # setup github stuff
 git config --global gc.auto 0
 git config --global user.name nfbot
-git config --global user.email nanoframework@outlook.com
+git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
 
 # check for special repos that have sources on different location
