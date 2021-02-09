@@ -42,7 +42,7 @@ $env:GIT_REDIRECT_STDERR = '2>&1'
 # setup github stuff
 git config --global gc.auto 0
 git config --global user.name nfbot
-git config --global user.email nanoframework@outlook.com
+git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
 
 # check for special repos that have sources on different location
@@ -108,8 +108,7 @@ foreach ($packageFile in $packagesConfig)
         # filter out Nerdbank.GitVersioning package
         if($node.id -notlike "Nerdbank.GitVersioning*")
         {
-            "Adding $node.id $node.version" | Write-Host
-
+            "Adding '$node.id' '$node.version'" | Write-Host
             if($packageList)
             {
                 $packageList += , ($node.id,  $node.version)
@@ -129,7 +128,15 @@ foreach ($packageFile in $packagesConfig)
         # restore NuGet packages, need to do this before anything else
         nuget restore $solutionFile[0] -ConfigFile NuGet.Config
 
-        # rename nfproj files to csproj
+        # temporarily rename csproj files to csproj-temp so they are not affected.
+        Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
+            Foreach-object {
+                $OldName = $_.name; 
+                $NewName = $_.name -replace 'csproj','csproj-temp'; 
+                Rename-Item  -Path $_.fullname -Newname $NewName; 
+            }
+
+        # temporarily rename nfproj files to csproj
         Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
             Foreach-object {
                 $OldName = $_.name; 
@@ -246,6 +253,14 @@ foreach ($packageFile in $packagesConfig)
         Foreach-object {
             $OldName = $_.name; 
             $NewName = $_.name -replace 'csproj','nfproj'; 
+            Rename-Item  -Path $_.fullname -Newname $NewName; 
+            }
+
+        # rename csproj-temp files back to csproj
+        Get-ChildItem -Path $workingPath -Include "*.csproj-temp" -Recurse |
+        Foreach-object {
+            $OldName = $_.name; 
+            $NewName = $_.name -replace 'csproj-temp','csproj'; 
             Rename-Item  -Path $_.fullname -Newname $NewName; 
             }
 
