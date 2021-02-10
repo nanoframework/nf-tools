@@ -48,49 +48,49 @@ git config --global core.autocrlf true
 # check for special repos that have sources on different location
 
 ######################################
-# paho.mqtt.m2mqtt 
-if ($library -like "paho.mqtt.m2mqtt")
-{
-    # solution is at root
+# # paho.mqtt.m2mqtt 
+# if ($library -like "paho.mqtt.m2mqtt")
+# {
+#     # solution is at root
 
-    # find solution file in repository
-    $solutionFile = (Get-ChildItem -Path ".\" -Include "M2Mqtt.nanoFramework.sln" -Recurse)
+#     # find solution file in repository
+#     $solutionFile = (Get-ChildItem -Path ".\" -Include "M2Mqtt.nanoFramework.sln" -Recurse)
 
-    # find packages.config
-    $packagesConfig = (Get-ChildItem -Path ".\M2Mqtt" -Include "packages.config" -Recurse)
+#     # find packages.config
+#     $packagesConfig = (Get-ChildItem -Path ".\M2Mqtt" -Include "packages.config" -Recurse)
 
-}
-######################################
-# AMQPLite
-elseif ($library -like "amqpnetlite")
-{
-    # solution is at root
+# }
+# ######################################
+# # AMQPLite
+# elseif ($library -like "amqpnetlite")
+# {
+#     # solution is at root
 
-    # need to set working path
-    $workingPath = '.\nanoFramework', '.\Examples\Device\Device.SmallMemory.nanoFramework', '.\Examples\Device\Device.Thermometer.nanoFramework', '.\Examples\ServiceBus\ServiceBus.EventHub.nanoFramework'
+#     # need to set working path
+#     $workingPath = '.\nanoFramework', '.\Examples\Device\Device.SmallMemory.nanoFramework', '.\Examples\Device\Device.Thermometer.nanoFramework', '.\Examples\ServiceBus\ServiceBus.EventHub.nanoFramework'
 
-    # find solution file in repository
-    $solutionFile = (Get-ChildItem -Path ".\" -Include "amqp-nanoFramework.sln" -Recurse)
+#     # find solution file in repository
+#     $solutionFile = (Get-ChildItem -Path ".\" -Include "amqp-nanoFramework.sln" -Recurse)
 
-    # find packages.config
-    $packagesConfig = (Get-ChildItem -Path ".\nanoFramework" -Include "packages.config" -Recurse)
+#     # find packages.config
+#     $packagesConfig = (Get-ChildItem -Path ".\nanoFramework" -Include "packages.config" -Recurse)
 
-    # CD-CI branch is not 'develop'
-    $baseBranch = "cd-nanoframework"
+#     # CD-CI branch is not 'develop'
+#     $baseBranch = "cd-nanoframework"
 
-}
-########################################
-# now all the rest
-else 
-{
+# }
+# ########################################
+# # now all the rest
+# else 
+# {
     # find solution file in repository
     $solutionFile = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
     # find packages.config
     $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse)
     
-    $baseBranch = "develop"
-}
+    $baseBranch = ${GITHUB_REF##*/}
+# }
 
 foreach ($packageFile in $packagesConfig)
 {
@@ -108,7 +108,7 @@ foreach ($packageFile in $packagesConfig)
         # filter out Nerdbank.GitVersioning package
         if($node.id -notlike "Nerdbank.GitVersioning*")
         {
-            "Adding '$node.id' '$node.version'" | Write-Host
+            "Adding $node.id.InnerText $node.version.InnerText" | Write-Host
             if($packageList)
             {
                 $packageList += , ($node.id,  $node.version)
