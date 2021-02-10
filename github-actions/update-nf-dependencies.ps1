@@ -218,11 +218,11 @@ foreach ($packageFile in $packagesConfig)
                 # update nuspec files, if any
                 $nuspecFiles = (Get-ChildItem -Path ".\" -Include "*.nuspec" -Recurse)
                 
-                Write-Debug "Updating nuspec files"
+                "Updating nuspec files" | Write-Host #Debug
 
                 foreach ($nuspec in $nuspecFiles)
                 {
-                    Write-Debug "Nuspec file is " 
+                    "Nuspec file is " | Write-Host #Debug
 
                     [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
 
@@ -240,6 +240,7 @@ foreach ($packageFile in $packagesConfig)
                                     {
                                         if($dependency.Attributes["id"].value -eq $packageName)
                                         {
+                                            "Updating dependency." | Write-Host #Debug
                                             $dependency.Attributes["version"].value = "$packageTargetVersion"
                                         }
                                     }
