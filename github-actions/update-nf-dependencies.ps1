@@ -111,7 +111,7 @@ foreach ($packageFile in $packagesConfig)
         # filter out Nerdbank.GitVersioning package
         if($node.id -notlike "Nerdbank.GitVersioning*")
         {
-            "Adding $node.id.InnerText $node.version.InnerText" | Write-Host
+            "Adding {0} {1}" -f $node.id,$node.version" | Write-Host
             if($packageList)
             {
                 $packageList += , ($node.id,  $node.version)
