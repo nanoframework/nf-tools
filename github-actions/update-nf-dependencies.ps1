@@ -84,12 +84,12 @@ git config --global core.autocrlf true
 # else 
 # {
     # find solution file in repository
-    $solutionFile = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
+    $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
     # find packages.config
-    $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse)
+    $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse) ###TODO: should probably be filtered by solution files as defined above, but more preferably, target packages.config in the same folders as .nfproj files
     
-    $baseBranch = ${GITHUB_REF##*/}
+    #$baseBranch = ${GITHUB_REF##*/} # This should not be needed, as the branch workflow initiates the update. 
 # }
 
 foreach ($packageFile in $packagesConfig)
@@ -126,9 +126,12 @@ foreach ($packageFile in $packagesConfig)
         $packageList | Write-Host
 
         # restore NuGet packages, need to do this before anything else
-        nuget restore $solutionFile[0] -ConfigFile NuGet.Config
+        foreach ($solutionFile in $solutionFiles)
+        {
+            nuget restore $solutionFile -ConfigFile NuGet.Config
+        }
 
-        # temporarily rename csproj files to csproj-temp so they are not affected.
+        # temporarily rename csproj files to csproj-temp so they are not affected.    ###TODO: this might cause a failure as we should allow them to update.
         Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
             Foreach-object {
                 $OldName = $_.name; 
@@ -136,7 +139,7 @@ foreach ($packageFile in $packagesConfig)
                 Rename-Item  -Path $_.fullname -Newname $NewName; 
             }
 
-        # temporarily rename nfproj files to csproj
+        # temporarily rename nfproj files to csproj     ###TODO: We should be keeping a record of these, so we dont rename csproj files back to nfproj.
         Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
             Foreach-object {
                 $OldName = $_.name; 
@@ -156,12 +159,18 @@ foreach ($packageFile in $packagesConfig)
             if ('${{ github.ref }}' -like '*release*' -or '${{ github.ref }}' -like '*master*')
             {
                 # don't allow prerelease for release and master branches
-                nuget update $solutionFile[0].FullName -Id "$packageName" -ConfigFile NuGet.Config
+                foreach ($solutionFile in $solutionFiles)
+                {
+                    nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile NuGet.Config
+                }
             }
             else
             {
                 # allow prerelease for all others
-                nuget update $solutionFile[0].FullName -Id "$packageName" -ConfigFile NuGet.Config -PreRelease
+                foreach ($solutionFile in $solutionFiles)
+                {
+                    nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile NuGet.Config -PreRelease
+                }
             }
 
             # need to get target version
@@ -256,7 +265,7 @@ foreach ($packageFile in $packagesConfig)
             Rename-Item  -Path $_.fullname -Newname $NewName; 
             }
 
-        # rename csproj-temp files back to csproj
+        # rename csproj-temp files back to csproj ###TODO: this should not be needed if the above is corrected!
         Get-ChildItem -Path $workingPath -Include "*.csproj-temp" -Recurse |
         Foreach-object {
             $OldName = $_.name; 
