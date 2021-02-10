@@ -293,8 +293,14 @@ else
     # fix PR title
     $prTitle = "Update dependencies"
 
-    echo "CREATE_PR=true" >> $GITHUB_ENV
-    echo "BRANCH_NAME=$newBranchName" >> $GITHUB_ENV
-    echo "PR_MESSAGE=$commitMessage" >> $GITHUB_ENV
-    echo "PR_TITLE=$prTitle" >> $GITHUB_ENV
+    #echo "CREATE_PR=true" >> $GITHUB_ENV
+    #echo "BRANCH_NAME=$newBranchName" >> $GITHUB_ENV
+    #echo "PR_MESSAGE=$commitMessage" >> $GITHUB_ENV
+    #echo "PR_TITLE=$prTitle" >> $GITHUB_ENV
+    
+    Write-Output "::set-env name=CREATE_PR::true"
+    Write-Output "::set-env name=BRANCH_NAME::$newBranchName"
+    Write-Output "::set-env name=PR_MESSAGE::$commitMessage"
+    Write-Output "::set-env name=PR_TITLE::$prTitle"
+    
 }
