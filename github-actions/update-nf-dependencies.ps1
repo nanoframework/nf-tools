@@ -89,6 +89,9 @@ git config --global core.autocrlf true
     # find packages.config
     $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse) ###TODO: should probably be filtered by solution files as defined above, but more preferably, target packages.config in the same folders as .nfproj files
     
+    # find NuGet.Config
+    $nugetConfig = (Get-ChildItem -Path ".\" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
+    
     #$baseBranch = ${GITHUB_REF##*/} # This should not be needed, as the branch workflow initiates the update. 
 # }
 
@@ -128,7 +131,7 @@ foreach ($packageFile in $packagesConfig)
         # restore NuGet packages, need to do this before anything else
         foreach ($solutionFile in $solutionFiles)
         {
-            nuget restore $solutionFile -ConfigFile NuGet.Config
+            nuget restore $solutionFile -ConfigFile $nugetConfig
         }
 
         # temporarily rename csproj files to csproj-temp so they are not affected.    ###TODO: this might cause a failure as we should allow them to update.
@@ -161,7 +164,7 @@ foreach ($packageFile in $packagesConfig)
                 # don't allow prerelease for release and master branches
                 foreach ($solutionFile in $solutionFiles)
                 {
-                    nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile NuGet.Config
+                    nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig
                 }
             }
             else
@@ -169,7 +172,7 @@ foreach ($packageFile in $packagesConfig)
                 # allow prerelease for all others
                 foreach ($solutionFile in $solutionFiles)
                 {
-                    nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile NuGet.Config -PreRelease
+                    nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease
                 }
             }
 
