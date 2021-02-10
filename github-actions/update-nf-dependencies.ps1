@@ -287,8 +287,8 @@ if($updateCount -eq 0)
 }
 else
 {
-    "$updateCount packages were updated..." | Write-Host
-    "Generating PR information" | Write-Host
+    "Number of packages updated: $updateCount" | Write-Host
+    "Generating PR information..." | Write-Host
    
     # fix PR title
     $prTitle = "Update dependencies"
