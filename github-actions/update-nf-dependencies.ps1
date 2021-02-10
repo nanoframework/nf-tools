@@ -194,7 +194,7 @@ foreach ($packageFile in $packagesConfig)
             # sanity check
             if($packageTargetVersion -eq $packageOriginVersion)
             {
-                "Skip update of $packageName because it has the same version as before: $packageOriginVersion."
+                "Skip update of $packageName because it has the same version as before: $packageOriginVersion." | Write-Host -ForegroundColor Cyan
             }
             else
             {
@@ -205,7 +205,7 @@ foreach ($packageFile in $packagesConfig)
                 #  find csproj(s)
                 $projectFiles = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
 
-                Write-Debug "Updating NFMDP_PE LoadHints"
+                "Updating NFMDP_PE LoadHints" | Write-Host #Debug
 
                 # replace NFMDP_PE_LoadHints
                 foreach ($project in $projectFiles)
@@ -287,6 +287,8 @@ if($updateCount -eq 0)
 }
 else
 {
+    "$updateCount packages were updated..." | Write-Host
+    "Generating PR information" | Write-Host
    
     # fix PR title
     $prTitle = "Update dependencies"
