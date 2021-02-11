@@ -87,7 +87,7 @@ else
     $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
     # find packages.config
-    $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse) ###TODO: should probably be filtered by solution files as defined above, but more preferably, target packages.config in the same folders as .nfproj files
+    $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse)
     
     # find NuGet.Config
     $nugetConfig = (Get-ChildItem -Path ".\" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
@@ -205,7 +205,7 @@ foreach ($packageFile in $packagesConfig)
                 #  find csproj(s)
                 $projectFiles = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
 
-                "Updating NFMDP_PE LoadHints" | Write-Host #Debug
+                "Updating NFMDP_PE LoadHints" | Write-Host
 
                 # replace NFMDP_PE_LoadHints
                 foreach ($project in $projectFiles)
@@ -218,11 +218,11 @@ foreach ($packageFile in $packagesConfig)
                 # update nuspec files, if any
                 $nuspecFiles = (Get-ChildItem -Path ".\" -Include "*.nuspec" -Recurse)
                 
-                "Updating nuspec files" | Write-Host #Debug
+                "Updating nuspec files" | Write-Host
 
                 foreach ($nuspec in $nuspecFiles)
                 {
-                    "Nuspec file is " | Write-Host #Debug
+                    "Nuspec file is " | Write-Host
 
                     [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
 
@@ -240,7 +240,7 @@ foreach ($packageFile in $packagesConfig)
                                     {
                                         if($dependency.Attributes["id"].value -eq $packageName)
                                         {
-                                            "Updating dependency." | Write-Host #Debug
+                                            "Updating dependency." | Write-Host
                                             $dependency.Attributes["version"].value = "$packageTargetVersion"
                                         }
                                     }
@@ -269,7 +269,7 @@ foreach ($packageFile in $packagesConfig)
             Rename-Item  -Path $_.fullname -Newname $NewName; 
             }
 
-        # rename csproj-temp files back to csproj ###TODO: this should not be needed if the above is corrected!
+        # rename csproj-temp files back to csproj
         Get-ChildItem -Path $workingPath -Include "*.csproj-temp" -Recurse |
         Foreach-object {
             $OldName = $_.name; 
