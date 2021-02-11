@@ -48,41 +48,41 @@ git config --global core.autocrlf true
 # check for special repos that have sources on different location
 
 ######################################
-# # paho.mqtt.m2mqtt 
-# if ($library -like "paho.mqtt.m2mqtt")
-# {
-#     # solution is at root
+# paho.mqtt.m2mqtt 
+if ($library -like "paho.mqtt.m2mqtt")
+{
+    # solution is at root
 
-#     # find solution file in repository
-#     $solutionFile = (Get-ChildItem -Path ".\" -Include "M2Mqtt.nanoFramework.sln" -Recurse)
+    # find solution file in repository
+    $solutionFile = (Get-ChildItem -Path ".\" -Include "M2Mqtt.nanoFramework.sln" -Recurse)
 
-#     # find packages.config
-#     $packagesConfig = (Get-ChildItem -Path ".\M2Mqtt" -Include "packages.config" -Recurse)
+    # find packages.config
+    $packagesConfig = (Get-ChildItem -Path ".\M2Mqtt" -Include "packages.config" -Recurse)
 
-# }
-# ######################################
-# # AMQPLite
-# elseif ($library -like "amqpnetlite")
-# {
-#     # solution is at root
+}
+######################################
+# AMQPLite
+elseif ($library -like "amqpnetlite")
+{
+    # solution is at root
 
-#     # need to set working path
-#     $workingPath = '.\nanoFramework', '.\Examples\Device\Device.SmallMemory.nanoFramework', '.\Examples\Device\Device.Thermometer.nanoFramework', '.\Examples\ServiceBus\ServiceBus.EventHub.nanoFramework'
+    # need to set working path
+    $workingPath = '.\nanoFramework', '.\Examples\Device\Device.SmallMemory.nanoFramework', '.\Examples\Device\Device.Thermometer.nanoFramework', '.\Examples\ServiceBus\ServiceBus.EventHub.nanoFramework'
 
-#     # find solution file in repository
-#     $solutionFile = (Get-ChildItem -Path ".\" -Include "amqp-nanoFramework.sln" -Recurse)
+    # find solution file in repository
+    $solutionFile = (Get-ChildItem -Path ".\" -Include "amqp-nanoFramework.sln" -Recurse)
 
-#     # find packages.config
-#     $packagesConfig = (Get-ChildItem -Path ".\nanoFramework" -Include "packages.config" -Recurse)
+    # find packages.config
+    $packagesConfig = (Get-ChildItem -Path ".\nanoFramework" -Include "packages.config" -Recurse)
 
-#     # CD-CI branch is not 'develop'
-#     $baseBranch = "cd-nanoframework"
+    # CD-CI branch is not 'develop'
+    $baseBranch = "cd-nanoframework"
 
-# }
-# ########################################
-# # now all the rest
-# else 
-# {
+}
+########################################
+# now all the rest
+else 
+{
     # find solution file in repository
     $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
@@ -93,7 +93,7 @@ git config --global core.autocrlf true
     $nugetConfig = (Get-ChildItem -Path ".\" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
     
     #$baseBranch = ${GITHUB_REF##*/} # This should not be needed, as the branch workflow initiates the update. 
-# }
+}
 
 foreach ($packageFile in $packagesConfig)
 {
@@ -134,7 +134,7 @@ foreach ($packageFile in $packagesConfig)
             nuget restore $solutionFile -ConfigFile $nugetConfig
         }
 
-        # temporarily rename csproj files to csproj-temp so they are not affected.    ###TODO: this might cause a failure as we should allow them to update.
+        # temporarily rename csproj files to csproj-temp so they are not affected.
         Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
             Foreach-object {
                 $OldName = $_.name; 
@@ -142,7 +142,7 @@ foreach ($packageFile in $packagesConfig)
                 Rename-Item  -Path $_.fullname -Newname $NewName; 
             }
 
-        # temporarily rename nfproj files to csproj     ###TODO: We should be keeping a record of these, so we dont rename csproj files back to nfproj.
+        # temporarily rename nfproj files to csproj
         Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
             Foreach-object {
                 $OldName = $_.name; 
@@ -293,9 +293,9 @@ else
     # fix PR title
     $prTitle = "Update dependencies"
 
-    echo "CREATE_PR=true" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append #>> $GITHUB_ENV
-    echo "BRANCH_NAME=$newBranchName" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append #>> $GITHUB_ENV
-    echo "PR_MESSAGE=$commitMessage" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append #>> $GITHUB_ENV
-    echo "PR_TITLE=$prTitle" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append #>> $GITHUB_ENV    
+    echo "CREATE_PR=true" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+    echo "BRANCH_NAME=$newBranchName" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+    echo "PR_MESSAGE=$commitMessage" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+    echo "PR_TITLE=$prTitle" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append   
     
 }
