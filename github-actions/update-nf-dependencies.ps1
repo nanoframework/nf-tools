@@ -84,12 +84,15 @@ elseif ($library -like "amqpnetlite")
 else 
 {
     # find solution file in repository
-    $solutionFile = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
+    $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
     # find packages.config
     $packagesConfig = (Get-ChildItem -Path ".\" -Include "packages.config" -Recurse)
     
-    $baseBranch = "develop"
+    # find NuGet.Config
+    $nugetConfig = (Get-ChildItem -Path ".\" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
+    
+    #$baseBranch = ${GITHUB_REF##*/} # This should not be needed, as the branch workflow initiates the update. 
 }
 
 foreach ($packageFile in $packagesConfig)
@@ -108,7 +111,7 @@ foreach ($packageFile in $packagesConfig)
         # filter out Nerdbank.GitVersioning package
         if($node.id -notlike "Nerdbank.GitVersioning*")
         {
-            "Adding '$node.id' '$node.version'" | Write-Host
+            "Adding {0} {1}" -f [string]$node.id,[string]$node.version | Write-Host
             if($packageList)
             {
                 $packageList += , ($node.id,  $node.version)
@@ -126,7 +129,10 @@ foreach ($packageFile in $packagesConfig)
         $packageList | Write-Host
 
         # restore NuGet packages, need to do this before anything else
-        nuget restore $solutionFile[0] -ConfigFile NuGet.Config
+        foreach ($solutionFile in $solutionFiles)
+        {
+            nuget restore $solutionFile -ConfigFile $nugetConfig
+        }
 
         # temporarily rename csproj files to csproj-temp so they are not affected.
         Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
@@ -156,12 +162,18 @@ foreach ($packageFile in $packagesConfig)
             if ('${{ github.ref }}' -like '*release*' -or '${{ github.ref }}' -like '*master*')
             {
                 # don't allow prerelease for release and master branches
-                nuget update $solutionFile[0].FullName -Id "$packageName" -ConfigFile NuGet.Config
+                foreach ($solutionFile in $solutionFiles)
+                {
+                    nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig
+                }
             }
             else
             {
                 # allow prerelease for all others
-                nuget update $solutionFile[0].FullName -Id "$packageName" -ConfigFile NuGet.Config -PreRelease
+                foreach ($solutionFile in $solutionFiles)
+                {
+                    nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease
+                }
             }
 
             # need to get target version
@@ -182,7 +194,7 @@ foreach ($packageFile in $packagesConfig)
             # sanity check
             if($packageTargetVersion -eq $packageOriginVersion)
             {
-                "Skip update of $packageName because it has the same version as before: $packageOriginVersion."
+                "Skip update of $packageName because it has the same version as before: $packageOriginVersion." | Write-Host -ForegroundColor Cyan
             }
             else
             {
@@ -193,7 +205,7 @@ foreach ($packageFile in $packagesConfig)
                 #  find csproj(s)
                 $projectFiles = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
 
-                Write-Debug "Updating NFMDP_PE LoadHints"
+                "Updating NFMDP_PE LoadHints" | Write-Host
 
                 # replace NFMDP_PE_LoadHints
                 foreach ($project in $projectFiles)
@@ -206,11 +218,11 @@ foreach ($packageFile in $packagesConfig)
                 # update nuspec files, if any
                 $nuspecFiles = (Get-ChildItem -Path ".\" -Include "*.nuspec" -Recurse)
                 
-                Write-Debug "Updating nuspec files"
+                "Updating nuspec files" | Write-Host
 
                 foreach ($nuspec in $nuspecFiles)
                 {
-                    Write-Debug "Nuspec file is " 
+                    "Nuspec file is " | Write-Host
 
                     [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
 
@@ -228,6 +240,7 @@ foreach ($packageFile in $packagesConfig)
                                     {
                                         if($dependency.Attributes["id"].value -eq $packageName)
                                         {
+                                            "Updating dependency." | Write-Host
                                             $dependency.Attributes["version"].value = "$packageTargetVersion"
                                         }
                                     }
@@ -274,12 +287,15 @@ if($updateCount -eq 0)
 }
 else
 {
+    "Number of packages updated: $updateCount" | Write-Host
+    "Generating PR information..." | Write-Host
    
     # fix PR title
     $prTitle = "Update dependencies"
 
-    echo "CREATE_PR=true" >> $GITHUB_ENV
-    echo "BRANCH_NAME=$newBranchName" >> $GITHUB_ENV
-    echo "PR_MESSAGE=$commitMessage" >> $GITHUB_ENV
-    echo "PR_TITLE=$prTitle" >> $GITHUB_ENV
+    echo "CREATE_PR=true" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+    echo "BRANCH_NAME=$newBranchName" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+    echo "PR_MESSAGE=$commitMessage" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+    echo "PR_TITLE=$prTitle" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append   
+    
 }
