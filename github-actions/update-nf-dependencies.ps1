@@ -6,6 +6,27 @@
 ######################################
 # this is building from github actions
 
+param ($nugetReleaseType)
+
+if ([string]::IsNullOrEmpty($nugetReleaseType))
+{
+    if('${{ github.ref }}' -like '*release*' -or '${{ github.ref }}' -like '*master*' -or '${{ github.ref }}' -like '*main*' -or '${{ github.ref }}' -like '*stable*')
+    {
+        $nugetReleaseType = "stable"
+    }
+    else
+    {
+        $nugetReleaseType = "prerelease"
+    }
+}
+else
+{
+    if($nugetReleaseType -notlike '*stable*' -or $nugetReleaseType -notlike '*prerelease*' )
+    {
+        $nugetReleaseType = "stable"
+    }
+}
+
 # get repository name from the repo path
 Set-Location ".." | Out-Null
 $library = Split-Path $(Get-Location) -Leaf
@@ -128,7 +149,7 @@ foreach ($solutionFile in $solutionFiles)
 
                 "Updating package $packageName" | Write-Host
 
-                if ('${{ github.ref }}' -like '*release*' -or '${{ github.ref }}' -like '*master*' -or '${{ github.ref }}' -like '*main*' -or '${{ github.ref }}' -like '*stable*')
+                if ($nugetReleaseType -like '*stable*')
                 {
                     # don't allow prerelease for release and master branches
 
