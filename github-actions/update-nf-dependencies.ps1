@@ -21,7 +21,7 @@ if ([string]::IsNullOrEmpty($nugetReleaseType))
 }
 else
 {
-    if(!$nugetReleaseType -like '*stable*' -or !$nugetReleaseType -like '*prerelease*' )
+    if($nugetReleaseType -notlike '*stable*' -or $nugetReleaseType -notlike '*prerelease*' )
     {
         $nugetReleaseType = "stable"
     }
