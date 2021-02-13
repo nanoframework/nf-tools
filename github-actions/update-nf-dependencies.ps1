@@ -58,7 +58,7 @@ git config --global core.autocrlf true
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
     Foreach-object {
         $OldName = $_.name; 
-        $NewName = $_.name -replace 'csproj','csproj-temp'; 
+        $NewName = $_.name -replace '.csproj','.projcs-temp'; 
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
@@ -66,7 +66,7 @@ Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
 Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
     Foreach-object {
         $OldName = $_.name; 
-        $NewName = $_.name -replace 'nfproj','csproj'; 
+        $NewName = $_.name -replace '.nfproj','.csproj'; 
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
@@ -79,7 +79,7 @@ $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
-    $content = $content -replace '.csproj', '.csproj-temp'
+    $content = $content -replace '.csproj', '.projcs-temp'
     $content = $content -replace '.nfproj', '.csproj'
     $content | Set-Content -Path $solutionFile
 }
@@ -274,7 +274,7 @@ foreach ($solutionFile in $solutionFiles)
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
 Foreach-object {
     $OldName = $_.name; 
-    $NewName = $_.name -replace 'csproj','nfproj'; 
+    $NewName = $_.name -replace '.csproj','.nfproj'; 
     Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
@@ -282,7 +282,7 @@ Foreach-object {
 Get-ChildItem -Path $workingPath -Include "*.csproj-temp" -Recurse |
 Foreach-object {
     $OldName = $_.name; 
-    $NewName = $_.name -replace 'csproj-temp','csproj'; 
+    $NewName = $_.name -replace '.projcs-temp','.csproj'; 
     Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
@@ -292,9 +292,13 @@ foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
     $content = $content -replace '.csproj', '.nfproj'
-    $content = $content -replace '.nfproj-temp', '.csproj' #This is because the above replace affects the name "csproj-temp", so it is actually "nfproj-temp".
+    $content = $content -replace '.projcs-temp', '.csproj'
     $content | Set-Content -Path $solutionFile
 }
+
+# Potential workkaround for whitespace only changes?
+#git diff -U0 -w --no-color | git apply --cached --ignore-whitespace --unidiff-zero -
+#git checkout .
 
 if($updateCount -eq 0)
 {
