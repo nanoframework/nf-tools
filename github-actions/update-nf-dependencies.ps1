@@ -87,7 +87,9 @@ Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
 # find solution file in repository
 $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
-# loop through soluton files and replace content containing .csproj to .csproj-temp and .nfproj to .csproj so nuget can handle them.
+# loop through solution files and replace content containing:
+# 1) .csproj to .csproj-temp (to prevent NuGet from touching these)
+# 2) and .nfproj to .csproj so nuget can handle them
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
