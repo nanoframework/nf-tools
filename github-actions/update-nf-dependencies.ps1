@@ -72,7 +72,7 @@ git config --global core.autocrlf true
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
     Foreach-object {
         $OldName = $_.name; 
-        $NewName = $_.name -replace '.csproj','.projcs-temp'; 
+        $NewName = $_.name -replace '.csproj','.csproj-temp'; 
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
@@ -84,8 +84,6 @@ Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
-
-
 # find solution file in repository
 $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
@@ -93,7 +91,7 @@ $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
-    $content = $content -replace '.csproj', '.projcs-temp'
+    $content = $content -replace '.csproj', '.csproj-temp'
     $content = $content -replace '.nfproj', '.csproj'
     $content | Set-Content -Path $solutionFile
 }
@@ -151,9 +149,6 @@ foreach ($solutionFile in $solutionFiles)
                 nuget restore $solutionFile
             }
             
-
-
-
             # update all packages
             foreach ($package in $packageList)
             {
@@ -283,7 +278,6 @@ foreach ($solutionFile in $solutionFiles)
     }
 }
 
-
 # rename csproj files back to nfproj
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
 Foreach-object {
@@ -296,17 +290,16 @@ Foreach-object {
 Get-ChildItem -Path $workingPath -Include "*.csproj-temp" -Recurse |
 Foreach-object {
     $OldName = $_.name; 
-    $NewName = $_.name -replace '.projcs-temp','.csproj'; 
+    $NewName = $_.name -replace '.csproj-temp','.csproj'; 
     Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
-
-# loop through soluton files and revert names to default.
+# loop through solution files and revert names to default.
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
     $content = $content -replace '.csproj', '.nfproj'
-    $content = $content -replace '.projcs-temp', '.csproj'
+    $content = $content -replace '.csproj-temp', '.csproj'
     $content | Set-Content -Path $solutionFile
 }
 
