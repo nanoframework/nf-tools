@@ -133,7 +133,7 @@ foreach ($solutionFile in $solutionFiles)
             }
         }
 
-        #$packageList = $packageList | select -Unique
+        $packageList = $packageList | select -Unique
 
         if ($packageList.length -gt 0)
         {
