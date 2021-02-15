@@ -3,9 +3,7 @@
 
 # This PS update the .NET nanoFramework dependencies on the repo where it's running
 
-######################################
-# this is building from github actions
-
+# optional parameter to request for stable or preview releases to be used when updating NuGets
 param ($nugetReleaseType)
 
 if ([string]::IsNullOrEmpty($nugetReleaseType))
