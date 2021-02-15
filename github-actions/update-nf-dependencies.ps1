@@ -272,8 +272,8 @@ foreach ($solutionFile in $solutionFiles)
                         "No nuspec files to update." | Write-Host
                     }
 
-                    # build commit message (we cannot use newlines, as Environment Variables cannot handle them).
-                    $commitMessage += "Bumps $packagesPath $packageName from $packageOriginVersion to $packageTargetVersion, "
+                    # build commit message
+                    $commitMessage += "Bumps $packagesPath $packageName from $packageOriginVersion to $packageTargetVersion`n"
                 }
 
             }
