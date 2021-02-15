@@ -3,9 +3,7 @@
 
 # This PS update the .NET nanoFramework dependencies on the repo where it's running
 
-######################################
-# this is building from github actions
-
+# optional parameter to request for stable or preview releases to be used when updating NuGets
 param ($nugetReleaseType)
 
 if ([string]::IsNullOrEmpty($nugetReleaseType))
@@ -27,16 +25,32 @@ else
     }
 }
 
-# get repository name from the repo path
-Set-Location ".." | Out-Null
-$library = Split-Path $(Get-Location) -Leaf
+# check if this is running in Azure Pipelines or GitHub actions
+if($env:NF_Library -ne $null)
+{
+    ######################################
+    # this is building from Azure Pipelines
 
-"Repository: '$library'" | Write-Host
+    Set-Location "$env:Build_SourcesDirectory\$env:NF_Library" | Out-Null
 
-# need this to move to the 
-"Moving to 'main' folder" | Write-Host
+    $library = $env:NF_Library
+}
+else
+{
+    ######################################
+    # this is building from github actions
 
-Set-Location "main" | Out-Null
+    # get repository name from the repo path
+    Set-Location ".." | Out-Null
+    $library = Split-Path $(Get-Location) -Leaf
+
+    "Repository: '$library'" | Write-Host
+
+    # need this to move to the 
+    "Moving to 'main' folder" | Write-Host
+
+    Set-Location "main" | Out-Null
+}
 
 # init/reset these
 $updateCount = 0
@@ -46,7 +60,7 @@ $newBranchName = "develop-nfbot/update-dependencies/" + [guid]::NewGuid().ToStri
 $workingPath = '.\'
 
 # need this to remove definition of redirect stdErr (only on Azure Pipelines image fo VS2019)
-# $env:GIT_REDIRECT_STDERR = '2>&1'
+$env:GIT_REDIRECT_STDERR = '2>&1'
 
 # setup github stuff
 git config --global gc.auto 0
@@ -58,7 +72,7 @@ git config --global core.autocrlf true
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
     Foreach-object {
         $OldName = $_.name; 
-        $NewName = $_.name -replace '.csproj','.projcs-temp'; 
+        $NewName = $_.name -replace '.csproj','.csproj-temp'; 
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
@@ -70,16 +84,16 @@ Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
-
-
 # find solution file in repository
 $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
-# loop through soluton files and replace content containing .csproj to .csproj-temp and .nfproj to .csproj so nuget can handle them.
+# loop through solution files and replace content containing:
+# 1) .csproj to .csproj-temp (to prevent NuGet from touching these)
+# 2) and .nfproj to .csproj so nuget can handle them
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
-    $content = $content -replace '.csproj', '.projcs-temp'
+    $content = $content -replace '.csproj', '.csproj-temp'
     $content = $content -replace '.nfproj', '.csproj'
     $content | Set-Content -Path $solutionFile
 }
@@ -121,7 +135,7 @@ foreach ($solutionFile in $solutionFiles)
             }
         }
 
-        #$packageList = $packageList | select -Unique
+        $packageList = $packageList | select -Unique
 
         if ($packageList.length -gt 0)
         {
@@ -137,9 +151,6 @@ foreach ($solutionFile in $solutionFiles)
                 nuget restore $solutionFile
             }
             
-
-
-
             # update all packages
             foreach ($package in $packageList)
             {
@@ -185,9 +196,10 @@ foreach ($solutionFile in $solutionFiles)
                 foreach ($node in $nodes)
                 {
                     # find this package
-                    if($node.id -match $packageName)
+                    if($node.id -eq $packageName)
                     {
                         $packageTargetVersion = $node.version
+                        break
                     }
                 }
 
@@ -269,7 +281,6 @@ foreach ($solutionFile in $solutionFiles)
     }
 }
 
-
 # rename csproj files back to nfproj
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
 Foreach-object {
@@ -282,17 +293,16 @@ Foreach-object {
 Get-ChildItem -Path $workingPath -Include "*.csproj-temp" -Recurse |
 Foreach-object {
     $OldName = $_.name; 
-    $NewName = $_.name -replace '.projcs-temp','.csproj'; 
+    $NewName = $_.name -replace '.csproj-temp','.csproj'; 
     Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
-
-# loop through soluton files and revert names to default.
+# loop through solution files and revert names to default.
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
     $content = $content -replace '.csproj', '.nfproj'
-    $content = $content -replace '.projcs-temp', '.csproj'
+    $content = $content -replace '.csproj-temp', '.csproj'
     $content | Set-Content -Path $solutionFile
 }
 
@@ -313,13 +323,8 @@ else
     # fix PR title
     $prTitle = "Update $updateCount nuget dependencies"
 
-    #Fix end of commit message.
-    $commitMessage = $commitMessage.TrimEnd(", ")
-    $commitMessage += "."
-
     echo "CREATE_PR=true" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
     echo "BRANCH_NAME=$newBranchName" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
     echo "PR_MESSAGE=$commitMessage" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
     echo "PR_TITLE=$prTitle" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append   
-    
 }
