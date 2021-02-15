@@ -60,7 +60,7 @@ $newBranchName = "develop-nfbot/update-dependencies/" + [guid]::NewGuid().ToStri
 $workingPath = '.\'
 
 # need this to remove definition of redirect stdErr (only on Azure Pipelines image fo VS2019)
-# $env:GIT_REDIRECT_STDERR = '2>&1'
+$env:GIT_REDIRECT_STDERR = '2>&1'
 
 # setup github stuff
 git config --global gc.auto 0
