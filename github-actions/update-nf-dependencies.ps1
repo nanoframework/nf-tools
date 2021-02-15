@@ -194,9 +194,10 @@ foreach ($solutionFile in $solutionFiles)
                 foreach ($node in $nodes)
                 {
                     # find this package
-                    if($node.id -match $packageName)
+                    if($node.id -eq $packageName)
                     {
                         $packageTargetVersion = $node.version
+                        break
                     }
                 }
 
