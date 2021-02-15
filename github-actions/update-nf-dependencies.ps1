@@ -25,16 +25,32 @@ else
     }
 }
 
-# get repository name from the repo path
-Set-Location ".." | Out-Null
-$library = Split-Path $(Get-Location) -Leaf
+# check if this is running in Azure Pipelines or GitHub actions
+if($env:NF_Library -ne $null)
+{
+    ######################################
+    # this is building from Azure Pipelines
 
-"Repository: '$library'" | Write-Host
+    Set-Location "$env:Build_SourcesDirectory\$env:NF_Library" | Out-Null
 
-# need this to move to the 
-"Moving to 'main' folder" | Write-Host
+    $library = $env:NF_Library
+}
+else
+{
+    ######################################
+    # this is building from github actions
 
-Set-Location "main" | Out-Null
+    # get repository name from the repo path
+    Set-Location ".." | Out-Null
+    $library = Split-Path $(Get-Location) -Leaf
+
+    "Repository: '$library'" | Write-Host
+
+    # need this to move to the 
+    "Moving to 'main' folder" | Write-Host
+
+    Set-Location "main" | Out-Null
+}
 
 # init/reset these
 $updateCount = 0
