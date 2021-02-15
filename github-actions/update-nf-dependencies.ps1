@@ -68,11 +68,11 @@ git config --global user.name nfbot
 git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
 
-# temporarily rename csproj files to csproj-temp so they are not affected.
+# temporarily rename csproj files to projcs-temp so they are not affected.
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
     Foreach-object {
         $OldName = $_.name; 
-        $NewName = $_.name -replace '.csproj','.csproj-temp'; 
+        $NewName = $_.name -replace '.csproj','.projcs-temp'; 
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
@@ -84,16 +84,16 @@ Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
-# find solution file in repository
+# find every solution file in repository
 $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 
 # loop through solution files and replace content containing:
-# 1) .csproj to .csproj-temp (to prevent NuGet from touching these)
+# 1) .csproj to .projcs-temp (to prevent NuGet from touching these)
 # 2) and .nfproj to .csproj so nuget can handle them
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
-    $content = $content -replace '.csproj', '.csproj-temp'
+    $content = $content -replace '.csproj', '.projcs-temp'
     $content = $content -replace '.nfproj', '.csproj'
     $content | Set-Content -Path $solutionFile
 }
@@ -103,9 +103,17 @@ $nugetConfig = (Get-ChildItem -Path ".\" -Include "NuGet.Config" -Recurse) | Sel
 
 foreach ($solutionFile in $solutionFiles)
 {
-    $packagesPath = Split-Path -Path $solutionFile
+    # check if there are any csproj here
+    $hascsproj = Get-Content $solutionFile | Where-Object {$_ -like '*.csproj*'}
+    if($hascsproj -eq $null)
+    {
+        continue
+    }
+
+    $solutionPath = Split-Path -Path $solutionFile
+
     # find packages.config
-    $packagesConfigs = (Get-ChildItem -Path "$packagesPath" -Include "packages.config" -Recurse)
+    $packagesConfigs = (Get-ChildItem -Path "$solutionPath" -Include "packages.config" -Recurse)
 
     foreach ($packagesConfig in $packagesConfigs)
     {
@@ -210,30 +218,47 @@ foreach ($solutionFile in $solutionFiles)
                 }
                 else
                 {
+                    # if we are updating samples repo, OK to move to next one
+                    if($Env:GITHUB_REPOSITORY -eq "nanoframework/Samples")
+                    {
+                        $updateCount = $updateCount + 1;
+                                            # build commit message
+                        $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>"
+
+                        continue
+                    }
+
                     "Bumping $packageName from $packageOriginVersion to $packageTargetVersion." | Write-Host -ForegroundColor Cyan                
 
                     $updateCount = $updateCount + 1;
 
                     #  find csproj(s)
-                    $projectFiles = (Get-ChildItem -Path ".\" -Include "*.csproj" -Recurse)
+                    $projectFiles = (Get-ChildItem -Path "$solutionPath" -Include "*.csproj" -Recurse)
 
-                    "Updating NFMDP_PE LoadHints" | Write-Host
-
-                    # replace NFMDP_PE_LoadHints
-                    foreach ($project in $projectFiles)
+                    if ($projectFiles.length -gt 0)
                     {
-                        $filecontent = Get-Content($project)
-                        attrib $project -r
-                        $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8
+                        "Updating NFMDP_PE LoadHints" | Write-Host
+
+                        # replace NFMDP_PE_LoadHints
+                        foreach ($project in $projectFiles)
+                        {
+                            $filecontent = Get-Content($project)
+                            attrib $project -r
+                            $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8
+                        }
+                    }
+                    else
+                    {
+                        "No project files to update." | Write-Host
                     }
 
                     # update nuspec files, if any
-                    $nuspecFiles = (Get-ChildItem -Path ".\" -Include "*.nuspec" -Recurse)
+                    $nuspecFiles = (Get-ChildItem -Path "$solutionPath" -Include "*.nuspec" -Recurse)
                     
-                    "Updating nuspec files" | Write-Host
-
                     if ($nuspecFiles.length -gt 0)
                     {
+                        "Updating nuspec files" | Write-Host
+
                         foreach ($nuspec in $nuspecFiles)
                         {
                             "Nuspec file is " | Write-Host
@@ -265,6 +290,7 @@ foreach ($solutionFile in $solutionFiles)
 
                             $nuspecDoc.Save($nuspec[0].FullName)
                         }
+
                         "Finished updating nuspec files." | Write-Host
                     }
                     else
@@ -273,7 +299,7 @@ foreach ($solutionFile in $solutionFiles)
                     }
 
                     # build commit message
-                    $commitMessage += "Bumps $packagesPath $packageName from $packageOriginVersion to $packageTargetVersion`n"
+                    $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>"
                 }
 
             }
@@ -289,11 +315,11 @@ Foreach-object {
     Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
-# rename csproj-temp files back to csproj
-Get-ChildItem -Path $workingPath -Include "*.csproj-temp" -Recurse |
+# rename projcs-temp files back to csproj
+Get-ChildItem -Path $workingPath -Include "*.projcs-temp" -Recurse |
 Foreach-object {
     $OldName = $_.name; 
-    $NewName = $_.name -replace '.csproj-temp','.csproj'; 
+    $NewName = $_.name -replace '.projcs-temp','.csproj'; 
     Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
@@ -302,7 +328,7 @@ foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile
     $content = $content -replace '.csproj', '.nfproj'
-    $content = $content -replace '.csproj-temp', '.csproj'
+    $content = $content -replace '.projcs-temp', '.csproj'
     $content | Set-Content -Path $solutionFile
 }
 
