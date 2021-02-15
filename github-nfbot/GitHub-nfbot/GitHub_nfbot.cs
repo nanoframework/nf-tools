@@ -355,6 +355,12 @@ namespace nanoFramework.Tools.GitHub
 
                 var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"] == payload.check_run.head_sha);
 
+                if (matchingPr == null)
+                {
+                    // try now with 'base'
+                    matchingPr = openPrs.FirstOrDefault(p => p["base"]["sha"] == payload.check_run.head_sha);
+                }
+
                 if (matchingPr != null)
                 {
                     // get PR
@@ -375,36 +381,43 @@ namespace nanoFramework.Tools.GitHub
 
                         bool allChecksSuccessfull = false;
 
-                        // iterate through all check status
-                        foreach (dynamic cr in (JArray)checkSatus.check_runs)
+                        if (((JArray)checkSatus.check_runs).Count == 0)
                         {
-                            if (cr.conclusion == "success")
+                            allChecksSuccessfull = true;
+                        }
+                        else
+                        {
+                            // iterate through all check status, if there are any
+                            foreach (dynamic cr in (JArray)checkSatus.check_runs)
                             {
-                                // check pass
-                                allChecksSuccessfull = true;
-                            }
-                            else
-                            {
-                                // check failed, don't bother check others
-                                allChecksSuccessfull = false;
-                                break;
+                                if (cr.conclusion == "success")
+                                {
+                                    // check pass
+                                    allChecksSuccessfull = true;
+                                }
+                                else
+                                {
+                                    // check failed, don't bother check others
+                                    allChecksSuccessfull = false;
+                                    break;
+                                }
                             }
                         }
 
                         if (allChecksSuccessfull)
                         {
-                            log.LogInformation($"Adding 'Publish release flag to PR.");
+                            // add publish release label, if this is not the samples repo
+                            if (!pr.head.repo.url.ToString().Contains("nanoframework/Samples"))
+                            {
 
-                            // add the Publish release label
-                            await SendGitHubRequest(
-                                $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelCiPublishReleaseName}\" ]",
-                                log,
-                                "application/vnd.github.squirrel-girl-preview");
+                                log.LogInformation($"Adding 'Publish release flag to PR.");
 
-                            // list labels for repository
-                            JArray repoLabels = (JArray)(await GetGitHubRequest(
-                                $"{payload.repository.url.ToString()}/labels",
-                                log));
+                                // add the Publish release label
+                                await SendGitHubRequest(
+                                    $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelCiPublishReleaseName}\" ]",
+                                    log,
+                                    "application/vnd.github.squirrel-girl-preview");
+                            }
 
                             // checks are all successful
                             // merge PR with squash
