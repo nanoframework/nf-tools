@@ -355,12 +355,6 @@ namespace nanoFramework.Tools.GitHub
 
                 var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"] == payload.check_run.head_sha);
 
-                if (matchingPr == null)
-                {
-                    // try now with 'base'
-                    matchingPr = openPrs.FirstOrDefault(p => p["base"]["sha"] == payload.check_run.head_sha);
-                }
-
                 if (matchingPr != null)
                 {
                     // get PR
