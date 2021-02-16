@@ -92,10 +92,10 @@ $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 # 2) and .nfproj to .csproj so nuget can handle them
 foreach ($solutionFile in $solutionFiles)
 {
-    $content = Get-Content $solutionFile
+    $content = Get-Content $solutionFile -Encoding utf8
     $content = $content -replace '.csproj', '.projcs-temp'
     $content = $content -replace '.nfproj', '.csproj'
-    $content | Set-Content -Path $solutionFile -Force
+    $content | Set-Content -Path $solutionFile -Encoding utf8 -Force
 }
     
 # find NuGet.Config
@@ -104,7 +104,7 @@ $nugetConfig = (Get-ChildItem -Path ".\" -Include "NuGet.Config" -Recurse) | Sel
 foreach ($solutionFile in $solutionFiles)
 {
     # check if there are any csproj here
-    $hascsproj = Get-Content $solutionFile | Where-Object {$_ -like '*.csproj*'}
+    $hascsproj = Get-Content $solutionFile -Encoding utf8 | Where-Object {$_ -like '*.csproj*'}
     if($hascsproj -eq $null)
     {
         continue
@@ -118,7 +118,7 @@ foreach ($solutionFile in $solutionFiles)
     foreach ($packagesConfig in $packagesConfigs)
     {
         # load packages.config as XML doc
-        [xml]$packagesDoc = Get-Content $packagesConfig
+        [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8
 
         $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
 
@@ -143,8 +143,6 @@ foreach ($solutionFile in $solutionFiles)
             }
         }
 
-        $packageList = $packageList | select -Unique
-
         if ($packageList.length -gt 0)
         {
             "NuGet packages to update:" | Write-Host
@@ -163,10 +161,10 @@ foreach ($solutionFile in $solutionFiles)
             foreach ($package in $packageList)
             {
                 # get package name and target version
-                $packageName = $package[0]
-                $packageOriginVersion = $package[1]
+                [string]$packageName = $package[0]
+                [string]$packageOriginVersion = $package[1]
 
-                "Updating package $packageName" | Write-Host
+                "Updating package $packageName from $packageOriginVersion" | Write-Host
 
                 if ($nugetReleaseType -like '*stable*')
                 {
@@ -197,7 +195,7 @@ foreach ($solutionFile in $solutionFiles)
 
                 # need to get target version
                 # load packages.config as XML doc
-                [xml]$packagesDoc = Get-Content $packagesConfig
+                [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8
 
                 $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
 
@@ -207,6 +205,8 @@ foreach ($solutionFile in $solutionFiles)
                     if($node.id -eq $packageName)
                     {
                         $packageTargetVersion = $node.version
+
+                        # done here
                         break
                     }
                 }
@@ -222,9 +222,11 @@ foreach ($solutionFile in $solutionFiles)
                     if($Env:GITHUB_REPOSITORY -eq "nanoframework/Samples")
                     {
                         $updateCount = $updateCount + 1;
-                                            # build commit message
+                        
+                        # build commit message
                         $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>"
 
+                        # done here
                         continue
                     }
 
@@ -242,7 +244,7 @@ foreach ($solutionFile in $solutionFiles)
                         # replace NFMDP_PE_LoadHints
                         foreach ($project in $projectFiles)
                         {
-                            $filecontent = Get-Content($project)
+                            $filecontent = Get-Content $project -Encoding utf8
                             attrib $project -r
                             $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8 -Force
                         }
@@ -326,10 +328,10 @@ Foreach-object {
 # loop through solution files and revert names to default.
 foreach ($solutionFile in $solutionFiles)
 {
-    $content = Get-Content $solutionFile
+    $content = Get-Content $solutionFile -Encoding utf8
     $content = $content -replace '.csproj', '.nfproj'
     $content = $content -replace '.projcs-temp', '.csproj'
-    $content | Set-Content -Path $solutionFile -Force
+    $content | Set-Content -Path $solutionFile -Encoding utf8 -Force
 }
 
 # Potential workkaround for whitespace only changes?
