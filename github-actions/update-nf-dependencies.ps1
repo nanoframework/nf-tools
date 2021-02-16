@@ -95,7 +95,7 @@ foreach ($solutionFile in $solutionFiles)
     $content = Get-Content $solutionFile
     $content = $content -replace '.csproj', '.projcs-temp'
     $content = $content -replace '.nfproj', '.csproj'
-    $content | Set-Content -Path $solutionFile
+    $content | Set-Content -Path $solutionFile -Force
 }
     
 # find NuGet.Config
@@ -244,7 +244,7 @@ foreach ($solutionFile in $solutionFiles)
                         {
                             $filecontent = Get-Content($project)
                             attrib $project -r
-                            $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8
+                            $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8 -Force
                         }
                     }
                     else
@@ -329,7 +329,7 @@ foreach ($solutionFile in $solutionFiles)
     $content = Get-Content $solutionFile
     $content = $content -replace '.csproj', '.nfproj'
     $content = $content -replace '.projcs-temp', '.csproj'
-    $content | Set-Content -Path $solutionFile
+    $content | Set-Content -Path $solutionFile -Force
 }
 
 # Potential workkaround for whitespace only changes?
