@@ -8,10 +8,13 @@ parameters:
   gitEmail: 'nanoframework@outlook.com'
   sonarCloudProject: 'dummy-key'
   nugetConfigPath: 'NuGet.config'
+  runUnitTests: false
+  unitTestRunsettings: 'DIDNT_GET_ONE_FROM_THE_CALLER'
 
 steps:
 # need this here in order to persist GitHub credentials 
 - checkout: self
+  submodules: true
 
 - script: |
     git config --global user.email ${{ parameters.gitEmail }}
@@ -91,12 +94,31 @@ steps:
     configuration: '$(buildConfiguration)'
   condition: ne( variables['StartReleaseCandidate'], true )
 
-# we don't have tests (yet)
-# - task: VSTest@2
-#   inputs:
-#     platform: '$(buildPlatform)'
-#     configuration: '$(buildConfiguration)'
-#   condition: ne( variables['StartReleaseCandidate'], true )
+- task: VisualStudioTestPlatformInstaller@1
+  condition: and( succeeded(), ${{ parameters.runUnitTests }}, ne( variables['StartReleaseCandidate'], true ) )
+  displayName: 'Visual Studio Test Platform Installer'
+  inputs:
+    versionSelector: latestStable
+
+- task: VSTest@2
+  condition: and( succeeded(), ${{ parameters.runUnitTests }}, ne( variables['StartReleaseCandidate'], true ) )
+  displayName: 'Running Unit Tests'
+  inputs:
+    testSelector: 'testAssemblies'
+    testAssemblyVer2: |
+      **\*NFUnitTest*.dll
+      **\*Tests*.dll
+      **\*Tests*.dll
+      !**\*TestAdapter*.dll
+      !**\*TestFramework*.dll
+      !**\obj\**
+    searchFolder: '$(System.DefaultWorkingDirectory)'
+    platform: '$(BuildPlatform)'
+    configuration: '$(BuildConfiguration)'
+    diagnosticsEnabled: true
+    vsTestVersion: toolsInstaller
+    codeCoverageEnabled: true
+    runSettingsFile: '${{ parameters.unitTestRunsettings }}'
 
 - task: PowerShell@2
   inputs:
