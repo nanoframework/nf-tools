@@ -103,6 +103,7 @@ steps:
 - task: VSTest@2
   condition: and( succeeded(), ${{ parameters.runUnitTests }}, ne( variables['StartReleaseCandidate'], true ) )
   displayName: 'Running Unit Tests'
+  continueOnError: true
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: |
