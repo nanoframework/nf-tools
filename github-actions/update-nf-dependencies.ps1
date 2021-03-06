@@ -172,11 +172,11 @@ foreach ($solutionFile in $solutionFiles)
 
                     if (![string]::IsNullOrEmpty($nugetConfig))
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig
+                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -FileConflictAction Overwrite
                     }
                     else
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName"
+                        nuget update $solutionFile.FullName -Id "$packageName" -FileConflictAction Overwrite
                     }
 
                 }
@@ -185,11 +185,11 @@ foreach ($solutionFile in $solutionFiles)
 
                     if (![string]::IsNullOrEmpty($nugetConfig))
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease
+                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease -FileConflictAction Overwrite
                     }
                     else
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -PreRelease
+                        nuget update $solutionFile.FullName -Id "$packageName" -PreRelease -FileConflictAction Overwrite
                     }
                 }
 
