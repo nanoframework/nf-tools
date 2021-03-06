@@ -65,6 +65,10 @@ steps:
     organization: 'nanoframework'
     scannerMode: 'MSBuild'
     projectKey: '${{ parameters.sonarCloudProject }}'
+    extraProperties: |
+     sonar.exclusions=**/obj/**,**/*.dll
+     sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/TestResults/**.coverage
+     sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/TestResults/*.trx
   condition: ne( variables['StartReleaseCandidate'], true )
   displayName: 'Prepare analysis on SonarCloud'
 
