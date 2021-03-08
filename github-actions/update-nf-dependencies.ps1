@@ -8,7 +8,7 @@ param ($nugetReleaseType)
 
 if ([string]::IsNullOrEmpty($nugetReleaseType))
 {
-    if('${{ github.ref }}' -like '*release*' -or '${{ github.ref }}' -like '*master*' -or '${{ github.ref }}' -like '*main*' -or '${{ github.ref }}' -like '*stable*')
+    if($env:GITHUB_REF -like '*release*' -or $env:GITHUB_REF -like '*master*' -or $env:GITHUB_REF -like '*main*' -or $env:GITHUB_REF -like '*stable*')
     {
         $nugetReleaseType = "stable"
     }
@@ -56,7 +56,7 @@ else
 $updateCount = 0
 $commitMessage = ""
 $prTitle = ""
-$newBranchName = "develop-nfbot/update-dependencies/" + [guid]::NewGuid().ToString()
+$newBranchName = "develop-nfbot/update-dependencies-$env:GITHUB_HEAD_REF" #+ [guid]::NewGuid().ToString()
 $workingPath = '.\'
 
 # need this to remove definition of redirect stdErr (only on Azure Pipelines image fo VS2019)
@@ -172,11 +172,11 @@ foreach ($solutionFile in $solutionFiles)
 
                     if (![string]::IsNullOrEmpty($nugetConfig))
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig
+                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -FileConflictAction Overwrite
                     }
                     else
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName"
+                        nuget update $solutionFile.FullName -Id "$packageName" -FileConflictAction Overwrite
                     }
 
                 }
@@ -185,11 +185,11 @@ foreach ($solutionFile in $solutionFiles)
 
                     if (![string]::IsNullOrEmpty($nugetConfig))
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease
+                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease -FileConflictAction Overwrite
                     }
                     else
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -PreRelease
+                        nuget update $solutionFile.FullName -Id "$packageName" -PreRelease -FileConflictAction Overwrite
                     }
                 }
 
