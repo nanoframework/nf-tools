@@ -68,6 +68,10 @@ steps:
     organization: 'nanoframework'
     scannerMode: 'MSBuild'
     projectKey: '${{ parameters.sonarCloudProject }}'
+    extraProperties: |
+      sonar.exclusions=**/obj/**,**/*.dll
+      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/**/**.coverage
+      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
 
 - task: NuGetToolInstaller@0
   inputs:
@@ -104,6 +108,7 @@ steps:
 - task: VSTest@2
   condition: and( succeeded(), ${{ parameters.runUnitTests }}, ne( variables['StartReleaseCandidate'], true ) )
   displayName: 'Running Unit Tests'
+  continueOnError: true
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: |

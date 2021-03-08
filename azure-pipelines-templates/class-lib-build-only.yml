@@ -60,6 +60,8 @@ steps:
 - template: prepare-release.yml
 
 - task: SonarCloudPrepare@1
+  condition: ne( variables['StartReleaseCandidate'], true )
+  displayName: 'Prepare analysis on SonarCloud'
   inputs:
     SonarCloud: 'sonarcloud-$(System.TeamProject)'
     organization: 'nanoframework'
@@ -69,8 +71,6 @@ steps:
      sonar.exclusions=**/obj/**,**/*.dll
      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/**/**.coverage
      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
-  condition: ne( variables['StartReleaseCandidate'], true )
-  displayName: 'Prepare analysis on SonarCloud'
 
 - task: NuGetToolInstaller@0
   inputs:
