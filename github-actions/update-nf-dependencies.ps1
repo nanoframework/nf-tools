@@ -5,7 +5,7 @@
 
 # optional parameter to request for stable or preview releases to be used when updating NuGets
 param (
-    [string]$nugetReleaseType
+    [string]$nugetReleaseType,
     [string]$targetDirectory
     )
 
