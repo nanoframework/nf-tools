@@ -5,6 +5,7 @@
 
 # optional parameter to request for stable or preview releases to be used when updating NuGets
 param ($nugetReleaseType)
+param ($targetDirectory)
 
 if ([string]::IsNullOrEmpty($nugetReleaseType))
 {
@@ -50,13 +51,23 @@ else
     "Moving to 'main' folder" | Write-Host
 
     Set-Location "main" | Out-Null
+
+    if ([string]::IsNullOrEmpty($targetDirectory))
+    {
+        Write-Host "Targeting everything in the root directory"
+    }
+    else
+    {
+        Write-Host "Targeting everything in the sub directory $targetDirectory"
+        Set-Location "$targetDirectory" | Out-Null
+    }
 }
 
 # init/reset these
 $updateCount = 0
 $commitMessage = ""
 $prTitle = ""
-$newBranchName = "develop-nfbot/update-dependencies-$env:GITHUB_HEAD_REF" #+ [guid]::NewGuid().ToString()
+$newBranchName = "develop-nfbot/update-dependencies-$env:GITHUB_REF" #+ [guid]::NewGuid().ToString()
 $workingPath = '.\'
 
 # need this to remove definition of redirect stdErr (only on Azure Pipelines image fo VS2019)
