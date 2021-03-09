@@ -4,8 +4,10 @@
 # This PS update the .NET nanoFramework dependencies on the repo where it's running
 
 # optional parameter to request for stable or preview releases to be used when updating NuGets
-param ($nugetReleaseType)
-param ($targetDirectory)
+param (
+    [string]$nugetReleaseType
+    [string]$targetDirectory
+    )
 
 if ([string]::IsNullOrEmpty($nugetReleaseType))
 {
