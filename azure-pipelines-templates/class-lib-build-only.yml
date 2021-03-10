@@ -79,12 +79,12 @@ steps:
   displayName: 'Install specifc version of NuGet'
 
 - task: NuGetCommand@2
-  inputs:
-    restoreSolution: '$(solution)'
-    feedsToUse: config
-    nugetConfigPath: ${{ parameters.nugetConfigPath }}
   condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: NuGet restore
+  inputs:
+    restoreSolution: '**/*.sln'
+    feedsToUse: config
+    nugetConfigPath: ${{ parameters.nugetConfigPath }}
 
 - task: InstallnFBuildComponents@1
   condition: ne( variables['StartReleaseCandidate'], true )
