@@ -56,11 +56,11 @@ else
 
     if ([string]::IsNullOrEmpty($targetDirectory))
     {
-        Write-Host "Targeting everything in the root directory"
+        Write-Host "Targeting every solution in the repository."
     }
     else
     {
-        Write-Host "Targeting everything in the sub directory $targetDirectory"
+        Write-Host "Targeting every solution in the '$targetDirectory' directory."
         Set-Location "$targetDirectory" | Out-Null
     }
 }
