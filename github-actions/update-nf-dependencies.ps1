@@ -106,8 +106,8 @@ $solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile -Encoding utf8
-    $content = $content -replace '.csproj', '.projcs-temp'
-    $content = $content -replace '.nfproj', '.csproj'
+    $content = $content -replace ".csproj", ".projcs-temp"
+    $content = $content -replace ".nfproj", ".csproj"
     $content | Set-Content -Path $solutionFile -Encoding utf8 -Force
 }
     
@@ -342,8 +342,8 @@ Foreach-object {
 foreach ($solutionFile in $solutionFiles)
 {
     $content = Get-Content $solutionFile -Encoding utf8
-    $content = $content -replace '.csproj', '.nfproj'
-    $content = $content -replace '.projcs-temp', '.csproj'
+    $content = $content -replace ".csproj", ".nfproj"
+    $content = $content -replace ".projcs-temp", ".csproj"
     $content | Set-Content -Path $solutionFile -Encoding utf8 -Force
 }
 
