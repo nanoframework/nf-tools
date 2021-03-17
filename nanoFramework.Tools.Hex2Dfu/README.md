@@ -1,1 +1,0 @@
-This tool has been moved to it's own repository [here](https://github.com/nanoframework/hex2dfu).
