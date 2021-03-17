@@ -13,6 +13,8 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Octokit;
+using Octokit.Internal;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -83,6 +85,10 @@ namespace nanoFramework.Tools.GitHub
         // DevOps client
         private const string _nfOrganizationUrl = "https://dev.azure.com/nanoframework";
 
+        // GitHub stuff
+        private const string _gitOwner = "nanoframework";
+
+        static GitHubClient _octokitClient = new GitHubClient(new Octokit.ProductHeaderValue("nfbot"));
 
         [FunctionName("GitHub-nfbot")]
         public static async Task<IActionResult> Run(
@@ -400,17 +406,59 @@ namespace nanoFramework.Tools.GitHub
 
                         if (allChecksSuccessfull)
                         {
-                            // add publish release label, if this is not the samples repo
+                            // check if this is running on samples repo
                             if (!pr.head.repo.url.ToString().Contains("nanoframework/Samples"))
                             {
+                                // class lib repo
 
-                                log.LogInformation($"Adding 'Publish release flag to PR.");
+                                
+                                // default is TO PUBLISH a new relase 
+                                bool publishReleaseFlag = true;
 
-                                // add the Publish release label
-                                await SendGitHubRequest(
-                                    $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelCiPublishReleaseName}\" ]",
-                                    log,
-                                    "application/vnd.github.squirrel-girl-preview");
+                                // get labels for this PR
+                                JArray prLabels = (JArray)pr.labels;
+
+                                // check if this was a dependencies update
+                                var dependenciesLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelTypeDependenciesName);
+                                if (dependenciesLabel != null)
+                                {
+                                    // this is a dependencies update PR
+
+                                    // get which packages where updated
+                                    IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, "lib-nanoFramework.System.Net.Http", 163);
+
+                                    var packageFile = prFiles.FirstOrDefault(f => f.FileName.Contains("/packages.config"));
+
+                                    if(packageFile != null)
+                                    {
+                                        // get patch
+                                        var diffs = packageFile.Patch.ToString().Split('\n');
+
+                                        // get additions
+                                        var newPackages = diffs.Where(p => p.StartsWith("+"));
+
+                                        if(newPackages.Count() == 1 &&
+                                            newPackages.Contains("nanoFramework.TestFramework"))
+                                        {
+                                            // update was only for Test Framework
+                                            // DON'T publish a new relase
+                                            publishReleaseFlag = false;
+                                        }
+                                    }
+                                }
+
+                                if (publishReleaseFlag)
+                                {
+                                    // add publish release label
+
+                                    log.LogInformation($"Adding 'Publish release flag to PR.");
+
+                                    // add the Publish release label
+                                    await SendGitHubRequest(
+                                        $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelCiPublishReleaseName}\" ]",
+                                        log,
+                                        "application/vnd.github.squirrel-girl-preview");
+                                }
                             }
 
                             // checks are all successful

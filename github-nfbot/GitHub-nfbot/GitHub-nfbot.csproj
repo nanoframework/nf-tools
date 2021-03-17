@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.153.0" />
+    <PackageReference Include="Octokit" Version="0.50.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
