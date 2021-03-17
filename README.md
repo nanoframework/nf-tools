@@ -12,15 +12,6 @@ This repo contains various tools that are required in **nanoFramework** developm
 * [Azure Pipelines Templates](azure-pipelines-templates) Azure Pipelines templates for our repositories.
 * [GitHub-bot](AzureFunction-github-bot) Azure Function project for **nanoFramework** GitHub bot which help with managing various aspects of communication and the pull requests workflow.
 
-Moved:
-
-* [EspFirmwareFlasher](https://github.com/nanoframework/esp32-firmware-flasher) Console app to flash an ESP32 with the bootloader and the nanoCLR images.
-* [Hex2Dfu](https://github.com/nanoframework/hex2dfu) Console app to convert and/or pack HEX or BIN files in DFU packages (required to update some target boards).
-
-Deprecated:
-
-* [GitHub DCO Check](GitHubDcoCheck) Windows app to check Pull Requests for DCO (obsolete as DCO is not required anymore).
-
 ## Feedback and documentation
 
 For documentation, providing feedback, issues and finding out how to contribute please refer to the [Home repo](https://github.com/nanoframework/Home).
