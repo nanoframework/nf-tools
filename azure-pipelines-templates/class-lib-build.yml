@@ -130,31 +130,6 @@ steps:
   inputs:
       targetType: 'inline'
       script: |
-          $MyNuGetVersion = $env:NBGV_NuGetPackageVersion -replace "\-g$env:NBGV_GitCommitIdShort", ""
-
-          # replace preview with alpha if this is a PR build
-          if($env:System_PullRequest_PullRequestId -ne $null)
-          {
-            $alphaPrString = "alpha-pr" + $env:System_PullRequest_PullRequestNumber
-            $MyNuGetVersion = $MyNuGetVersion -replace "preview", $alphaPrString
-          }
-
-          if ($env:System_PullRequest_SourceBranch -like 'release*')
-          {
-            $MyNuGetVersion = $MyNuGetVersion + "-rc." + $env:NBGV_VersionHeight
-          }
-
-          Write-Host "NuGet build is: $MyNuGetVersion"
-          Write-Host "Assembly version is: $env:NBGV_AssemblyVersion"
-
-          Write-Host "$("##vso[task.setvariable variable=MY_NUGET_VERSION]")$MyNuGetVersion"
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Get NuGet build number
-
-- task: PowerShell@2
-  inputs:
-      targetType: 'inline'
-      script: |
 
           $assemblyInfoFiles = (Get-ChildItem -Path ".\*" -Include "AssemblyInfo.cs" -Recurse)
           $attributeRegex = '(AssemblyNativeVersion\(\")+(\d+\.\d+\.\d+\.\d)+("\))'
@@ -259,20 +234,10 @@ steps:
 
           git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
 
-# update could build number (only possible if this is not a PR from a fork)
-- task: PowerShell@2
-  inputs:
-      targetType: 'inline'
-      script: |
-        Write-Host "NuGet version is $("##vso[build.updatebuildnumber]")$env:MY_NUGET_VERSION"
-        Write-Host "Build version is $env:NBGV_AssemblyVersion"
-  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Update cloud build number
-
 - task: NuGetCommand@2
   inputs:
     command: 'custom' 
-    arguments: 'pack $(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NativeAssemblyChecksum)"'
+    arguments: 'pack $(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NativeAssemblyChecksum)"'
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Pack NuGet with class library
 
@@ -283,16 +248,15 @@ steps:
 #     displayName: Pack NuGet with build deliverables class library
 
 - task: CopyFiles@1
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Collecting deployable artifacts
   inputs:
     sourceFolder: $(Build.SourcesDirectory)
     Contents: |
-      **\$(nugetPackageName)*.nupkg
-      **\$(nugetPackageName)*.snupkg
-      **\CHANGELOG.md
+      $(nugetPackageName)*.nupkg
+      CHANGELOG.md
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Collecting deployable artifacts
 
 - task: DotNetCoreCLI@2
   displayName: Install SignTool tool

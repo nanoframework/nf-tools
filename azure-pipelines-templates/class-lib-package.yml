@@ -8,19 +8,18 @@ parameters:
 steps:
 
 - task: NuGetCommand@2
-  inputs:
-    command: 'custom' 
-    arguments: 'pack ${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NativeAssemblyChecksum)"'
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Pack NuGet with class library
+  inputs:
+    command: 'custom' 
+    arguments: 'pack ${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NativeAssemblyChecksum)"'
 
 - task: CopyFiles@1
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Collecting deployable artifacts
   inputs:
     sourceFolder: $(Build.SourcesDirectory)
     Contents: |
-      **\${{ parameters.nugetPackageName }}*.nupkg
-      **\${{ parameters.nugetPackageName }}*.snupkg
+      ${{ parameters.nugetPackageName }}*.nupkg
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Collecting deployable artifacts
