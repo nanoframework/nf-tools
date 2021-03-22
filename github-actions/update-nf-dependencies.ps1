@@ -3,10 +3,12 @@
 
 # This PS update the .NET nanoFramework dependencies on the repo where it's running
 
-# optional parameter to request for stable or preview releases to be used when updating NuGets
+# optional parameters:
+# nugetReleaseType:  to request for stable or preview releases to be used when updating NuGets
+# targetSolutions: solution (or solutions) to update
 param (
     [string]$nugetReleaseType,
-    [string]$targetDirectory
+    [string]$targetSolutions
     )
 
 if ([string]::IsNullOrEmpty($nugetReleaseType))
@@ -53,16 +55,6 @@ else
     "Moving to 'main' folder" | Write-Host
 
     Set-Location "main" | Out-Null
-
-    if ([string]::IsNullOrEmpty($targetDirectory))
-    {
-        Write-Host "Targeting every solution in the repository."
-    }
-    else
-    {
-        Write-Host "Targeting every solution in the '$targetDirectory' directory."
-        Set-Location "$targetDirectory" | Out-Null
-    }
 }
 
 # init/reset these
@@ -97,8 +89,20 @@ Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
         Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
 
+if ([string]::IsNullOrEmpty($targetSolutions))
+{
+    Write-Host "Targeting every solution in the repository."
+
+    # set Include to all sln files
+    $targetSolutions = "*.sln"
+}
+else
+{
+    Write-Host "Targeting only this(ese) solution(s): '$targetSolutions'."
+}
+
 # find every solution file in repository
-$solutionFiles = (Get-ChildItem -Path ".\" -Include "*.sln" -Recurse)
+$solutionFiles = (Get-ChildItem -Path ".\" -Include "$targetSolutions"  -Recurse)
 
 # loop through solution files and replace content containing:
 # 1) .csproj to .projcs-temp (to prevent NuGet from touching these)
@@ -117,7 +121,8 @@ $nugetConfig = (Get-ChildItem -Path ".\" -Include "NuGet.Config" -Recurse) | Sel
 foreach ($solutionFile in $solutionFiles)
 {
     # check if there are any csproj here
-    $hascsproj = Get-Content $solutionFile -Encoding utf8 | Where-Object {$_ -like '*.csproj*'}
+    $slnFileContent = Get-Content $solutionFile -Encoding utf8
+    $hascsproj = $slnFileContent | Where-Object {$_ -like '*.csproj*'}
     if($hascsproj -eq $null)
     {
         continue
@@ -125,11 +130,33 @@ foreach ($solutionFile in $solutionFiles)
 
     $solutionPath = Split-Path -Path $solutionFile
 
-    # find packages.config
+    if (![string]::IsNullOrEmpty($nugetConfig))
+    {
+        nuget restore $solutionFile -ConfigFile $nugetConfig
+    }
+    else
+    {
+        nuget restore $solutionFile
+    }
+
+    # find ALL packages.config files in the solution projects
     $packagesConfigs = (Get-ChildItem -Path "$solutionPath" -Include "packages.config" -Recurse)
 
     foreach ($packagesConfig in $packagesConfigs)
     {
+        # check if this project is in our solution file
+        $projectPath = Split-Path -Path $packagesConfig -Parent
+        $projectPathInSln = $projectPath.Replace("$solutionPath\",'')
+
+        $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString().Contains($projectPathInSln)}
+        if($isProjecInSolution -eq $null)
+        {
+            continue
+        }
+
+        # get project at path
+        $projectPath = Get-ChildItem -Path $projectPath -Include '*.csproj' -Recurse
+
         # load packages.config as XML doc
         [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8
 
@@ -160,15 +187,6 @@ foreach ($solutionFile in $solutionFiles)
         {
             "NuGet packages to update:" | Write-Host
             $packageList | Write-Host
-
-            if (![string]::IsNullOrEmpty($nugetConfig))
-            {
-                nuget restore $solutionFile -ConfigFile $nugetConfig
-            }
-            else
-            {
-                nuget restore $solutionFile
-            }
             
             # update all packages
             foreach ($package in $packageList)
@@ -185,11 +203,11 @@ foreach ($solutionFile in $solutionFiles)
 
                     if (![string]::IsNullOrEmpty($nugetConfig))
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -FileConflictAction Overwrite
+                        nuget update $projectPath.FullName -Id "$packageName" -ConfigFile $nugetConfig -FileConflictAction Overwrite
                     }
                     else
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -FileConflictAction Overwrite
+                        nuget update $projectPath.FullName -Id "$packageName" -FileConflictAction Overwrite
                     }
 
                 }
@@ -198,11 +216,11 @@ foreach ($solutionFile in $solutionFiles)
 
                     if (![string]::IsNullOrEmpty($nugetConfig))
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease -FileConflictAction Overwrite
+                        nuget update $projectPath.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease -FileConflictAction Overwrite
                     }
                     else
                     {
-                        nuget update $solutionFile.FullName -Id "$packageName" -PreRelease -FileConflictAction Overwrite
+                        nuget update $projectPath.FullName -Id "$packageName" -PreRelease -FileConflictAction Overwrite
                     }
                 }
 
@@ -245,27 +263,12 @@ foreach ($solutionFile in $solutionFiles)
 
                     "Bumping $packageName from $packageOriginVersion to $packageTargetVersion." | Write-Host -ForegroundColor Cyan                
 
-                    $updateCount = $updateCount + 1;
+                    "Updating NFMDP_PE LoadHints" | Write-Host
 
-                    #  find csproj(s)
-                    $projectFiles = (Get-ChildItem -Path "$solutionPath" -Include "*.csproj" -Recurse)
-
-                    if ($projectFiles.length -gt 0)
-                    {
-                        "Updating NFMDP_PE LoadHints" | Write-Host
-
-                        # replace NFMDP_PE_LoadHints
-                        foreach ($project in $projectFiles)
-                        {
-                            $filecontent = Get-Content $project -Encoding utf8
-                            attrib $project -r
-                            $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $project -Encoding utf8 -Force
-                        }
-                    }
-                    else
-                    {
-                        "No project files to update." | Write-Host
-                    }
+                    # replace NFMDP_PE_LoadHints
+                    $filecontent = Get-Content $projectPath.FullName -Encoding utf8
+                    attrib $project -r
+                    $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $projectPath.FullName -Encoding utf8 -Force
 
                     # update nuspec files, if any
                     $nuspecFiles = (Get-ChildItem -Path "$solutionPath" -Include "*.nuspec" -Recurse)
@@ -276,7 +279,7 @@ foreach ($solutionFile in $solutionFiles)
 
                         foreach ($nuspec in $nuspecFiles)
                         {
-                            "Nuspec file is " | Write-Host
+                            "Trying update on nuspec file: '$nuspec.FullName' " | Write-Host
 
                             [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
 
@@ -294,7 +297,7 @@ foreach ($solutionFile in $solutionFiles)
                                             {
                                                 if($dependency.Attributes["id"].value -eq $packageName)
                                                 {
-                                                    "Updating dependency." | Write-Host
+                                                    "Updating dependency: $packageName to $packageTargetVersion" | Write-Host
                                                     $dependency.Attributes["version"].value = "$packageTargetVersion"
                                                 }
                                             }
@@ -314,9 +317,21 @@ foreach ($solutionFile in $solutionFiles)
                     }
 
                     # build commit message
-                    $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>"
-                }
+                    $updateMessage = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>";
 
+                    if($commitMessage.Contains($updateMessage))
+                    {
+                        # already reported
+                    }
+                    else
+                    {
+                        # update message
+                        $commitMessage += $updateMessage
+
+                        # update count
+                        $updateCount = $updateCount + 1;
+                    }
+                }
             }
         }
     }
@@ -325,7 +340,6 @@ foreach ($solutionFile in $solutionFiles)
 # rename csproj files back to nfproj
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
 Foreach-object {
-    $OldName = $_.name; 
     $NewName = $_.name -replace '.csproj','.nfproj'; 
     Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
@@ -333,7 +347,6 @@ Foreach-object {
 # rename projcs-temp files back to csproj
 Get-ChildItem -Path $workingPath -Include "*.projcs-temp" -Recurse |
 Foreach-object {
-    $OldName = $_.name; 
     $NewName = $_.name -replace '.projcs-temp','.csproj'; 
     Rename-Item  -Path $_.fullname -Newname $NewName; 
     }
