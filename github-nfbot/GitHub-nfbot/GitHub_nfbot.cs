@@ -702,10 +702,19 @@ namespace nanoFramework.Tools.GitHub
                     branchName = "develop";
                 }
 
-                return await QueueBuildAsync(repositoryName, branchName, log);
+                try
+                {
+                    return await QueueBuildAsync(repositoryName, branchName, log);
+                }
+                catch (Exception ex)
+                {
+                    log.LogError($"Error queuing build: {ex.Message}.");
+
+                    return false;
+                }
             }
 
-            // unkown or invlaid command
+            // unknown or invalid command
             return false;
         }
 
@@ -742,7 +751,16 @@ namespace nanoFramework.Tools.GitHub
                     Parameters = "{\"StartReleaseCandidate\":\"true\"}"
                 };
 
-                await buildClient.QueueBuildAsync(buildRequest);
+                try
+                {
+                    await buildClient.QueueBuildAsync(buildRequest);
+                }
+                catch (Exception ex)
+                {
+                    log.LogError($"Error queuing build: {ex.Message}.");
+
+                    return false;
+                }
 
                 return true;
             }
@@ -787,7 +805,16 @@ namespace nanoFramework.Tools.GitHub
                     Parameters = "{\"UPDATE_DEPENDENTS\":\"true\"}"
                 };
 
-                await buildClient.QueueBuildAsync(buildRequest);
+                try
+                {
+                    await buildClient.QueueBuildAsync(buildRequest);
+                }
+                catch(Exception ex)
+                {
+                    log.LogError($"Error queuing build: {ex.Message}.");
+
+                    return false;
+                }
 
                 return true;
             }
