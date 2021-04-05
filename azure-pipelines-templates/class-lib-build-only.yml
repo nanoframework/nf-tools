@@ -197,6 +197,7 @@ steps:
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
   condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Generate change log
+  continueOnError: true
 
 # generate change log including future version
 - powershell: |
@@ -205,35 +206,37 @@ steps:
       github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels --future-release v$env:MY_NUGET_VERSION
   condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), and ( eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Generate change log
+  continueOnError: true
 
 # copy change log to artifacts directory
 - task: CopyFiles@2
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Copy Changelog
+  continueOnError: true
   inputs:
     SourceFolder: '$(System.DefaultWorkingDirectory)'
     Contents: 'CHANGELOG.md'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Copy Changelog
 
 # push new changelog to GitHub repo
 - task: PowerShell@2
-  inputs:
-      targetType: 'inline'
-      script: |
-          git add CHANGELOG.md
-          git commit -m "Update CHANGELOG for v$(NBGV_Version)" -m"***NO_CI***"
-
-          git config user.email ${{ parameters.gitEmail }}
-          git config user.name ${{ parameters.gitUser }}
-          
-          # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
-          # 'encoded token' is the Base64 of the string "nfbot:personal-token"
-          $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
-
-          git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
-
   condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Push changelog to GitHub
+  continueOnError: true
+  inputs:
+    targetType: 'inline'
+    script: |
+      git add CHANGELOG.md
+      git commit -m "Update CHANGELOG for v$(NBGV_Version)" -m"***NO_CI***"
+
+      git config user.email ${{ parameters.gitEmail }}
+      git config user.name ${{ parameters.gitUser }}
+      
+      # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
+      # 'encoded token' is the Base64 of the string "nfbot:personal-token"
+      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
+
+      git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
 
 - task: CopyFiles@1
   inputs:
