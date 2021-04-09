@@ -384,42 +384,40 @@ namespace nanoFramework.Tools.GitHub
                 }
 
                 // list all open PRs from nfbot
-                JArray openPrs = (JArray)(await GetGitHubRequest(
-                    $"{payload.repository.url.ToString()}/pulls?user=nfbot",
-                    log));
+                IReadOnlyList<Octokit.PullRequest>  ppprrs = await _octokitClient.PullRequest.GetAllForRepository(
+                    _gitOwner,
+                    payload.repository.name.ToString(),
+                    new PullRequestRequest());
 
-                var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"].ToString() == prSha);
+                Octokit.PullRequest matchingPr = ppprrs.FirstOrDefault(
+                    p => p.User.Login == "nfbot" && 
+                    p.Head.Sha == prSha);
 
                 if (matchingPr != null)
                 {
                     // get PR
-                    var pr = await GetGitHubRequest($"{matchingPr["url"]}", log);
-                    
-                    // need to get PR head as JObject to access the 'ref' property because it's a C# keyword
-                    JObject prHead = pr.head;
+                    var pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), matchingPr.Number);
 
                     // check if PR it's a version update
-                    if ((pr.user.login == "nfbot" ||
-                         pr.user.login == "github-actions[bot]") && 
-                         pr.body.ToString().Contains("[version update]"))
+                    if ((pr.User.Login == "nfbot" ||
+                         pr.User.Login == "github-actions[bot]") && 
+                         pr.Body.ToString().Contains("[version update]"))
                     {
                         // get status checks for PR
-                        var checkSatus = await GetGitHubRequest(
-                            $"{pr.head.repo.url.ToString()}/commits/{pr.head.sha}/check-runs",
-                            log);
+                        var checkStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
 
                         bool allChecksSuccessfull = false;
 
-                        if (((JArray)checkSatus.check_runs).Count == 0)
+                        if (checkStatus.TotalCount == 0)
                         {
                             allChecksSuccessfull = true;
                         }
                         else
                         {
                             // iterate through all check status, if there are any
-                            foreach (dynamic cr in (JArray)checkSatus.check_runs)
+                            foreach (var cr in checkStatus.CheckRuns)
                             {
-                                if (cr.conclusion == "success")
+                                if (cr.Conclusion == "success")
                                 {
                                     // check pass
                                     allChecksSuccessfull = true;
@@ -436,25 +434,24 @@ namespace nanoFramework.Tools.GitHub
                         if (allChecksSuccessfull)
                         {
                             // check if this is running on samples repo
-                            if (!pr.head.repo.url.ToString().Contains("nanoframework/Samples"))
+                            if (!pr.HtmlUrl.ToString().Contains("nanoframework/Samples"))
                             {
                                 // class lib repo
 
-                                
-                                // default is TO PUBLISH a new relase 
+                                // default is TO PUBLISH a new release 
                                 bool publishReleaseFlag = true;
 
                                 // get labels for this PR
-                                JArray prLabels = (JArray)pr.labels;
+                                List<Label> prLabels = (List<Label>)pr.Labels;
 
                                 // check if this was a dependencies update
-                                var dependenciesLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelTypeDependenciesName);
+                                var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
                                 if (dependenciesLabel != null)
                                 {
                                     // this is a dependencies update PR
 
                                     // get which packages where updated
-                                    IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, pr.head.repo.name.ToString(), (int)pr.number);
+                                    IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
 
                                     var packageFile = prFiles.FirstOrDefault(f => f.FileName.Contains("/packages.config"));
 
@@ -487,10 +484,7 @@ namespace nanoFramework.Tools.GitHub
                                     log.LogInformation($"Adding 'Publish release flag to PR.");
 
                                     // add the Publish release label
-                                    await SendGitHubRequest(
-                                        $"{pr.issue_url.ToString()}/labels", $"[ \"{_labelCiPublishReleaseName}\" ]",
-                                        log,
-                                        "application/vnd.github.squirrel-girl-preview");
+                                    await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)pr.Number, new string[] { _labelCiPublishReleaseName });
                                 }
                             }
 
@@ -499,21 +493,19 @@ namespace nanoFramework.Tools.GitHub
                             await SquashAndMergePR(pr, log);
                         }
                     }
-                    else if (prHead["ref"].ToString().StartsWith("release-"))
+                    else if (pr.Base.Ref.ToString().StartsWith("release-"))
                     {
                         // PR it's a release branch
 
                         // get status checks for PR
-                        var checkSatus = await GetGitHubRequest(
-                            $"{pr.head.repo.url.ToString()}/commits/{pr.head.sha}/check-runs",
-                            log);
+                        var checkStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
 
                         bool allChecksSuccessfull = false;
 
                         // iterate through all check status
-                        foreach (dynamic cr in (JArray)checkSatus.check_runs)
+                        foreach (var cr in checkStatus.CheckRuns)
                         {
-                            if (cr.conclusion == "success")
+                            if (cr.Conclusion == "success")
                             {
                                 // check pass
                                 allChecksSuccessfull = true;
@@ -531,16 +523,14 @@ namespace nanoFramework.Tools.GitHub
                             // need an APPROVED review
 
                             // list PR reviews
-                            JArray prReviews = (JArray)(await GetGitHubRequest(
-                                $"{pr.url.ToString()}/reviews",
-                                log));
+                            var prReviews = await _octokitClient.PullRequest.Review.GetAll(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
 
                             bool prApproved = false;
 
                             // iterate through all reviews
                             foreach (dynamic review in prReviews)
                             {
-                                if (review.state == "APPROVED")
+                                if (review.State == "APPROVED")
                                 {
                                     // approved
                                     prApproved = true;
@@ -551,9 +541,9 @@ namespace nanoFramework.Tools.GitHub
                             if (prApproved)
                             {
                                 // check if the CI-PublishRelease is set 
-                                JArray prLabels = pr.labels;
+                                List<Label> prLabels = (List<Label>)pr.Labels;
 
-                                if (prLabels.Count(l => l["name"].ToString() == _labelCiPublishReleaseName) > 0)
+                                if (prLabels.Any(l => l.Name.ToString() == _labelCiPublishReleaseName))
                                 {
                                     // all checks are successful
                                     // PR flaged to Publish Release
