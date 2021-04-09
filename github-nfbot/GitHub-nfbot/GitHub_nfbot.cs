@@ -349,17 +349,35 @@ namespace nanoFramework.Tools.GitHub
 
             #region process check run
 
-            else if (payload.check_run != null && payload.check_run.conclusion == "success")
+            else if (
+                (payload.check_run != null && payload.check_run.conclusion == "success") ||
+                (payload.state != null && payload.state == "success"))
             {
-                // serious candidate of a PR check
-                log.LogInformation($"Processing check success event...");
+                string prSha = null;
+
+                if (payload.check_run != null)
+                {
+                    // serious candidate of a PR check
+                    log.LogInformation($"Processing check success event...");
+
+                    // get SHA
+                    prSha = payload.check_run.head_sha.ToString();
+                }
+                else if(payload.state != null)
+                {
+                    // serious candidate of a PR state
+                    log.LogInformation($"Processing state success event...");
+
+                    // get SHA
+                    prSha = payload.sha.ToString();
+                }
 
                 // list all open PRs from nfbot
                 JArray openPrs = (JArray)(await GetGitHubRequest(
                     $"{payload.repository.url.ToString()}/pulls?user=nfbot",
                     log));
 
-                var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"] == payload.check_run.head_sha);
+                var matchingPr = openPrs.FirstOrDefault(p => p["head"]["sha"].ToString() == prSha);
 
                 if (matchingPr != null)
                 {
@@ -425,7 +443,7 @@ namespace nanoFramework.Tools.GitHub
                                     // this is a dependencies update PR
 
                                     // get which packages where updated
-                                    IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, "lib-nanoFramework.System.Net.Http", 163);
+                                    IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, pr.head.repo.name.ToString(), (int)pr.number);
 
                                     var packageFile = prFiles.FirstOrDefault(f => f.FileName.Contains("/packages.config"));
 
@@ -438,10 +456,14 @@ namespace nanoFramework.Tools.GitHub
                                         var newPackages = diffs.Where(p => p.StartsWith("+"));
 
                                         if(newPackages.Count() == 1 &&
-                                            newPackages.Contains("nanoFramework.TestFramework"))
+                                            (newPackages.Contains("nanoFramework.TestFramework") ||
+                                             newPackages.Contains("Nerdbank.GitVersioning")))
                                         {
-                                            // update was only for Test Framework
-                                            // DON'T publish a new relase
+                                            // update was for:
+                                            // Test Framework
+                                            // Nerdbank.GitVersioning
+
+                                            // DON'T publish a new release
                                             publishReleaseFlag = false;
                                         }
                                     }
@@ -1556,6 +1578,13 @@ namespace nanoFramework.Tools.GitHub
 
                 client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("username", "version"));
 
+
+                /////////////////////////////////////////////////////////////////////////////////////////////////
+                // commented code to generate the encoded string to put at GITHUB_CREDENTIALS
+                //var plainTextBytes = Encoding.UTF8.GetBytes("nfbot:GITHUB-TOKEN-HERE");
+                //string base64Encoded = Convert.ToBase64String(plainTextBytes);
+                /////////////////////////////////////////////////////////////////////////////////////////////////
+
                 // Add the GITHUB_CREDENTIALS as an app setting, Value for the app setting is a base64 encoded string in the following format
                 // "Username:Password" or "Username:PersonalAccessToken"
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Environment.GetEnvironmentVariable("GITHUB_CREDENTIALS"));
@@ -1564,7 +1593,11 @@ namespace nanoFramework.Tools.GitHub
 
                 HttpResponseMessage response = await client.GetAsync(url);
 
-                return JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync());
+                dynamic responseContent = JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync());
+
+                log.LogInformation($"Reply {responseContent.ToString()}");
+
+                return responseContent;
             }
         }
 
