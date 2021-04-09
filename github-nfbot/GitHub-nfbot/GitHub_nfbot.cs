@@ -82,6 +82,8 @@ namespace nanoFramework.Tools.GitHub
 
         private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
 
+        private const string _labelInvalidName = "invalid";
+
         // DevOps client
         private const string _nfOrganizationUrl = "https://dev.azure.com/nanoframework";
 
@@ -99,6 +101,9 @@ namespace nanoFramework.Tools.GitHub
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic payload = JsonConvert.DeserializeObject(requestBody);
+
+            // setup OctoKit authentication
+            _octokitClient.Credentials = new Credentials(Environment.GetEnvironmentVariable("GITHUB_TOKEN"));
 
             #region process PR events
 
@@ -211,6 +216,12 @@ namespace nanoFramework.Tools.GitHub
                         await SendGitHubDeleteRequest(
                             $"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}",
                             log);
+
+                        // clear all labels
+                        await _octokitClient.Issue.Labels.RemoveAllFromIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+
+                        // add the invalid label
+                        await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number, new string[] { _labelInvalidName });
                     }
                 }
             }
