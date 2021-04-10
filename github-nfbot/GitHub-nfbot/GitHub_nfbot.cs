@@ -203,11 +203,12 @@ namespace nanoFramework.Tools.GitHub
                     log.LogInformation($"Processing PR closed event...");
 
                     // get PR
-                    var pr = await GetGitHubRequest(payload.pull_request.url.ToString(), log);
+                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+
 
                     // check for PR authored by nfbot or git-actions bot
-                    if (pr.user.login == "nfbot" ||
-                        pr.user.login == "github-actions[bot]")
+                    if (pr.User.Login == "nfbot" ||
+                        pr.User.Login == "github-actions[bot]")
                     {
                         // get origin branch
                         var originBranch = payload.pull_request.head.label.ToString().Replace("nanoframework:", "");
@@ -217,11 +218,17 @@ namespace nanoFramework.Tools.GitHub
                             $"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}",
                             log);
 
-                        // clear all labels
-                        await _octokitClient.Issue.Labels.RemoveAllFromIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                        // check merge status
+                        if (!await _octokitClient.PullRequest.Merged(_gitOwner, payload.repository.name.ToString(), (int)payload.number))
+                        {
+                            // this branch was deleted without being merged, mark as invalid
 
-                        // add the invalid label
-                        await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number, new string[] { _labelInvalidName });
+                            // clear all labels
+                            await _octokitClient.Issue.Labels.RemoveAllFromIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+
+                            // add the invalid label
+                            await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number, new string[] { _labelInvalidName });
+                        }
                     }
                 }
             }
@@ -384,19 +391,19 @@ namespace nanoFramework.Tools.GitHub
                 }
 
                 // list all open PRs from nfbot
-                IReadOnlyList<Octokit.PullRequest>  ppprrs = await _octokitClient.PullRequest.GetAllForRepository(
+                IReadOnlyList<Octokit.PullRequest>  openPRs = await _octokitClient.PullRequest.GetAllForRepository(
                     _gitOwner,
                     payload.repository.name.ToString(),
                     new PullRequestRequest());
 
-                Octokit.PullRequest matchingPr = ppprrs.FirstOrDefault(
+                Octokit.PullRequest matchingPr = openPRs.FirstOrDefault(
                     p => p.User.Login == "nfbot" && 
                     p.Head.Sha == prSha);
 
                 if (matchingPr != null)
                 {
                     // get PR
-                    var pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), matchingPr.Number);
+                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), matchingPr.Number);
 
                     // check if PR it's a version update
                     if ((pr.User.Login == "nfbot" ||
@@ -1668,6 +1675,33 @@ namespace nanoFramework.Tools.GitHub
                 mergeRequest, 
                 log, 
                 "application/vnd.github.squirrel-girl-preview", "PUT");
+        }
+
+        public static async Task SquashAndMergePR(
+            Octokit.PullRequest pull_request,
+            ILogger log)
+        {
+            log.LogInformation($"Squash and merge PR {pull_request.Title}");
+
+            // place holder for commit message (if any)
+            string commitMessage = "";
+
+            // get labels for this PR
+            var prLabels = pull_request.Labels;
+
+            var updateDependentsLabel = prLabels.FirstOrDefault(l => l.Name == _labelCiUpdateDependentsName);
+            if (updateDependentsLabel != null)
+            {
+                commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
+            }
+
+            var publishReleaseLabel = prLabels.FirstOrDefault(l => l.Name == _labelCiPublishReleaseName);
+            if (publishReleaseLabel != null)
+            {
+                commitMessage += "\\r\\n***PUBLISH_RELEASE***";
+            }
+
+            await _octokitClient.PullRequest.Merge(pull_request.Head.Repository.Id, pull_request.Number, new MergePullRequest() { MergeMethod = PullRequestMergeMethod.Squash, CommitTitle = pull_request.Title, CommitMessage = commitMessage });
         }
 
         public static async Task CloseIssue(
