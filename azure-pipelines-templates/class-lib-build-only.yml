@@ -27,19 +27,19 @@ steps:
 
     if($env:System_PullRequest_PullRequestId -ne $null)
     {
-      # PR build, get PR message
+        # PR build, get PR message
 
-      # need to get PR number from branch as the Azure Pipeline var can't be trusted
-      if($env:Build_SourceBranch -match '(?<=(pull\/))\w*(?=(\/))')
-      {
-        $prNumber = $matches[0]
+        # need to get PR number from branch as the Azure Pipeline var can't be trusted
+        if($env:Build_SourceBranch -match '(?<=(pull\/))\w*(?=(\/))')
+        {
+            $prNumber = $matches[0]
 
-        $prUrl = "https://api.github.com/repos/$env:Build_Repository_Name/pulls/$prNumber"
+            $prUrl = "https://api.github.com/repos/$env:Build_Repository_Name/pulls/$prNumber"
 
-        $commit = Invoke-RestMethod -Uri $prUrl -ContentType "application/json" -Method GET
+            $commit = Invoke-RestMethod -Uri $prUrl -ContentType "application/json" -Method GET
 
-        $commitMessage = $commit.body
-      }
+            $commitMessage = $commit.body
+        }
     }
     else
     {
@@ -102,10 +102,10 @@ steps:
      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
 
 - task: NuGetToolInstaller@0
-  inputs:
-    versionSpec: '5.8.0'
   condition: ne( variables['StartReleaseCandidate'], true )
   displayName: 'Install specifc version of NuGet'
+  inputs:
+    versionSpec: '5.8.0'
 
 - task: NuGetCommand@2
   condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ), ne( variables['StartReleaseCandidate'], true ) )
@@ -120,12 +120,12 @@ steps:
   displayName: Install nanoFramework MSBuild components
 
 - task: VSBuild@1
+  condition: ne( variables['StartReleaseCandidate'], true )
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     msbuildArgs: '/p:PublicRelease=true'
     configuration: '$(buildConfiguration)'
-  condition: ne( variables['StartReleaseCandidate'], true )
 
 - task: VisualStudioTestPlatformInstaller@1
   condition: and( succeeded(), ${{ parameters.runUnitTests }}, ne( variables['StartReleaseCandidate'], true ) )
@@ -155,27 +155,27 @@ steps:
     runSettingsFile: '${{ parameters.unitTestRunsettings }}'
 
 - task: PowerShell@2
-  inputs:
-      targetType: 'inline'
-      script: |
-
-          $assemblyInfoFiles = (Get-ChildItem -Path ".\*" -Include "AssemblyInfo.cs" -Recurse)
-          $attributeRegex = '(AssemblyNativeVersion\(\")+(\d+\.\d+\.\d+\.\d)+("\))'
-
-          $attributeRegex = [regex]"(AssemblyNativeVersion\(\"")+(\d+\.\d+\.\d+\.\d)+(""\))"
-
-          # read attribute from file
-          $fileContent = Get-Content($assemblyInfoFiles[0])
-
-          $attrib = $attributeRegex.Match($fileContent) 
-
-          $nativeVersion = $attrib.Groups[2].value
-
-          Write-Host "AssemblyNativeVersion is $nativeVersion"
-
-          Write-Host "$("##vso[task.setvariable variable=ASSEMBLY_NATIVE_VERSION]")$nativeVersion"
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Get AssemblyNativeVersion version
+  inputs:
+    targetType: 'inline'
+    script: |
+
+      $assemblyInfoFiles = (Get-ChildItem -Path ".\*" -Include "AssemblyInfo.cs" -Recurse)
+      $attributeRegex = '(AssemblyNativeVersion\(\")+(\d+\.\d+\.\d+\.\d)+("\))'
+
+      $attributeRegex = [regex]"(AssemblyNativeVersion\(\"")+(\d+\.\d+\.\d+\.\d)+(""\))"
+
+      # read attribute from file
+      $fileContent = Get-Content($assemblyInfoFiles[0])
+
+      $attrib = $attributeRegex.Match($fileContent) 
+
+      $nativeVersion = $attrib.Groups[2].value
+
+      Write-Host "AssemblyNativeVersion is $nativeVersion"
+
+      Write-Host "$("##vso[task.setvariable variable=ASSEMBLY_NATIVE_VERSION]")$nativeVersion"
 
 - powershell: |
     # get subject and commit message for commit
@@ -186,17 +186,17 @@ steps:
 
     if($commitMessage -like "*PUBLISH_RELEASE*")
     {
-      # set variable
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")false"
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")true"
-      Write-Host "Release draft: FALSE"
+        # set variable
+        Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")false"
+        Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")true"
+        Write-Host "Release draft: FALSE"
     }
     else
     {
-      # set variable
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")true"
-      Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")false"
-      Write-Host "Release draft: TRUE"
+        # set variable
+        Write-Host "$("##vso[task.setvariable variable=RELEASE_DRAFT;isOutput=true]")true"
+        Write-Host "$("##vso[task.setvariable variable=RELEASE_VERSION;isOutput=true]")false"
+        Write-Host "Release draft: TRUE"
     }
   name: SetReleaseDraftVar
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
@@ -207,32 +207,32 @@ steps:
   displayName: 'Run Code Analysis'
 
 - task: SonarCloudPublish@1
-  inputs:
-    pollingTimeoutSec: '300'
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: 'Publish Quality Gate Result'
+  inputs:
+    pollingTimeoutSec: '300'
 
 - task: UseRubyVersion@0
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Setup Ruby
   inputs:
     versionSpec: '>= 2.7' 
     addToPath: true
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Setup Ruby
 
 # generate change log
 - powershell: |
-      gem install github_changelog_generator --quiet --no-document
-      # need to call it passing both cache options with full path otherwise it won't work
-      github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
+    gem install github_changelog_generator --quiet --no-document
+    # need to call it passing both cache options with full path otherwise it won't work
+    github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
   condition: and( succeeded(), variables['SetReleaseDraftVar.RELEASE_DRAFT'], eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'master') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Generate change log
   continueOnError: true
 
 # generate change log including future version
 - powershell: |
-      gem install github_changelog_generator --quiet --no-document
-      # need to call it passing both cache options with full path otherwise it won't work
-      github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels --future-release v$env:MY_NUGET_VERSION
+    gem install github_changelog_generator --quiet --no-document
+    # need to call it passing both cache options with full path otherwise it won't work
+    github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels --future-release v$env:MY_NUGET_VERSION
   condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), and ( eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'master'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Generate change log
   continueOnError: true
@@ -268,11 +268,11 @@ steps:
       git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
 
 - task: CopyFiles@1
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Collecting deployable artifacts
   inputs:
     sourceFolder: $(Build.SourcesDirectory)
     Contents: |
       **\CHANGELOG.md
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Collecting deployable artifacts
