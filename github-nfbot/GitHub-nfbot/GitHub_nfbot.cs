@@ -405,6 +405,8 @@ namespace nanoFramework.Tools.GitHub
                          pr.User.Login == "github-actions[bot]") && 
                          pr.Body.ToString().Contains("[version update]"))
                     {
+                        bool skipCIBuild = false;
+
                         // get status checks for PR
                         var checkStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
 
@@ -465,8 +467,11 @@ namespace nanoFramework.Tools.GitHub
                                         // get additions
                                         var newPackages = diffs.Where(p => p.StartsWith("+"));
 
-                                        if(newPackages.Count() == 1 &&
+                                        if (newPackages.Count() == 1 &&
                                             (newPackages.Contains("nanoFramework.TestFramework") ||
+                                             newPackages.Contains("Nerdbank.GitVersioning")) ||
+                                            newPackages.Count() == 2 &&
+                                            (newPackages.Contains("nanoFramework.TestFramework") &&
                                              newPackages.Contains("Nerdbank.GitVersioning")))
                                         {
                                             // update was for:
@@ -475,6 +480,9 @@ namespace nanoFramework.Tools.GitHub
 
                                             // DON'T publish a new release
                                             publishReleaseFlag = false;
+
+                                            // skip build
+                                            skipCIBuild = true;
                                         }
                                     }
                                 }
@@ -492,7 +500,10 @@ namespace nanoFramework.Tools.GitHub
 
                             // checks are all successful
                             // merge PR with squash
-                            await SquashAndMergePR(pr, log);
+                            await SquashAndMergePR(
+                                pr,
+                                skipCIBuild,
+                                log);
                         }
                     }
                     else if (pr.Base.Ref.ToString().StartsWith("release-"))
@@ -1620,6 +1631,7 @@ namespace nanoFramework.Tools.GitHub
 
         public static async Task SquashAndMergePR(
             Octokit.PullRequest pull_request,
+            bool skipCIBuild,
             ILogger log)
         {
             log.LogInformation($"Squash and merge PR {pull_request.Title}");
@@ -1627,22 +1639,29 @@ namespace nanoFramework.Tools.GitHub
             // place holder for commit message (if any)
             string commitMessage = "";
 
-            // get labels for this PR
-            var prLabels = pull_request.Labels;
-
-            var updateDependentsLabel = prLabels.FirstOrDefault(l => l.Name == _labelCiUpdateDependentsName);
-            if (updateDependentsLabel != null)
+            // check PR labels
+            if (pull_request.Labels.Any(l => l.Name == _labelCiUpdateDependentsName))
             {
                 commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
             }
 
-            var publishReleaseLabel = prLabels.FirstOrDefault(l => l.Name == _labelCiPublishReleaseName);
-            if (publishReleaseLabel != null)
+            if (pull_request.Labels.Any(l => l.Name == _labelCiPublishReleaseName))
             {
                 commitMessage += "\\r\\n***PUBLISH_RELEASE***";
             }
 
-            await _octokitClient.PullRequest.Merge(pull_request.Base.Repository.Id, pull_request.Number, new MergePullRequest() { MergeMethod = PullRequestMergeMethod.Squash, CommitTitle = pull_request.Title, CommitMessage = commitMessage });
+            if(skipCIBuild)
+            {
+                commitMessage += "\\r\\n***NO_CI***";
+            }
+
+            await _octokitClient.PullRequest.Merge(
+                pull_request.Base.Repository.Id,
+                pull_request.Number,
+                new MergePullRequest() { 
+                    MergeMethod = PullRequestMergeMethod.Squash, 
+                    CommitTitle = pull_request.Title, 
+                    CommitMessage = commitMessage });
         }
 
         public static async Task CloseIssue(
