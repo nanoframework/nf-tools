@@ -79,6 +79,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _labelTypeFeatureRequestName = "Type: Feature Request";
         private const string _labelTypeBugName = "Type: bug";
         private const string _labelTypeEnhancementName = "Type: enhancement";
+        private const string _labelTypeUnitTestsName = "Type: Unit Tests";
 
         private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
 
@@ -114,8 +115,9 @@ namespace nanoFramework.Tools.GitHub
                 if (payload.action == "opened" ||
                     payload.action == "edited")
                 {
-
                     log.LogInformation($"Processing PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
+
+                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
 
                     ////////////////////////////////////////////////////////////
                     // processing exceptions
@@ -144,20 +146,14 @@ namespace nanoFramework.Tools.GitHub
                             log.LogInformation($"Adding {_labelTypeDependenciesName} label to PR.");
 
                             // add the Type: dependency label
-                            await SendGitHubRequest(
-                                $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
-                                log,
-                                "application/vnd.github.squirrel-girl-preview");
+                            await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeDependenciesName });
                         }
                         else if (prHead["ref"].ToString().StartsWith("release-"))
                         {
                             // this is a release candidate PR
 
                             // add the Publish release label
-                            await SendGitHubRequest(
-                                $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelCiPublishReleaseName}\" ]",
-                                log,
-                                "application/vnd.github.squirrel-girl-preview");
+                            await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelCiPublishReleaseName });
                         }
                     }
                     else
@@ -185,7 +181,7 @@ namespace nanoFramework.Tools.GitHub
 
                         bool linkedIssuesReference = await CheckLinkedIssuesAsync(payload, log);
 
-                        await ManageLabelsAsync(payload, log);
+                        await ManageLabelsAsync(pr, log);
 
                         if (linkedIssuesReference)
                         {
@@ -913,56 +909,44 @@ namespace nanoFramework.Tools.GitHub
             return false;
         }
 
-        private static async Task ManageLabelsAsync(dynamic payload, ILogger log)
+        private static async Task ManageLabelsAsync(Octokit.PullRequest pr, ILogger log)
         {
-            // get PR body
-            string prBody = payload.pull_request.body;
-
-            if (prBody.Contains("[x] Bug fix", StringComparison.InvariantCultureIgnoreCase))
+            if (pr.Body.Contains("[x] Bug fix", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: dependency label
-                await SendGitHubRequest(
-                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeBugName}\" ]",
-                    log,
-                    "application/vnd.github.squirrel-girl-preview");
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeBugName });
             }
 
             if (
-                prBody.Contains("[x] Improvement", StringComparison.InvariantCultureIgnoreCase) ||
-                prBody.Contains("[x] New feature", StringComparison.InvariantCultureIgnoreCase) )
+                pr.Body.Contains("[x] Improvement", StringComparison.InvariantCultureIgnoreCase) ||
+                pr.Body.Contains("[x] New feature", StringComparison.InvariantCultureIgnoreCase) )
             {
                 // add the Type: enhancement label
-                await SendGitHubRequest(
-                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeEnhancementName}\" ]",
-                    log,
-                    "application/vnd.github.squirrel-girl-preview");
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeEnhancementName });
             }
 
-            if (prBody.Contains("[x] Breaking change", StringComparison.InvariantCultureIgnoreCase))
+            if (pr.Body.Contains("[x] Breaking change", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: Breaking change label
-                await SendGitHubRequest(
-                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelBreakingChangeName}\" ]",
-                    log,
-                    "application/vnd.github.squirrel-girl-preview");
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelBreakingChangeName });
             }
 
-            if (prBody.Contains("[x] Config and build", StringComparison.InvariantCultureIgnoreCase))
+            if (pr.Body.Contains("[x] Config and build", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: Breaking change label
-                await SendGitHubRequest(
-                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelConfigAndBuildName}\" ]",
-                    log,
-                    "application/vnd.github.squirrel-girl-preview");
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelConfigAndBuildName });
             }
 
-            if (prBody.Contains("[x] Dependencies", StringComparison.InvariantCultureIgnoreCase))
+            if (pr.Body.Contains("[x] Dependencies", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: Breaking change label
-                await SendGitHubRequest(
-                    $"{payload.pull_request.issue_url.ToString()}/labels", $"[ \"{_labelTypeDependenciesName}\" ]",
-                    log,
-                    "application/vnd.github.squirrel-girl-preview");
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeDependenciesName });
+            }
+
+            if (pr.Body.Contains("[x] Unit Tests", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // add the Type: Unit Tests label
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeUnitTestsName });
             }
         }
 
@@ -1186,26 +1170,106 @@ namespace nanoFramework.Tools.GitHub
             bool authorIsMemberOrOwner = payload.issue.author_association == "MEMBER" || payload.issue.author_association == "OWNER";
 
             // get issue
-            dynamic issue = await GetGitHubRequest(
-                payload.issue.url.ToString(),
-                log);
+            Octokit.Issue issue = await _octokitClient.Issue.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
 
-            if (issue != null)
+            // check unwanted content
+            if (issue.Body.Contains(_issueContentBeforePosting) ||
+                    issue.Body.Contains(_issueContentRemoveContentInstruction))
             {
-                string issueBody = issue.body;
+                log.LogInformation($"Unwanted content on issue. Adding comment before closing.");
 
-                // check unwanted content
-                if (issueBody.Contains(_issueContentBeforePosting) ||
-                     issueBody.Contains(_issueContentRemoveContentInstruction))
+                await _octokitClient.Issue.Comment.Create(issue.Repository.Id, issue.Number, $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}");
+
+                // close issue
+                await CloseIssue(
+                    payload.issue,
+                    log);
+
+                return new OkObjectResult("");
+            }
+
+            // check for expected/mandatory content
+            bool issueIsFeatureRequest = false;
+            bool issueIsBugReport = false;
+            bool issueIsToolBugReport = false;
+            bool issueIsClassLibBugReport = false;
+            bool issueIsFwBugReport = false;
+            bool issueIsTodo = false;
+
+            if (issue.Body.Contains(_bugReportForClassLibTagComment))
+            {
+                issueIsClassLibBugReport = true;
+            }
+            if (issue.Body.Contains(_bugReportFirmwareTagComment))
+            {
+                issueIsFwBugReport = true;
+            }
+            if (issue.Body.Contains(_bugReportToolsTagComment))
+            {
+                issueIsToolBugReport = true;
+            }
+            if (issue.Body.Contains(_todoTagComment))
+            {
+                issueIsTodo = true;
+            }
+
+            if (issueIsClassLibBugReport ||
+                issueIsFwBugReport ||
+                issueIsToolBugReport)
+            {
+                // check for mandatory content
+                if (issue.Body.Contains(_issueDescription))
                 {
-                    log.LogInformation($"Unwanted content on issue. Adding comment before closing.");
+                    issueIsBugReport = true;
 
-                    string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}\" }}";
+                    if ((issueIsClassLibBugReport ||
+                            issueIsToolBugReport) &&
+                        !issue.Body.Contains(_issueArea))
+                    {
+                        issueIsBugReport = false;
 
-                    await SendGitHubRequest(
-                        payload.issue.comments_url.ToString(),
-                        comment,
-                        log);
+                        await _octokitClient.Issue.Comment.Create(issue.Repository.Id, issue.Number, $"Hi @{payload.issue.user.login},\\r\\n{_issueMissingAreaContent}\\r\\n{_fixRequestTagComment}");
+                    }
+                }  
+            }
+            else if(issue.Body.Contains(_featureRequestTagComment))
+            {
+                // check for mandatory content
+                if (!issue.Body.Contains(_issueArea))
+                {
+                    await _octokitClient.Issue.Comment.Create(issue.Repository.Id, issue.Number, $"Hi @{payload.issue.user.login},\\r\\n{_issueMissingAreaContent}\\r\\n{_fixRequestTagComment}");
+                }
+                else
+                {
+                    // looks like a feature request
+                    issueIsFeatureRequest = true;
+                }                    
+            }
+
+            if (issueIsBugReport &&
+                (issueIsFwBugReport ||
+                    issueIsToolBugReport))
+            {
+                // fw and class lib bug reports have to include device caps
+
+                if (issue.Body.Contains(_issueDeviceCaps))
+                {
+                    // check for valid content
+                    if (issue.Body.Contains("System Information") &&
+                        issue.Body.Contains("HAL build info:") &&
+                        issue.Body.Contains("Firmware build Info:") &&
+                        issue.Body.Contains("Assemblies:") &&
+                        issue.Body.Contains("Native Assemblies:") &&
+                        issue.Body.Contains("++ Memory Map ++") &&
+                        issue.Body.Contains("++ Flash Sector Map ++") &&
+                        issue.Body.Contains("++ Storage Usage Map ++"))
+                    {
+                        // device caps seems complete
+                    }
+
+                    log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
+
+                    await _octokitClient.Issue.Comment.Create(issue.Repository.Id, issue.Number, $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}\\r\\n{_fixRequestTagComment}");
 
                     // close issue
                     await CloseIssue(
@@ -1214,105 +1278,49 @@ namespace nanoFramework.Tools.GitHub
 
                     return new OkObjectResult("");
                 }
+            }
 
-                // check for expected/mandatory content
-                bool issueIsFeatureRequest = false;
-                bool issueIsBugReport = false;
-                bool issueIsToolBugReport = false;
-                bool issueIsClassLibBugReport = false;
-                bool issueIsFwBugReport = false;
-                bool issueIsTodo = false;
+            if(issueIsTodo)
+            {
+                // users outside members team can't open TODOs
+                // need to proceed with the author check
+            }
 
-                if (issueBody.Contains(_bugReportForClassLibTagComment))
-                {
-                    issueIsClassLibBugReport = true;
-                }
-                if (issueBody.Contains(_bugReportFirmwareTagComment))
-                {
-                    issueIsFwBugReport = true;
-                }
-                if (issueBody.Contains(_bugReportToolsTagComment))
-                {
-                    issueIsToolBugReport = true;
-                }
-                if (issueBody.Contains(_todoTagComment))
-                {
-                    issueIsTodo = true;
-                }
+            if (!authorIsMemberOrOwner)
+            {
+                // process this only if author is NOT member or owner
 
-                if (issueIsClassLibBugReport ||
-                    issueIsFwBugReport ||
-                    issueIsToolBugReport)
+                if (isOpenAction)
                 {
-                    // check for mandatory content
-                    if (issueBody.Contains(_issueDescription))
+                    // does this issue look legit?
+                    if (issueIsFeatureRequest)
                     {
-                        issueIsBugReport = true;
+                        // OK to label with feature request
+                        log.LogInformation($"Adding 'feature request label.");
 
-                        if ((issueIsClassLibBugReport ||
-                             issueIsToolBugReport) &&
-                            !issueBody.Contains(_issueArea))
-                        {
-                            issueIsBugReport = false;
-
-                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueMissingAreaContent}\\r\\n{_fixRequestTagComment}\" }}";
-
-                            await SendGitHubRequest(
-                                payload.issue.comments_url.ToString(),
-                                comment,
-                                log);
-                        }
-                    }  
-                }
-                else if(issueBody.Contains(_featureRequestTagComment))
-                {
-                    // check for mandatory content
-                    if (!issueBody.Contains(_issueArea))
+                        // add label
+                        await _octokitClient.Issue.Labels.AddToIssue(issue.Repository.Id, issue.Number, new string[] { _labelTypeFeatureRequestName });
+                    }
+                    else if (issueIsBugReport)
                     {
+                        // OK to label with bug
+                        log.LogInformation($"Adding 'bug label.");
 
-                        string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueMissingAreaContent}\\r\\n{_fixRequestTagComment}\" }}";
+                        // add label
+                        await _octokitClient.Issue.Labels.AddToIssue(issue.Repository.Id, issue.Number, new string[] { _labelTypeBugName });
 
-                        await SendGitHubRequest(
-                            payload.issue.comments_url.ToString(),
-                            comment,
-                            log);
+                        // OK to label for triage
+                        log.LogInformation($"Adding 'triage label.");
+
+                        // add the triage label
+                        await _octokitClient.Issue.Labels.AddToIssue(issue.Repository.Id, issue.Number, new string[] { _labelStatusWaitingTriageName });
                     }
                     else
                     {
-                        // looks like a feature request
-                        issueIsFeatureRequest = true;
-                    }                    
-                }
+                        // not sure what this is about...
+                        log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
 
-                if (issueIsBugReport &&
-                    (issueIsFwBugReport ||
-                     issueIsToolBugReport))
-                {
-                    // fw and class lib bug reports have to include device caps
-
-                    if (issueBody.Contains(_issueDeviceCaps))
-                    {
-                        // check for valid content
-                        if (issueBody.Contains("System Information") &&
-                            issueBody.Contains("HAL build info:") &&
-                            issueBody.Contains("Firmware build Info:") &&
-                            issueBody.Contains("Assemblies:") &&
-                            issueBody.Contains("Native Assemblies:") &&
-                            issueBody.Contains("++ Memory Map ++") &&
-                            issueBody.Contains("++ Flash Sector Map ++") &&
-                            issueBody.Contains("++ Storage Usage Map ++"))
-                        {
-                            // device caps seems complete
-                        }
-
-                        log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
-
-                        string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentInvalidDeviceCaps}\\r\\n{_fixRequestTagComment}\" }}";
-
-                        await SendGitHubRequest(
-                            payload.issue.comments_url.ToString(),
-                            comment,
-                            log);
+                        await _octokitClient.Issue.Comment.Create(issue.Repository.Id, issue.Number, $"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}\\r\\n{_fixRequestTagComment}");
 
                         // close issue
                         await CloseIssue(
@@ -1320,72 +1328,6 @@ namespace nanoFramework.Tools.GitHub
                             log);
 
                         return new OkObjectResult("");
-                    }
-                }
-
-                if(issueIsTodo)
-                {
-                    // users outside members team can't open TODOs
-                    // need to proceed with the author check
-                }
-
-                if (!authorIsMemberOrOwner)
-                {
-                    // process this only if author is NOT member or owner
-
-                    if (isOpenAction)
-                    {
-                        // does this issue look legit?
-                        if (issueIsFeatureRequest)
-                        {
-                            // OK to label with feature request
-                            log.LogInformation($"Adding 'feature request label.");
-
-                            // add label
-                            await SendGitHubRequest(
-                                $"{payload.issue.url.ToString()}/labels", $"[ \"{_labelTypeFeatureRequestName}\" ]",
-                                log,
-                                "application/vnd.github.squirrel-girl-preview");
-                        }
-                        else if (issueIsBugReport)
-                        {
-                            // OK to label with bug
-                            log.LogInformation($"Adding 'bug label.");
-
-                            // add label
-                            await SendGitHubRequest(
-                                $"{payload.issue.url.ToString()}/labels", $"[ \"{_labelTypeBugName}\" ]",
-                                log,
-                                "application/vnd.github.squirrel-girl-preview");
-
-                            // OK to label for triage
-                            log.LogInformation($"Adding 'triage label.");
-
-                            // add the triage label
-                            await SendGitHubRequest(
-                                $"{payload.issue.url.ToString()}/labels", $"[ \"{_labelStatusWaitingTriageName}\" ]",
-                                log,
-                                "application/vnd.github.squirrel-girl-preview");
-                        }
-                        else
-                        {
-                            // not sure what this is about...
-                            log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
-
-                            string comment = $"{{ \"body\": \"Hi @{payload.issue.user.login},\\r\\n{_issueCommentUnshureAboutIssueContent}\\r\\n{_fixRequestTagComment}\" }}";
-
-                            await SendGitHubRequest(
-                                payload.issue.comments_url.ToString(),
-                                comment,
-                                log);
-
-                            // close issue
-                            await CloseIssue(
-                                payload.issue,
-                                log);
-
-                            return new OkObjectResult("");
-                        }
                     }
                 }
 
