@@ -44,8 +44,37 @@ steps:
     }
     else
     {
-      # not a PR, get subject and commit message for commit
-      $commitMessage = git log --format='%B' -1
+        # build NOT from PR
+        
+        # get commit ID
+        $commitId = git rev-parse HEAD
+        
+        # get PR associate with commit
+        $prUrl = "https://api.github.com/repos/$env:Build_Repository_Name/commits/$commitId/pulls"
+        $commit = Invoke-RestMethod -Uri $prUrl -ContentType "application/json" -Headers @{"Accept"="application/vnd.github.groot-preview+json"} -Method GET
+
+        if($commit -ne $null)
+        {
+            # merged from a PR, check if changes where for unit tests only
+            $labelsCount = [int]$commit.labels.count
+            if($labelsCount -eq 1)
+            {
+                $unitTestsLabel = $commit.labels | where {$_.Name -eq 'Type: Unit Tests'}
+                if($unitTestsLabel -ne $null)
+                {
+                    # Unit Test work only, skip build
+                    echo "##vso[task.setvariable variable=SKIP_BUILD;isOutput=true]true"
+        
+                    Write-Host "Unit Tests changes only, skipping build."
+                    
+                    # done here
+                    Return
+                }
+            }
+        }
+
+        # get subject and commit message for commit
+        $commitMessage = git log --format='%B' -1
     }
 
     # need to flatten message by removing new lines
