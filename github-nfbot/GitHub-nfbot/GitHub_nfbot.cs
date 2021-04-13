@@ -201,7 +201,6 @@ namespace nanoFramework.Tools.GitHub
                     // get PR
                     Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
 
-
                     // check for PR authored by nfbot or git-actions bot
                     if (pr.User.Login == "nfbot" ||
                         pr.User.Login == "github-actions[bot]")
@@ -213,18 +212,18 @@ namespace nanoFramework.Tools.GitHub
                         await SendGitHubDeleteRequest(
                             $"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}",
                             log);
+                    }
 
-                        // check merge status
-                        if (!await _octokitClient.PullRequest.Merged(_gitOwner, payload.repository.name.ToString(), (int)payload.number))
-                        {
-                            // this branch was deleted without being merged, mark as invalid
+                    // check merge status
+                    if (!await _octokitClient.PullRequest.Merged(_gitOwner, payload.repository.name.ToString(), (int)payload.number))
+                    {
+                        // this branch was deleted without being merged, mark as invalid
 
-                            // clear all labels
-                            await _octokitClient.Issue.Labels.RemoveAllFromIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                        // clear all labels
+                        await _octokitClient.Issue.Labels.RemoveAllFromIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
 
-                            // add the invalid label
-                            await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number, new string[] { _labelInvalidName });
-                        }
+                        // add the invalid label
+                        await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number, new string[] { _labelInvalidName });
                     }
                 }
             }
