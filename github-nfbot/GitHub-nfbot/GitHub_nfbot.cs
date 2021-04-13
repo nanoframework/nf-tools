@@ -146,14 +146,14 @@ namespace nanoFramework.Tools.GitHub
                             log.LogInformation($"Adding {_labelTypeDependenciesName} label to PR.");
 
                             // add the Type: dependency label
-                            await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeDependenciesName });
+                            await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeDependenciesName });
                         }
                         else if (prHead["ref"].ToString().StartsWith("release-"))
                         {
                             // this is a release candidate PR
 
                             // add the Publish release label
-                            await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelCiPublishReleaseName });
+                            await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelCiPublishReleaseName });
                         }
                     }
                     else
@@ -914,7 +914,7 @@ namespace nanoFramework.Tools.GitHub
             if (pr.Body.Contains("[x] Bug fix", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: dependency label
-                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeBugName });
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeBugName });
             }
 
             if (
@@ -922,31 +922,31 @@ namespace nanoFramework.Tools.GitHub
                 pr.Body.Contains("[x] New feature", StringComparison.InvariantCultureIgnoreCase) )
             {
                 // add the Type: enhancement label
-                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeEnhancementName });
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeEnhancementName });
             }
 
             if (pr.Body.Contains("[x] Breaking change", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: Breaking change label
-                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelBreakingChangeName });
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelBreakingChangeName });
             }
 
             if (pr.Body.Contains("[x] Config and build", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: Breaking change label
-                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelConfigAndBuildName });
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelConfigAndBuildName });
             }
 
             if (pr.Body.Contains("[x] Dependencies", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: Breaking change label
-                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeDependenciesName });
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeDependenciesName });
             }
 
             if (pr.Body.Contains("[x] Unit Tests", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: Unit Tests label
-                await _octokitClient.Issue.Labels.AddToIssue(pr.Id, pr.Number, new string[] { _labelTypeUnitTestsName });
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeUnitTestsName });
             }
         }
 
@@ -1643,7 +1643,7 @@ namespace nanoFramework.Tools.GitHub
                 commitMessage += "\\r\\n***PUBLISH_RELEASE***";
             }
 
-            await _octokitClient.PullRequest.Merge(pull_request.Head.Repository.Id, pull_request.Number, new MergePullRequest() { MergeMethod = PullRequestMergeMethod.Squash, CommitTitle = pull_request.Title, CommitMessage = commitMessage });
+            await _octokitClient.PullRequest.Merge(pull_request.Base.Repository.Id, pull_request.Number, new MergePullRequest() { MergeMethod = PullRequestMergeMethod.Squash, CommitTitle = pull_request.Title, CommitMessage = commitMessage });
         }
 
         public static async Task CloseIssue(
