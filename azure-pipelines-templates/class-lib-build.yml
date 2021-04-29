@@ -96,7 +96,7 @@ steps:
 - template: prepare-release.yml
 
 - task: SonarCloudPrepare@1
-  condition: ne( variables['StartReleaseCandidate'], true )
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: 'Prepare analysis on SonarCloud'
   inputs:
     SonarCloud: 'sonarcloud-$(System.TeamProject)'
@@ -109,7 +109,7 @@ steps:
       sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
 
 - task: NuGetToolInstaller@0
-  condition: ne( variables['StartReleaseCandidate'], true )
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: 'Install specific version of NuGet'
   inputs:
     versionSpec: '5.8.0'
@@ -123,11 +123,11 @@ steps:
     nugetConfigPath: ${{ parameters.nugetConfigPath }}
 
 - task: InstallnFBuildComponents@1
-  condition: ne( variables['StartReleaseCandidate'], true )
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Install nanoFramework MSBuild components
 
 - task: VSBuild@1
-  condition: ne( variables['StartReleaseCandidate'], true )
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
@@ -204,7 +204,7 @@ steps:
       Write-Host "Release draft: TRUE"
     }
   name: SetReleaseDraftVar
-  condition: ne( variables['StartReleaseCandidate'], true )
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Set release draft var
 
 - task: SonarCloudAnalyze@1
