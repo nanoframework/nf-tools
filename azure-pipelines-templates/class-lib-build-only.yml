@@ -221,7 +221,7 @@ steps:
   condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Setup Ruby
   inputs:
-    versionSpec: '>= 2.7' 
+    versionSpec: '= 2.7' 
     addToPath: true
 
 # generate change log
