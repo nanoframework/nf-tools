@@ -385,15 +385,24 @@ namespace nanoFramework.Tools.GitHub
                     prSha = payload.sha.ToString();
                 }
 
-                // list all open PRs from nfbot
+                // list all open PRs...
                 IReadOnlyList<Octokit.PullRequest>  openPRs = await _octokitClient.PullRequest.GetAllForRepository(
                     _gitOwner,
                     payload.repository.name.ToString(),
                     new PullRequestRequest());
 
+                // ... filter the ones from nfbot
                 Octokit.PullRequest matchingPr = openPRs.FirstOrDefault(
                     p => p.User.Login == "nfbot" && 
                     p.Head.Sha == prSha);
+
+                if (matchingPr == null)
+                {
+                    // ... try now with github-actions 
+                    matchingPr = openPRs.FirstOrDefault(
+                    p => p.User.Login == "github-actions[bot]" && 
+                    p.Head.Sha == prSha);
+                }
 
                 if (matchingPr != null)
                 {
