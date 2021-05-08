@@ -21,10 +21,10 @@ $VsWherePath = "${env:PROGRAMFILES(X86)}\Microsoft Visual Studio\Installer\vswhe
 
 Write-Output "VsWherePath is: $VsWherePath"
 
-$VsInstance = $(&$VSWherePath -latest -property displayName)
+$VsInstance = $(&$VSWherePath -latest -property displayName) | Write-Host
 
-$idVS2019 = 1
-#$idVS2017 = 0
+$idVS2019 = 0 #Should probably target the specific VISX ID or "title" since this can change over time (and will likely be needed for VS2021).
+#$idVS2017 = 1
 
 $extensionUrl = $feedDetails.feed.entry[$idVS2019].content.src
 $vsixPath = Join-Path -Path $tempDir -ChildPath "nf-extension.zip"
