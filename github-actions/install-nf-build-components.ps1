@@ -25,36 +25,35 @@ $VsInstance = $(&$VSWherePath -latest -property displayName) | Write-Host
 
 
 ###### Add new extension ID's here! ######
-if ($VsInstance.Contains('2017')) {
+if ($VsInstance -like '*2017*')) {
     $vsid = '47973986-ed3c-4b64-ba40-a9da73b44ef7'
 }
-else { #Presume VS2017 in all other circumstances
+else { #Presume VS2019 in all other circumstances
     $vsid = '455f2be5-bb07-451e-b351-a9faf3018dc9'
 }
 ############################################
 
 
 foreach ($entry in $feedDetails.feed.entry) {
-    if ($entry.id = $vsid) {
+    if ($entry.id -Eq $vsid) {
         $extensionUrl = $entry.content.src
         $vsixPath = Join-Path -Path $tempDir -ChildPath "nf-extension.zip"
         $extensionVersion = $entry.Vsix.Version
+
+        # Download VS extension
+        DownloadVsixFile $extensionUrl $vsixPath
+
+        # unzip extension
+        Write-Host "Unzip extension content"
+        Expand-Archive -LiteralPath $vsixPath -DestinationPath $tempDir\nf-extension\ | Write-Host
+
+        # Copy build files to msbuild location
+        $VsPath = $(&$VsWherePath -latest -property installationPath)
+
+        Write-Host "Copy build files to msbuild location"
+        $msbuildPath = Join-Path -Path $VsPath -ChildPath "\MSBuild"
+        Copy-Item -Path "$tempDir\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
+
+        Write-Host "Installed VS extension v$extensionVersion"
     }
 }
-
-
-# Download VS extension
-DownloadVsixFile $extensionUrl $vsixPath
-
-# unzip extension
-Write-Host "Unzip extension content"
-Expand-Archive -LiteralPath $vsixPath -DestinationPath $tempDir\nf-extension\ | Write-Host
-
-# Copy build files to msbuild location
-$VsPath = $(&$VsWherePath -latest -property installationPath)
-
-Write-Host "Copy build files to msbuild location"
-$msbuildPath = Join-Path -Path $VsPath -ChildPath "\MSBuild"
-Copy-Item -Path "$tempDir\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
-
-Write-Host "Installed VS extension v$extensionVersion"
