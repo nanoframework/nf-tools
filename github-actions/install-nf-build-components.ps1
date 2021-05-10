@@ -23,12 +23,25 @@ Write-Output "VsWherePath is: $VsWherePath"
 
 $VsInstance = $(&$VSWherePath -latest -property displayName) | Write-Host
 
-$idVS2019 = 0 #Should probably target the specific VISX ID or "title" since this can change over time (and will likely be needed for VS2021).
-#$idVS2017 = 1
 
-$extensionUrl = $feedDetails.feed.entry[$idVS2019].content.src
-$vsixPath = Join-Path -Path $tempDir -ChildPath "nf-extension.zip"
-$extensionVersion = $feedDetails.feed.entry[$idVS2019].Vsix.Version
+###### Add new extension ID's here! ######
+if ($VsInstance = 'Visual Studio 2017') {
+    $vsid = '47973986-ed3c-4b64-ba40-a9da73b44ef7'
+}
+else { #Presume VS2017 in all other circumstances
+    $vsid = '455f2be5-bb07-451e-b351-a9faf3018dc9'
+}
+############################################
+
+
+foreach ($entry in $feedDetails.feed.entry) {
+    if ($entry.id = $vsid) {
+        $extensionUrl = $entry.content.src
+        $vsixPath = Join-Path -Path $tempDir -ChildPath "nf-extension.zip"
+        $extensionVersion = entry.Vsix.Version
+    }
+}
+
 
 # Download VS extension
 DownloadVsixFile $extensionUrl $vsixPath
