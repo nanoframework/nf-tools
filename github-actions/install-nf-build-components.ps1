@@ -25,7 +25,7 @@ $VsInstance = $(&$VSWherePath -latest -property displayName) | Write-Host
 
 
 ###### Add new extension ID's here! ######
-if ($VsInstance[0].Contains('2017')) {
+if ($VsInstance.Contains('2017')) {
     $vsid = '47973986-ed3c-4b64-ba40-a9da73b44ef7'
 }
 else { #Presume VS2017 in all other circumstances
