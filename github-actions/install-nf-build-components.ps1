@@ -21,27 +21,40 @@ $VsWherePath = "${env:PROGRAMFILES(X86)}\Microsoft Visual Studio\Installer\vswhe
 
 Write-Output "VsWherePath is: $VsWherePath"
 
-$VsInstance = $(&$VSWherePath -latest -property displayName)
+$VsInstance = $(&$VSWherePath -latest -property displayName) | Write-Host
 
-$idVS2019 = 1
-#$idVS2017 = 0
 
-$extensionUrl = $feedDetails.feed.entry[$idVS2019].content.src
-$vsixPath = Join-Path -Path $tempDir -ChildPath "nf-extension.zip"
-$extensionVersion = $feedDetails.feed.entry[$idVS2019].Vsix.Version
+###### Add new extension ID's here! ######
+if ($VsInstance -like '*2017*') {
+    $vsid = '47973986-ed3c-4b64-ba40-a9da73b44ef7'
+}
+else { #Presume VS2019 in all other circumstances
+    $vsid = '455f2be5-bb07-451e-b351-a9faf3018dc9'
+}
+############################################
 
-# Download VS extension
-DownloadVsixFile $extensionUrl $vsixPath
 
-# unzip extension
-Write-Host "Unzip extension content"
-Expand-Archive -LiteralPath $vsixPath -DestinationPath $tempDir\nf-extension\ | Write-Host
+foreach ($entry in $feedDetails.feed.entry) {
+    if ($entry.id -Eq $vsid) {
+        $extensionUrl = $entry.content.src
+        $vsixPath = Join-Path -Path $tempDir -ChildPath "nf-extension.zip"
+        $extensionVersion = $entry.Vsix.Version
 
-# Copy build files to msbuild location
-$VsPath = $(&$VsWherePath -latest -property installationPath)
+        # Download VS extension
+        DownloadVsixFile $extensionUrl $vsixPath
 
-Write-Host "Copy build files to msbuild location"
-$msbuildPath = Join-Path -Path $VsPath -ChildPath "\MSBuild"
-Copy-Item -Path "$tempDir\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
+        # unzip extension
+        Write-Host "Unzip extension content"
+        Expand-Archive -LiteralPath $vsixPath -DestinationPath $tempDir\nf-extension\ | Write-Host
 
-Write-Host "Installed VS extension v$extensionVersion"
+        # Copy build files to msbuild location
+        $VsPath = $(&$VsWherePath -latest -property installationPath)
+
+        Write-Host "Copy build files to msbuild location"
+        $msbuildPath = Join-Path -Path $VsPath -ChildPath "\MSBuild"
+        Copy-Item -Path "$tempDir\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
+
+        Write-Host "Installed VS extension v$extensionVersion"
+        break  # exit the foreach loop
+    }
+}
