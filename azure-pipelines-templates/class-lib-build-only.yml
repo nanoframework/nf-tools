@@ -56,11 +56,13 @@ steps:
 
             if($commit -ne $null)
             {
-                # merged from a PR, check if changes where for unit tests only
+                # merged from a PR, check if changes were for unit tests only
                 $labelsCount = [int]$commit.labels.count
-                if($labelsCount -eq 0 -or $labelsCount -eq 1)
+                
+                if($labelsCount -eq 1)
                 {
                     $unitTestsLabel = $commit.labels | where {$_.Name -eq 'Type: Unit Tests'}
+                    
                     if($unitTestsLabel -ne $null)
                     {
                         # Unit Test work only, skip build
@@ -86,7 +88,7 @@ steps:
 
     # set variable to foward to jobs
     echo "##vso[task.setvariable variable=COMMIT_MESSAGE;isOutput=true]$commitMessage"
-  name: getCommitMessage
+  name: getCommitDetails
   displayName: Grab build details
 
 - template: install-nbgv-tool.yml
