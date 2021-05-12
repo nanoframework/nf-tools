@@ -179,7 +179,7 @@ ForEach($library in $librariesToUpdate)
                 foreach ($node in $nodes)
                 {
                     # find this package
-                    if($node.id -match $packageName)
+                    if($node.id -eq $packageName)
                     {
                         $packageTargetVersion = $node.version
                     }
@@ -251,7 +251,6 @@ ForEach($library in $librariesToUpdate)
                     $prTitle = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion"
 
                 }
-
             }
 
             # rename csproj files back to nfproj
