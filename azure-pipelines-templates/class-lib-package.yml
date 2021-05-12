@@ -12,7 +12,7 @@ steps:
   displayName: Pack NuGet with class library
   inputs:
     command: 'custom' 
-    arguments: 'pack ${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NativeAssemblyChecksum)"'
+    arguments: 'pack ${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NATIVE_ASSEMBLY_CHECKSUM)"'
 
 - task: CopyFiles@1
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
