@@ -9,105 +9,105 @@ parameters:
 
 steps:
 - task: PowerShell@2
-  inputs:
-      targetType: 'inline'
-      script: |
-          $STATUS = "${{ parameters.status }}"
-
-          Switch ($STATUS) {
-            "success" {
-              $EMBED_COLOR=3066993
-              $STATUS_MESSAGE="Passed"
-              Break
-            }
-            "failure" {
-              $EMBED_COLOR=15158332
-              $STATUS_MESSAGE="Failed"
-              Break
-            }
-            "warning" {
-              $EMBED_COLOR=12370112
-              $STATUS_MESSAGE="Warning"
-              Break
-            }  
-            default {
-              Write-Output "Default!"
-              Break
-            }
-          }
-
-          $AUTHOR_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%aN")"
-          $COMMITTER_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%cN")"
-          $COMMIT_SUBJECT="$(git log -1 "$env:Build_SourceVersion" --pretty="%s")"
-          $COMMIT_MESSAGE="$(git log -1 "$env:Build_SourceVersion" --pretty="%b")"
-
-          if ($AUTHOR_NAME -eq $COMMITTER_NAME)
-          {
-            $CREDITS = "$AUTHOR_NAME authored & committed"
-          }
-          else
-          {
-            $CREDITS = "$AUTHOR_NAME authored & $COMMITTER_NAME committed"
-          }
-
-          $WEBHOOK_URL = "${{ parameters.webhookUrl }}"
-          $MESSAGE = "${{ parameters.message }}"
-
-          if ($env:System_PullRequest_PullRequestNumber) {
-            $URL="https://github.com/$env:Build_Repository_Name/pull/$env:System_PullRequest_PullRequestNumber"
-          }
-        
-          $BUILD_VERSION = [uri]::EscapeDataString($env:Build_BuildNumber)
-
-          [System.Collections.ArrayList]$embedArray = @()
-
-          $name = "Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $STATUS_MESSAGE - $env:Build_Repository_Name"
-          $url = "https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"
-          $description = "$COMMIT_MESSAGE`\n$env:CREDITS`\n$MESSAGE"
-
-          $authorObject = [PSCustomObject]@{
-              name = $name
-              url = $url
-              icon_url = $AVATAR
-          }
-
-          $field1Value = "[``$($env:Build_SourceVersion.substring(0, 7))``](https://github.com/$env:Build_Repository_Name/commit/$env:Build_SourceVersion)"
-
-          $field1Object = [PSCustomObject]@{
-              name = "Commit"
-              value = $field1Value
-              inline = 'true'
-          }
-          
-          $field2Value = "[``$env:Build_SourceBranchName``](https://github.com/$env:Build_Repository_Name/tree/$env:Build_SourceBranchName)"
-
-          $field2Object = [PSCustomObject]@{
-              name = "Branch/Tag"
-              value = $field2Value
-              inline = 'true'
-          }
-
-          [System.Collections.ArrayList]$fieldsArray = @()
-          $fieldsArray.Add($field1Object)
-          $fieldsArray.Add($field2Object)
-
-          $embedObject = [PSCustomObject]@{
-              color = $EMBED_COLOR
-              author = $authorObject
-              title = $COMMIT_SUBJECT
-              url = $env:URL
-              description = $description
-              fields = $fieldsArray
-          }
-
-          $embedArray.Add($embedObject)
-          
-          $payload = [PSCustomObject]@{
-              embeds = $embedArray
-          }
-
-          [Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'
-          $sC = Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method 'Post' -ContentType 'application/json'
-          Write-Host "Status: $sC"
-    errorActionPreference: 'silentlyContinue'    
   displayName: Call Discord webhook
+  inputs:
+    targetType: 'inline'
+    script: |
+      $STATUS = "${{ parameters.status }}"
+
+      Switch ($STATUS) {
+        "success" {
+          $EMBED_COLOR=3066993
+          $STATUS_MESSAGE="Passed"
+          Break
+        }
+        "failure" {
+          $EMBED_COLOR=15158332
+          $STATUS_MESSAGE="Failed"
+          Break
+        }
+        "warning" {
+          $EMBED_COLOR=12370112
+          $STATUS_MESSAGE="Warning"
+          Break
+        }  
+        default {
+          Write-Output "Default!"
+          Break
+        }
+      }
+
+      $AUTHOR_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%aN")"
+      $COMMITTER_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%cN")"
+      $COMMIT_SUBJECT="$(git log -1 "$env:Build_SourceVersion" --pretty="%s")"
+      $COMMIT_MESSAGE="$(git log -1 "$env:Build_SourceVersion" --pretty="%b")"
+
+      if ($AUTHOR_NAME -eq $COMMITTER_NAME)
+      {
+        $CREDITS = "$AUTHOR_NAME authored & committed"
+      }
+      else
+      {
+        $CREDITS = "$AUTHOR_NAME authored & $COMMITTER_NAME committed"
+      }
+
+      $WEBHOOK_URL = "${{ parameters.webhookUrl }}"
+      $MESSAGE = "${{ parameters.message }}"
+
+      if ($env:System_PullRequest_PullRequestNumber) {
+        $URL="https://github.com/$env:Build_Repository_Name/pull/$env:System_PullRequest_PullRequestNumber"
+      }
+    
+      $BUILD_VERSION = [uri]::EscapeDataString($env:Build_BuildNumber)
+
+      [System.Collections.ArrayList]$embedArray = @()
+
+      $name = "Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $STATUS_MESSAGE - $env:Build_Repository_Name"
+      $url = "https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"
+      $description = "$COMMIT_MESSAGE`\n$env:CREDITS`\n$MESSAGE"
+
+      $authorObject = [PSCustomObject]@{
+          name = $name
+          url = $url
+          icon_url = $AVATAR
+      }
+
+      $field1Value = "[``$($env:Build_SourceVersion.substring(0, 7))``](https://github.com/$env:Build_Repository_Name/commit/$env:Build_SourceVersion)"
+
+      $field1Object = [PSCustomObject]@{
+          name = "Commit"
+          value = $field1Value
+          inline = 'true'
+      }
+      
+      $field2Value = "[``$env:Build_SourceBranchName``](https://github.com/$env:Build_Repository_Name/tree/$env:Build_SourceBranchName)"
+
+      $field2Object = [PSCustomObject]@{
+          name = "Branch/Tag"
+          value = $field2Value
+          inline = 'true'
+      }
+
+      [System.Collections.ArrayList]$fieldsArray = @()
+      $fieldsArray.Add($field1Object)
+      $fieldsArray.Add($field2Object)
+
+      $embedObject = [PSCustomObject]@{
+          color = $EMBED_COLOR
+          author = $authorObject
+          title = $COMMIT_SUBJECT
+          url = $env:URL
+          description = $description
+          fields = $fieldsArray
+      }
+
+      $embedArray.Add($embedObject)
+      
+      $payload = [PSCustomObject]@{
+          embeds = $embedArray
+      }
+
+      [Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'
+      $sC = Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method 'Post' -ContentType 'application/json'
+      Write-Host "Status: $sC"
+    errorActionPreference: 'silentlyContinue'    
