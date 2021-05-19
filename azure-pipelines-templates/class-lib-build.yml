@@ -319,7 +319,7 @@ steps:
     --descriptionUrl "https://github.com/$env:Build_Repository_Name"
   displayName: Sign packages
   continueOnError: true
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], '') )
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
 
 # publish artifacts (only possible if this is not a PR originated on a fork)
 - task: PublishBuildArtifacts@1
@@ -332,7 +332,7 @@ steps:
 
 # push NuGet packages to AzureArtifacts feed (always happens)
 - task: NuGetCommand@2
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), eq( variables['StartReleaseCandidate'], false ) )
   continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
   inputs:
@@ -345,7 +345,7 @@ steps:
 
 # push NuGet class lib package to NuGet (happens on every build except PRs)
 - task: NuGetCommand@2
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
   inputs:
