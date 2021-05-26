@@ -8,6 +8,7 @@
 # targetSolutions: solution (or solutions) to update
 param (
     [string]$nugetReleaseType,
+    [string]$targetPath,
     [string]$targetSolutions
     )
 
@@ -62,7 +63,7 @@ $updateCount = 0
 $commitMessage = ""
 $prTitle = ""
 $newBranchName = "develop-nfbot/update-dependencies/" + [guid]::NewGuid().ToString()
-$workingPath = '.\'
+$workingPath = ".\$targetPath"
 
 # need this to remove definition of redirect stdErr (only on Azure Pipelines image fo VS2019)
 $env:GIT_REDIRECT_STDERR = '2>&1'
@@ -72,6 +73,8 @@ git config --global gc.auto 0
 git config --global user.name nfbot
 git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
+
+Write-Host "Working path is: '$workingPath'"
 
 # temporarily rename csproj files to projcs-temp so they are not affected.
 Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
@@ -102,7 +105,7 @@ else
 }
 
 # find every solution file in repository
-$solutionFiles = (Get-ChildItem -Path ".\" -Include "$targetSolutions"  -Recurse)
+$solutionFiles = (Get-ChildItem -Path "$workingPath" -Include "$targetSolutions"  -Recurse)
 
 # loop through solution files and replace content containing:
 # 1) .csproj to .projcs-temp (to prevent NuGet from touching these)
@@ -116,7 +119,7 @@ foreach ($solutionFile in $solutionFiles)
 }
     
 # find NuGet.Config
-$nugetConfig = (Get-ChildItem -Path ".\" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
+$nugetConfig = (Get-ChildItem -Path "$workingPath" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
 
 foreach ($solutionFile in $solutionFiles)
 {
