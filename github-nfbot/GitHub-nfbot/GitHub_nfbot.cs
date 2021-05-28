@@ -196,7 +196,7 @@ namespace nanoFramework.Tools.GitHub
                 // PR closed
                 else if (payload.action == "closed")
                 {
-                    log.LogInformation($"Processing PR closed event...");
+                    log.LogInformation($"Processing PR #{payload.pull_request.number} closed event...");
 
                     // get PR
                     Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
@@ -234,6 +234,8 @@ namespace nanoFramework.Tools.GitHub
 
             else if (payload.issue != null)
             {
+                log.LogInformation($"Processing issue #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
+
                 if ( (payload.action == "opened" ||
                       payload.action == "edited" ||
                       payload.action == "reopened") &&
@@ -249,9 +251,11 @@ namespace nanoFramework.Tools.GitHub
                     payload.action == "created" &&
                     payload.comment != null)
                 {
+                    log.LogInformation($"Processing new issue");
+
                     // this is a comment on an issue or PR
                     // check for command to nfbot
-                    if(payload.comment.body.ToString().StartsWith("@nfbot"))
+                    if (payload.comment.body.ToString().StartsWith("@nfbot"))
                     {
                         // sender if member
                         // flag if author is member or owner
@@ -350,8 +354,8 @@ namespace nanoFramework.Tools.GitHub
                                 // clear known prefixes
                                 repositoryName = repositoryName.Replace("lib-", "");
 
-                                // after merge to master need to queue a build
-                                await QueueBuildAsync(repositoryName, "master", log);
+                                // after merge to main need to queue a build
+                                await QueueBuildAsync(repositoryName, "main", log);
                             }
                         }
                     }
@@ -580,8 +584,8 @@ namespace nanoFramework.Tools.GitHub
                                     // clear known prefixes
                                     repositoryName = repositoryName.Replace("lib-", "");
 
-                                    // after merge to master need to queue a build
-                                    await QueueBuildAsync(repositoryName, "master", log);
+                                    // after merge to main need to queue a build
+                                    await QueueBuildAsync(repositoryName, "main", log);
                                 }
                             }
                         }
@@ -1021,7 +1025,8 @@ namespace nanoFramework.Tools.GitHub
                 Replace("[ x]", "[x]", StringComparison.InvariantCultureIgnoreCase).
                 Replace("[x ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
                 Replace("[ X]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace("[X ]", "[x]", StringComparison.InvariantCultureIgnoreCase);
+                Replace("[X ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
+                Replace("[]", "[ ]", StringComparison.InvariantCultureIgnoreCase);
 
             if(prBodyHash != prBodyFixed.GetHashCode())
             {
@@ -1183,6 +1188,8 @@ namespace nanoFramework.Tools.GitHub
 
             // get issue
             Octokit.Issue issue = await _octokitClient.Issue.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+
+            log.LogInformation($"Processing issue #{issue.Number} from {issue.Repository.Name}");
 
             // check unwanted content
             if (issue.Body.Contains(_issueContentBeforePosting) ||
