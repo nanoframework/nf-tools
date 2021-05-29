@@ -1201,7 +1201,8 @@ namespace nanoFramework.Tools.GitHub
 
                 // close issue
                 await CloseIssue(
-                    payload.issue,
+                    (int)payload.repository.id,
+                    issue,
                     log);
 
                 return new OkObjectResult("");
@@ -1292,7 +1293,8 @@ namespace nanoFramework.Tools.GitHub
 
                     // close issue
                     await CloseIssue(
-                        payload.issue,
+                        (int)payload.repository.id,
+                        issue,
                         log);
 
                     return new OkObjectResult("");
@@ -1343,7 +1345,8 @@ namespace nanoFramework.Tools.GitHub
 
                         // close issue
                         await CloseIssue(
-                            payload.issue,
+                            (int)payload.repository.id,
+                            issue,
                             log);
 
                         return new OkObjectResult("");
@@ -1674,20 +1677,22 @@ namespace nanoFramework.Tools.GitHub
         }
 
         public static async Task CloseIssue(
-            dynamic issue,
+            int repoId,
+            Octokit.Issue issue,
             ILogger log)
         {
-            log.LogInformation($"Close Issue {issue.title}");
+            log.LogInformation($"Closing Issue #{issue.Number} \"{issue.Title}\"");
 
-            string closeRequest = $"{{ \"state\": \"close\" , \"labels\": [ ] }}";
+            // close issue
+            var issueUpdate = new IssueUpdate
+            {
+                State = ItemState.Closed
+            };
+            issueUpdate.ClearLabels();
+            issueUpdate.ClearAssignees();
+            issueUpdate.AddLabel(_labelInvalidName);
 
-            // request need to be a PATCH
-            await SendGitHubRequest(
-                $"{issue.url.ToString()}",
-                closeRequest,
-                log,
-                "",
-                "PATCH");
+            await _octokitClient.Issue.Update(repoId, issue.Number, issueUpdate);
         }
 
         public static async Task ClosePR(
