@@ -234,7 +234,7 @@ namespace nanoFramework.Tools.GitHub
 
             else if (payload.issue != null)
             {
-                log.LogInformation($"Processing issue #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
+                log.LogInformation($"Processing issue #{payload.issue.number}:{payload.issue.title} submitted by {payload.issue.user.login}");
 
                 if ( (payload.action == "opened" ||
                       payload.action == "edited" ||
