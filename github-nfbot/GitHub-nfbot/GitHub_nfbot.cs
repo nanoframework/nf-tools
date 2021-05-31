@@ -234,7 +234,7 @@ namespace nanoFramework.Tools.GitHub
 
             else if (payload.issue != null)
             {
-                log.LogInformation($"Processing issue #{payload.issue.number}:{payload.issue.title} submitted by {payload.issue.user.login}");
+                log.LogInformation($"Processing issue #{payload.issue.number} '{payload.issue.title}' submitted by {payload.issue.user.login}");
 
                 // get issue
                 Octokit.Issue issue = await _octokitClient.Issue.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.issue.number);
@@ -260,7 +260,7 @@ namespace nanoFramework.Tools.GitHub
                     payload.action == "created" &&
                     payload.comment != null)
                 {
-                    log.LogInformation($"Processing new issue");
+                    log.LogInformation($"Processing command");
 
                     // this is a comment on an issue or PR
                     // check for command to nfbot
@@ -281,7 +281,7 @@ namespace nanoFramework.Tools.GitHub
                             }
                             else
                             {
-                                // add confuse reaction to comment
+                                // add confused reaction to comment
                                 await SendGitHubRequest(
                                     $"{payload.comment.url.ToString()}/reactions",
                                     "{ \"content\" : \"confused\" }",
@@ -291,6 +291,8 @@ namespace nanoFramework.Tools.GitHub
                         }
                         else
                         {
+                            log.LogInformation($"User has no permission to execute command");
+
                             // add thumbs down reaction to comment
                             await SendGitHubRequest(
                                 $"{payload.comment.url.ToString()}/reactions",
@@ -299,7 +301,6 @@ namespace nanoFramework.Tools.GitHub
                                 "application/vnd.github.squirrel-girl-preview");
                         }
                     }
-
                 }
             }
 
@@ -731,6 +732,8 @@ namespace nanoFramework.Tools.GitHub
             // check commands
             if (command.StartsWith("startrelease"))
             {
+                log.LogInformation($"Processing command");
+
                 return await StartReleaseCandidateAsync(repositoryName, log);
             }
             else if (command.StartsWith("updatedependents"))
@@ -739,9 +742,7 @@ namespace nanoFramework.Tools.GitHub
             }
             else if (command.StartsWith("updatedependencies"))
             {
-                await UpdateDependenciesAsync(payload.repository.url.ToString(), log);
-
-                return true;
+                return await UpdateDependenciesAsync(payload.repository.url.ToString(), log);
             }
             else if (command.StartsWith("runpipeline"))
             {
@@ -884,16 +885,24 @@ namespace nanoFramework.Tools.GitHub
             return false;
         }
 
-        private static async Task UpdateDependenciesAsync(string repoUrl, ILogger log)
+        private static async Task<bool> UpdateDependenciesAsync(string repoUrl, ILogger log)
         {
             string requestContent = $"{{ \"event_type\": \"update-dependencies\" }}";
 
-            await SendGitHubRequest(
+
+            var result = await SendGitHubRequest(
                 repoUrl + "/dispatches",
                 requestContent,
                 log,
                 "application/vnd.github.v3+json",
                 "POST");
+
+            if(result == 204)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static async Task<bool> QueueBuildAsync(string repositoryName, string branchName, ILogger log)
@@ -1531,7 +1540,7 @@ namespace nanoFramework.Tools.GitHub
             }
         }
 
-        public static async Task SendGitHubRequest(
+        public static async Task<int> SendGitHubRequest(
             string url,
             string requestBody,
             ILogger log,
@@ -1542,7 +1551,7 @@ namespace nanoFramework.Tools.GitHub
             {
                 HttpResponseMessage response = null;
 
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("username", "version"));
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("nanoframework_nfbot", "2.0"));
 
                 // Add the GITHUB_CREDENTIALS as an app setting, Value for the app setting is a base64 encoded string in the following format
                 // "Username:Password" or "Username:PersonalAccessToken"
@@ -1586,7 +1595,11 @@ namespace nanoFramework.Tools.GitHub
 
                 log.LogInformation($"Request result {response.StatusCode}");
                 log.LogInformation($"Request result {response.StatusCode} content >>{await response.Content.ReadAsStringAsync()}<< .");
+
+                return (int)response.StatusCode;
             }
+
+            return 0;
         }
 
         public static async Task<dynamic> GetGitHubRequest(
