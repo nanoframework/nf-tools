@@ -236,16 +236,25 @@ namespace nanoFramework.Tools.GitHub
             {
                 log.LogInformation($"Processing issue #{payload.issue.number}:{payload.issue.title} submitted by {payload.issue.user.login}");
 
+                // get issue
+                Octokit.Issue issue = await _octokitClient.Issue.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.issue.number);
+
                 if ( (payload.action == "opened" ||
                       payload.action == "edited" ||
                       payload.action == "reopened") &&
                       payload.comment == null)
                 {
-                    return await ProcessOpenOrEditIssueAsync(payload, log);
+                    return await ProcessOpenOrEditIssueAsync(
+                        issue, 
+                        payload, 
+                        log);
                 }
                 else if (payload.action == "closed")
                 {
-                    return await ProcessClosedIssueAsync(payload, log);
+                    return await ProcessClosedIssueAsync(
+                        issue,
+                        payload,
+                        log);
                 }
                 else if(
                     payload.action == "created" &&
@@ -1158,25 +1167,68 @@ namespace nanoFramework.Tools.GitHub
             return false;
         }
 
-        private static async Task<IActionResult> ProcessClosedIssueAsync(dynamic payload, ILogger log)
+        private static async Task<IActionResult> ProcessClosedIssueAsync(
+            Octokit.Issue issue,
+            dynamic payload,
+            ILogger log)
         {
+            // get timeline of issue
+            var issueTimeLine = await _octokitClient.Issue.Timeline.GetAllForIssue((int)payload.repository.id, issue.Number);
+            var crossRefs = issueTimeLine.Where(t => t.Event == EventInfoState.Crossreferenced).OrderByDescending(t => t.CreatedAt);
 
-            // get issue
-            dynamic issue = await GetGitHubRequest(
-                payload.issue.url.ToString(),
-                log);
-
-            if (issue != null)
+            foreach(var eventInfo in crossRefs)
             {
-                // TODO
-                // need to find out the details on how to recognize this as a closed by a commit
-                return new OkObjectResult("");
+                if(eventInfo.Source.Issue != null &&
+                    eventInfo.Source.Issue.PullRequest != null &&
+                    eventInfo.Source.Issue.State.Value == ItemState.Closed
+                    )
+                {
+                    // this issue is linked to a PR that is closed
+                    // it's safe to assume that it was just closed by it
+                    
+                    // clear all labels that don't belong here anymore
+                    foreach(var label in issue.Labels)
+                    {
+                        if(label.Name == "up-for-grabs" ||
+                           label.Name == "good first issue" ||
+                           label.Name == "FOR DISCUSSION" ||
+                           label.Name == "HELP WANTED" ||
+                           label.Name.StartsWith("Status") ||
+                           label.Name.Contains("trivial") ||
+                           label.Name.Contains("Priority") ||
+                           label.Name.Contains("pinned"))
+                        {
+                            _ = await _octokitClient.Issue.Labels.RemoveFromIssue((int)payload.repository.id, issue.Number, label.Name);
+                        }
+                    }
+
+                    // set the appropriate label after the issue closure
+                    foreach (var label in issue.Labels)
+                    {
+                        if (label.Name == "Type: Bug")
+                        {
+                            _ = await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { "Status: FIXED" });
+                        }
+                        else if (label.Name == "Type: Chores"
+                                 || label.Name == "Type: Enhancement"
+                                 || label.Name == "Type: Feature request")
+                        {
+                            _ = await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { "Status: DONE" });
+                        }
+                    }
+
+                    // no need to process any other time line event
+                    break;
+                }
             }
 
-            return new UnprocessableEntityObjectResult("Failed to get issue details");
+            return new OkObjectResult("");
         }
 
-        private static async Task<IActionResult> ProcessOpenOrEditIssueAsync(dynamic payload, ILogger log)
+        private static async Task<IActionResult> ProcessOpenOrEditIssueAsync(
+            Octokit.Issue issue,
+            dynamic payload,
+            ILogger log)
         {
             // check for content that shouldn't be there and shows that the author hadn't read the instructions or is being lazy
 
@@ -1185,9 +1237,6 @@ namespace nanoFramework.Tools.GitHub
 
             // flag if author is member or owner
             bool authorIsMemberOrOwner = payload.issue.author_association == "MEMBER" || payload.issue.author_association == "OWNER";
-
-            // get issue
-            Octokit.Issue issue = await _octokitClient.Issue.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.issue.number);
 
             log.LogInformation($"Processing issue #{issue.Number}");
 
