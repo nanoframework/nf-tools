@@ -83,7 +83,7 @@ ForEach($library in $librariesToUpdate)
         $solutionFiles = (Get-ChildItem -Path ".\" -Include "amqp-nanoFramework.sln" -Recurse)
 
         # CD-CI branch is not 'develop'
-        $baseBranch = "cd-nanoframework"
+        $baseBranch = "nanoframework-dev"
     
     }
     ########################################
