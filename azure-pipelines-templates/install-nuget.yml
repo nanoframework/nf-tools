@@ -1,0 +1,10 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+steps:
+
+- task: NuGetToolInstaller@1
+  condition: succeeded()
+  displayName: 'Install specific version of NuGet'
+  inputs:
+    versionSpec: '5.9.0'

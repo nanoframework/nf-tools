@@ -108,11 +108,7 @@ steps:
      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/**/**.coverage
      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
 
-- task: NuGetToolInstaller@0
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: 'Install specifc version of NuGet'
-  inputs:
-    versionSpec: '5.8.0'
+- template: install-nuget.yml
 
 - task: NuGetCommand@2
   condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ), ne( variables['StartReleaseCandidate'], true ) )
