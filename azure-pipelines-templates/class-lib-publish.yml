@@ -42,7 +42,7 @@ steps:
 
 # push NuGet packages to Azure Artifacts feed (always happens except on PR builds)
 - task: NuGetCommand@2
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
   continueOnError: true
   displayName: Push NuGet packages to Azure Artifacts
   inputs:

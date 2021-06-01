@@ -330,9 +330,9 @@ steps:
   condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Publish deployables artifacts
 
-# push NuGet packages to AzureArtifacts feed (always happens)
+# push NuGet packages to AzureArtifacts feed (happens on every build except PRs)
 - task: NuGetCommand@2
-  condition: and( succeeded(), eq( variables['StartReleaseCandidate'], false ) )
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
   continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
   inputs:
