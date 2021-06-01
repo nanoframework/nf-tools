@@ -209,9 +209,10 @@ namespace nanoFramework.Tools.GitHub
                         var originBranch = payload.pull_request.head.label.ToString().Replace("nanoframework:", "");
 
                         // delete this branch
-                        await SendGitHubDeleteRequest(
-                            $"{payload.pull_request.head.repo.url.ToString()}/git/refs/heads/{originBranch}",
-                            log);
+
+                        log.LogInformation($"Deleting URL \"heads/{originBranch}\"");
+
+                        await _octokitClient.Git.Reference.Delete(_gitOwner, payload.repository.name.ToString(), $"heads/{originBranch}");
                     }
 
                     // check merge status
@@ -430,131 +431,105 @@ namespace nanoFramework.Tools.GitHub
                     {
                         bool skipCIBuild = false;
 
+                        // get reuired check runs for this branch
+                        BranchProtectionRequiredStatusChecks statusChecks = await _octokitClient.Repository.Branch.GetRequiredStatusChecks((long)payload.repository.id, pr.Base.Ref);
+
                         // get status checks for PR
-                        var checkStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
+                        CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
 
-                        bool allChecksSuccessfull = false;
-
-                        if (checkStatus.TotalCount == 0)
+                        // check if ALL check runs are in place
+                        if (checkRunStatus.TotalCount == statusChecks.Contexts.Where(c => !c.Contains("license/cla")).Count())
                         {
-                            allChecksSuccessfull = true;
-                        }
-                        else
-                        {
-                            // iterate through all check status, if there are any
-                            foreach (var cr in checkStatus.CheckRuns)
+                            if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion != CheckConclusion.Success))
                             {
-                                if (cr.Conclusion == "success")
+                                // check if this is running on samples repo
+                                if (!pr.HtmlUrl.ToString().Contains("nanoframework/Samples"))
                                 {
-                                    // check pass
-                                    allChecksSuccessfull = true;
-                                }
-                                else
-                                {
-                                    // check failed, don't bother check others
-                                    allChecksSuccessfull = false;
-                                    break;
-                                }
-                            }
-                        }
+                                    // class lib repo
 
-                        if (allChecksSuccessfull)
-                        {
-                            // check if this is running on samples repo
-                            if (!pr.HtmlUrl.ToString().Contains("nanoframework/Samples"))
-                            {
-                                // class lib repo
+                                    // default is TO PUBLISH a new release 
+                                    bool publishReleaseFlag = true;
 
-                                // default is TO PUBLISH a new release 
-                                bool publishReleaseFlag = true;
+                                    // get labels for this PR
+                                    List<Label> prLabels = (List<Label>)pr.Labels;
 
-                                // get labels for this PR
-                                List<Label> prLabels = (List<Label>)pr.Labels;
-
-                                // check if this was a dependencies update
-                                var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
-                                if (dependenciesLabel != null)
-                                {
-                                    // this is a dependencies update PR
-
-                                    // get which packages where updated
-                                    IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
-
-                                    var packageFile = prFiles.FirstOrDefault(f => f.FileName.Contains("/packages.config"));
-
-                                    if(packageFile != null)
+                                    // check if this was a dependencies update
+                                    var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
+                                    if (dependenciesLabel != null)
                                     {
-                                        // get patch
-                                        var diffs = packageFile.Patch.ToString().Split('\n');
+                                        // this is a dependencies update PR
 
-                                        // get additions
-                                        var newPackages = diffs.Where(p => p.StartsWith("+"));
+                                        // get which packages where updated
+                                        IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
 
-                                        if (newPackages.Count() == 1 &&
-                                            (newPackages.Contains("nanoFramework.TestFramework") ||
-                                             newPackages.Contains("Nerdbank.GitVersioning")) ||
-                                            newPackages.Count() == 2 &&
-                                            (newPackages.Contains("nanoFramework.TestFramework") &&
-                                             newPackages.Contains("Nerdbank.GitVersioning")))
+                                        var packageFile = prFiles.FirstOrDefault(f => f.FileName.Contains("/packages.config"));
+
+                                        if (packageFile != null)
                                         {
-                                            // update was for:
-                                            // Test Framework
-                                            // Nerdbank.GitVersioning
+                                            // get patch
+                                            var diffs = packageFile.Patch.ToString().Split('\n');
 
-                                            // DON'T publish a new release
-                                            publishReleaseFlag = false;
+                                            // get additions
+                                            var newPackages = diffs.Where(p => p.StartsWith("+"));
 
-                                            // skip build
-                                            skipCIBuild = true;
+                                            if ((newPackages.Count() == 1 &&
+                                                (newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) ||
+                                                 newPackages.Any(p => p.Contains("Nerdbank.GitVersioning")))) ||
+                                                (newPackages.Count() == 2 &&
+                                                newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) &&
+                                                 newPackages.Any(p => p.Contains("Nerdbank.GitVersioning"))))
+                                            {
+                                                // update was for:
+                                                // Test Framework
+                                                // Nerdbank.GitVersioning
+
+                                                // DON'T publish a new release
+                                                publishReleaseFlag = false;
+
+                                                // skip build
+                                                skipCIBuild = true;
+                                            }
                                         }
+                                    }
+
+                                    if (publishReleaseFlag)
+                                    {
+                                        // add publish release label
+
+                                        log.LogInformation($"Adding 'Publish release flag to PR.");
+
+                                        // add the Publish release label
+                                        await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)pr.Number, new string[] { _labelCiPublishReleaseName });
                                     }
                                 }
 
-                                if (publishReleaseFlag)
-                                {
-                                    // add publish release label
-
-                                    log.LogInformation($"Adding 'Publish release flag to PR.");
-
-                                    // add the Publish release label
-                                    await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)pr.Number, new string[] { _labelCiPublishReleaseName });
-                                }
+                                // all checks completed successfully
+                                // merge PR with squash
+                                await SquashAndMergePR(
+                                    pr,
+                                    skipCIBuild,
+                                    log);
                             }
-
-                            // checks are all successful
-                            // merge PR with squash
-                            await SquashAndMergePR(
-                                pr,
-                                skipCIBuild,
-                                log);
                         }
+                        else
+                        {
+                            // still some missing, quit
+                            log.LogInformation($"Check runs still missing, no point checking any further...");
+                        }
+
                     }
                     else if (pr.Base.Ref.ToString().StartsWith("release-"))
                     {
                         // PR it's a release branch
 
+                        // get reuired check runs for this branch
+                        BranchProtectionRequiredStatusChecks statusChecks = await _octokitClient.Repository.Branch.GetRequiredStatusChecks((long)payload.repository.id, pr.Base.Ref);
+
                         // get status checks for PR
-                        var checkStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
+                        CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
 
-                        bool allChecksSuccessfull = false;
-
-                        // iterate through all check status
-                        foreach (var cr in checkStatus.CheckRuns)
-                        {
-                            if (cr.Conclusion == "success")
-                            {
-                                // check pass
-                                allChecksSuccessfull = true;
-                            }
-                            else
-                            {
-                                // check failed, don't bother check others
-                                allChecksSuccessfull = false;
-                                break;
-                            }
-                        }
-
-                        if (allChecksSuccessfull)
+                        // check if ALL check runs are in place
+                        if (checkRunStatus.TotalCount == statusChecks.Contexts.Where(c => !c.Contains("license/cla")).Count())
                         {
                             // need an APPROVED review
 
@@ -598,6 +573,11 @@ namespace nanoFramework.Tools.GitHub
                                     await QueueBuildAsync(repositoryName, "main", log);
                                 }
                             }
+                        }
+                        else
+                        {
+                            // still some missing, quit
+                            log.LogInformation($"Check runs still missing, no point checking any further...");
                         }
                     }
                 }
@@ -1518,26 +1498,6 @@ namespace nanoFramework.Tools.GitHub
             }
 
             return Tuple.Create(signedOffCount, obviousFixCount, checkPass);
-        }
-
-        public static async Task SendGitHubDeleteRequest(
-            string url,
-            ILogger log)
-        {
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("username", "version"));
-
-                // Add the GITHUB_CREDENTIALS as an app setting, Value for the app setting is a base64 encoded string in the following format
-                // "Username:Password" or "Username:PersonalAccessToken"
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Environment.GetEnvironmentVariable("GITHUB_CREDENTIALS"));
-
-                log.LogInformation($"Delete URL {url}");
-
-                HttpResponseMessage response = await client.DeleteAsync(url);
-
-                log.LogInformation($"Delete result {response.StatusCode} content {await response.Content.ReadAsStringAsync()} .");
-            }
         }
 
         public static async Task<int> SendGitHubRequest(
