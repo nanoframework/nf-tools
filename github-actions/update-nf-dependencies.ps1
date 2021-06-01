@@ -250,6 +250,13 @@ foreach ($solutionFile in $solutionFiles)
                 {
                     "Skip update of $packageName because it has the same version as before: $packageOriginVersion." | Write-Host -ForegroundColor Cyan
                 }
+                elseif ($packageTargetVersion.Contains('alpha'))
+                {
+                    "Skip update of $packageName because it's trying to use an alpha version!" | Write-Host -ForegroundColor Red
+
+                    # done here
+                    return
+                }
                 else
                 {
                     # if we are updating samples repo, OK to move to next one
