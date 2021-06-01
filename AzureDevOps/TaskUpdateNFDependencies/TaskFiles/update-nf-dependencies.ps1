@@ -141,8 +141,6 @@ ForEach($library in $librariesToUpdate)
 
         $solutionPath = Split-Path -Path $solutionFile
 
-        Write-Host "Restoring '$solutionFile'..."
-
         if (![string]::IsNullOrEmpty($nugetConfig))
         {
             nuget restore $solutionFile -ConfigFile $nugetConfig
@@ -383,7 +381,7 @@ ForEach($library in $librariesToUpdate)
     }
     else
     {
-        "Updated $updateCount packages" | Write-Host -ForegroundColor Yellow
+        "Updated $updateCount package(s)" | Write-Host -ForegroundColor Yellow
 
         # need this line so nfbot flags the PR appropriately
         $commitMessage += "`n[version update]`n`n"
