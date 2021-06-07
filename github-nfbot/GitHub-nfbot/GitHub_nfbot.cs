@@ -1374,37 +1374,37 @@ namespace nanoFramework.Tools.GitHub
                 // need to proceed with the author check
             }
 
-            if (!authorIsMemberOrOwner)
+            if (isOpenAction)
             {
-                // process this only if author is NOT member or owner
-
-                if (isOpenAction)
+                // does this issue look legit?
+                if (issueIsFeatureRequest)
                 {
-                    // does this issue look legit?
-                    if (issueIsFeatureRequest)
+                    // OK to label with feature request
+                    log.LogInformation($"Adding 'feature request label.");
+
+                    // add label
+                    await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelTypeFeatureRequestName });
+                }
+                else if (issueIsBugReport)
+                {
+                    // OK to label with bug
+                    log.LogInformation($"Adding 'bug label.");
+
+                    // add label
+                    await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelTypeBugName });
+
+                    // OK to label for triage
+                    log.LogInformation($"Adding 'triage label.");
+
+                    // add the triage label
+                    await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelStatusWaitingTriageName });
+                }
+                else
+                {
+                    if (!authorIsMemberOrOwner)
                     {
-                        // OK to label with feature request
-                        log.LogInformation($"Adding 'feature request label.");
+                        // process this only if author is NOT member or owner
 
-                        // add label
-                        await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelTypeFeatureRequestName });
-                    }
-                    else if (issueIsBugReport)
-                    {
-                        // OK to label with bug
-                        log.LogInformation($"Adding 'bug label.");
-
-                        // add label
-                        await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelTypeBugName });
-
-                        // OK to label for triage
-                        log.LogInformation($"Adding 'triage label.");
-
-                        // add the triage label
-                        await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelStatusWaitingTriageName });
-                    }
-                    else
-                    {
                         // not sure what this is about...
                         log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
 
@@ -1415,20 +1415,20 @@ namespace nanoFramework.Tools.GitHub
                             (int)payload.repository.id,
                             issue,
                             log);
-
-                        return new OkObjectResult("");
                     }
-                }
 
+                    return new OkObjectResult("");
+                }
+            }
+            else
+            {
                 // everything looks OK, remove all comments from nfbot
                 await RemovenfbotCommentsAsync(
                     payload.issue.comments_url.ToString(),
                     log);
-
-                return new OkObjectResult("");
             }
 
-            return new UnprocessableEntityObjectResult("Failed to get issue details");
+            return new OkObjectResult("");
         }
 
         private static async Task RemovenfbotCommentsAsync(string comments_url, ILogger log)
