@@ -438,77 +438,106 @@ namespace nanoFramework.Tools.GitHub
                         CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
 
                         // check if ALL check runs are in place
-                        if (checkRunStatus.TotalCount == statusChecks.Contexts.Where(c => !c.Contains("license/cla")).Count())
+                        int requiredStatusChecks = statusChecks.Contexts.Where(c => !c.Contains("license/cla")).Count();
+
+                        if (checkRunStatus.TotalCount >= requiredStatusChecks)
                         {
-                            if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion != CheckConclusion.Success))
+                            int checksCount = 0;
+
+                            foreach (var statusCheck in statusChecks.Contexts)
                             {
-                                // check if this is running on samples repo
-                                if (!pr.HtmlUrl.ToString().Contains("nanoframework/Samples"))
+                                if (checkRunStatus.CheckRuns.Any(c => c.Name == statusCheck))
                                 {
-                                    // class lib repo
-
-                                    // default is TO PUBLISH a new release 
-                                    bool publishReleaseFlag = true;
-
-                                    // get labels for this PR
-                                    List<Label> prLabels = (List<Label>)pr.Labels;
-
-                                    // check if this was a dependencies update
-                                    var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
-                                    if (dependenciesLabel != null)
+                                    checksCount++;
+                                }
+                                else
+                                {
+                                    if (statusCheck != "license/cla")
                                     {
-                                        // this is a dependencies update PR
+                                        log.LogInformation($"Status check {statusCheck} not reported as successfull");
+                                    }
+                                }
+                            }
 
-                                        // get which packages where updated
-                                        IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
+                            if (checksCount >= requiredStatusChecks)
+                            {
 
-                                        var packageFile = prFiles.FirstOrDefault(f => f.FileName.Contains("/packages.config"));
+                                if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion != CheckConclusion.Success))
+                                {
+                                    // check if this is running on samples repo
+                                    if (!pr.HtmlUrl.ToString().Contains("nanoframework/Samples"))
+                                    {
+                                        // class lib repo
 
-                                        if (packageFile != null)
+                                        // default is TO PUBLISH a new release 
+                                        bool publishReleaseFlag = true;
+
+                                        // get labels for this PR
+                                        List<Label> prLabels = (List<Label>)pr.Labels;
+
+                                        // check if this was a dependencies update
+                                        var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
+                                        if (dependenciesLabel != null)
                                         {
-                                            // get patch
-                                            var diffs = packageFile.Patch.ToString().Split('\n');
+                                            // this is a dependencies update PR
 
-                                            // get additions
-                                            var newPackages = diffs.Where(p => p.StartsWith("+"));
+                                            // get which packages where updated
+                                            IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
 
-                                            if ((newPackages.Count() == 1 &&
-                                                (newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) ||
-                                                 newPackages.Any(p => p.Contains("Nerdbank.GitVersioning")))) ||
-                                                (newPackages.Count() == 2 &&
-                                                newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) &&
-                                                 newPackages.Any(p => p.Contains("Nerdbank.GitVersioning"))))
+                                            var packageFile = prFiles.FirstOrDefault(f => f.FileName.Contains("/packages.config"));
+
+                                            if (packageFile != null)
                                             {
-                                                // update was for:
-                                                // Test Framework
-                                                // Nerdbank.GitVersioning
+                                                // get patch
+                                                var diffs = packageFile.Patch.ToString().Split('\n');
 
-                                                // DON'T publish a new release
-                                                publishReleaseFlag = false;
+                                                // get additions
+                                                var newPackages = diffs.Where(p => p.StartsWith("+  <package id"));
 
-                                                // skip build
-                                                skipCIBuild = true;
+                                                if ((newPackages.Count() == 1 &&
+                                                    (newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) ||
+                                                     newPackages.Any(p => p.Contains("Nerdbank.GitVersioning")))) ||
+                                                    (newPackages.Count() == 2 &&
+                                                    newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) &&
+                                                     newPackages.Any(p => p.Contains("Nerdbank.GitVersioning"))))
+                                                {
+                                                    // update was for:
+                                                    // Test Framework
+                                                    // Nerdbank.GitVersioning
+
+                                                    // DON'T publish a new release
+                                                    publishReleaseFlag = false;
+
+                                                    // skip build
+                                                    skipCIBuild = true;
+                                                }
                                             }
+                                        }
+
+                                        if (publishReleaseFlag)
+                                        {
+                                            // add publish release label
+
+                                            log.LogInformation($"Adding 'Publish release flag to PR.");
+
+                                            // add the Publish release label
+                                            await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)pr.Number, new string[] { _labelCiPublishReleaseName });
                                         }
                                     }
 
-                                    if (publishReleaseFlag)
-                                    {
-                                        // add publish release label
-
-                                        log.LogInformation($"Adding 'Publish release flag to PR.");
-
-                                        // add the Publish release label
-                                        await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)pr.Number, new string[] { _labelCiPublishReleaseName });
-                                    }
+                                    // all checks completed successfully
+                                    // merge PR with squash
+                                    await SquashAndMergePR(
+                                        pr,
+                                        skipCIBuild,
+                                        log);
                                 }
 
-                                // all checks completed successfully
-                                // merge PR with squash
-                                await SquashAndMergePR(
-                                    pr,
-                                    skipCIBuild,
-                                    log);
+                            }
+                            else
+                            {
+                                // not all required status check are missing, quit
+                                log.LogInformation($"Check runs still missing, no point checking any further...");
                             }
                         }
                         else
