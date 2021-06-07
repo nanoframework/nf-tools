@@ -145,12 +145,12 @@ steps:
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: |
-      **\*NFUnitTest*.dll
+      **\NFUnitTest.dll
       **\*Tests*.dll
-      **\*Tests*.dll
-      !**\*TestAdapter*.dll
-      !**\*TestFramework*.dll
       !**\obj\**
+      !**\TestAdapter\**
+      !**\NFUnitTest_DummyAdapter\**
+      !**\nanoFramework.TestFramework\**
     searchFolder: '$(System.DefaultWorkingDirectory)'
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
