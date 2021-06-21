@@ -695,12 +695,12 @@ namespace nanoFramework.Tools.GitHub
                 // we have a new sponsor
                 // send message to Discord channel
 
-                log.LogInformation($"Processing new repo stared event from {payload.sender.login.ToString()}");
+                log.LogInformation($"Processing new repo stared event from {payload.sponsorship.sponsor.login.ToString()}");
 
                 var slackPayload = new
                 {
-                    text = $"GitHub user <{payload.sender.html_url.ToString()}|{payload.sender.login.ToString()}> just joined as sponsor with a monthly contribution of ${payload.sponsorship.tier.monthly_price_in_dollars.ToString()}.00 USD! Well done and thank you very much! :clap:",
-                    icon_url = payload.sender.avatar_url.ToString(),
+                    text = $"GitHub user <{payload.sponsorship.sponsor.url.ToString()}|{payload.sponsorship.sponsor.login.ToString()}> just joined as sponsor with a monthly contribution of ${payload.sponsorship.tier.monthly_price_in_dollars.ToString()}.00 USD! Well done and thank you very much! :clap:",
+                    icon_url = payload.sponsorship.sponsor.avatar_url.ToString(),
                 };
 
                 // Add the DISCORD_CONTRIBUTIONS_WEBHOOK_URL as an app setting, Value for the app setting is the URL from Slack API integration
