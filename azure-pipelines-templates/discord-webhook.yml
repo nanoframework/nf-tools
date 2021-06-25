@@ -11,103 +11,149 @@ steps:
 - task: PowerShell@2
   displayName: Call Discord webhook
   inputs:
+    errorActionPreference: 'silentlyContinue'    
     targetType: 'inline'
     script: |
-      $STATUS = "${{ parameters.status }}"
 
-      Switch ($STATUS) {
-        "success" {
-          $EMBED_COLOR=3066993
-          $STATUS_MESSAGE="Passed"
-          Break
-        }
-        "failure" {
-          $EMBED_COLOR=15158332
-          $STATUS_MESSAGE="Failed"
-          Break
-        }
-        "warning" {
-          $EMBED_COLOR=12370112
-          $STATUS_MESSAGE="Warning"
-          Break
-        }  
-        default {
-          Write-Output "Default!"
-          Break
-        }
-      }
+      Install-Module -Name PowerShellForGitHub -Scope CurrentUser -Force
 
-      $AUTHOR_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%aN")"
-      $COMMITTER_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%cN")"
-      $COMMIT_SUBJECT="$(git log -1 "$env:Build_SourceVersion" --pretty="%s")"
-      $COMMIT_MESSAGE="$(git log -1 "$env:Build_SourceVersion" --pretty="%b")"
-
-      if ($AUTHOR_NAME -eq $COMMITTER_NAME)
+      # check if this is a PR
+      if($env:System_PullRequest_PullRequestId -ne $null)
       {
-        $CREDITS = "$AUTHOR_NAME authored & committed"
+          Write-Host "Building from PR"
+
+          $pr = Get-GitHubIssue -Uri "https://github.com/$env:Build_Repository_Name" -Issue $env:System_PullRequest_PullRequestNumber
+
+          $user = [String]$pr.user.login
+
+          Write-Host "PR from user: $user"
+
+          # only report to Discord if this is from an automated build
+          if($user -eq 'nfbot' -or $user -eq 'github-actions[bot]')
+          {
+              Write-Host "Go and report failure to Discord"
+
+              $CallDiscord = $TRUE
+          }
+          else
+          {
+              Write-Host "Don't report failure to Discord"
+
+              $CallDiscord = $FALSE
+          }
       }
       else
       {
-        $CREDITS = "$AUTHOR_NAME authored & $COMMITTER_NAME committed"
+          # build not from PR, report to Discord
+
+          Write-Host "Build from other than PR, report to Discord"
+
+          $CallDiscord = $TRUE
       }
 
-      $WEBHOOK_URL = "${{ parameters.webhookUrl }}"
-      $MESSAGE = "${{ parameters.message }}"
+      if($CallDiscord)
+      {
+          Write-Host "Preparing call to Discord webhook..."
 
-      if ($env:System_PullRequest_PullRequestNumber) {
-        $URL="https://github.com/$env:Build_Repository_Name/pull/$env:System_PullRequest_PullRequestNumber"
+          $STATUS = "${{ parameters.status }}"
+
+          Switch ($STATUS) {
+            "success" {
+              $EMBED_COLOR=3066993
+              $STATUS_MESSAGE="Passed"
+              Break
+            }
+            "failure" {
+              $EMBED_COLOR=15158332
+              $STATUS_MESSAGE="Failed"
+              Break
+            }
+            "warning" {
+              $EMBED_COLOR=12370112
+              $STATUS_MESSAGE="Warning"
+              Break
+            }  
+            default {
+              Write-Output "Default!"
+              Break
+            }
+          }
+
+          $AUTHOR_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%aN")"
+          $COMMITTER_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%cN")"
+          $COMMIT_SUBJECT="$(git log -1 "$env:Build_SourceVersion" --pretty="%s")"
+          $COMMIT_MESSAGE="$(git log -1 "$env:Build_SourceVersion" --pretty="%b")"
+
+          if ($AUTHOR_NAME -eq $COMMITTER_NAME)
+          {
+            $CREDITS = "$AUTHOR_NAME authored & committed"
+          }
+          else
+          {
+            $CREDITS = "$AUTHOR_NAME authored & $COMMITTER_NAME committed"
+          }
+
+          $WEBHOOK_URL = "${{ parameters.webhookUrl }}"
+          $MESSAGE = "${{ parameters.message }}"
+
+          if ($env:System_PullRequest_PullRequestNumber) {
+            $URL="https://github.com/$env:Build_Repository_Name/pull/$env:System_PullRequest_PullRequestNumber"
+          }
+        
+          $BUILD_VERSION = [uri]::EscapeDataString($env:Build_BuildNumber)
+
+          [System.Collections.ArrayList]$embedArray = @()
+
+          $name = "Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $STATUS_MESSAGE - $env:Build_Repository_Name"
+          $url = "https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"
+          $description = "$COMMIT_MESSAGE`\n$CREDITS`\n$MESSAGE"
+
+          $authorObject = [PSCustomObject]@{
+              name = $name
+              url = $url
+              icon_url = $AVATAR
+          }
+
+          $field1Value = "[``$($env:Build_SourceVersion.substring(0, 7))``](https://github.com/$env:Build_Repository_Name/commit/$env:Build_SourceVersion)"
+
+          $field1Object = [PSCustomObject]@{
+              name = "Commit"
+              value = $field1Value
+              inline = 'true'
+          }
+          
+          $field2Value = "[``$env:Build_SourceBranchName``](https://github.com/$env:Build_Repository_Name/tree/$env:Build_SourceBranchName)"
+
+          $field2Object = [PSCustomObject]@{
+              name = "Branch/Tag"
+              value = $field2Value
+              inline = 'true'
+          }
+
+          [System.Collections.ArrayList]$fieldsArray = @()
+          $fieldsArray.Add($field1Object)
+          $fieldsArray.Add($field2Object)
+
+          $embedObject = [PSCustomObject]@{
+              color = $EMBED_COLOR
+              author = $authorObject
+              title = $COMMIT_SUBJECT
+              url = $url
+              description = $description
+              fields = $fieldsArray
+          }
+
+          $embedArray.Add($embedObject)
+          
+          $payload = [PSCustomObject]@{
+              embeds = $embedArray
+          }
+
+          [Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'
+          $sC = Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method 'Post' -ContentType 'application/json'
+          Write-Host "Status: $sC"
       }
-    
-      $BUILD_VERSION = [uri]::EscapeDataString($env:Build_BuildNumber)
 
-      [System.Collections.ArrayList]$embedArray = @()
-
-      $name = "Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $STATUS_MESSAGE - $env:Build_Repository_Name"
-      $url = "https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"
-      $description = "$COMMIT_MESSAGE`\n$env:CREDITS`\n$MESSAGE"
-
-      $authorObject = [PSCustomObject]@{
-          name = $name
-          url = $url
-          icon_url = $AVATAR
-      }
-
-      $field1Value = "[``$($env:Build_SourceVersion.substring(0, 7))``](https://github.com/$env:Build_Repository_Name/commit/$env:Build_SourceVersion)"
-
-      $field1Object = [PSCustomObject]@{
-          name = "Commit"
-          value = $field1Value
-          inline = 'true'
-      }
-      
-      $field2Value = "[``$env:Build_SourceBranchName``](https://github.com/$env:Build_Repository_Name/tree/$env:Build_SourceBranchName)"
-
-      $field2Object = [PSCustomObject]@{
-          name = "Branch/Tag"
-          value = $field2Value
-          inline = 'true'
-      }
-
-      [System.Collections.ArrayList]$fieldsArray = @()
-      $fieldsArray.Add($field1Object)
-      $fieldsArray.Add($field2Object)
-
-      $embedObject = [PSCustomObject]@{
-          color = $EMBED_COLOR
-          author = $authorObject
-          title = $COMMIT_SUBJECT
-          url = $env:URL
-          description = $description
-          fields = $fieldsArray
-      }
-
-      $embedArray.Add($embedObject)
-      
-      $payload = [PSCustomObject]@{
-          embeds = $embedArray
-      }
-
-      [Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'
-      $sC = Invoke-RestMethod -Uri $WEBHOOK_URL -Body ($payload | ConvertTo-Json -Depth 4) -Method 'Post' -ContentType 'application/json'
-      Write-Host "Status: $sC"
-    errorActionPreference: 'silentlyContinue'    
+- template: report-build-failure.yml
+  parameters:
+    forceRun: 'true'
