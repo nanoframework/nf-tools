@@ -37,7 +37,7 @@ ForEach($library in $librariesToUpdate)
     $prTitle = ""
     $projectPath = ""
     $baseBranch = "develop"
-    $newBranchName = "develop-nfbot/update-dependencies/" + [guid]::NewGuid().ToString()
+    $newBranchName = "nfbot/update-dependencies/" + [guid]::NewGuid().ToString()
     $workingPath = '.\'
 
     # working directory is agent temp directory

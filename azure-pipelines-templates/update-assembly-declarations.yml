@@ -30,7 +30,7 @@ steps:
     git -c http.extraheader="AUTHORIZATION: $auth" fetch --depth 1 origin
 
     # new branch name
-    $newBranch = "develop-nfbot/update-version/$(nugetPackageName)/$env:MY_NUGET_VERSION"
+    $newBranch = "nfbot/update-version/$(nugetPackageName)/$env:MY_NUGET_VERSION"
     Write-Host "$("##vso[task.setvariable variable=NEW_BRANCH_NAME]")$newBranch"
 
     # create branch to perform updates

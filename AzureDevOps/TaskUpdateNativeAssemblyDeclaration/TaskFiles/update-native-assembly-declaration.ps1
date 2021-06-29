@@ -46,7 +46,7 @@ git config user.email nfbot@users.noreply.github.com
 git -c http.extraheader="AUTHORIZATION: $auth" fetch --depth 1 origin -q
 
 # new branch name
-$newBranch = "develop-nfbot/update-version/$classLibName/$nuGetVersion"
+$newBranch = "nfbot/update-version/$classLibName/$nuGetVersion"
 
 Write-Debug "Update branch name is: $newBranch."
 
