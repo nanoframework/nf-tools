@@ -31,7 +31,11 @@ steps:
           # only warn user if it's NOT an automated build
           if($user -eq 'nfbot' -or $user -eq 'github-actions[bot]' -or $user -eq 'dependabot[bot]')
           {
-              Write-Host "PR from user: $user"
+              Write-Host "Skipping warning"
+          }
+          else
+          {
+              Write-Host "Sending warning to $user"
 
               $comment = New-GitHubIssueComment -Uri "https://github.com/$env:Build_Repository_Name" -Issue $env:System_PullRequest_PullRequestNumber -Body "Hey @$user!`n`nSeems that the build is failing for this PR... :disappointed: Please check it."
 
@@ -44,10 +48,6 @@ steps:
               Remove-GitHubIssueComment -Uri "https://github.com/$env:Build_Repository_Name" -CommentID $commentId -Force
 
               Write-Host "Removed comment"
-          }
-          else
-          {
-              Write-Host "Skipping warning"
           }
       }
       else
