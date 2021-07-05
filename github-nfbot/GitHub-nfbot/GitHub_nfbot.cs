@@ -16,6 +16,7 @@ using Newtonsoft.Json.Linq;
 using Octokit;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -224,6 +225,32 @@ namespace nanoFramework.Tools.GitHub
 
                         // add the invalid label
                         await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number, new string[] { _labelInvalidName });
+                    }
+                }
+                else if (payload.action == "synchronize")
+                {
+                    // get commits for this PR
+                    ReadOnlyCollection<Octokit.PullRequestCommit> prCommits = await _octokitClient.PullRequest.Commits(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                    var commit = prCommits.First(c => c.Sha == payload.after.ToString());
+
+                    ReadOnlyCollection<Octokit.Branch> branches = await _octokitClient.Repository.Branch.GetAll(_gitOwner, payload.repository.name.ToString());
+                    var branchesClangFix = branches.Where(b => b.Name.StartsWith("nfbot/clang-format-fix"));
+
+                    // get PR commit at HEAD
+                    GitHubCommit prCommitAtHead = await _octokitClient.Repository.Commit.Get((int)payload.pull_request.head.repo.id, commit.Sha);
+
+                    foreach (var branch in branchesClangFix)
+                    {
+                        GitHubCommit commitForClangFix = await _octokitClient.Repository.Commit.Get(_gitOwner, payload.repository.name.ToString(), branch.Commit.Sha);
+
+                        if (prCommitAtHead.Parents[0].Sha == commitForClangFix.Parents[0].Sha)
+                        {
+                            // found the branch
+                            await _octokitClient.Git.Reference.Delete(_gitOwner, payload.repository.name.ToString(), $"heads/{branch.Name}");
+
+                            // done here
+                            break;
+                        }
                     }
                 }
             }
@@ -1599,7 +1626,6 @@ namespace nanoFramework.Tools.GitHub
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.antiope-preview+json"));
 
                 client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("username", "version"));
-
 
                 /////////////////////////////////////////////////////////////////////////////////////////////////
                 // commented code to generate the encoded string to put at GITHUB_CREDENTIALS
