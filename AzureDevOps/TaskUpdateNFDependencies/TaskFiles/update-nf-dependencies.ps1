@@ -35,7 +35,7 @@ ForEach($library in $librariesToUpdate)
     $updateCount = 0
     $commitMessage = ""
     $prTitle = ""
-    $projectPath = ""
+    $pathOfProject = ""
     $baseBranch = "develop"
     $newBranchName = "nfbot/update-dependencies/" + [guid]::NewGuid().ToString()
     $workingPath = '.\'
@@ -156,8 +156,8 @@ ForEach($library in $librariesToUpdate)
         foreach ($packagesConfig in $packagesConfigs)
         {
             # check if this project is in our solution file
-            $projectPath = Split-Path -Path $packagesConfig -Parent
-            $projectPathInSln = $projectPath.Replace("$solutionPath\",'')
+            $pathOfProject = Split-Path -Path $packagesConfig -Parent
+            $projectPathInSln = $pathOfProject.Replace("$solutionPath\",'')
 
             $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString().Contains($projectPathInSln)}
             if($null -eq $isProjecInSolution)
@@ -166,183 +166,188 @@ ForEach($library in $librariesToUpdate)
             }
 
             # get project at path
-            $projectPath = Get-ChildItem -Path $projectPath -Include '*.csproj' -Recurse
+            $projectsAtPath = Get-ChildItem -Path $pathOfProject -Include '*.csproj' -Recurse
 
-            # load packages.config as XML doc
-            [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8
-
-            $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
-
-            $packageList = @(,@())
-
-            "Building package list to update" | Write-Host
-
-            foreach ($node in $nodes)
+            foreach ($projectToUpdate in $projectsAtPath)
             {
-                # filter out Nerdbank.GitVersioning package
-                if($node.id -notlike "Nerdbank.GitVersioning*")
+                "Updating $projectToUpdate.FullName" | Write-Host
+
+                # load packages.config as XML doc
+                [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8
+
+                $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
+
+                $packageList = @(,@())
+
+                "Building package list to update" | Write-Host
+
+                foreach ($node in $nodes)
                 {
-                    "Adding {0} {1}" -f [string]$node.id,[string]$node.version | Write-Host
-                    if($packageList)
+                    # filter out Nerdbank.GitVersioning package
+                    if($node.id -notlike "Nerdbank.GitVersioning*")
                     {
-                        $packageList += , ($node.id,  $node.version)
-                    }
-                    else
-                    {
-                        $packageList = , ($node.id,  $node.version)
+                        "Adding {0} {1}" -f [string]$node.id,[string]$node.version | Write-Host
+                        if($packageList)
+                        {
+                            $packageList += , ($node.id,  $node.version)
+                        }
+                        else
+                        {
+                            $packageList = , ($node.id,  $node.version)
+                        }
                     }
                 }
-            }
 
-            if ($packageList.length -gt 0)
-            {
-                "NuGet packages to update:" | Write-Host
-                $packageList | Write-Host
-                
-                # update all packages
-                foreach ($package in $packageList)
+                if ($packageList.length -gt 0)
                 {
-                    # get package name and target version
-                    [string]$packageName = $package[0]
-                    [string]$packageOriginVersion = $package[1]
-
-                    "Updating package $packageName from $packageOriginVersion" | Write-Host
-
-                    if ($nugetReleaseType -like '*stable*')
+                    "NuGet packages to update:" | Write-Host
+                    $packageList | Write-Host
+                    
+                    # update all packages
+                    foreach ($package in $packageList)
                     {
-                        # don't allow prerelease for release and master branches
+                        # get package name and target version
+                        [string]$packageName = $package[0]
+                        [string]$packageOriginVersion = $package[1]
 
-                        if (![string]::IsNullOrEmpty($nugetConfig))
+                        "Updating package $packageName from $packageOriginVersion" | Write-Host
+
+                        if ($nugetReleaseType -like '*stable*')
                         {
-                            nuget update $projectPath.FullName -Id "$packageName" -ConfigFile $nugetConfig -FileConflictAction Overwrite
-                        }
-                        else
-                        {
-                            nuget update $projectPath.FullName -Id "$packageName" -FileConflictAction Overwrite
-                        }
-                    }
-                    else
-                    {
+                            # don't allow prerelease for release and master branches
 
-                        if (![string]::IsNullOrEmpty($nugetConfig))
-                        {
-                            nuget update $projectPath.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease -FileConflictAction Overwrite
-                        }
-                        else
-                        {
-                            nuget update $projectPath.FullName -Id "$packageName" -PreRelease -FileConflictAction Overwrite
-                        }
-                    }
-
-                    # need to get target version
-                    # load packages.config as XML doc
-                    [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8
-
-                    $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
-
-                    foreach ($node in $nodes)
-                    {
-                        # find this package
-                        if($node.id -eq $packageName)
-                        {
-                            $packageTargetVersion = $node.version
-
-                            # done here
-                            break
-                        }
-                    }
-
-                    # sanity check
-                    if($packageTargetVersion -eq $packageOriginVersion)
-                    {
-                        "Skip update of $packageName because it has the same version as before: $packageOriginVersion." | Write-Host -ForegroundColor Cyan
-                    }
-                    else
-                    {
-                        # if we are updating samples repo, OK to move to next one
-                        if($Env:GITHUB_REPOSITORY -eq "nanoframework/Samples")
-                        {
-                            $updateCount = $updateCount + 1;
-                            
-                            # build commit message
-                            $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>"
-
-                            # done here
-                            continue
-                        }
-
-                        "Bumping $packageName from $packageOriginVersion to $packageTargetVersion." | Write-Host -ForegroundColor Cyan                
-
-                        "Updating NFMDP_PE LoadHints" | Write-Host
-
-                        # replace NFMDP_PE_LoadHints
-                        $filecontent = Get-Content $projectPath.FullName -Encoding utf8
-                        attrib $project -r
-                        $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $projectPath.FullName -Encoding utf8 -Force
-
-                        # update nuspec files, if any
-                        $nuspecFiles = (Get-ChildItem -Path "$solutionPath" -Include "*.nuspec" -Recurse)
-                        
-                        if ($nuspecFiles.length -gt 0)
-                        {
-                            "Updating nuspec files" | Write-Host
-
-                            foreach ($nuspec in $nuspecFiles)
+                            if (![string]::IsNullOrEmpty($nugetConfig))
                             {
-                                "Trying update on nuspec file: '$nuspec.FullName' " | Write-Host
+                                nuget update $projectToUpdate.FullName -Id "$packageName" -ConfigFile $nugetConfig -FileConflictAction Overwrite
+                            }
+                            else
+                            {
+                                nuget update $projectToUpdate.FullName -Id "$packageName" -FileConflictAction Overwrite
+                            }
+                        }
+                        else
+                        {
 
-                                [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
+                            if (![string]::IsNullOrEmpty($nugetConfig))
+                            {
+                                nuget update $projectToUpdate.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease -FileConflictAction Overwrite
+                            }
+                            else
+                            {
+                                nuget update $projectToUpdate.FullName -Id "$packageName" -PreRelease -FileConflictAction Overwrite
+                            }
+                        }
 
-                                $nodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
+                        # need to get target version
+                        # load packages.config as XML doc
+                        [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8
 
-                                foreach ($node in $nodes)
+                        $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
+
+                        foreach ($node in $nodes)
+                        {
+                            # find this package
+                            if($node.id -eq $packageName)
+                            {
+                                $packageTargetVersion = $node.version
+
+                                # done here
+                                break
+                            }
+                        }
+
+                        # sanity check
+                        if($packageTargetVersion -eq $packageOriginVersion)
+                        {
+                            "Skip update of $packageName because it has the same version as before: $packageOriginVersion." | Write-Host -ForegroundColor Cyan
+                        }
+                        else
+                        {
+                            # if we are updating samples repo, OK to move to next one
+                            if($Env:GITHUB_REPOSITORY -eq "nanoframework/Samples")
+                            {
+                                $updateCount = $updateCount + 1;
+                                
+                                # build commit message
+                                $commitMessage += "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>"
+
+                                # done here
+                                continue
+                            }
+
+                            "Bumping $packageName from $packageOriginVersion to $packageTargetVersion." | Write-Host -ForegroundColor Cyan                
+
+                            "Updating NFMDP_PE LoadHints" | Write-Host
+
+                            # replace NFMDP_PE_LoadHints
+                            $filecontent = Get-Content $projectToUpdate.FullName -Encoding utf8
+                            attrib $project -r
+                            $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $projectToUpdate.FullName -Encoding utf8 -Force
+
+                            # update nuspec files, if any
+                            $nuspecFiles = (Get-ChildItem -Path "$solutionPath" -Include "*.nuspec" -Recurse)
+                            
+                            if ($nuspecFiles.length -gt 0)
+                            {
+                                "Updating nuspec files" | Write-Host
+
+                                foreach ($nuspec in $nuspecFiles)
                                 {
-                                    if($node.Name -eq "metadata")
+                                    "Trying update on nuspec file: '$nuspec.FullName' " | Write-Host
+
+                                    [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
+
+                                    $nodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
+
+                                    foreach ($node in $nodes)
                                     {
-                                        foreach ($metadataItem in $node.ChildNodes)
-                                        {                          
-                                            if($metadataItem.Name -eq "dependencies")
-                                            {
-                                                foreach ($dependency in $metadataItem.ChildNodes)
+                                        if($node.Name -eq "metadata")
+                                        {
+                                            foreach ($metadataItem in $node.ChildNodes)
+                                            {                          
+                                                if($metadataItem.Name -eq "dependencies")
                                                 {
-                                                    if($dependency.Attributes["id"].value -eq $packageName)
+                                                    foreach ($dependency in $metadataItem.ChildNodes)
                                                     {
-                                                        "Updating dependency: $packageName to $packageTargetVersion" | Write-Host
-                                                        $dependency.Attributes["version"].value = "$packageTargetVersion"
+                                                        if($dependency.Attributes["id"].value -eq $packageName)
+                                                        {
+                                                            "Updating dependency: $packageName to $packageTargetVersion" | Write-Host
+                                                            $dependency.Attributes["version"].value = "$packageTargetVersion"
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
                                     }
+
+                                    $nuspecDoc.Save($nuspec[0].FullName)
                                 }
 
-                                $nuspecDoc.Save($nuspec[0].FullName)
+                                "Finished updating nuspec files." | Write-Host
+                            }
+                            else
+                            {
+                                "No nuspec files to update." | Write-Host
                             }
 
-                            "Finished updating nuspec files." | Write-Host
-                        }
-                        else
-                        {
-                            "No nuspec files to update." | Write-Host
-                        }
+                            # build commit message
+                            $updateMessage = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>";
 
-                        # build commit message
-                        $updateMessage = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>";
+                            # build PR title
+                            $prTitle = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion"
 
-                        # build PR title
-                        $prTitle = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion"
+                            if($commitMessage.Contains($updateMessage))
+                            {
+                                # already reported
+                            }
+                            else
+                            {
+                                # update message
+                                $commitMessage += $updateMessage
 
-                        if($commitMessage.Contains($updateMessage))
-                        {
-                            # already reported
-                        }
-                        else
-                        {
-                            # update message
-                            $commitMessage += $updateMessage
-
-                            # update count
-                            $updateCount = $updateCount + 1;
+                                # update count
+                                $updateCount = $updateCount + 1;
+                            }
                         }
                     }
                 }
