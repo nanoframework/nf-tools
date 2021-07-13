@@ -167,9 +167,8 @@ steps:
     script: |
 
       $assemblyInfoFiles = (Get-ChildItem -Path ".\*" -Include "AssemblyInfo.cs" -Recurse)
-      $attributeRegex = '(AssemblyNativeVersion\(\")+(\d+\.\d+\.\d+\.\d)+("\))'
 
-      $attributeRegex = [regex]"(AssemblyNativeVersion\(\"")+(\d+\.\d+\.\d+\.\d)+(""\))"
+      $attributeRegex = [regex]::new('("AssemblyNativeVersion\(")|(\d+\.\d+\.\d+\.\d+)|(""\))')
 
       # read attribute from file
       $fileContent = Get-Content($assemblyInfoFiles[0])
