@@ -29,7 +29,7 @@ steps:
 
         # prepare release and capture output
         Write-Host "Prepare release with NBGV..."
-        $release = nbgv prepare-release -p source
+        $release = nbgv prepare-release
 
         Write-Host "Prepare commit..."
         # get commit message for the merge
