@@ -10,7 +10,7 @@ steps:
 
 - task: DotNetCoreCLI@2
   displayName: Install SignTool tool
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], '') )
+  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
   inputs:
     command: custom
     custom: tool

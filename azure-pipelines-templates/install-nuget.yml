@@ -4,7 +4,7 @@
 steps:
 
 - task: NuGetToolInstaller@1
-  condition: succeeded()
+  condition: and( succeeded(), eq( variables['StartReleaseCandidate'], false ) )
   displayName: 'Install specific version of NuGet'
   inputs:
     versionSpec: '5.9.0'
