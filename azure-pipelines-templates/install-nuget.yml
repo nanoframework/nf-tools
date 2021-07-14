@@ -7,4 +7,4 @@ steps:
   condition: and( succeeded(), eq( variables['StartReleaseCandidate'], false ) )
   displayName: 'Install specific version of NuGet'
   inputs:
-    versionSpec: '5.9.0'
+    versionSpec: '>=5.10.0'
