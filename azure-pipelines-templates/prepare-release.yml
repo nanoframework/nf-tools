@@ -47,7 +47,7 @@ steps:
 
         Write-Host "Prepare PR..."
         # start PR for release
-        $prRequestBody = @{title="$branch";body="";head="$branch";base="master"} | ConvertTo-Json
+        $prRequestBody = @{title="$branch";body="";head="$branch";base="main"} | ConvertTo-Json
         $githubApiEndpoint = "https://api.github.com/repos/$env:BUILD_REPOSITORY_NAME/pulls"
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 

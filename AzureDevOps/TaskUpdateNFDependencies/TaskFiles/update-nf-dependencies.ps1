@@ -175,7 +175,7 @@ ForEach($library in $librariesToUpdate)
 
                         if ($nugetReleaseType -like '*stable*')
                         {
-                            # don't allow prerelease for release and master branches
+                            # don't allow prerelease for release and main branches
 
                             if (![string]::IsNullOrEmpty($nugetConfig))
                             {
