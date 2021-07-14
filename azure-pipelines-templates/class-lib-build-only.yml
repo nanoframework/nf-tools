@@ -108,6 +108,10 @@ steps:
      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/**/**.coverage
      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
 
+- task: InstallnFBuildComponents@1
+  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  displayName: Install nanoFramework MSBuild components
+
 - template: install-nuget.yml
 
 - task: NuGetCommand@2
@@ -117,10 +121,6 @@ steps:
     restoreSolution: '**/*.sln'
     feedsToUse: config
     nugetConfigPath: ${{ parameters.nugetConfigPath }}
-
-- task: InstallnFBuildComponents@1
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Install nanoFramework MSBuild components
 
 - task: VSBuild@1
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
