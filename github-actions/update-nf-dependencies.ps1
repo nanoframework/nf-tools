@@ -85,22 +85,6 @@ git config --global user.name nfbot
 git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
 
-# temporarily rename csproj files to projcs-temp so they are not affected.
-Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
-    Foreach-object {
-        $OldName = $_.name; 
-        $NewName = $_.name -replace '.csproj','.projcs-temp'; 
-        Rename-Item  -Path $_.fullname -Newname $NewName; 
-    }
-
-# temporarily rename nfproj files to csproj
-Get-ChildItem -Path $workingPath -Include "*.nfproj" -Recurse |
-    Foreach-object {
-        $OldName = $_.name; 
-        $NewName = $_.name -replace '.nfproj','.csproj'; 
-        Rename-Item  -Path $_.fullname -Newname $NewName; 
-    }
-
 if ([string]::IsNullOrEmpty($targetSolutions))
 {
     Write-Host "Targeting every solution in the repository."
@@ -115,17 +99,6 @@ else
 
 # find every solution file in repository
 $solutionFiles = (Get-ChildItem -Path "$workingPath" -Include "$targetSolutions"  -Recurse)
-
-# loop through solution files and replace content containing:
-# 1) .csproj to .projcs-temp (to prevent NuGet from touching these)
-# 2) and .nfproj to .csproj so nuget can handle them
-foreach ($solutionFile in $solutionFiles)
-{
-    $content = Get-Content $solutionFile -Encoding utf8
-    $content = $content -replace '.csproj', '.projcs-temp'
-    $content = $content -replace '.nfproj', '.csproj'
-    $content | Set-Content -Path $solutionFile -Encoding utf8 -Force
-}
     
 # find NuGet.Config
 $nugetConfig = (Get-ChildItem -Path "$workingPath" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
@@ -134,8 +107,8 @@ foreach ($solutionFile in $solutionFiles)
 {
     # check if there are any csproj here
     $slnFileContent = Get-Content $solutionFile -Encoding utf8
-    $hascsproj = $slnFileContent | Where-Object {$_ -like '*.csproj*'}
-    if($hascsproj -eq $null)
+    $hasnfproj = $slnFileContent | Where-Object {$_ -like '*.nfproj*'}
+    if($hasnfproj -eq $null)
     {
         continue
     }
@@ -167,7 +140,7 @@ foreach ($solutionFile in $solutionFiles)
         }
 
         # get project(s) at path
-        $projectsAtPath = Get-ChildItem -Path $pathOfProject -Include '*.csproj' -Recurse
+        $projectsAtPath = Get-ChildItem -Path $pathOfProject -Include '*.nfproj' -Recurse
 
         foreach ($projectToUpdate in $projectsAtPath)
         {
@@ -359,29 +332,6 @@ foreach ($solutionFile in $solutionFiles)
             }
         }
     }
-}
-
-# rename csproj files back to nfproj
-Get-ChildItem -Path $workingPath -Include "*.csproj" -Recurse |
-Foreach-object {
-    $NewName = $_.name -replace '.csproj','.nfproj'; 
-    Rename-Item  -Path $_.fullname -Newname $NewName; 
-    }
-
-# rename projcs-temp files back to csproj
-Get-ChildItem -Path $workingPath -Include "*.projcs-temp" -Recurse |
-Foreach-object {
-    $NewName = $_.name -replace '.projcs-temp','.csproj'; 
-    Rename-Item  -Path $_.fullname -Newname $NewName; 
-    }
-
-# loop through solution files and revert names to default.
-foreach ($solutionFile in $solutionFiles)
-{
-    $content = Get-Content $solutionFile -Encoding utf8
-    $content = $content -replace '.csproj', '.nfproj'
-    $content = $content -replace '.projcs-temp', '.csproj'
-    $content | Set-Content -Path $solutionFile -Encoding utf8 -Force
 }
 
 # Potential workkaround for whitespace only changes?
