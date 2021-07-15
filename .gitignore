@@ -10,4 +10,3 @@ NanoFramework-GitHubBot - Web Deploy.pubxml
 # AzureDevOps tasks
 *.vsix
 *.zip
-AzureDevOps/TaskUpdateNFDependencies/TaskFiles/ps_modules
