@@ -126,8 +126,8 @@ ForEach($library in $librariesToUpdate)
                 continue
             }
 
-            # get project at path
-            $projectsAtPath = Get-ChildItem -Path $pathOfProject -Include '*.csproj' -Recurse
+            # get project(s) at path
+            $projectsAtPath = Get-ChildItem -Path $pathOfProject -Include '*.nfproj' -Recurse
 
             foreach ($projectToUpdate in $projectsAtPath)
             {
