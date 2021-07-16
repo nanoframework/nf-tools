@@ -372,6 +372,7 @@ steps:
   condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Create/Update GitHub stable release
   inputs:
+    action: edit
     gitHubConnection: 'github.com_nano-$(System.TeamProject)'
     tagSource: userSpecifiedTag
     tag: v$(MY_NUGET_VERSION)
@@ -382,3 +383,4 @@ steps:
     assetUploadMode: replace
     isPreRelease: false
     addChangeLog: false
+    
