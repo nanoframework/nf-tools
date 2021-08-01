@@ -686,12 +686,12 @@ namespace nanoFramework.Tools.GitHub
 
             #region process stared event 
 
-            else if (payload.repository != null && payload.action == "started")
+            else if (payload.repository != null && payload.action == "created" && payload.starred_at != null)
             {
                 // we have a user staring the repo
                 // send message to Slack channel
 
-                log.LogInformation($"Processing new repo stared event from {payload.sender.login.ToString()}");
+                log.LogInformation($"Processing new repo starred event from {payload.sender.login.ToString()}");
 
                 var slackPayload = new
                 {
