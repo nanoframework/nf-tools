@@ -725,7 +725,7 @@ namespace nanoFramework.Tools.GitHub
 
                 var slackPayload = new
                 {
-                    text = $"GitHub user <{payload.sponsorship.sponsor.url.ToString()}|{payload.sponsorship.sponsor.login.ToString()}> just sponsored the project with a ${payload.sponsorship.tier.name.ToString()} contribution. Well done and thank you very much! :clap:",
+                    text = $"GitHub user <{payload.sponsorship.sponsor.url.ToString()}|{payload.sponsorship.sponsor.login.ToString()}> just sponsored the project with a {payload.sponsorship.tier.name.ToString()} contribution. Well done and thank you very much! :clap:",
                     icon_url = payload.sponsorship.sponsor.avatar_url.ToString(),
                 };
 
