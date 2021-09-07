@@ -22,6 +22,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace nanoFramework.Tools.GitHub
@@ -215,8 +216,41 @@ namespace nanoFramework.Tools.GitHub
                         await _octokitClient.Git.Reference.Delete(_gitOwner, payload.repository.name.ToString(), $"heads/{originBranch}");
                     }
 
-                    // check merge status
-                    if (!await _octokitClient.PullRequest.Merged(_gitOwner, payload.repository.name.ToString(), (int)payload.number))
+                    // was the PR merged?
+                    if (await _octokitClient.PullRequest.Merged(_gitOwner, payload.repository.name.ToString(), (int)payload.number))
+                    {
+                        // yes, check contributors list
+
+                        // skip if it was a bot
+                        if (pr.User.Login == "nfbot" ||
+                            pr.User.Login == "github-actions[bot]")
+                        {
+                            // nothing to do here
+                        }
+                        else
+                        {
+                            // grab contributors list
+                            string contributorsContent = UTF8Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, "Home", "CONTRIBUTORS.md"));
+
+                            // try to find the user there
+                            if (!contributorsContent.Contains($"https://github.com/{pr.User.Login}"))
+                            {
+                                // get user name
+                                var userDetails = await _octokitClient.User.Get(pr.User.Login);
+
+                                // isn't there, send a message inviting to self add
+                                var commentContent = $"\\r\\n@{pr.User.Login} thank you again for your contribution! :pray::smile:\\r\\n\\r\\n.NET nanoFramework it's all about community involvement and no contribution is too small.\\r\\nWe would like to invite you to join the project [Contributors list](https://github.com/nanoframework/Home/blob/main/CONTRIBUTORS.md).\\r\\n\\r\\nPlease edit it and add an entry with your GitHub user in the appropriate location (names sorted alphabetically):\\r\\n```text\\r\\n  <tr>\\r\\n    <td><img src=\\\"https://github.com/{pr.User.Login}.png?size=50&\\\" height=\\\"50\\\" width=\\\"50\\\" ></td>\\r\\n    <td><a href=\\\"https://github.com/{pr.User.Login}\\\">{userDetails.Name}</a></td>\\r\\n  </tr>\\r\\n```\\r\\n\\r\\n(feel free to adjust your name, if it's not correct)";
+
+                                string comment = $"{{ \"body\": \"{commentContent}\" }}";
+
+                                await SendGitHubRequest(
+                                    payload.pull_request.comments_url.ToString(),
+                                    comment,
+                                    log);
+                            }
+                        }
+                    }
+                    else
                     {
                         // this branch was deleted without being merged, mark as invalid
 
