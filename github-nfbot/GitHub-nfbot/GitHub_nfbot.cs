@@ -30,7 +30,7 @@ namespace nanoFramework.Tools.GitHub
     public static class GitHub_nfbot
     {
         // strings to be used in messages and comments
-        private const string _fixRequestTagComment = "\r\n<!-- nfbot fix request DO NOT REMOVE -->";
+        private const string _fixRequestTagComment = "\\r\\n<!-- nfbot fix request DO NOT REMOVE -->";
         private const string _bugReportForClassLibTagComment = "<!-- bug-report-clas-lib-tag DO NOT REMOVE -->";
         private const string _bugReportFirmwareTagComment = "<!-- bug-report-fw-tag DO NOT REMOVE -->";
         private const string _bugReportToolsTagComment = "<!-- bug-report-tools-tag DO NOT REMOVE -->";
