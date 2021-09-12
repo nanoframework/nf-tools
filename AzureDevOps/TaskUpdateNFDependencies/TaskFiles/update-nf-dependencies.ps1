@@ -238,13 +238,6 @@ ForEach($library in $librariesToUpdate)
 
                             "Bumping $packageName from $packageOriginVersion to $packageTargetVersion." | Write-Host -ForegroundColor Cyan                
 
-                            "Updating NFMDP_PE LoadHints" | Write-Host
-
-                            # replace NFMDP_PE_LoadHints
-                            $filecontent = Get-Content $projectToUpdate.FullName -Encoding utf8
-                            attrib $project -r
-                            $filecontent -replace "($packageName.$packageOriginVersion)", "$packageName.$packageTargetVersion" | Out-File $projectToUpdate.FullName -Encoding utf8 -Force
-
                             # update nuspec files, if any
                             $nuspecFiles = (Get-ChildItem -Path "$solutionPath" -Include "*.nuspec" -Recurse)
                             
