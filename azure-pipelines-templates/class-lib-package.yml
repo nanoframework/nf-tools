@@ -21,5 +21,6 @@ steps:
     sourceFolder: $(Build.SourcesDirectory)
     Contents: |
       ${{ parameters.nugetPackageName }}*.nupkg
+      ${{ parameters.nugetPackageName }}*.snupkg
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
