@@ -10,6 +10,7 @@ This repo contains various tools that are required in **nanoFramework** developm
 
 * [Azure DevOps extensions](AzureDevOps) Extensions used in build pipelines for our repositories.
 * [Azure Pipelines Templates](azure-pipelines-templates) Azure Pipelines templates for our repositories.
+* [github-actions](github-actions) Github Action workflow scripts/templates for our repositories.
 * [GitHub-bot](AzureFunction-github-bot) Azure Function project for **nanoFramework** GitHub bot which help with managing various aspects of communication and the pull requests workflow.
 
 ## Feedback and documentation
