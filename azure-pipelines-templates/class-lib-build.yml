@@ -124,6 +124,8 @@ steps:
     feedsToUse: config
     nugetConfigPath: ${{ parameters.nugetConfigPath }}
 
+- template: versions-check.yml
+
 - task: VSBuild@1
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   inputs:
