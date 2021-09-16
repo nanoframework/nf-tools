@@ -112,7 +112,7 @@ steps:
 
 - task: InstallnFBuildComponents@1
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Install nanoFramework MSBuild components
+  displayName: Install .NET nanoFramework MSBuild components
 
 - template: install-nuget.yml
 
