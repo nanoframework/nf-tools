@@ -85,6 +85,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
 
         private const string _labelInvalidName = "invalid";
+        private const string _labelUpForGrabs = "up-for-grabs";
 
         // DevOps client
         private const string _nfOrganizationUrl = "https://dev.azure.com/nanoframework";
@@ -371,6 +372,12 @@ namespace nanoFramework.Tools.GitHub
                                 "application/vnd.github.squirrel-girl-preview");
                         }
                     }
+                }
+                else if (payload.action == "labeled")
+                {
+                    return await ProcessIssueLabeledAsync(
+                        payload,
+                        log);
                 }
             }
 
@@ -786,6 +793,49 @@ namespace nanoFramework.Tools.GitHub
             }
 
             #endregion
+
+            return new OkObjectResult("");
+        }
+
+        private static async Task<IActionResult> ProcessIssueLabeledAsync(
+            dynamic payload,
+            ILogger log)
+        {
+            // check if label is "up-for-grabs"
+            if(payload.label.name.ToString() == _labelUpForGrabs)
+            {
+                // compose message for Discord channel
+                
+                var slackPayload = new
+                {
+                    text = $":notepad_spiral: **{payload.issue.title.ToString()}** :notepad_spiral: \nThere's a new issue up for grabs! Please take a look: <https://github.com/nanoframework/Home/issues/{payload.issue.number.ToString()}>! :wink:",
+                    icon_url = "https://avatars.githubusercontent.com/u/25073645?v=4",
+                };
+
+                // Add the DISCORD_UP_FOR_GRABS_WEBHOOK_URL as an app setting, Value for the app setting is the URL from Slack API integration
+                // this is possible because Discord webhooks API supports Slack compatible webhooks
+                // see https://discordapp.com/developers/docs/resources/webhook#execute-slackcompatible-webhook
+                using var client = new HttpClient();
+                var res = await client.PostAsync(
+                    Environment.GetEnvironmentVariable("DISCORD_UP_FOR_GRABS_WEBHOOK_URL"),
+                    new FormUrlEncodedContent(new[]
+                        {
+                            new KeyValuePair<string, string>("payload", JsonConvert.SerializeObject(slackPayload))
+                        })
+                );
+
+                log.LogInformation($"Result from request to Discord API: {res.StatusCode}");
+
+                if(!res.IsSuccessStatusCode)
+                {
+                    log.LogInformation($"Error message received: {res.ReasonPhrase}");
+                }
+            }
+            else
+            {
+                log.LogInformation("Skipping event as this is NOT up-for-grabs");
+            }
+
 
             return new OkObjectResult("");
         }
