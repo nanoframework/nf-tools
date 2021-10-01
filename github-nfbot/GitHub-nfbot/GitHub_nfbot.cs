@@ -221,6 +221,10 @@ namespace nanoFramework.Tools.GitHub
                         await _octokitClient.Git.Reference.Delete(_gitOwner, payload.repository.name.ToString(), $"heads/{originBranch}");
                     }
 
+                    // developer note: hang in there a few seconds before checking if the PR was merged
+                    // Occasionally the merge information it's a bit delayed when pulled from the API causing the PR to be miss labeled
+                    await Task.Delay(TimeSpan.FromSeconds(3));
+
                     // was the PR merged?
                     if (await _octokitClient.PullRequest.Merged(_gitOwner, payload.repository.name.ToString(), (int)payload.number))
                     {
