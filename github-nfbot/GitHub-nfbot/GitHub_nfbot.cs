@@ -179,14 +179,18 @@ namespace nanoFramework.Tools.GitHub
                             // post comment with thank you message if this is a new PR
                             if (payload.action == "opened")
                             {
-                                log.LogInformation($"Comment with thank you note.");
+                                // check if author is 1st time contributor here
+                                if (payload.pull_request.author_association == "FIRST_TIME_CONTRIBUTOR")
+                                {
+                                    log.LogInformation($"Comment with thank you note.");
 
-                                string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:{_fixRequestTagComment}\" }}";
+                                    string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:{_fixRequestTagComment}\" }}";
 
-                                await SendGitHubRequest(
-                                    payload.pull_request.comments_url.ToString(),
-                                    comment,
-                                    log);
+                                    await SendGitHubRequest(
+                                        payload.pull_request.comments_url.ToString(),
+                                        comment,
+                                        log);
+                                }
 
                                 // add thumbs up reaction in PR main message
                                 await SendGitHubRequest(
