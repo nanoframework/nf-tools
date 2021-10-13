@@ -184,7 +184,7 @@ namespace nanoFramework.Tools.GitHub
                                 {
                                     log.LogInformation($"Comment with thank you note.");
 
-                                    string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:{_fixRequestTagComment}\" }}";
+                                    string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\nI'm nanoFramework bot.\\r\\n Thank you for your contribution!\\r\\n\\r\\nA human will be reviewing it shortly. :wink:\" }}";
 
                                     await SendGitHubRequest(
                                         payload.pull_request.comments_url.ToString(),
@@ -209,7 +209,7 @@ namespace nanoFramework.Tools.GitHub
                         {
                             // everything looks OK, remove all comments from nfbot
                             await RemovenfbotCommentsAsync(
-                                payload.pull_request.comments_url.ToString(),
+                                pr,
                                 log);
                         }
                     }
@@ -1569,34 +1569,37 @@ namespace nanoFramework.Tools.GitHub
             {
                 // everything looks OK, remove all comments from nfbot
                 await RemovenfbotCommentsAsync(
-                    payload.issue.comments_url.ToString(),
+                    issue,
                     log);
             }
 
             return new OkObjectResult("");
         }
 
-        private static async Task RemovenfbotCommentsAsync(string comments_url, ILogger log)
+        private static async Task RemovenfbotCommentsAsync(Octokit.PullRequest pr, ILogger log)
+        {
+            await RemovenfbotCommentsAsync(pr.Base.Repository.Id, pr.Number, log);
+        }
+
+        private static async Task RemovenfbotCommentsAsync(Octokit.Issue issue, ILogger log)
+        {
+            await RemovenfbotCommentsAsync(issue.Repository.Id, issue.Number, log);
+        }
+
+        private static async Task RemovenfbotCommentsAsync(long repoId, int id, ILogger log)
         {
             // list all comments from nfbot
-            JArray comments = (JArray)await GetGitHubRequest(
-                                        comments_url,
-                                        log);
+            var commentsForThisIssue = await _octokitClient.Issue.Comment.GetAllForIssue(repoId, id);
 
-            var commentsToRemove = comments.Where(c => c["user"]["login"].ToString() == "nfbot");
+            var commentsToRemove = commentsForThisIssue.Where(c => c.User.Login == "nfbot");
 
-            foreach (var c in commentsToRemove)
+            foreach (var comment in commentsToRemove)
             {
                 // check for fix request comment, remove only the ones that have it
-                if (c["body"].ToString().Contains(_fixRequestTagComment))
+                // (need to remove the leading \r\n from the label string
+                if (comment.Body.Contains(_fixRequestTagComment.Replace("\\r", "").Replace("\\n", "")))
                 {
-                    await SendGitHubRequest(
-                        c["url"].ToString(),
-                        "",
-                        log,
-                        null,
-                        "DELETE"
-                        );
+                    await _octokitClient.Issue.Comment.Delete(repoId, comment.Id);
                 }
             }
         }
