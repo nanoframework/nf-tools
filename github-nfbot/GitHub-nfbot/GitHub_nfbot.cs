@@ -160,6 +160,17 @@ namespace nanoFramework.Tools.GitHub
                     }
                     else
                     {
+                        // fix title if needed
+                        if (pr.Title.EndsWith("."))
+                        {
+                            var fixedPr = new PullRequestUpdate
+                            {
+                                Title = pr.Title.Substring(0, pr.Title.Length - 1)
+                            };
+
+                            pr = await _octokitClient.PullRequest.Update(pr.Base.Repository.Id, pr.Number, fixedPr);
+                        }
+
                         await FixCheckListAsync(payload, log);
 
                         // check for PR ignoring template
@@ -1392,6 +1403,17 @@ namespace nanoFramework.Tools.GitHub
                     log);
 
                 return new OkObjectResult("");
+            }
+
+            // fix title if needed
+            if(issue.Title.EndsWith("."))
+            {
+                var fixedIssue = new IssueUpdate
+                {
+                    Title = issue.Title.Substring(0, issue.Title.Length - 1)
+                };
+
+                issue = await _octokitClient.Issue.Update((int)payload.repository.id, issue.Number, fixedIssue);
             }
 
             // check for expected/mandatory content
