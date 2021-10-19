@@ -134,6 +134,8 @@ foreach ($solutionFile in $solutionFiles)
     # find ALL packages.config files in the solution projects
     $packagesConfigs = (Get-ChildItem -Path "$solutionPath" -Include "packages.config" -Recurse)
 
+    nuget config -set repositoryPath=$solutionPath + "\packages"
+
     foreach ($packagesConfig in $packagesConfigs)
     {
         # check if this project is in our solution file
