@@ -31,6 +31,8 @@ else
     }
 }
 
+"Using '$nugetReleaseType' versions of NuGet packages" | Write-Host
+
 # check if this is running in Azure Pipelines or GitHub actions
 if($env:NF_Library -ne $null)
 {
@@ -81,8 +83,8 @@ $env:GIT_REDIRECT_STDERR = '2>&1'
 
 # setup github stuff
 git config --global gc.auto 0
-git config --global user.name nfbot
-git config --global user.email dependencybot@nanoframework.net
+# git config --global user.name nfbot
+# git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
 
 if ([string]::IsNullOrEmpty($targetSolutions))
@@ -102,9 +104,14 @@ $solutionFiles = (Get-ChildItem -Path "$workingPath" -Include "$targetSolutions"
     
 # find NuGet.Config
 $nugetConfig = (Get-ChildItem -Path "$workingPath" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
+Write-Host "Working with nuget.config: '$nugetConfig'"
 
 foreach ($solutionFile in $solutionFiles)
 {
+    Write-Host ""
+    Write-Host "************"
+    Write-Host "Processing: '$solutionFile'"
+
     # check if there are any csproj here
     $slnFileContent = Get-Content $solutionFile -Encoding utf8
     $hasnfproj = $slnFileContent | Where-Object {$_ -like '*.nfproj*'}
@@ -136,6 +143,7 @@ foreach ($solutionFile in $solutionFiles)
         $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString().Contains($projectPathInSln)}
         if($isProjecInSolution -eq $null)
         {
+            Write-Host "Project '$projectPathInSln' is not in solution. Skipping."
             continue
         }
 
@@ -144,7 +152,7 @@ foreach ($solutionFile in $solutionFiles)
 
         foreach ($projectToUpdate in $projectsAtPath)
         {
-            "Updating $projectToUpdate.FullName" | Write-Host
+            "Updating project $projectToUpdate" | Write-Host
 
             # load packages.config as XML doc
             [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8
