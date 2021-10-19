@@ -91,7 +91,11 @@ ForEach($library in $librariesToUpdate)
 
     foreach ($solutionFile in $solutionFiles)
     {
-        # check if there are any csproj here
+        Write-Host ""
+        Write-Host "************"
+        Write-Host "Processing: '$solutionFile'"
+    
+        # check if there are any nfproj here
         $slnFileContent = Get-Content $solutionFile -Encoding utf8
         $hasnfproj = $slnFileContent | Where-Object {$_ -like '*.nfproj*'}
 
@@ -118,11 +122,18 @@ ForEach($library in $librariesToUpdate)
         {
             # check if this project is in our solution file
             $pathOfProject = Split-Path -Path $packagesConfig -Parent
-            $projectPathInSln = $pathOfProject.Replace("$solutionPath\",'')
+            $projectPathInSln = $pathOfProject.Replace("$solutionPath",'')
+
+            if($projectPathInSln[0] -eq "\")
+            {
+                # need to remove the leading \
+                $projectPathInSln = $projectPathInSln.Substring(1)
+            }
 
             $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString().Contains($projectPathInSln)}
             if($null -eq $isProjecInSolution)
             {
+                Write-Host "Project '$projectPathInSln' is not in solution. Skipping."
                 continue
             }
 
@@ -131,7 +142,7 @@ ForEach($library in $librariesToUpdate)
 
             foreach ($projectToUpdate in $projectsAtPath)
             {
-                "Updating $projectToUpdate.FullName" | Write-Host
+                "Updating project $projectToUpdate" | Write-Host
 
                 # load packages.config as XML doc
                 [xml]$packagesDoc = Get-Content $packagesConfig -Encoding utf8

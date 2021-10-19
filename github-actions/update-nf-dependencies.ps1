@@ -83,8 +83,8 @@ $env:GIT_REDIRECT_STDERR = '2>&1'
 
 # setup github stuff
 git config --global gc.auto 0
-# git config --global user.name nfbot
-# git config --global user.email dependencybot@nanoframework.net
+git config --global user.name nfbot
+git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
 
 if ([string]::IsNullOrEmpty($targetSolutions))
@@ -112,10 +112,10 @@ foreach ($solutionFile in $solutionFiles)
     Write-Host "************"
     Write-Host "Processing: '$solutionFile'"
 
-    # check if there are any csproj here
+    # check if there are any nfproj here
     $slnFileContent = Get-Content $solutionFile -Encoding utf8
     $hasnfproj = $slnFileContent | Where-Object {$_ -like '*.nfproj*'}
-    if($hasnfproj -eq $null)
+    if($null -eq $hasnfproj)
     {
         continue
     }
@@ -138,10 +138,16 @@ foreach ($solutionFile in $solutionFiles)
     {
         # check if this project is in our solution file
         $pathOfProject = Split-Path -Path $packagesConfig -Parent
-        $projectPathInSln = $pathOfProject.Replace("$solutionPath\",'')
+        $projectPathInSln = $pathOfProject.Replace("$solutionPath",'')
+
+        if($projectPathInSln[0] -eq "\")
+        {
+            # need to remove the leading \
+            $projectPathInSln = $projectPathInSln.Substring(1)
+        }
 
         $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString().Contains($projectPathInSln)}
-        if($isProjecInSolution -eq $null)
+        if($null -eq $isProjecInSolution)
         {
             Write-Host "Project '$projectPathInSln' is not in solution. Skipping."
             continue
