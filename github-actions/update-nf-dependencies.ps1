@@ -359,9 +359,13 @@ else
 {
     "Number of packages updated: $updateCount" | Write-Host
     "Generating PR information..." | Write-Host
-   
+
     # fix PR title
     $prTitle = "Update $updateCount nuget dependencies"
+  
+    "Title is $prTitle" | Write-Host
+    "Branch is $newBranchName" | Write-Host
+    "CommitMessage is $commitMessage" | Write-Host
 
     echo "CREATE_PR=true" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
     echo "BRANCH_NAME=$newBranchName" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
