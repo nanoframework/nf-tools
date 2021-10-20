@@ -83,8 +83,8 @@ $env:GIT_REDIRECT_STDERR = '2>&1'
 
 # setup github stuff
 git config --global gc.auto 0
-git config --global user.name nfbot
-git config --global user.email dependencybot@nanoframework.net
+# git config --global user.name nfbot
+# git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
 
 if ([string]::IsNullOrEmpty($targetSolutions))
@@ -134,7 +134,7 @@ foreach ($solutionFile in $solutionFiles)
     # find ALL packages.config files in the solution projects
     $packagesConfigs = (Get-ChildItem -Path "$solutionPath" -Include "packages.config" -Recurse)
 
-    nuget config -set repositoryPath=$solutionPath + "\packages"
+    nuget config -set repositoryPath="$solutionPath\packages"
 
     foreach ($packagesConfig in $packagesConfigs)
     {
@@ -207,14 +207,16 @@ foreach ($solutionFile in $solutionFiles)
 
                     if ($nugetReleaseType -like '*stable*')
                     {
-                        # don't allow prerelease for release and master branches
+                        # don't allow prerelease for release and main branches
 
                         if (![string]::IsNullOrEmpty($nugetConfig))
                         {
+                            nuget restore $packagesConfig -ConfigFile $nugetConfig -SolutionDirectory $solutionFile.DirectoryName
                             nuget update $projectToUpdate.FullName -Id "$packageName" -ConfigFile $nugetConfig -FileConflictAction Overwrite
                         }
                         else
                         {
+                            nuget restore $packagesConfig -SolutionDirectory $solutionFile.DirectoryName
                             nuget update $projectToUpdate.FullName -Id "$packageName" -FileConflictAction Overwrite
                         }
 
@@ -224,10 +226,12 @@ foreach ($solutionFile in $solutionFiles)
 
                         if (![string]::IsNullOrEmpty($nugetConfig))
                         {
+                            nuget restore $packagesConfig -ConfigFile $nugetConfig -SolutionDirectory $solutionFile.DirectoryName
                             nuget update $projectToUpdate.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease -FileConflictAction Overwrite
                         }
                         else
                         {
+                            nuget restore $packagesConfig -SolutionDirectory $solutionFile.DirectoryName
                             nuget update $projectToUpdate.FullName -Id "$packageName" -PreRelease -FileConflictAction Overwrite
                         }
                     }
@@ -362,10 +366,6 @@ else
 
     # fix PR title
     $prTitle = "Update $updateCount nuget dependencies"
-  
-    "Title is $prTitle" | Write-Host
-    "Branch is $newBranchName" | Write-Host
-    "CommitMessage is $commitMessage" | Write-Host
 
     echo "CREATE_PR=true" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
     echo "BRANCH_NAME=$newBranchName" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append

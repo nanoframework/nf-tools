@@ -118,7 +118,7 @@ ForEach($library in $librariesToUpdate)
         # find ALL packages.config files in the solution projects
         $packagesConfigs = (Get-ChildItem -Path "$solutionPath" -Include "packages.config" -Recurse)
 
-        nuget config -set repositoryPath=$solutionPath + "\packages"
+        nuget config -set repositoryPath="$solutionPath\packages"
 
         foreach ($packagesConfig in $packagesConfigs)
         {
@@ -192,25 +192,30 @@ ForEach($library in $librariesToUpdate)
                         if ($nugetReleaseType -like '*stable*')
                         {
                             # don't allow prerelease for release and main branches
-
+    
                             if (![string]::IsNullOrEmpty($nugetConfig))
                             {
+                                nuget restore $packagesConfig -ConfigFile $nugetConfig -SolutionDirectory $solutionFile.DirectoryName
                                 nuget update $projectToUpdate.FullName -Id "$packageName" -ConfigFile $nugetConfig -FileConflictAction Overwrite
                             }
                             else
                             {
+                                nuget restore $packagesConfig -SolutionDirectory $solutionFile.DirectoryName
                                 nuget update $projectToUpdate.FullName -Id "$packageName" -FileConflictAction Overwrite
                             }
+    
                         }
                         else
                         {
-
+    
                             if (![string]::IsNullOrEmpty($nugetConfig))
                             {
+                                nuget restore $packagesConfig -ConfigFile $nugetConfig -SolutionDirectory $solutionFile.DirectoryName
                                 nuget update $projectToUpdate.FullName -Id "$packageName" -ConfigFile $nugetConfig -PreRelease -FileConflictAction Overwrite
                             }
                             else
                             {
+                                nuget restore $packagesConfig -SolutionDirectory $solutionFile.DirectoryName
                                 nuget update $projectToUpdate.FullName -Id "$packageName" -PreRelease -FileConflictAction Overwrite
                             }
                         }
