@@ -147,11 +147,14 @@ foreach ($solutionFile in $solutionFiles)
             # need to remove the leading \
             $projectPathInSln = $projectPathInSln.Substring(1)
 
-            # need to add a trailing \
+            # need to add a trailing \\ (double because of regex)
             $projectPathInSln = $projectPathInSln + "\\"
+
+            # need to add a trailing \\ (double because of regex)
+            $projectPathInSln = $projectPathInSln.Replace('.','\.')
         }
 
-        $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString() -match "(?>"", ""$projectPathInSln\w+\.nfproj"",)"}
+        $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString() -match "(?>"", ""$projectPathInSln[a-zA-Z0-9_.]+\.nfproj"")"}
         if($null -eq $isProjecInSolution)
         {
             Write-Host "Project '$projectPathInSln' is not in solution. Skipping."
