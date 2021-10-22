@@ -147,11 +147,13 @@ foreach ($solutionFile in $solutionFiles)
             # need to remove the leading \
             $projectPathInSln = $projectPathInSln.Substring(1)
 
-            # need to add a trailing \\ (double because of regex)
-            $projectPathInSln = $projectPathInSln + "\\"
+            # need to add a trailing \
+            $projectPathInSln = $projectPathInSln + "\"
 
-            # need to add a trailing \\ (double because of regex)
+            # need to replace . for regex 
             $projectPathInSln = $projectPathInSln.Replace('.','\.')
+            # need to replace \ for regex 
+            $projectPathInSln = $projectPathInSln.Replace('\','\\')
         }
 
         $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString() -match "(?>"", ""$projectPathInSln[a-zA-Z0-9_.]+\.nfproj"")"}
