@@ -246,9 +246,9 @@ namespace nanoFramework.Tools.GitHub
                     {
                         // yes, check contributors list
 
-                        // skip if it was a bot
+                        // skip if user it's a bot
                         if (pr.User.Login == "nfbot" ||
-                            pr.User.Login == "github-actions[bot]")
+                            pr.User.Login.EndsWith("[bot]"))
                         {
                             // nothing to do here
                         }
