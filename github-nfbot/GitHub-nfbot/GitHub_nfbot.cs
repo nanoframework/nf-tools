@@ -83,6 +83,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _labelTypeUnitTestsName = "Type: Unit Tests";
 
         private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
+        private const string _labelDocumentationName = "Type: documentation";
 
         private const string _labelInvalidName = "invalid";
         private const string _labelUpForGrabs = "up-for-grabs";
@@ -1131,6 +1132,12 @@ namespace nanoFramework.Tools.GitHub
             {
                 // add the Type: Unit Tests label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeUnitTestsName });
+            }
+
+            if (pr.Body.Contains("[x] Documentation", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // add the Type: Documentation label
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelDocumentationName });
             }
         }
 
