@@ -273,6 +273,8 @@ steps:
 
       git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
 
+- template: download-logo.yml
+
 - task: NuGetCommand@2
   condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
   displayName: Pack NuGet with class library
