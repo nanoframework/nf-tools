@@ -83,8 +83,8 @@ $env:GIT_REDIRECT_STDERR = '2>&1'
 
 # setup github stuff
 git config --global gc.auto 0
-# git config --global user.name nfbot
-# git config --global user.email dependencybot@nanoframework.net
+git config --global user.name nfbot
+git config --global user.email dependencybot@nanoframework.net
 git config --global core.autocrlf true
 
 if ([string]::IsNullOrEmpty($targetSolutions))
