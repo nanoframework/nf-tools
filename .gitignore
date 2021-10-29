@@ -10,3 +10,6 @@ NanoFramework-GitHubBot - Web Deploy.pubxml
 # AzureDevOps tasks
 *.vsix
 *.zip
+
+# VS Code
+.vscode
