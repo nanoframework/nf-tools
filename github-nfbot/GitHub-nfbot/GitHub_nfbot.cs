@@ -30,7 +30,7 @@ namespace nanoFramework.Tools.GitHub
     public static class GitHub_nfbot
     {
         // strings to be used in messages and comments
-        private const string _fixRequestTagComment = "\\r\\n<!-- nfbot fix request DO NOT REMOVE -->";
+        private const string _fixRequestTagComment = "<!-- nfbot fix request DO NOT REMOVE -->";
         private const string _bugReportForClassLibTagComment = "<!-- bug-report-clas-lib-tag DO NOT REMOVE -->";
         private const string _bugReportFirmwareTagComment = "<!-- bug-report-fw-tag DO NOT REMOVE -->";
         private const string _bugReportToolsTagComment = "<!-- bug-report-tools-tag DO NOT REMOVE -->";
@@ -1170,12 +1170,7 @@ namespace nanoFramework.Tools.GitHub
                 return true;
             }
 
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{commentContent}{_fixRequestTagComment}\" }}";
-
-            await SendGitHubRequest(
-                payload.pull_request.comments_url.ToString(),
-                comment,
-                log);
+            await _octokitClient.Issue.Comment.Create((int)payload.repository.id, (int)payload.issue.number, $"Hi @{payload.issue.user.login},\r\n\r\n{commentContent}.{_fixRequestTagComment}");
 
             return false;
         }
@@ -1290,13 +1285,7 @@ namespace nanoFramework.Tools.GitHub
                     if(prBody.Contains("[ ]"))
                     {
                         // developer has left un-checked items in the to-do list
-
-                        string myComment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}\" }}";
-
-                        await SendGitHubRequest(
-                            payload.pull_request.comments_url.ToString(),
-                            myComment,
-                            log);
+                        await _octokitClient.Issue.Comment.Create((int)payload.repository.id, (int)payload.pull_request.number, $"Hi @{payload.pull_request.user.login},\r\n\r\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}");
 
                         return true;
                     }
@@ -1311,12 +1300,7 @@ namespace nanoFramework.Tools.GitHub
 
             log.LogInformation($"User ignoring PR template. Adding comment before closing.");
 
-            string comment = $"{{ \"body\": \"Hi @{payload.pull_request.user.login},\\r\\n\\r\\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}\" }}";
-
-            await SendGitHubRequest(
-                payload.pull_request.comments_url.ToString(),
-                comment,
-                log);
+            await _octokitClient.Issue.Comment.Create((int)payload.repository.id, (int)payload.pull_request.number, $"Hi @{payload.pull_request.user.login},\r\n\r\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}");
 
             // close PR
             await ClosePR(
@@ -1335,49 +1319,77 @@ namespace nanoFramework.Tools.GitHub
             var issueTimeLine = await _octokitClient.Issue.Timeline.GetAllForIssue((int)payload.repository.id, issue.Number);
             var crossRefs = issueTimeLine.Where(t => t.Event == EventInfoState.Crossreferenced).OrderByDescending(t => t.CreatedAt);
 
-            foreach(var eventInfo in crossRefs)
+            if (crossRefs.Any())
             {
-                if(eventInfo.Source.Issue != null &&
-                    eventInfo.Source.Issue.PullRequest != null &&
-                    eventInfo.Source.Issue.State.Value == ItemState.Closed
-                    )
+                foreach (var eventInfo in crossRefs)
                 {
-                    // this issue is linked to a PR that is closed
-                    // it's safe to assume that it was just closed by it
-                    
-                    // clear all labels that don't belong here anymore
-                    foreach(var label in issue.Labels)
+                    if (eventInfo.Source.Issue != null &&
+                        eventInfo.Source.Issue.PullRequest != null &&
+                        eventInfo.Source.Issue.State.Value == ItemState.Closed
+                        )
                     {
-                        if(label.Name == "up-for-grabs" ||
-                           label.Name == "good first issue" ||
-                           label.Name == "FOR DISCUSSION" ||
-                           label.Name == "HELP WANTED" ||
-                           label.Name.StartsWith("Status") ||
-                           label.Name.Contains("trivial") ||
-                           label.Name.Contains("Priority") ||
-                           label.Name.Contains("pinned"))
-                        {
-                            _ = await _octokitClient.Issue.Labels.RemoveFromIssue((int)payload.repository.id, issue.Number, label.Name);
-                        }
-                    }
+                        // this issue is linked to a PR that is closed
+                        // it's safe to assume that it was just closed by it
 
-                    // set the appropriate label after the issue closure
-                    foreach (var label in issue.Labels)
+                        // clear all labels that don't belong here anymore
+                        foreach (var label in issue.Labels)
+                        {
+                            if (label.Name == "up-for-grabs" ||
+                               label.Name == "good first issue" ||
+                               label.Name == "FOR DISCUSSION" ||
+                               label.Name == "HELP WANTED" ||
+                               label.Name.StartsWith("Status") ||
+                               label.Name.Contains("trivial") ||
+                               label.Name.Contains("Priority") ||
+                               label.Name.Contains("pinned"))
+                            {
+                                _ = await _octokitClient.Issue.Labels.RemoveFromIssue((int)payload.repository.id, issue.Number, label.Name);
+                            }
+                        }
+
+                        // set the appropriate label after the issue closure
+                        foreach (var label in issue.Labels)
+                        {
+                            if (label.Name == "Type: Bug")
+                            {
+                                _ = await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { "Status: FIXED" });
+                            }
+                            else if (label.Name == "Type: Chores"
+                                     || label.Name == "Type: Enhancement"
+                                     || label.Name == "Type: Feature request")
+                            {
+                                _ = await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { "Status: DONE" });
+                            }
+                        }
+
+                        // no need to process any other time line event
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // this issue has no links
+
+                // clear all labels that don't belong here anymore
+                foreach (var label in issue.Labels)
+                {
+                    if (label.Name == "up-for-grabs" ||
+                       label.Name == "good first issue" ||
+                       label.Name == "FOR DISCUSSION" ||
+                       label.Name == "HELP WANTED" ||
+                       label.Name.StartsWith("Status") ||
+                       label.Name.Contains("trivial") ||
+                       label.Name.Contains("Priority") ||
+                       label.Name.Contains("pinned") ||
+                       label.Name == "Type: Bug" ||
+                       label.Name == "Type: Chores" || 
+                       label.Name == "Type: Enhancement" || 
+                       label.Name == "Type: Feature request" ||
+                       label.Name == "Status: Waiting Triage")
                     {
-                        if (label.Name == "Type: Bug")
-                        {
-                            _ = await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { "Status: FIXED" });
-                        }
-                        else if (label.Name == "Type: Chores"
-                                 || label.Name == "Type: Enhancement"
-                                 || label.Name == "Type: Feature request")
-                        {
-                            _ = await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { "Status: DONE" });
-                        }
+                        _ = await _octokitClient.Issue.Labels.RemoveFromIssue((int)payload.repository.id, issue.Number, label.Name);
                     }
-
-                    // no need to process any other time line event
-                    break;
                 }
             }
 
@@ -1461,8 +1473,7 @@ namespace nanoFramework.Tools.GitHub
                 {
                     issueIsBugReport = true;
 
-                    if ((issueIsClassLibBugReport ||
-                            issueIsToolBugReport) &&
+                    if (issueIsToolBugReport &&
                         !issue.Body.Contains(_issueArea))
                     {
                         issueIsBugReport = false;
