@@ -149,11 +149,10 @@ foreach ($solutionFile in $solutionFiles)
 
             # need to add a trailing \
             $projectPathInSln = $projectPathInSln + "\"
-
-            # need to replace . for regex 
-            $projectPathInSln = $projectPathInSln.Replace('.','\.')
             # need to replace \ for regex 
             $projectPathInSln = $projectPathInSln.Replace('\','\\')
+            # need to replace . for regex 
+            $projectPathInSln = $projectPathInSln.Replace('.','\.')
         }
 
         $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString() -match "(?>"", ""$projectPathInSln[a-zA-Z0-9_.]+\.nfproj"")"}
