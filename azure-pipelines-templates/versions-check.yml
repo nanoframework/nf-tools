@@ -11,6 +11,13 @@ steps:
       script: |
         "Reading content of '$(solution)'" | Write-Host
 
+        # the exception here is mscorlib which doesn't have referenced to anything
+        if("$(solution)".Contains("nanoFramework.CoreLibrary.sln"))
+        {
+            "This is mscorlib, skipping this check!"
+            exit 0
+        }
+
         $slnFileContent = Get-Content "$(solution)" -Encoding utf8
         $hasnfproj = $slnFileContent | Where-Object {$_ -like '*.nfproj*'}
         
@@ -78,7 +85,8 @@ steps:
                 foreach ($node in $nodes)
                 {
                     # filter out Nerdbank.GitVersioning package
-                    if($node.id -notlike "Nerdbank.GitVersioning*")
+                    # and also development dependencies
+                    if(($node.id -notlike "Nerdbank.GitVersioning*") -And !$node.developmentDependency)
                     {
                         if($packageList)
                         {
@@ -91,7 +99,8 @@ steps:
                     }
                 }
 
-                if ($packageList.length -gt 0)
+                # need to check for greater than one NOT zero because of the empty assignment
+                if ($packageList.length -gt 1)
                 {
                     "NuGet packages to check:" | Write-Host
                     $packageList | Write-Host
@@ -170,7 +179,7 @@ steps:
                         {
                             "" | Write-Host
                             "*****************************************************************" | Write-Host
-                            "Couldn't find it in $projectToCheck.nfproj"
+                            "Couldn't find it in $projectToCheck"
                             "*****************************************************************" | Write-Host
                             "" | Write-Host
 
