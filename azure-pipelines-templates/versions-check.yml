@@ -9,19 +9,29 @@ steps:
     inputs:
       targetType: 'inline'
       script: |
-        "Reading content of '$(solution)'" | Write-Host
 
-        # the exception here is mscorlib which doesn't have referenced to anything
-        if("$(solution)".Contains("nanoFramework.CoreLibrary.sln"))
+        if($null -eq "$(solution)")
+        {
+            $SolutionToCheck = $env:SOLUTION_TO_CHECK
+        }
+        else
+        {
+            $SolutionToCheck = "$(solution)"
+        }
+
+        "Reading content of '$SolutionToCheck'" | Write-Host
+
+        # the exception here is mscorlib which doesn't have references to anything
+        if($SolutionToCheck.Contains("nanoFramework.CoreLibrary.sln"))
         {
             "This is mscorlib, skipping this check!"
             exit 0
         }
 
-        $slnFileContent = Get-Content "$(solution)" -Encoding utf8
+        $slnFileContent = Get-Content "$SolutionToCheck" -Encoding utf8
         $hasnfproj = $slnFileContent | Where-Object {$_ -like '*.nfproj*'}
-        
-        if($hasnfproj -eq $null)
+
+        if($null -eq $hasnfproj)
         {
             "ERROR: Solution doesn't have any nfproj file??" | Write-Host
             exit 1
@@ -32,6 +42,9 @@ steps:
         {
             [xml]$nuspecDoc = Get-Content "$(nugetPackageName).nuspec" -Encoding UTF8
             $nuspecNodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
+            
+            # set flag
+            $nuspecChecked = $false
         }
         else
         {
@@ -46,187 +59,208 @@ steps:
         foreach ($packagesConfig in $packagesConfigs)
         {
             "INFO: working file is $packagesConfig" | Write-Host
-
+    
             # check if this project is in our solution file
             $pathOfProject = Split-Path -Path $packagesConfig -Parent
-            $projectNameInSln = $pathOfProject.Replace("$($(Get-Location).Path)\","")
+            $projectPathInSln = $pathOfProject.Replace("$($(Get-Location).Path)","")
 
-            "INFO: project is $projectNameInSln" | Write-Host
-
-            $isProjectInSolution = $slnFileContent | %{$_.ToString().Contains($projectNameInSln)}
-            if($isProjectInSolution -contains $true)
+            if($projectPathInSln[0] -eq "\")
             {
-                "INFO: OK for '$projectNameInSln'" | Write-Host
+                # need to remove the leading \
+                $projectPathInSln = $projectPathInSln.Substring(1)
+                
+                # need to add a trailing \
+                $projectPathInSln = $projectPathInSln + "\"
+                # need to replace \ for regex 
+                $projectPathInSln = $projectPathInSln.Replace('\','\\')
+                # need to replace . for regex 
+                $projectPathInSln = $projectPathInSln.Replace('.','\.')
             }
-            else
+
+            $isProjecInSolution = $slnFileContent | Where-Object {$_.ToString() -match "(?>"", ""$projectPathInSln)(?'project'[a-zA-Z0-9_.]+\.nfproj)("")"}
+            if($null -eq $isProjecInSolution)
             {
-                "INFO: ignoring $projectNameInSln" | Write-Host
+                Write-Host "Couldn't find a projet matching this packages.config. Skipping."
                 continue
             }
 
-            # get project(s) at path
-            $projectsAtPath = Get-ChildItem -Path $pathOfProject -Include '*.nfproj' -Recurse
+            "Checking '"+$Matches['project']+"' project file..." | Write-Host
 
-            "Checking $($projectsAtPath.Count) project file(s)..." | Write-Host
+            $projectToCheck = "$pathOfProject\"+$Matches['project']
 
-            foreach ($projectToCheck in $projectsAtPath)
+            "Reading packages.config for '" + $projectToCheck.Name + "'" | Write-Host
+
+            # load packages.config as XML doc
+            [xml]$packagesDoc = Get-Content "$(Split-Path -Path $projectToCheck -Parent)\packages.config" -Encoding utf8
+
+            $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
+
+            $packageList = @(,@())
+
+            "" | Write-Host
+            "Building package list..." | Write-Host
+
+            foreach ($node in $nodes)
             {
-                "Reading packages.config for '" + $projectToCheck.Name + "'" | Write-Host
-
-                # load packages.config as XML doc
-                [xml]$packagesDoc = Get-Content "$(Split-Path -Path $projectToCheck -Parent)\packages.config" -Encoding utf8
-
-                $nodes = $packagesDoc.SelectNodes("*").SelectNodes("*")
-
-                $packageList = @(,@())
-
-                "Building package list..." | Write-Host
-
-                foreach ($node in $nodes)
+                # filter out Nerdbank.GitVersioning package
+                # and also development dependencies
+                if(($node.id -notlike "Nerdbank.GitVersioning*") -And !$node.developmentDependency)
                 {
-                    # filter out Nerdbank.GitVersioning package
-                    # and also development dependencies
-                    if(($node.id -notlike "Nerdbank.GitVersioning*") -And !$node.developmentDependency)
+                    if($packageList)
                     {
-                        if($packageList)
-                        {
-                            $packageList += , ($node.id,  $node.version)
-                        }
-                        else
-                        {
-                            $packageList = , ($node.id,  $node.version)
-                        }
+                        $packageList += , ($node.id,  $node.version)
+                    }
+                    else
+                    {
+                        $packageList = , ($node.id,  $node.version)
                     }
                 }
+            }
 
-                # need to check for greater than one NOT zero because of the empty assignment
-                if ($packageList.length -gt 1)
+            if ($packageList.length -gt 0)
+            {
+                "" | Write-Host
+                "NuGet packages to check:" | Write-Host
+                
+                $packageList | Write-Host
+                
+                "--- end of list ---" | Write-Host
+                "" | Write-Host
+
+                # get content of nfproj file
+                $projecFileContent = Get-Content $projectToCheck -Encoding utf8
+
+                # get assembly name from project file
+                $nameRegex = [regex]::new("(?>\<AssemblyName\>)(?'assemblyname'[a-zA-Z0-9_.]+)|(?>\<\/AssemblyName\>)")
+                $projectMatches = $nameRegex.Match($projecFileContent) 
+                $assemblyName = $projectMatches.Groups['assemblyname'].value
+
+                "INFO: AssemblyName is $assemblyName" | Write-Host
+
+                # reset flags
+                $projectCheckFailed = $false
+                $nuspecCheckFailed = $false
+                $checkNuspec = $true
+
+                "" | Write-Host
+                ">>>>>>>>>>>>>>>>>>>>>>>>" | Write-Host
+
+                # check all packages
+                foreach ($package in $packageList)
                 {
-                    "NuGet packages to check:" | Write-Host
-                    $packageList | Write-Host
-                    "--- end of list ---" | Write-Host
+                    # get package name and target version
+                    [string]$packageName = $package[0]
+                    [string]$packageVersion = $package[1]
 
-                    # get content of nfproj file
-                    $projecFileContent = Get-Content $projectToCheck.FullName -Encoding utf8
+                    "Checking $packageName $packageVersion... " | Write-Host -NoNewline
 
-                    # get assembly name from project file
-                    $nameRegex = [regex]::new("(?>\<AssemblyName\>)(?'assemblyname'[a-zA-Z0-9_.]+)|(?>\<\/AssemblyName\>)")
-                    $projectMatches = $nameRegex.Match($projecFileContent) 
-                    $assemblyName = $projectMatches.Groups['assemblyname'].value
+                    # find package in project file
+                    $hasProjectAndVersion = $projecFileContent | Where-Object {$_ -like "*packages\$packageName.$packageVersion*"}
 
-                    "INFO: AssemblyName is $assemblyName" | Write-Host
+                    # flag for nuspec missing
+                    $nuspecPackageMissing = $true
 
-                    # reset flags
-                    $projectCheckFailed = $false
-                    $nuspecCheckFailed = $false
-                    $checkNuspec = $true
-
-                    # check all packages
-                    foreach ($package in $packageList)
+                    if($nuspecNodes -ne $null -and $checkNuspec)
                     {
-                        # get package name and target version
-                        [string]$packageName = $package[0]
-                        [string]$packageVersion = $package[1]
+                        # there is a nuspec, so check it
 
-                        "Checking $packageName $packageVersion... " | Write-Host -NoNewline
-
-                        # find package in project file
-                        $hasProjectAndVersion = $projecFileContent | Where-Object {$_ -like "*packages\$packageName.$packageVersion*"}
-
-                        # flag for nuspec missing
-                        $nuspecPackageMissing = $true
-
-                        if($nuspecNodes -ne $null -and $checkNuspec)
+                        foreach ($node in $nuspecNodes)
                         {
-                            # there is a nuspec, so check it
-
-                            foreach ($node in $nuspecNodes)
+                            if($node.Name -eq "metadata")
                             {
-                                if($node.Name -eq "metadata")
-                                {
-                                    foreach ($metadataItem in $node.ChildNodes)
-                                    {
-                                        # check if package ID matches assembly name
-                                        if($metadataItem.Name -eq "id")
-                                        {
-                                            if($metadataItem.text -ne $assemblyName)
-                                            {
-                                                $checkNuspec = $false
-                                                break
-                                            }
-                                        }
+                                # check if package ID or title matches assembly name
+                                $id = $node.ChildNodes | Where-Object Name -eq 'id'
+                                $title = $node.ChildNodes | Where-Object Name -eq 'title'
 
-                                        if($metadataItem.Name -eq "dependencies")
-                                        {
-                                            foreach ($dependency in $metadataItem.ChildNodes)
-                                            {
-                                                if($dependency.Attributes["id"].value -eq $packageName -and $dependency.Attributes["version"].value -eq $packageVersion)
-                                                {
-                                                    $nuspecPackageMissing = $false
-                                                    
-                                                    # done here
-                                                    continue
-                                                }
-                                            }
-                                        }
+                                if($id.'#text' -ne $assemblyName -and $title.'#text' -ne $assemblyName -and $id.'#text' -ne 'nanoFramework.'+$assemblyName -and $title.'#text' -ne 'nanoFramework.'+$assemblyName)
+                                {
+                                    $checkNuspec = $false
+                                    break
+                                }
+
+                                # nuspec is being checked: set flag
+                                $nuspecChecked = $true
+
+                                foreach ($dependency in ($node.ChildNodes | Where-Object Name -eq 'dependencies').dependency)
+                                {
+                                    if($dependency.Attributes["id"].value -eq $packageName -and $dependency.Attributes["version"].value -eq $packageVersion)
+                                    {
+                                        $nuspecPackageMissing = $false
+                                        
+                                        # done here
+                                        continue
                                     }
                                 }
                             }
                         }
-                    
-                        # project check outcome
-                        if($hasProjectAndVersion -eq $null)
+                    }
+                
+                    # project check outcome
+                    if($null -eq $hasProjectAndVersion)
+                    {
+                        "" | Write-Host
+                        "*****************************************************************" | Write-Host
+                        "Couldn't find it in $projectToCheck"
+                        "*****************************************************************" | Write-Host
+                        "" | Write-Host
+
+                        # flag failed check
+                        $projectCheckFailed = $true
+                    }
+                    else
+                    {
+                        "nfproj OK! " | Write-Host -NoNewline
+                    }
+
+                    # nuspec check outcome, if any
+                    if($null -eq $nuspecNodes -or $checkNuspec -eq $false)
+                    {
+                        "" | Write-Host
+                    }
+                    else
+                    {
+                        if($nuspecPackageMissing)
                         {
                             "" | Write-Host
                             "*****************************************************************" | Write-Host
-                            "Couldn't find it in $projectToCheck"
+                            "Couldn't find it in $(nugetPackageName).nuspec" | Write-Host
                             "*****************************************************************" | Write-Host
                             "" | Write-Host
 
                             # flag failed check
-                            $projectCheckFailed = $true
+                            $nuspecCheckFailed = $true
                         }
                         else
                         {
-                            "nfproj OK! " | Write-Host -NoNewline
+                            "nuspec OK!" | Write-Host
                         }
-
-                        # nuspec check outcome, if any
-                        if($nuspecNodes -eq $null -or $checkNuspec -eq $false)
-                        {
-                            "" | Write-Host
-                        }
-                        else
-                        {
-                            if($nuspecPackageMissing)
-                            {
-                                "" | Write-Host
-                                "*****************************************************************" | Write-Host
-                                "Couldn't find it in $(nugetPackageName).nuspec" | Write-Host
-                                "*****************************************************************" | Write-Host
-                                "" | Write-Host
-
-                                # flag failed check
-                                $nuspecCheckFailed = $true
-                            }
-                            else
-                            {
-                                "nuspec OK!" | Write-Host
-                            }
-                        }
-                    }
-                    
-                    if($projectCheckFailed -or $nuspecCheckFailed)
-                    {
-                        exit 1
                     }
                 }
-                else
+
+                "" | Write-Host
+                "<<<<<<<<<<<<<<<<<<<<<<<<" | Write-Host
+
+                if($projectCheckFailed -or $nuspecCheckFailed)
                 {
-                    "ERROR: Couldn't identify any nuget packages to check for??" | Write-Host
                     exit 1
                 }
             }
+            else
+            {
+                "ERROR: Couldn't identify any nuget packages to check for??" | Write-Host
+                exit 1
+            }
+        }
+
+        if(-not $nuspecChecked)
+        {
+            "" | Write-Host
+            "********************************************************************" | Write-Host
+            "nuspec wasn't checked!! Verify package ID/Title and/or assembly name" | Write-Host
+            "********************************************************************" | Write-Host
+            "" | Write-Host
+
+            exit 1
         }
 
         "Versions check completed!" | Write-Host
