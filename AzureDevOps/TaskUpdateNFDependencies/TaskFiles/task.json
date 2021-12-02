@@ -1,8 +1,8 @@
 {
     "id": "bea9f085-357d-4494-b9fd-5c8bf407be94",
     "name": "UpdatenFDependencies",
-    "friendlyName": "Update nanoFramework dependencies",
-    "description": "Update nanoFramework dependencies following a class library tag.",
+    "friendlyName": "Update .NET nanoFramework dependencies",
+    "description": "Update .NET nanoFramework dependencies following a class library tag.",
     "helpMarkDown": "",
     "category": "Tool",
     "minimumAgentVersion": "2.115.0",
@@ -14,7 +14,7 @@
     "author": "nanoFramework Project Contributors",
     "version": {
         "Major": 1,
-        "Minor": 18,
+        "Minor": 19,
         "Patch": 0
     },
     "inputs": [
@@ -36,7 +36,7 @@
         }
     ],    
     "preview": true,
-    "instanceNameFormat": "Update nanoFramework dependencies",
+    "instanceNameFormat": "Update .NET nanoFramework dependencies",
     "execution": {
         "PowerShell3": {
             "target": "update-nf-dependencies.ps1",

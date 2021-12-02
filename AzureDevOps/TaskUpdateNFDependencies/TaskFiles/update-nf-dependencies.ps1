@@ -29,6 +29,8 @@ ForEach($library in $librariesToUpdate)
     # remove quotes, if any
     $library = $library -replace "'", ""
 
+    "" | Write-Host
+    "*******************************" | Write-Host
     "Updating $library" | Write-Host
 
     # init/reset these
@@ -98,7 +100,6 @@ ForEach($library in $librariesToUpdate)
         # check if there are any nfproj here
         $slnFileContent = Get-Content $solutionFile -Encoding utf8
         $hasnfproj = $slnFileContent | Where-Object {$_ -like '*.nfproj*'}
-
         if($null -eq $hasnfproj)
         {
             continue
@@ -247,6 +248,13 @@ ForEach($library in $librariesToUpdate)
                         {
                             "Skip update of $packageName because it has the same version as before: $packageOriginVersion." | Write-Host -ForegroundColor Cyan
                         }
+                        elseif ($packageTargetVersion.Contains('alpha'))
+                        {
+                            "Skip update of $packageName because it's trying to use an alpha version!" | Write-Host -ForegroundColor Red
+    
+                            # done here
+                            return
+                        }
                         else
                         {
                             # if we are updating samples repo, OK to move to next one
@@ -299,7 +307,7 @@ ForEach($library in $librariesToUpdate)
                                         }
                                     }
 
-                                    $nuspecDoc.Save($nuspec[0].FullName)
+                                    $nuspecDoc.Save($nuspec.FullName)
                                 }
 
                                 "Finished updating nuspec files." | Write-Host
