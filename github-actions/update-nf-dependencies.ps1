@@ -295,9 +295,9 @@ foreach ($solutionFile in $solutionFiles)
 
                             foreach ($nuspec in $nuspecFiles)
                             {
-                                "Trying update on nuspec file: '$nuspec.FullName' " | Write-Host
+                                "Trying update on nuspec file: '$nuspec' " | Write-Host
 
-                                [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
+                                [xml]$nuspecDoc = Get-Content $nuspec.FullName -Encoding UTF8
 
                                 $nodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
 
@@ -322,7 +322,7 @@ foreach ($solutionFile in $solutionFiles)
                                     }
                                 }
 
-                                $nuspecDoc.Save($nuspec[0].FullName)
+                                $nuspecDoc.Save($nuspec.FullName)
                             }
 
                             "Finished updating nuspec files." | Write-Host
