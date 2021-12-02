@@ -152,11 +152,16 @@ steps:
   continueOnError: true
 
 - task: UseRubyVersion@0
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      eq(variables['StartReleaseCandidate'], false)
+    )
+  displayName: Setup Ruby
   inputs:
     versionSpec: '= 2.7' 
     addToPath: true
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), ne( variables['StartReleaseCandidate'], true ) )
-  displayName: Setup Ruby
 
 # generate change log
 - powershell: |
