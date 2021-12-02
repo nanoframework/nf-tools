@@ -4,7 +4,12 @@
 steps:
 
 - task: NuGetToolInstaller@1
-  condition: and( succeeded(), or(eq(variables['StartReleaseCandidate'], ''), eq( variables['StartReleaseCandidate'], false )) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: 'Install specific version of NuGet'
   inputs:
     versionSpec: '>=5.10.0'

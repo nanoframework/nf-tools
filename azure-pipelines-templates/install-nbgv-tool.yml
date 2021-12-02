@@ -16,7 +16,7 @@ steps:
     displayName: Set build number
 
   - task: PowerShell@2
-    condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+    condition: and(succeeded(), eq(variables['StartReleaseCandidate'], false))
     displayName: Get NuGet build number
     inputs:
       targetType: 'inline'

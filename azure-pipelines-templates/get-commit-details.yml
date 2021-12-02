@@ -76,3 +76,8 @@ steps:
 
   name: GetCommitDetails
   displayName: Grab commit details
+  condition: >-
+    and(
+      succeeded(),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )

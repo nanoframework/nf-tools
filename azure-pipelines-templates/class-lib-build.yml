@@ -33,7 +33,12 @@ steps:
 - template: prepare-release.yml
 
 - task: SonarCloudPrepare@1
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: 'Prepare analysis on SonarCloud'
   inputs:
     SonarCloud: 'sonarcloud-$(System.TeamProject)'
@@ -46,13 +51,24 @@ steps:
       sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
 
 - task: InstallnFBuildComponents@1
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: Install .NET nanoFramework MSBuild components
 
 - template: install-nuget.yml
 
 - task: NuGetCommand@2
-  condition: and( succeeded(), not( ${{ parameters.skipNuGetRestore }} ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      not(${{ parameters.skipNuGetRestore }}),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: NuGet restore
   inputs:
     restoreSolution: '$(solution)'
@@ -62,7 +78,12 @@ steps:
 - template: versions-check.yml
 
 - task: VSBuild@1
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'],false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
@@ -70,13 +91,25 @@ steps:
     configuration: '$(buildConfiguration)'
 
 - task: VisualStudioTestPlatformInstaller@1
-  condition: and( succeeded(), ${{ parameters.runUnitTests }}, ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      ${{ parameters.runUnitTests }},
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: 'Visual Studio Test Platform Installer'
   inputs:
     versionSelector: latestStable
 
 - task: VSTest@2
-  condition: and( succeeded(), ${{ parameters.runUnitTests }}, ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      ${{ parameters.runUnitTests }},
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: 'Running Unit Tests'
   continueOnError: false
   inputs:
@@ -97,7 +130,12 @@ steps:
     runSettingsFile: '${{ parameters.unitTestRunsettings }}'
 
 - task: PowerShell@2
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: Get AssemblyNativeVersion version
   inputs:
     targetType: 'inline'
@@ -138,16 +176,30 @@ steps:
       Write-Host "Release draft: TRUE"
     }
   name: SetReleaseDraftVar
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Set release draft var
 
 - task: SonarCloudAnalyze@1
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: 'Run Code Analysis'
   continueOnError: true
 
 - task: SonarCloudPublish@1
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: 'Publish Quality Gate Result'
   continueOnError: true
 
@@ -168,7 +220,15 @@ steps:
     gem install github_changelog_generator --quiet --no-document
     # need to call it passing both cache options with full path otherwise it won't work
     github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( startsWith(variables['Build.SourceBranchName'], 'main') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      not(startsWith(variables['Build.SourceBranchName'], 'main')),
+      not(contains(variables['Build.SourceBranchName'], 'update-dependencies')),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Generate change log
   continueOnError: true
 
@@ -177,13 +237,32 @@ steps:
     gem install github_changelog_generator --quiet --no-document
     # need to call it passing both cache options with full path otherwise it won't work
     github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels --future-release v$env:MY_NUGET_VERSION
-  condition: and( succeeded(), or( eq ( variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True' ), and ( eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), startsWith(variables['Build.SourceBranchName'], 'main'), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ) ) ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      or(
+        eq(variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True'),
+        and(
+          eq(variables['System.PullRequest.PullRequestId'], ''),
+          not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+          startsWith(variables['Build.SourceBranchName'], 'main'),
+          not(contains(variables['Build.SourceBranchName'], 'update-dependencies'))
+        )
+      ),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Generate change log
   continueOnError: true
 
 # copy change log to artifacts directory
 - task: CopyFiles@2
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      not(contains(variables['Build.SourceBranchName'], 'update-dependencies')),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Copy Changelog
   continueOnError: true
   inputs:
@@ -193,7 +272,14 @@ steps:
 
 # push new changelog to GitHub repo
 - task: PowerShell@2
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), not( contains(variables['Build.SourceBranchName'], 'update-dependencies') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      not(contains(variables['Build.SourceBranchName'], 'update-dependencies')),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Push changelog to GitHub
   continueOnError: true
   inputs:
@@ -214,7 +300,13 @@ steps:
 - template: download-logo.yml
 
 - task: NuGetCommand@2
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: Pack NuGet with class library
   inputs:
     command: 'custom' 
@@ -227,7 +319,12 @@ steps:
 #     displayName: Pack NuGet with build deliverables class library
 
 - task: CopyFiles@1
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Collecting deployable artifacts
   inputs:
     sourceFolder: $(Build.SourcesDirectory)
@@ -240,7 +337,13 @@ steps:
 
 - task: DotNetCoreCLI@2
   displayName: Install SignTool tool
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   inputs:
     command: custom
     custom: tool
@@ -259,7 +362,13 @@ steps:
     --descriptionUrl "https://github.com/$env:Build_Repository_Name"
   displayName: Sign packages
   continueOnError: true
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
 
 # publish artifacts (only possible if this is not a PR originated on a fork)
 - task: PublishBuildArtifacts@1
@@ -267,12 +376,23 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: deployables
     ArtifactType: Container
-  condition: and( succeeded(), ne(variables['system.pullrequest.isfork'], true), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Publish deployables artifacts
 
 # push NuGet packages to AzureArtifacts feed (happens on every build except PRs)
 - task: NuGetCommand@2
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    ) 
   continueOnError: true
   displayName: Push NuGet packages to AzureArtifacts
   inputs:
@@ -285,7 +405,13 @@ steps:
 
 # push NuGet class lib package to NuGet (happens on every build except PRs)
 - task: NuGetCommand@2
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), eq( variables['StartReleaseCandidate'], false ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
   inputs:
@@ -298,7 +424,13 @@ steps:
 
 # create or update GitHub release
 - task: GithubRelease@1
-  condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], ''), not( startsWith(variables['Build.SourceBranch'], 'refs/tags/v') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Create/Update GitHub PREVIEW release
   inputs:
     gitHubConnection: 'github.com_nano-$(System.TeamProject)'
@@ -314,7 +446,13 @@ steps:
 
 # create or update GitHub release ON tags from release or main branches
 - task: GithubRelease@1
-  condition: and( succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), not(contains(variables['Build.SourceBranch'], 'preview') ), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      startsWith(variables['Build.SourceBranch'], 'refs/tags/v'),
+      not(contains(variables['Build.SourceBranch'], 'preview')),
+      eq(variables['StartReleaseCandidate'], false)
+    )
   displayName: Create/Update GitHub stable release
   inputs:
     action: edit

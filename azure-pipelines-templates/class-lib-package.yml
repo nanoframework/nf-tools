@@ -10,14 +10,24 @@ steps:
 - template: download-logo.yml
 
 - task: NuGetCommand@2
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: Pack NuGet with class library
   inputs:
     command: 'custom' 
     arguments: 'pack ${{ parameters.nugetPackageName }}.nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NATIVE_ASSEMBLY_CHECKSUM)"'
 
 - task: CopyFiles@1
-  condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   displayName: Collecting deployable artifacts
   inputs:
     sourceFolder: $(Build.SourcesDirectory)
