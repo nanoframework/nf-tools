@@ -1,0 +1,58 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+steps:
+
+  - task: PowerShell@2
+    condition: and( succeeded(), ne( variables['StartReleaseCandidate'], true ) )
+    displayName: Check files format
+    inputs:
+      targetType: 'inline'
+      script: |
+
+        if($env:System_PullRequest_PullRequestId -ne $null)
+        {
+            # get files changed in PR, if this is a PR
+            $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:Build_Repository_Name/pulls/$env:System_PullRequest_PullRequestNumber/files" -ContentType "application/json" -Method GET
+
+            # filter removed files              
+            $files = $commit.where{$_.status -ne 'removed'}
+        }
+        else
+        {
+            # get files changed in the commit, if this is NOT a PR
+            $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:Build_Repository_Name/commits/$(Build.SourceVersion)" -ContentType "application/json" -Method GET
+
+            # filter removed files              
+            $files = $commit.files.where{$_.status -ne 'removed'}
+        }
+
+        $checksFailed = $false
+
+        # get file names only
+        $files = $files | % {$_.filename}
+
+        ###########################
+        # get nuspec files (if any)
+        $nuspecFiles = ($files.where{$_.EndsWith('.nuspec')})
+
+        foreach ($nuspec in $nuspecFiles)
+        {
+            try
+            {
+                # try reading as XML
+                [xml]$nuspecDoc = Get-Content $nuspec -Encoding UTF8
+            }
+            catch 
+            {
+                "Bad format for: $nuspec" | Write-Host -ForegroundColor Red
+
+                $checksFailed = $true
+            }
+        }
+
+        # global check for build failure
+        if($checksFailed)
+        {
+            exit 1
+        }

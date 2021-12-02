@@ -25,6 +25,8 @@ steps:
 # get commit details
 - template: get-commit-details.yml
 
+- template: file-format-checks.yml
+
 - template: install-nbgv-tool.yml
 
 - template: prepare-release.yml
