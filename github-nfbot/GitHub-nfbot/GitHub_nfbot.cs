@@ -357,23 +357,27 @@ namespace nanoFramework.Tools.GitHub
                         // flag if author is member or owner
                         if(payload.comment.author_association == "MEMBER" || payload.issue.author_association == "OWNER")
                         {
-                            if (await ProcessCommandAsync(payload, log))
+                            StartReleaseResult processResult = await ProcessCommandAsync(payload, log);
+
+                            if (processResult ==  StartReleaseResult.Executed )
                             {
                                 // add thumbs up reaction to comment
-                                await SendGitHubRequest(
-                                    $"{payload.comment.url.ToString()}/reactions",
-                                    "{ \"content\" : \"+1\" }",
-                                    log,
-                                    "application/vnd.github.squirrel-girl-preview");
+                                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Plus1));
+                            }
+                            else if (processResult == StartReleaseResult.Started)
+                            {
+                                // add rocket reaction to comment
+                                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Rocket));
+                            }
+                            else if (processResult == StartReleaseResult.WatchoutConditions)
+                            {
+                                // add eyes reaction to comment
+                                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Eyes));
                             }
                             else
                             {
                                 // add confused reaction to comment
-                                await SendGitHubRequest(
-                                    $"{payload.comment.url.ToString()}/reactions",
-                                    "{ \"content\" : \"confused\" }",
-                                    log,
-                                    "application/vnd.github.squirrel-girl-preview");
+                                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Confused));
                             }
                         }
                         else
@@ -381,11 +385,7 @@ namespace nanoFramework.Tools.GitHub
                             log.LogInformation($"User has no permission to execute command");
 
                             // add thumbs down reaction to comment
-                            await SendGitHubRequest(
-                                $"{payload.comment.url.ToString()}/reactions",
-                                "{ \"content\" : \"-1\" }",
-                                log,
-                                "application/vnd.github.squirrel-girl-preview");
+                            await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Minus1));
                         }
                     }
                 }
@@ -856,7 +856,7 @@ namespace nanoFramework.Tools.GitHub
             return new OkObjectResult("");
         }
 
-        private static async Task<bool> ProcessCommandAsync(dynamic payload, ILogger log)
+        private static async Task<StartReleaseResult> ProcessCommandAsync(dynamic payload, ILogger log)
         {
             // content has to follow this pattern:
             // @nfbot ccccc a1 a2 a3
@@ -874,7 +874,7 @@ namespace nanoFramework.Tools.GitHub
             repositoryName = repositoryName.Replace("lib-", "");
 
             // check commands
-            if (command.StartsWith("startrelease"))
+            if (command.EndsWith("startrelease"))
             {
                 log.LogInformation($"Processing command");
 
@@ -884,7 +884,14 @@ namespace nanoFramework.Tools.GitHub
             {
                 return await UpdateDependentsAsync(repositoryName, log);
             }
-            else if (command.StartsWith("updatedependencies"))
+            else if (command.EndsWith("updatedependencies all"))
+            {
+                // add thumbs up reaction to comment to flag start
+                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Plus1));
+
+                return await UpdateDependenciesAllReposAsync(log);
+            }
+            else if (command.EndsWith("updatedependencies"))
             {
                 return await UpdateDependenciesAsync(payload.repository.url.ToString(), log);
             }
@@ -913,16 +920,46 @@ namespace nanoFramework.Tools.GitHub
                 {
                     log.LogError($"Error queuing build: {ex.Message}.");
 
-                    return false;
+                    return StartReleaseResult.Failed;
                 }
             }
 
             // unknown or invalid command
-            return false;
+            return StartReleaseResult.Unknwon;
         }
 
-        private static async Task<bool> StartReleaseCandidateAsync(string repositoryName, ILogger log)
+        private static async Task<StartReleaseResult> StartReleaseCandidateAsync(string repositoryName, ILogger log)
         {
+            // check if nuspec has preview versions
+            SearchCodeRequest nuspecQuery = new SearchCodeRequest();
+            nuspecQuery.FileName = "*.nuspec";
+            nuspecQuery.Repos.Add(_gitOwner, repositoryName);
+
+            var nuspecFiles = await _octokitClient.Search.SearchCode(nuspecQuery);
+
+            // sanity checks            
+            if(nuspecFiles.TotalCount < 1)
+            {
+                return StartReleaseResult.Failed;
+            }
+
+            // filter out any DELIVERABLES nuspec
+            var nuspecFile = nuspecFiles.Items.Where(f => !f.Name.Contains("DELIVERABLES"));
+
+            if (nuspecFile.Count() != 1)
+            {
+                return StartReleaseResult.Failed;
+            }
+
+            // get content of nuspec
+            string nuspecContent = Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, repositoryName, nuspecFile.First().Name));
+
+            if(nuspecContent.Contains("-preview"))
+            {
+                // still have preview references
+                return StartReleaseResult.WatchoutConditions;
+            }
+
             var personalAccessToken = Environment.GetEnvironmentVariable("DEVOPS_PATOKEN", EnvironmentVariableTarget.Process);
 
             Uri nfOrganizationUri = new Uri(_nfOrganizationUrl);
@@ -940,7 +977,7 @@ namespace nanoFramework.Tools.GitHub
 
             var buildDefs = await buildClient.GetDefinitionsAsync(repositoryName);
 
-            // so far we only have projects with a single build definitio so check this and take the 1st one
+            // so far we only have projects with a single build definition so check this and take the 1st one
             if(buildDefs.Count == 1)
             {
                 // compose build request
@@ -962,20 +999,20 @@ namespace nanoFramework.Tools.GitHub
                 {
                     log.LogError($"Error queuing build: {ex.Message}.");
 
-                    return false;
+                    return StartReleaseResult.Failed;
                 }
 
-                return true;
+                return StartReleaseResult.Started;
             }
             else
             {
                 log.LogError("Error processing DevOps build definition: more definition then expected");
             }
 
-            return false;
+            return StartReleaseResult.Failed;
         }
 
-        private static async Task<bool> UpdateDependentsAsync(string repositoryName, ILogger log)
+        private static async Task<StartReleaseResult> UpdateDependentsAsync(string repositoryName, ILogger log)
         {
             var personalAccessToken = Environment.GetEnvironmentVariable("DEVOPS_PATOKEN", EnvironmentVariableTarget.Process);
 
@@ -1016,20 +1053,20 @@ namespace nanoFramework.Tools.GitHub
                 {
                     log.LogError($"Error queuing build: {ex.Message}.");
 
-                    return false;
+                    return StartReleaseResult.Failed;
                 }
 
-                return true;
+                return StartReleaseResult.Started;
             }
             else
             {
                 log.LogError("Error processing DevOps build definition: more definition then expected");
             }
 
-            return false;
+            return StartReleaseResult.Failed;
         }
 
-        private static async Task<bool> UpdateDependenciesAsync(string repoUrl, ILogger log)
+        private static async Task<StartReleaseResult> UpdateDependenciesAsync(string repoUrl, ILogger log)
         {
             string requestContent = $"{{ \"event_type\": \"update-dependencies\" }}";
 
@@ -1043,13 +1080,54 @@ namespace nanoFramework.Tools.GitHub
 
             if(result == 204)
             {
-                return true;
+                return StartReleaseResult.Started;
             }
 
-            return false;
+            return StartReleaseResult.Failed;
         }
 
-        private static async Task<bool> QueueBuildAsync(string repositoryName, string branchName, ILogger log)
+        private static async Task<StartReleaseResult> UpdateDependenciesAllReposAsync(ILogger log)
+        {
+            string requestContent = $"{{ \"event_type\": \"update-dependencies\" }}";
+
+            bool failFlag = false;
+
+            // get all repos for all libraries
+            var allRepos = await _octokitClient.Repository.GetAllForOrg(_gitOwner);
+
+            // filter out:
+            // samples, ST packages, ChibiOS, 
+            var reposToProcess = allRepos.Where(r => r.Name.StartsWith("nanoFramework.")
+                                                     || r.Name.StartsWith("System.")
+                                                     || r.Name.StartsWith("Windows."));
+
+            foreach(var repo in reposToProcess)
+            {
+                var result = await SendGitHubRequest(
+                    repo.Url + "/dispatches",
+                    requestContent,
+                    log,
+                    "application/vnd.github.v3+json",
+                    "POST");
+
+                if (result != 204)
+                {
+                    failFlag = false;
+                }
+            }
+
+            if (failFlag)
+            {
+                return StartReleaseResult.Failed;
+            }
+            else
+            {
+                return StartReleaseResult.Started;
+            }
+        }
+
+
+        private static async Task<StartReleaseResult> QueueBuildAsync(string repositoryName, string branchName, ILogger log)
         {
             var personalAccessToken = Environment.GetEnvironmentVariable("DEVOPS_PATOKEN", EnvironmentVariableTarget.Process);
 
@@ -1084,14 +1162,14 @@ namespace nanoFramework.Tools.GitHub
 
                 await buildClient.QueueBuildAsync(buildRequest);
 
-                return true;
+                return StartReleaseResult.Started;
             }
             else
             {
                 log.LogError("Error processing DevOps build definition: more definition then expected");
             }
 
-            return false;
+            return StartReleaseResult.Failed;
         }
 
         private static async Task ManageLabelsAsync(Octokit.PullRequest pr, ILogger log)
