@@ -60,12 +60,18 @@ steps:
         $commitMessage = git log --format='%B' -1
     }
 
+    # handle empty commit message
+    if($null -eq $commitMessage)
+    {
+        $commitMessage = ""
+    }
+
     # need to flatten message by removing new lines
     $commitMessage = $commitMessage.Replace("`r`n", " ").Replace("`r", " ").Replace("`n", " ")
 
     "Flattened commit message is: '$commitMessage'" | Write-Host
 
-    # set variable to foward to jobs
+    # set variable to forward to jobs
     echo "##vso[task.setvariable variable=COMMIT_MESSAGE;isOutput=true]$commitMessage"
 
   name: GetCommitDetails
