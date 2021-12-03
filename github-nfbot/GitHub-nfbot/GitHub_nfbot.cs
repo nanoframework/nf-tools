@@ -944,7 +944,7 @@ namespace nanoFramework.Tools.GitHub
             }
 
             // filter out any DELIVERABLES nuspec
-            var nuspecFiles = nuspecFiles.Items.Where(f => !f.Name.Contains("DELIVERABLES"));
+            nuspecFiles = nuspecFiles.Items.Where(f => !f.Name.Contains("DELIVERABLES"));
 
             if (nuspecFiles.Count() < 1)
             {
