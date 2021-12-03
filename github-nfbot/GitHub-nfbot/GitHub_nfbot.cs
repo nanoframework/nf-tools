@@ -935,16 +935,16 @@ namespace nanoFramework.Tools.GitHub
             nuspecQuery.FileName = "*.nuspec";
             nuspecQuery.Repos.Add(_gitOwner, repositoryName);
 
-            var nuspecFiles = await _octokitClient.Search.SearchCode(nuspecQuery);
+            var nuspecFilesInRepo = await _octokitClient.Search.SearchCode(nuspecQuery);
 
             // sanity checks            
-            if(nuspecFiles.TotalCount < 1)
+            if(nuspecFilesInRepo.TotalCount < 1)
             {
                 return StartReleaseResult.Failed;
             }
 
             // filter out any DELIVERABLES nuspec
-            nuspecFiles = nuspecFiles.Items.Where(f => !f.Name.Contains("DELIVERABLES"));
+            var nuspecFiles = nuspecFilesInRepo.Items.Where(f => !f.Name.Contains("DELIVERABLES"));
 
             if (nuspecFiles.Count() < 1)
             {
