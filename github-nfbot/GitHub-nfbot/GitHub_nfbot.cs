@@ -944,20 +944,23 @@ namespace nanoFramework.Tools.GitHub
             }
 
             // filter out any DELIVERABLES nuspec
-            var nuspecFile = nuspecFiles.Items.Where(f => !f.Name.Contains("DELIVERABLES"));
+            var nuspecFiles = nuspecFiles.Items.Where(f => !f.Name.Contains("DELIVERABLES"));
 
-            if (nuspecFile.Count() != 1)
+            if (nuspecFiles.Count() < 1)
             {
                 return StartReleaseResult.Failed;
             }
 
-            // get content of nuspec
-            string nuspecContent = Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, repositoryName, nuspecFile.First().Name));
-
-            if(nuspecContent.Contains("-preview"))
+            foreach(var nuspecFile in nuspecFiles)
             {
-                // still have preview references
-                return StartReleaseResult.WatchoutConditions;
+                // get content of nuspec
+                string nuspecContent = Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, repositoryName, nuspecFile.Name));
+
+                if(nuspecContent.Contains("-preview"))
+                {
+                    // still have preview references
+                    return StartReleaseResult.WatchoutConditions;
+                }
             }
 
             var personalAccessToken = Environment.GetEnvironmentVariable("DEVOPS_PATOKEN", EnvironmentVariableTarget.Process);
