@@ -209,9 +209,9 @@ foreach ($solutionFile in $solutionFiles)
 
                     "Updating package $packageName from $packageOriginVersion" | Write-Host
 
-                    if ($nugetReleaseType -like '*stable*')
+                    if ($nugetReleaseType -like '*stable*' -or $packageName.Contains('UnitsNet.'))
                     {
-                        # don't allow prerelease for release and main branches
+                        # don't allow prerelease for release, main branches and UnitsNet packages
 
                         if (![string]::IsNullOrEmpty($nugetConfig))
                         {
