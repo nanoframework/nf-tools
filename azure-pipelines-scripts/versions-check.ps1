@@ -164,7 +164,7 @@ foreach ($packagesConfig in $packagesConfigs)
             # flag for nuspec missing
             $nuspecPackageMissing = $true
 
-            if($nuspecNodes -ne $null -and $checkNuspec)
+            if($null -ne $nuspecNodes -and $checkNuspec)
             {
                 # there is a nuspec, so check it
 
