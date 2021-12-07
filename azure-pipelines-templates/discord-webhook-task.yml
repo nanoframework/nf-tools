@@ -6,12 +6,14 @@ parameters:
   status: 'failure'
   webhookUrl: ''
   message: ''
+  workingDirectory: ''
 
 steps:
 - task: PowerShell@2
   displayName: Call Discord webhook
   condition: failed()
   inputs:
+    workingDirectory: '${{ parameters.workingDirectory }}'
     errorActionPreference: 'silentlyContinue'
     targetType: 'inline'
     script: |
