@@ -202,7 +202,7 @@ namespace nanoFramework.Tools.GitHub
                             }
                         }
 
-                        bool linkedIssuesReference = await CheckLinkedIssuesAsync(payload, log);
+                        bool linkedIssuesReference = await CheckLinkedIssuesAsync(pr, log);
 
                         await ManageLabelsAsync(pr, log);
 
@@ -1222,19 +1222,16 @@ namespace nanoFramework.Tools.GitHub
             }
         }
 
-        private static async Task<bool> CheckLinkedIssuesAsync(dynamic payload, ILogger log)
+        private static async Task<bool> CheckLinkedIssuesAsync(Octokit.PullRequest pr, ILogger log)
         {
-            // get PR body
-            string prBody = payload.pull_request.body;
-
             string commentContent;
 
             // check for invalid link to issues
-            if (prBody.Contains("- Fixes/Closes/Resolves nanoFramework/Home#NNNN"))
+            if (pr.Body.Contains("- Fixes/Closes/Resolves nanoFramework/Home#NNNN"))
             {
                 commentContent = ":disappointed: If this PR does address any issue, you have to remove the content *Fixes/Closes/Resolves(...)* under 'Motivation and Context'";
             }
-            else if ( prBody.Contains("Fixes/Closes/Resolves"))
+            else if (pr.Body.Contains("Fixes/Closes/Resolves"))
             {
                 commentContent = ":disappointed: You have to make up your mind on how this PR addresses the issue. It either **fixes**, **closes** or **resolves** it. Can't have them all...";
             }
@@ -1251,7 +1248,7 @@ namespace nanoFramework.Tools.GitHub
                 return true;
             }
 
-            await _octokitClient.Issue.Comment.Create((int)payload.repository.id, (int)payload.issue.number, $"Hi @{payload.issue.user.login},\r\n\r\n{commentContent}.{_fixRequestTagComment}");
+            await _octokitClient.Issue.Comment.Create(pr.Base.Repository.Id, pr.Number, $"Hi @{pr.User.Login},\r\n\r\n{commentContent}.{_fixRequestTagComment}");
 
             return false;
         }
