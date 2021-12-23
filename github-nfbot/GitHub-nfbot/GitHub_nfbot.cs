@@ -326,14 +326,14 @@ namespace nanoFramework.Tools.GitHub
                 // get issue
                 Octokit.Issue issue = await _octokitClient.Issue.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.issue.number);
 
-                if ( (payload.action == "opened" ||
+                if ((payload.action == "opened" ||
                       payload.action == "edited" ||
                       payload.action == "reopened") &&
                       payload.comment == null)
                 {
                     return await ProcessOpenOrEditIssueAsync(
-                        issue, 
-                        payload, 
+                        issue,
+                        payload,
                         log);
                 }
                 else if (payload.action == "closed")
@@ -343,7 +343,7 @@ namespace nanoFramework.Tools.GitHub
                         payload,
                         log);
                 }
-                else if(
+                else if (
                     payload.action == "created" &&
                     payload.comment != null)
                 {
@@ -355,11 +355,11 @@ namespace nanoFramework.Tools.GitHub
                     {
                         // sender if member
                         // flag if author is member or owner
-                        if(payload.comment.author_association == "MEMBER" || payload.issue.author_association == "OWNER")
+                        if (payload.comment.author_association == "MEMBER" || payload.issue.author_association == "OWNER")
                         {
                             StartReleaseResult processResult = await ProcessCommandAsync(payload, log);
 
-                            if (processResult ==  StartReleaseResult.Executed )
+                            if (processResult == StartReleaseResult.Executed)
                             {
                                 // add thumbs up reaction to comment
                                 await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Plus1));
@@ -442,7 +442,7 @@ namespace nanoFramework.Tools.GitHub
                             // check if the CI-PublishRelease is set 
                             JArray prLabels = payload.pull_request.labels;
 
-                            if( prLabels.Count(l => l["name"].ToString() == _labelCiPublishReleaseName) > 0 )
+                            if (prLabels.Count(l => l["name"].ToString() == _labelCiPublishReleaseName) > 0)
                             {
                                 // all checks are successful
                                 // PR flaged to Publish Release
@@ -483,7 +483,7 @@ namespace nanoFramework.Tools.GitHub
                     // get SHA
                     prSha = payload.check_run.head_sha.ToString();
                 }
-                else if(payload.state != null)
+                else if (payload.state != null)
                 {
                     // serious candidate of a PR state
                     log.LogInformation($"Processing state success event...");
@@ -493,21 +493,21 @@ namespace nanoFramework.Tools.GitHub
                 }
 
                 // list all open PRs...
-                IReadOnlyList<Octokit.PullRequest>  openPRs = await _octokitClient.PullRequest.GetAllForRepository(
+                IReadOnlyList<Octokit.PullRequest> openPRs = await _octokitClient.PullRequest.GetAllForRepository(
                     _gitOwner,
                     payload.repository.name.ToString(),
                     new PullRequestRequest());
 
                 // ... filter the ones from nfbot
                 Octokit.PullRequest matchingPr = openPRs.FirstOrDefault(
-                    p => p.User.Login == "nfbot" && 
+                    p => p.User.Login == "nfbot" &&
                     p.Head.Sha == prSha);
 
                 if (matchingPr == null)
                 {
                     // ... try now with github-actions 
                     matchingPr = openPRs.FirstOrDefault(
-                    p => p.User.Login == "github-actions[bot]" && 
+                    p => p.User.Login == "github-actions[bot]" &&
                     p.Head.Sha == prSha);
                 }
 
@@ -556,7 +556,6 @@ namespace nanoFramework.Tools.GitHub
 
                             if (checksCount >= requiredStatusChecks)
                             {
-
                                 if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion != CheckConclusion.Success))
                                 {
                                     // check if this is running on samples repo
@@ -824,10 +823,10 @@ namespace nanoFramework.Tools.GitHub
             ILogger log)
         {
             // check if label is "up-for-grabs"
-            if(payload.label.name.ToString() == _labelUpForGrabs)
+            if (payload.label.name.ToString() == _labelUpForGrabs)
             {
                 // compose message for Discord channel
-                
+
                 var slackPayload = new
                 {
                     text = $":notepad_spiral: **{payload.issue.title.ToString()}** :notepad_spiral: \nThere's a new issue up for grabs! Please take a look: <https://github.com/nanoframework/Home/issues/{payload.issue.number.ToString()}>! :wink:",
@@ -848,7 +847,7 @@ namespace nanoFramework.Tools.GitHub
 
                 log.LogInformation($"Result from request to Discord API: {res.StatusCode}");
 
-                if(!res.IsSuccessStatusCode)
+                if (!res.IsSuccessStatusCode)
                 {
                     log.LogInformation($"Error message received: {res.ReasonPhrase}");
                 }
@@ -907,7 +906,7 @@ namespace nanoFramework.Tools.GitHub
 
                 string branchName = command.Substring("runpipeline".Length);
 
-                if(!string.IsNullOrEmpty(branchName))
+                if (!string.IsNullOrEmpty(branchName))
                 {
                     // remove leading and trailing white spaces
                     branchName = branchName.Trim();
@@ -944,7 +943,7 @@ namespace nanoFramework.Tools.GitHub
             var nuspecFilesInRepo = await _octokitClient.Search.SearchCode(nuspecQuery);
 
             // sanity checks            
-            if(nuspecFilesInRepo.TotalCount < 1)
+            if (nuspecFilesInRepo.TotalCount < 1)
             {
                 return StartReleaseResult.Failed;
             }
@@ -957,12 +956,12 @@ namespace nanoFramework.Tools.GitHub
                 return StartReleaseResult.Failed;
             }
 
-            foreach(var nuspecFile in nuspecFiles)
+            foreach (var nuspecFile in nuspecFiles)
             {
                 // get content of nuspec
                 string nuspecContent = Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, repositoryName, nuspecFile.Name));
 
-                if(nuspecContent.Contains("-preview"))
+                if (nuspecContent.Contains("-preview"))
                 {
                     // still have preview references
                     return StartReleaseResult.WatchoutConditions;
@@ -975,9 +974,9 @@ namespace nanoFramework.Tools.GitHub
 
             // Create a connection
             VssConnection connection = new VssConnection(
-                nfOrganizationUri, 
+                nfOrganizationUri,
                 new VssBasicCredential(
-                    string.Empty, 
+                    string.Empty,
                     personalAccessToken)
                 );
 
@@ -987,7 +986,7 @@ namespace nanoFramework.Tools.GitHub
             var buildDefs = await buildClient.GetDefinitionsAsync(repositoryName);
 
             // so far we only have projects with a single build definition so check this and take the 1st one
-            if(buildDefs.Count == 1)
+            if (buildDefs.Count == 1)
             {
                 // compose build request
                 var buildRequest = new Build
@@ -1058,7 +1057,7 @@ namespace nanoFramework.Tools.GitHub
                 {
                     await buildClient.QueueBuildAsync(buildRequest);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     log.LogError($"Error queuing build: {ex.Message}.");
 
@@ -1087,7 +1086,7 @@ namespace nanoFramework.Tools.GitHub
                 "application/vnd.github.v3+json",
                 "POST");
 
-            if(result == 204)
+            if (result == 204)
             {
                 return StartReleaseResult.Started;
             }
@@ -1110,7 +1109,7 @@ namespace nanoFramework.Tools.GitHub
                                                      || r.Name.StartsWith("System.")
                                                      || r.Name.StartsWith("Windows."));
 
-            foreach(var repo in reposToProcess)
+            foreach (var repo in reposToProcess)
             {
                 var result = await SendGitHubRequest(
                     repo.Url + "/dispatches",
@@ -1191,7 +1190,7 @@ namespace nanoFramework.Tools.GitHub
 
             if (
                 pr.Body.Contains("[x] Improvement", StringComparison.InvariantCultureIgnoreCase) ||
-                pr.Body.Contains("[x] New feature", StringComparison.InvariantCultureIgnoreCase) )
+                pr.Body.Contains("[x] New feature", StringComparison.InvariantCultureIgnoreCase))
             {
                 // add the Type: enhancement label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeEnhancementName });
@@ -1275,9 +1274,9 @@ namespace nanoFramework.Tools.GitHub
                 Replace("[X ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
                 Replace("[]", "[ ]", StringComparison.InvariantCultureIgnoreCase);
 
-            if(prBodyHash != prBodyFixed.GetHashCode())
+            if (prBodyHash != prBodyFixed.GetHashCode())
             {
-                dynamic requestContent = new { body = prBodyFixed};
+                dynamic requestContent = new { body = prBodyFixed };
 
                 await SendGitHubRequest(
                     payload.pull_request.url.ToString(),
@@ -1317,7 +1316,7 @@ namespace nanoFramework.Tools.GitHub
             if (payload.repository.name == "nf-Community-Targets")
             {
                 // community targets need to have ALL or at least one target selected for build
-                if(
+                if (
                     prBody.Contains("[x] MBN_QUAIL") ||
                     prBody.Contains("[x] GHI_FEZ_CERB40_NF") ||
                     prBody.Contains("[x] I2M_ELECTRON_NF") ||
@@ -1363,10 +1362,10 @@ namespace nanoFramework.Tools.GitHub
             else if (payload.repository.name == "nf-Community-Contributions")
             {
                 // check content
-                if ( prBody.Contains(_prChecklist))
+                if (prBody.Contains(_prChecklist))
                 {
                     // check for missing check boxes
-                    if(prBody.Contains("[ ]"))
+                    if (prBody.Contains("[ ]"))
                     {
                         // developer has left un-checked items in the to-do list
                         await _octokitClient.Issue.Comment.Create((int)payload.repository.id, (int)payload.pull_request.number, $"Hi @{payload.pull_request.user.login},\r\n\r\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}");
@@ -1467,8 +1466,8 @@ namespace nanoFramework.Tools.GitHub
                        label.Name.Contains("Priority") ||
                        label.Name.Contains("pinned") ||
                        label.Name == "Type: Bug" ||
-                       label.Name == "Type: Chores" || 
-                       label.Name == "Type: Enhancement" || 
+                       label.Name == "Type: Chores" ||
+                       label.Name == "Type: Enhancement" ||
                        label.Name == "Type: Feature request" ||
                        label.Name == "Status: Waiting Triage")
                     {
@@ -1513,7 +1512,7 @@ namespace nanoFramework.Tools.GitHub
             }
 
             // fix title if needed
-            if(issue.Title.EndsWith("."))
+            if (issue.Title.EndsWith("."))
             {
                 var fixedIssue = new IssueUpdate
                 {
@@ -1564,9 +1563,9 @@ namespace nanoFramework.Tools.GitHub
 
                         await _octokitClient.Issue.Comment.Create((int)payload.repository.id, issue.Number, $"Hi @{payload.issue.user.login},\r\n\r\n{_issueMissingAreaContent}\r\n{_fixRequestTagComment}");
                     }
-                }  
+                }
             }
-            else if(issue.Body.Contains(_featureRequestTagComment))
+            else if (issue.Body.Contains(_featureRequestTagComment))
             {
                 // check for mandatory content
                 if (!issue.Body.Contains(_issueArea))
@@ -1577,7 +1576,7 @@ namespace nanoFramework.Tools.GitHub
                 {
                     // looks like a feature request
                     issueIsFeatureRequest = true;
-                }                    
+                }
             }
 
             if (issueIsBugReport &&
@@ -1615,7 +1614,7 @@ namespace nanoFramework.Tools.GitHub
                 }
             }
 
-            if(issueIsTodo)
+            if (issueIsTodo)
             {
                 // users outside members team can't open TODOs
                 // need to proceed with the author check
@@ -1732,8 +1731,8 @@ namespace nanoFramework.Tools.GitHub
                     // set status to DCO checked
                     // need to hack this URL because the API is not exposing the URL for setting individual commit status
                     await SendGitHubRequest(
-                        $"{item.url.ToString().Replace("/commits/", "/statuses/")}", 
-                        "{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"This commit has a DCO Signed-off-by.\" }", 
+                        $"{item.url.ToString().Replace("/commits/", "/statuses/")}",
+                        "{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"This commit has a DCO Signed-off-by.\" }",
                         log);
                 }
                 else
@@ -1754,8 +1753,8 @@ namespace nanoFramework.Tools.GitHub
                         // set status to DCO checked
                         // need to hack this URL because the API is not exposing the URL for setting individual commit status
                         await SendGitHubRequest(
-                            $"{item.url.ToString().Replace("/commits/", "/statuses/")}", 
-                            "{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"This commit is an obvious fix.\" }", 
+                            $"{item.url.ToString().Replace("/commits/", "/statuses/")}",
+                            "{ \"context\" : \"DCO\" , \"state\" : \"success\" , \"description\" : \"This commit is an obvious fix.\" }",
                             log);
                     }
                     else
@@ -1769,8 +1768,8 @@ namespace nanoFramework.Tools.GitHub
                         // set status to DCO required
                         // need to hack this URL because the API is not exposing the URL for setting individual commit status
                         await SendGitHubRequest(
-                            $"{item.url.ToString().Replace("/commits/", "/statuses/")}", 
-                            "{ \"context\" : \"DCO\" , \"state\" : \"failure\" , \"description\" : \"This commit is missing either the DCO Signed-off-by or the obvious fix statement.\" }", 
+                            $"{item.url.ToString().Replace("/commits/", "/statuses/")}",
+                            "{ \"context\" : \"DCO\" , \"state\" : \"failure\" , \"description\" : \"This commit is missing either the DCO Signed-off-by or the obvious fix statement.\" }",
                             log);
                     }
                 }
