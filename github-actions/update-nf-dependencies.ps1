@@ -209,7 +209,7 @@ foreach ($solutionFile in $solutionFiles)
 
                     "Updating package $packageName from $packageOriginVersion" | Write-Host
 
-                    if ($nugetReleaseType -like '*stable*' -or $packageName.Contains('UnitsNet.'))
+                    if ($nugetReleaseType -like '*stable*' -and -not $packageName.StartsWith('UnitsNet.'))
                     {
                         # don't allow prerelease for release, main branches and UnitsNet packages
 
@@ -225,9 +225,25 @@ foreach ($solutionFile in $solutionFiles)
                         }
 
                     }
+                    elseif ($packageName.StartsWith('UnitsNet.'))
+                    {
+                        # grab latest version from NuGet
+                        $unitsNetPackageInfo = nuget search UnitsNet.nanoFramework.ElectricCurrent -Verbosity quiet -Source "https://api.nuget.org/v3/index.json"
+                        $unitsNetVersion = $unitsNetPackageInfo[2].Split('|')[1]
+
+                        if (![string]::IsNullOrEmpty($nugetConfig))
+                        {
+                            nuget restore $packagesConfig -ConfigFile $nugetConfig -SolutionDirectory $solutionFile.DirectoryName
+                            nuget update $projectToUpdate.FullName -Id "$packageName" -Version $unitsNetVersion -ConfigFile $nugetConfig -FileConflictAction Overwrite
+                        }
+                        else
+                        {
+                            nuget restore $packagesConfig -SolutionDirectory $solutionFile.DirectoryName
+                            nuget update $projectToUpdate.FullName -Id "$packageName" -Version $unitsNetVersion -FileConflictAction Overwrite
+                        }
+                    }
                     else
                     {
-
                         if (![string]::IsNullOrEmpty($nugetConfig))
                         {
                             nuget restore $packagesConfig -ConfigFile $nugetConfig -SolutionDirectory $solutionFile.DirectoryName
@@ -268,7 +284,7 @@ foreach ($solutionFile in $solutionFiles)
                         "Skip update of $packageName because it's trying to use an alpha version!" | Write-Host -ForegroundColor Red
 
                         # done here
-                        return
+                        throw "Skip update of $packageName because it's trying to use an alpha version!"
                     }
                     else
                     {
@@ -295,6 +311,9 @@ foreach ($solutionFile in $solutionFiles)
 
                             foreach ($nuspec in $nuspecFiles)
                             {
+                                # reset this
+                                $dependencyToUpdate = $true
+
                                 "Trying update on nuspec file: '$nuspec' " | Write-Host
 
                                 [xml]$nuspecDoc = Get-Content $nuspec.FullName -Encoding UTF8
@@ -303,11 +322,11 @@ foreach ($solutionFile in $solutionFiles)
 
                                 foreach ($node in $nodes)
                                 {
-                                    if($node.Name -eq "metadata")
+                                    if($node.Name -eq "metadata" -and $dependencyToUpdate)
                                     {
                                         foreach ($metadataItem in $node.ChildNodes)
                                         {                          
-                                            if($metadataItem.Name -eq "dependencies")
+                                            if($metadataItem.Name -eq "dependencies" -and $dependencyToUpdate)
                                             {
                                                 foreach ($dependency in $metadataItem.ChildNodes)
                                                 {
@@ -315,6 +334,10 @@ foreach ($solutionFile in $solutionFiles)
                                                     {
                                                         "Updating dependency: $packageName to $packageTargetVersion" | Write-Host
                                                         $dependency.Attributes["version"].value = "$packageTargetVersion"
+                                                        # reset flag
+                                                        $dependencyToUpdate = $false
+                                                        #done here
+                                                        break
                                                     }
                                                 }
                                             }
