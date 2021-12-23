@@ -514,16 +514,19 @@ namespace nanoFramework.Tools.GitHub
                 if (matchingPr != null)
                 {
                     // get PR
-                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), matchingPr.Number);
+                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get((long)payload.repository.id, matchingPr.Number);
+
+                    bool isVersionUpdate = pr.Body.Contains("[version update]");
+                    bool isReleaseCandidate = pr.Body.Contains("[release candidate]");
 
                     // check if PR it's a version update
-                    if ((pr.User.Login == "nfbot" ||
-                         pr.User.Login == "github-actions[bot]") && 
-                         pr.Body.ToString().Contains("[version update]"))
+                    if ((pr.User.Login == "nfbot"
+                         || pr.User.Login == "github-actions[bot]") &&
+                         (isVersionUpdate || isReleaseCandidate))
                     {
                         bool skipCIBuild = false;
 
-                        // get reuired check runs for this branch
+                        // get required check runs for this branch
                         BranchProtectionRequiredStatusChecks statusChecks = await _octokitClient.Repository.Branch.GetRequiredStatusChecks((long)payload.repository.id, pr.Base.Ref);
 
                         // get status checks for PR
@@ -546,7 +549,7 @@ namespace nanoFramework.Tools.GitHub
                                 {
                                     if (statusCheck != "license/cla")
                                     {
-                                        log.LogInformation($"Status check {statusCheck} not reported as successfull");
+                                        log.LogInformation($"Status check {statusCheck} not reported as successful");
                                     }
                                 }
                             }
@@ -618,11 +621,14 @@ namespace nanoFramework.Tools.GitHub
                                     }
 
                                     // all checks completed successfully
-                                    // merge PR with squash
-                                    await SquashAndMergePR(
+                                    // merge PR
+                                    // SQUASH if it's a regular PR
+                                    // MERGE if it's a release candidate merge
+                                    await MergePrWithStrategy(
                                         pr,
                                         skipCIBuild,
-                                        log);
+                                        log,
+                                        isReleaseCandidate ? PullRequestMergeMethod.Merge : PullRequestMergeMethod.Squash);
                                 }
 
                             }
@@ -1929,16 +1935,17 @@ namespace nanoFramework.Tools.GitHub
 
             // request need to be a PUT
             await SendGitHubRequest(
-                $"{pull_request.url.ToString()}/merge", 
-                mergeRequest, 
-                log, 
+                $"{pull_request.url.ToString()}/merge",
+                mergeRequest,
+                log,
                 "application/vnd.github.squirrel-girl-preview", "PUT");
         }
 
-        public static async Task SquashAndMergePR(
+        public static async Task MergePrWithStrategy(
             Octokit.PullRequest pull_request,
             bool skipCIBuild,
-            ILogger log)
+            ILogger log,
+            PullRequestMergeMethod mergeMethod)
         {
             log.LogInformation($"Squash and merge PR {pull_request.Title}");
 
@@ -1956,7 +1963,7 @@ namespace nanoFramework.Tools.GitHub
                 commitMessage += "\\r\\n***PUBLISH_RELEASE***";
             }
 
-            if(skipCIBuild)
+            if (skipCIBuild)
             {
                 commitMessage += "\\r\\n***NO_CI***";
             }
@@ -1964,10 +1971,12 @@ namespace nanoFramework.Tools.GitHub
             await _octokitClient.PullRequest.Merge(
                 pull_request.Base.Repository.Id,
                 pull_request.Number,
-                new MergePullRequest() { 
-                    MergeMethod = PullRequestMergeMethod.Squash, 
-                    CommitTitle = pull_request.Title, 
-                    CommitMessage = commitMessage });
+                new MergePullRequest()
+                {
+                    MergeMethod = mergeMethod,
+                    CommitTitle = pull_request.Title,
+                    CommitMessage = commitMessage,
+                });
         }
 
         public static async Task CloseIssue(
