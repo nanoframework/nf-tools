@@ -106,6 +106,8 @@ $solutionFiles = (Get-ChildItem -Path "$workingPath" -Include "$targetSolutions"
 $nugetConfig = (Get-ChildItem -Path "$workingPath" -Include "NuGet.Config" -Recurse) | Select-Object -First 1
 Write-Host "Working with nuget.config: '$nugetConfig'"
 
+$nugetsToSkip = @()
+
 foreach ($solutionFile in $solutionFiles)
 {
     Write-Host ""
@@ -207,6 +209,12 @@ foreach ($solutionFile in $solutionFiles)
                     [string]$packageName = $package[0]
                     [string]$packageOriginVersion = $package[1]
 
+                    # check if this one is to skip
+                    if($nugetsToSkip.Contains($packageName))
+                    {
+                        continue
+                    }
+
                     "Updating package $packageName from $packageOriginVersion" | Write-Host
 
                     if ($nugetReleaseType -like '*stable*' -and -not $packageName.StartsWith('UnitsNet.'))
@@ -278,6 +286,8 @@ foreach ($solutionFile in $solutionFiles)
                     if($packageTargetVersion -eq $packageOriginVersion)
                     {
                         "Skip update of $packageName because it has the same version as before: $packageOriginVersion." | Write-Host -ForegroundColor Cyan
+
+                        $nugetsToSkip += $packageName
                     }
                     elseif ($packageTargetVersion.Contains('alpha'))
                     {
@@ -302,73 +312,71 @@ foreach ($solutionFile in $solutionFiles)
 
                         "Bumping $packageName from $packageOriginVersion to $packageTargetVersion." | Write-Host -ForegroundColor Cyan                
 
-                        # update nuspec files, if any
-                        $nuspecFiles = (Get-ChildItem -Path "$solutionPath" -Include "*.nuspec" -Recurse)
+                        # update nuspec file
+                        $nuspecFileName = $projectToUpdate.BaseName+".nuspec"
+                        $nuspecFile = (Get-ChildItem -Path "$solutionPath" -Include $nuspecFileName -Recurse)
                         
-                        if ($nuspecFiles.length -gt 0)
+                        if ($null -eq $nuspecFile)
                         {
-                            "Updating nuspec files" | Write-Host
+                            "**********************************************" | Write-Host -ForegroundColor Yellow
+                            "INFO: Can't find nuspec file '$nuspecFileName'" | Write-Host -ForegroundColor Yellow
+                            "**********************************************" | Write-Host -ForegroundColor Yellow
+                        }
+                        else
+                        {
+                            "Trying update on nuspec file: '$nuspecFileName' " | Write-Host
 
-                            foreach ($nuspec in $nuspecFiles)
+                            # reset this
+                            $dependencyToUpdate = $true
+
+                            [xml]$nuspecDoc = Get-Content $nuspecFile.FullName -Encoding UTF8
+
+                            $nodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
+
+                            foreach ($node in $nodes)
                             {
-                                # reset this
-                                $dependencyToUpdate = $true
-
-                                "Trying update on nuspec file: '$nuspec' " | Write-Host
-
-                                [xml]$nuspecDoc = Get-Content $nuspec.FullName -Encoding UTF8
-
-                                $nodes = $nuspecDoc.SelectNodes("*").SelectNodes("*")
-
-                                foreach ($node in $nodes)
+                                if($node.Name -eq "metadata" -and $dependencyToUpdate)
                                 {
-                                    if($node.Name -eq "metadata" -and $dependencyToUpdate)
-                                    {
-                                        foreach ($metadataItem in $node.ChildNodes)
-                                        {                          
-                                            if($metadataItem.Name -eq "dependencies" -and $dependencyToUpdate)
+                                    foreach ($metadataItem in $node.ChildNodes)
+                                    {                          
+                                        if($metadataItem.Name -eq "dependencies" -and $dependencyToUpdate)
+                                        {
+                                            foreach ($dependency in $metadataItem.ChildNodes)
                                             {
-                                                foreach ($dependency in $metadataItem.ChildNodes)
+                                                if($dependency.Attributes["id"].value -eq $packageName)
                                                 {
-                                                    if($dependency.Attributes["id"].value -eq $packageName)
-                                                    {
-                                                        "Updating dependency: $packageName to $packageTargetVersion" | Write-Host
-                                                        $dependency.Attributes["version"].value = "$packageTargetVersion"
-                                                        # reset flag
-                                                        $dependencyToUpdate = $false
-                                                        #done here
-                                                        break
-                                                    }
+                                                    "Updating dependency: $packageName to $packageTargetVersion" | Write-Host
+                                                    $dependency.Attributes["version"].value = "$packageTargetVersion"
+                                                    # reset flag
+                                                    $dependencyToUpdate = $false
+                                                    #done here
+                                                    break
                                                 }
                                             }
                                         }
                                     }
                                 }
-
-                                $nuspecDoc.Save($nuspec.FullName)
                             }
 
-                            "Finished updating nuspec files." | Write-Host
-                        }
-                        else
-                        {
-                            "No nuspec files to update." | Write-Host
-                        }
+                            $nuspecDoc.Save($nuspecFile.FullName)
 
-                        # build commit message
-                        $updateMessage = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>";
+                            "Finished updating nuspec file." | Write-Host
 
-                        if($commitMessage.Contains($updateMessage))
-                        {
-                            # already reported
-                        }
-                        else
-                        {
-                            # update message
-                            $commitMessage += $updateMessage
+                            # build commit message
+                            $updateMessage = "Bumps $packageName from $packageOriginVersion to $packageTargetVersion</br>";
 
-                            # update count
-                            $updateCount = $updateCount + 1;
+                            if($commitMessage.Contains($updateMessage))
+                            {
+                                # already reported
+                            }
+                            else
+                            {
+                                # update message
+                                $commitMessage += $updateMessage
+
+                                # update count
+                                $updateCount = $updateCount + 1;
+                            }
                         }
                     }
                 }
