@@ -212,7 +212,7 @@ steps:
     )
   displayName: Setup Ruby
   inputs:
-    versionSpec: '= 2.7' 
+    versionSpec: '= 3.0' 
     addToPath: true
 
 # generate change log
