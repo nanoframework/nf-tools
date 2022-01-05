@@ -1,0 +1,187 @@
+trigger:
+  branches:
+    include: [main, develop, "release-*" ]
+  paths:
+    exclude: [README.md,  CHANGELOG.md, CODE_OF_CONDUCT.md, LICENSE.md, .gitignore]
+  tags:
+    include:
+    - refs/tags/v*
+
+# PR always trigger build
+pr:
+  autoCancel: true
+
+jobs:
+
+##############################
+- job: Check_Build_Options
+  pool:
+    vmImage: 'windows-2019'
+
+  steps:
+  
+  - checkout: self
+
+  # check what changed
+  - powershell: |
+      git config --global user.email "nfbot"
+      git config --global user.name "nanoframework@outlook.com"
+
+      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$(GitHubToken)"))))"
+      
+      if($env:System_PullRequest_PullRequestId -ne $null)
+      {
+          # get files changed in PR, if this is a PR
+          $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:Build_Repository_Name/pulls/$env:System_PullRequest_PullRequestNumber/files" -Header @{"Authorization"="$auth"} -ContentType "application/json" -Method GET
+
+          # filter removed files              
+          $files = $commit.where{$_.status -ne 'removed'}
+      }
+      else
+      {
+          # get files changed in the commit, if this is NOT a PR
+          $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:Build_Repository_Name/commits/$(Build.SourceVersion)" -Header @{"Authorization"="$auth"} -ContentType "application/json" -Method GET
+
+          # filter removed files              
+          $files = $commit.files.where{$_.status -ne 'removed'}
+      }
+
+      # get file names only
+      $files = $files | % {$_.filename}
+
+      Write-host "Files changed:"
+      $files | % { Write-host $_ }
+      Write-host ""
+
+      # set default values 
+      echo "##vso[task.setvariable variable=BUILD_NANOVC;isOutput=true]false"
+
+      if( ($files.where{$_.Contains('tools/VersionCop')}).Count -gt 0)
+      {
+          # files at nano VersionCop folder
+          echo "##vso[task.setvariable variable=BUILD_NANOVC;isOutput=true]true"
+
+          Write-host "Building VersionCop"
+      }
+  
+    name: TargetsToBuild
+    displayName: Get targets to build
+
+##############
+- job: Build_VersionCop
+  condition: eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_NANOVC'], true)
+  dependsOn:
+    Check_Build_Options
+
+  pool:
+    vmImage: 'windows-2019'
+
+  variables:
+    DOTNET_NOLOGO: true
+
+  steps:
+  
+  - checkout: self
+    persistCredentials: true
+
+  - template: azure-pipelines-templates/install-nuget.yml
+
+  - task: DotNetCoreCLI@2  
+    displayName: Install NBGV tool
+    condition: succeeded()
+    inputs:
+      command: custom
+      custom: tool
+      arguments: install -g nbgv
+
+  - task: DotNetCoreCLI@2
+    displayName: Restore NuGet packages
+    condition: succeeded()
+    inputs:
+      command: restore
+      verbosityRestore: minimal
+      projects: tools/VersionCop/VersionCop.sln
+      feedsToUse: config
+      nugetConfigPath: NuGet.Config
+
+  - script: dotnet build VersionCop.sln -c 'Release' -p:Configuration=Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
+    displayName: Build NuGet package
+    condition: succeeded()
+    workingDirectory: '$(System.DefaultWorkingDirectory)/tools/VersionCop'
+
+  - task: CopyFiles@1
+    condition: succeeded()
+    displayName: Collecting deployable artifacts
+    inputs:
+      sourceFolder: $(Agent.BuildDirectory)
+      Contents: |
+        **\nanovc*.nupkg
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true
+
+  - task: DotNetCoreCLI@2
+    displayName: Install SignTool tool
+    condition: succeeded()
+    inputs:
+      command: custom
+      custom: tool
+      arguments: install --tool-path . SignClient
+  
+  - pwsh: |
+      .\SignClient "Sign" `
+      --baseDirectory "$(Build.ArtifactStagingDirectory)" `
+      --input "**/*.nupkg" `
+      --config "$(Build.Repository.LocalPath)\config\SignClient.json" `
+      --filelist "$(Build.Repository.LocalPath)\config\filelist.txt" `
+      --user "$(SignClientUser)" `
+      --secret '$(SignClientSecret)' `
+      --name ".NET nanoFramework VersionCop" `
+      --description ".NET nanoFramework VersionCop" `
+      --descriptionUrl "https://github.com/$env:Build_Repository_Name"
+    displayName: Sign packages
+    continueOnError: true
+    condition: succeeded()
+
+  # publish artifacts (only possible if this is not a PR originated on a fork)
+  - task: PublishBuildArtifacts@1
+    condition: succeeded()
+    displayName: Publish deployables artifacts
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: deployables
+      ArtifactType: Container
+
+  # push NuGet packages to Azure Artifacts feed
+  - task: NuGetCommand@2
+    displayName: Push NuGet packages to Azure Artifacts
+    condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], '') )
+    continueOnError: true
+    inputs:
+      command: push
+      nuGetFeedType: external
+      packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+      publishFeedCredentials: 'AzureArtifacts-tools'
+      allowPackageConflicts: true
+
+
+##################################
+# report build failure to Discord
+- job: Report_Build_Failure
+  dependsOn:
+  - Check_Build_Options
+  - Build_VersionCop
+  condition: or( failed('Check_Build_Options'), failed('Build_VersionCop') )
+
+  pool:
+    vmImage: 'windows-2019'
+
+  steps:
+
+  - checkout: self
+
+  # step from template @ nf-tools repo
+  - template: azure-pipelines-templates/discord-webhook.yml
+    parameters:
+      status: 'failure'
+      webhookUrl: '$(DiscordWebhook)'
+      message: ''

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "VersionCop": {
+      "commandName": "Project",
+      "commandLineArgs": "--working-directory E:\\GitHub\\nf-paho.mqtt.m2mqtt --solution-to-check nanoFramework.M2Mqtt.sln --nuspec-file nanoFramework.M2Mqtt.nuspec"
+    }
+  }
+}
