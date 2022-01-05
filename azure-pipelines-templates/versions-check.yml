@@ -30,7 +30,7 @@ steps:
         Set-Location $env:Agent_TempDirectory
 
         # clone tools repo
-        git clone https://github.com/nanoframework/nf-tools.git -b main nftools --depth=1
+        git clone https://github.com/nanoframework/nf-tools.git -b main nftools --depth=100
 
   - task: DotNetCoreCLI@2
     displayName: 'Check versions match'
