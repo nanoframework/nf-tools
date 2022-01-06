@@ -3,6 +3,19 @@
 
 steps:
 
+  - task: DotNetCoreCLI@2  
+    displayName: Install NANOVC tool
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['StartReleaseCandidate'], false),
+        not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      )
+    inputs:
+      command: custom
+      custom: tool
+      arguments: install -g nanovc --add-source https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json
+
   - task: PowerShell@2
     condition: >-
       and(
@@ -27,12 +40,7 @@ steps:
 
         echo "##vso[task.setvariable variable=SolutionToCheck;isOutput=true]$SolutionToCheck" 
 
-        Set-Location $env:Agent_TempDirectory
-
-        # clone tools repo
-        git clone https://github.com/nanoframework/nf-tools.git -b main nftools --depth=100
-
-  - task: DotNetCoreCLI@2
+  - script: nanovc --working-directory $(System.DefaultWorkingDirectory) --solution-to-check $(PrepVersionCop.SolutionToCheck) --nuspec-file $(nugetPackageName).nuspec
     displayName: 'Check versions match'
     condition: >-
       and(
@@ -40,8 +48,3 @@ steps:
         eq(variables['StartReleaseCandidate'], false),
         not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
       )
-    inputs:
-      command: 'run'
-      projects: '$(Agent.TempDirectory)/nftools/tools/VersionCop'
-      arguments: '-- --working-directory $(System.DefaultWorkingDirectory) --solution-to-check $(PrepVersionCop.SolutionToCheck) --nuspec-file $(nugetPackageName).nuspec'
-    
