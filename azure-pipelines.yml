@@ -69,7 +69,11 @@ jobs:
 
 ##############
 - job: Build_VersionCop
-  condition: eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_NANOVC'], true)
+  condition: >-
+    or(
+      eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_NANOVC'], true),
+      eq(variables['BUILD_VERSIONCOP'], 'true'),
+    )
   dependsOn:
     Check_Build_Options
 
@@ -162,7 +166,6 @@ jobs:
       packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
       publishFeedCredentials: 'AzureArtifacts-tools'
       allowPackageConflicts: true
-
 
 ##################################
 # report build failure to Discord
