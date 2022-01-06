@@ -15,6 +15,7 @@
     <PackageIcon>nf-logo.png</PackageIcon>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackAsTool>true</PackAsTool>
+    <ToolCommandName>nanovc</ToolCommandName>
   </PropertyGroup>
 
   <ItemGroup>
