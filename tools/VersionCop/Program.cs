@@ -228,11 +228,15 @@ class Program
                         && checkNuspec
                         && nuspecReader is not null)
                     {
-                        if (nuspecReader.GetId() != assemblyName
-                            && nuspecReader.GetTitle() != assemblyName
-                            && nuspecReader.GetId() != $"nanoFramework.{assemblyName}"
-                            && nuspecReader.GetTitle() != $"nanoFramework.{assemblyName}"
-                            )
+                        // this check here tries to determine if the package ID and Title resemble with the assembly name
+                        // it looks a bit convoluted but these variations are required to deal with:
+                        // - libraries that have (or not) nanoFramework prefix
+                        // - libraries that have variations on the ID, like System.Net.Http.Client/Server
+                        if (!((nuspecReader.GetId().Contains(assemblyName)
+                            && nuspecReader.GetTitle().Contains(assemblyName))
+                            || (nuspecReader.GetId().Contains($"nanoFramework.{assemblyName}")
+                            && nuspecReader.GetTitle().Contains($"nanoFramework.{assemblyName}"))
+                            ))
                         {
                             checkNuspec = false;
                         }
