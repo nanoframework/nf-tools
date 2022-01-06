@@ -2,7 +2,7 @@
   "profiles": {
     "VersionCop": {
       "commandName": "Project",
-      "commandLineArgs": "--working-directory E:\\GitHub\\nf-nanoframework.System.Net.WebSockets --solution-to-check nanoframework.System.Net.WebSockets.sln --nuspec-file nanoFramework.System.Net.WebSockets.nuspec"
+      "commandLineArgs": "--working-directory E:\\GitHub\\nf-nanoFramework.IoT.Device\\devices\\Ws28xx --solution-to-check Ws28xx.sln --nuspec-file Ws28xx.nuspec"
     }
   }
 }

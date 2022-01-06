@@ -127,12 +127,20 @@ class Program
 
             var projectPathInSln = Path.GetRelativePath(workingDirectory, Directory.GetParent(packageConfigFile).FullName);
 
-            // need these extra replacements to adjust for regex expression
-            projectPathInSln = projectPathInSln.Replace("\\", "\\\\");
-            projectPathInSln = projectPathInSln.Replace(".", "\\.");
+            // check for project in the same folder
+            if (projectPathInSln == ".")
+            {
+                projectPathInSln = "";
+            }
+            else
+            {
+                // need these extra replacements to adjust for regex expression
+                projectPathInSln = projectPathInSln.Replace("\\", "\\\\");
+                projectPathInSln = projectPathInSln.Replace(".", "\\.");
 
-            // add trailing \ to match whatever will be in the solution file
-            projectPathInSln += "\\\\";
+                // add trailing \ to match whatever will be in the solution file
+                projectPathInSln += "\\\\";
+            }
 
             var match = Regex.Match(slnFileContent, $"(?>\\\", \\\"{projectPathInSln})(?'project'[a-zA-Z0-9_.]+.nfproj)(\\\")");
             if (!match.Success)
