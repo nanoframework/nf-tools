@@ -55,6 +55,7 @@ jobs:
 
       # set default values 
       echo "##vso[task.setvariable variable=BUILD_NANOVC;isOutput=true]false"
+      echo "##vso[task.setvariable variable=BUILD_NANODU;isOutput=true]false"
 
       if( ($files.where{$_.Contains('tools/VersionCop')}).Count -gt 0)
       {
@@ -62,6 +63,14 @@ jobs:
           echo "##vso[task.setvariable variable=BUILD_NANOVC;isOutput=true]true"
 
           Write-host "Building VersionCop"
+      }
+
+      if( ($files.where{$_.Contains('tools/DependencyUpdater')}).Count -gt 0)
+      {
+          # files at nano DependencyUpdater folder
+          echo "##vso[task.setvariable variable=BUILD_NANODU;isOutput=true]true"
+
+          Write-host "Building DependencyUpdater"
       }
   
     name: TargetsToBuild
@@ -168,13 +177,120 @@ jobs:
       allowPackageConflicts: true
       includeSymbols: true
 
+##############
+- job: Build_DependencyUpdater
+  condition: >-
+    or(
+      eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_NANOVC'], true),
+      eq(variables['BUILD_NANOVC'], 'true')
+    )
+  dependsOn:
+    Check_Build_Options
+
+  pool:
+    vmImage: 'windows-2019'
+
+  variables:
+    DOTNET_NOLOGO: true
+
+  steps:
+  
+  - checkout: self
+    persistCredentials: true
+
+  - template: azure-pipelines-templates/install-nuget.yml
+
+  - task: DotNetCoreCLI@2  
+    displayName: Install NBGV tool
+    condition: succeeded()
+    inputs:
+      command: custom
+      custom: tool
+      arguments: install -g nbgv
+
+  - task: DotNetCoreCLI@2
+    displayName: Restore NuGet packages
+    condition: succeeded()
+    inputs:
+      command: restore
+      verbosityRestore: minimal
+      projects: $(System.DefaultWorkingDirectory)/tools/DependencyUpdater/DependencyUpdater.sln
+      feedsToUse: config
+      nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/DependencyUpdater/NuGet.Config
+
+  - script: dotnet build DependencyUpdater.sln -c 'Release' -p:Configuration=Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
+    displayName: Build NuGet package
+    condition: succeeded()
+    workingDirectory: '$(System.DefaultWorkingDirectory)/tools/DependencyUpdater'
+
+  - task: CopyFiles@1
+    condition: succeeded()
+    displayName: Collecting deployable artifacts
+    inputs:
+      sourceFolder: $(Agent.BuildDirectory)
+      Contents: |
+        **\nanodu*.nupkg
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true
+
+  - task: DotNetCoreCLI@2
+    displayName: Install SignTool tool
+    condition: succeeded()
+    inputs:
+      command: custom
+      custom: tool
+      arguments: install --tool-path . SignClient
+  
+  - pwsh: |
+      .\SignClient "Sign" `
+      --baseDirectory "$(Build.ArtifactStagingDirectory)" `
+      --input "**/*.nupkg" `
+      --config "$(Build.Repository.LocalPath)\config\SignClient.json" `
+      --filelist "$(Build.Repository.LocalPath)\config\filelist.txt" `
+      --user "$(SignClientUser)" `
+      --secret '$(SignClientSecret)' `
+      --name ".NET nanoFramework DependencyUpdater" `
+      --description ".NET nanoFramework DependencyUpdater" `
+      --descriptionUrl "https://github.com/$env:Build_Repository_Name"
+    displayName: Sign packages
+    continueOnError: true
+    condition: succeeded()
+
+  # publish artifacts (only possible if this is not a PR originated on a fork)
+  - task: PublishBuildArtifacts@1
+    condition: succeeded()
+    displayName: Publish deployables artifacts
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: deployables
+      ArtifactType: Container
+
+  # push NuGet packages to Azure Artifacts feed
+  - task: NuGetCommand@2
+    displayName: Push NuGet packages to Azure Artifacts
+    condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], '') )
+    continueOnError: true
+    inputs:
+      command: push
+      nuGetFeedType: internal
+      packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+      publishVstsFeed: feed/sandbox
+      allowPackageConflicts: true
+      includeSymbols: true
+
 ##################################
 # report build failure to Discord
 - job: Report_Build_Failure
   dependsOn:
   - Check_Build_Options
   - Build_VersionCop
-  condition: or( failed('Check_Build_Options'), failed('Build_VersionCop') )
+  - Build_DependencyUpdater
+  condition: >-
+    or(
+      failed('Check_Build_Options'),
+      failed('Build_VersionCop'),
+      failed('Build_DependencyUpdater')
+    )
 
   pool:
     vmImage: 'windows-2019'

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DependencyUpdater": {
+      "commandName": "Project",
+      "commandLineArgs": "--preview-packages --working-directory E:\\GitHub\\nf-nanoFramework.M5Stack --repos-to-update System.Net.Http --repos-to-update System.Net.WebSockets"
+    }
+  }
+}

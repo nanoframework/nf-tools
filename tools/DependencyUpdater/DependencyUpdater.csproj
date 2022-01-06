@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>nanodu</PackageId>
+    <Authors>.NET nanoFramework project contributors</Authors>
+    <Company>.NET nanoFramework</Company>
+    <Description>.NET tool to update nanoFramework dependencies in class libraries. This is meant to be used in nanoFramework CI-CD pipelines.</Description>
+    <Copyright>Copyright (c) .NET Foundation and Contributors</Copyright>
+    <PackageProjectUrl>https://github.com/nanoframework/nf-tools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nanoframework/nf-tools</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>nf-logo.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>nanodu</ToolCommandName>
+    <UserSecretsId>65ed006b-633f-4f54-a855-6735e104d4ab</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\assets\nf-logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\assets\nf-logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\LICENSE.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CliWrap" Version="3.3.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="5.0.0" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NuGet.CommandLine" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <GeneratePathProperty>True</GeneratePathProperty>
+    </PackageReference>
+    <PackageReference Include="NuGet.Packaging" Version="6.0.0" />
+    <PackageReference Include="Octokit" Version="0.50.0" />
+    <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.21617.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="$(PkgNuGet_CommandLine)\tools\NuGet.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
+</Project>
