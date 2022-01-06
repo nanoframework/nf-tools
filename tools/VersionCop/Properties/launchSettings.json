@@ -2,7 +2,7 @@
   "profiles": {
     "VersionCop": {
       "commandName": "Project",
-      "commandLineArgs": "--working-directory E:\\GitHub\\nf-paho.mqtt.m2mqtt --solution-to-check nanoFramework.M2Mqtt.sln --nuspec-file nanoFramework.M2Mqtt.nuspec"
+      "commandLineArgs": "--working-directory E:\\GitHub\\nf-nanoframework.System.Net.WebSockets --solution-to-check nanoframework.System.Net.WebSockets.sln --nuspec-file nanoFramework.System.Net.WebSockets.nuspec"
     }
   }
 }
