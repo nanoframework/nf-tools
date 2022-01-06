@@ -2,7 +2,7 @@ trigger:
   branches:
     include: [main, develop, "release-*" ]
   paths:
-    exclude: [README.md,  CHANGELOG.md, CODE_OF_CONDUCT.md, LICENSE.md, .gitignore]
+    exclude: [azure-pipelines.yml, README.md,  CHANGELOG.md, CODE_OF_CONDUCT.md, LICENSE.md, .gitignore]
   tags:
     include:
     - refs/tags/v*
@@ -72,7 +72,7 @@ jobs:
   condition: >-
     or(
       eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_NANOVC'], true),
-      eq(variables['BUILD_VERSIONCOP'], 'true'),
+      eq(variables['BUILD_VERSIONCOP'], 'true')
     )
   dependsOn:
     Check_Build_Options
