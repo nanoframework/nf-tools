@@ -104,9 +104,9 @@ jobs:
     inputs:
       command: restore
       verbosityRestore: minimal
-      projects: tools/VersionCop/VersionCop.sln
+      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
       feedsToUse: config
-      nugetConfigPath: NuGet.Config
+      nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/VersionCop/NuGet.Config
 
   - script: dotnet build VersionCop.sln -c 'Release' -p:Configuration=Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
     displayName: Build NuGet package
@@ -162,9 +162,9 @@ jobs:
     continueOnError: true
     inputs:
       command: push
-      nuGetFeedType: external
+      nuGetFeedType: internal
       packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-      publishFeedCredentials: 'AzureArtifacts-project'
+      publishVstsFeed: feed/sandbox
       allowPackageConflicts: true
       includeSymbols: true
 
