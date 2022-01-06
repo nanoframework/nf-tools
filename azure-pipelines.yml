@@ -164,8 +164,9 @@ jobs:
       command: push
       nuGetFeedType: external
       packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-      publishFeedCredentials: 'AzureArtifacts-tools'
+      publishFeedCredentials: 'AzureArtifacts-project'
       allowPackageConflicts: true
+      includeSymbols: true
 
 ##################################
 # report build failure to Discord
