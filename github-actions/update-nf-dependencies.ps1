@@ -33,6 +33,11 @@ elseif($env:GITHUB_ACTIONS)
     # get repository name from the repo path
     Set-Location ".." | Out-Null
     $library = Split-Path $(Get-Location) -Leaf
+   
+    # need this to move to the 
+    "Moving to 'main' folder" | Write-Host
+
+    Set-Location "main" | Out-Null
 }
 
 # set working path
