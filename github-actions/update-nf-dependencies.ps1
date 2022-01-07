@@ -22,8 +22,6 @@ if($null -ne $env:NF_Library)
     # this is building from Azure Pipelines
 
     Set-Location "$env:Build_SourcesDirectory\$env:NF_Library" | Out-Null
-
-    $library = $env:NF_Library
 }
 elseif($env:GITHUB_ACTIONS)
 {
@@ -32,10 +30,6 @@ elseif($env:GITHUB_ACTIONS)
 
     # get repository name from the repo path
     Set-Location ".." | Out-Null
-    $library = Split-Path $(Get-Location) -Leaf
-   
-    # need this to move to the 
-    "Moving to 'main' folder" | Write-Host
 
     Set-Location "main" | Out-Null
 }
@@ -54,18 +48,18 @@ if ([string]::IsNullOrEmpty($nugetReleaseType))
 {
     if($env:GITHUB_REF -like '*release*' -or $env:GITHUB_REF -like '*master*' -or $env:GITHUB_REF -like '*main*' -or $env:GITHUB_REF -like '*stable*')
     {
-        nanodu --stable-packages --working-directory $workingPath --solutions-to-check $library
+        nanodu --stable-packages --working-directory $workingPath
     }
     else
     {
-        nanodu --preview-packages --working-directory $workingPath --solutions-to-check $library
+        nanodu --preview-packages --working-directory $workingPath
     }
 }
 else
 {
     if($nugetReleaseType -ne 'stable' -and $nugetReleaseType -ne 'prerelease' )
     {
-        nanodu --stable-packages --working-directory $workingPath --solutions-to-check $library
+        nanodu --stable-packages --working-directory $workingPath
     }
 }
 
