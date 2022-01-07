@@ -198,6 +198,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
+            Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
+
             Console.WriteLine($"Using {releaseType} NuGet packages.");
 
             if (solutionsToCheck is not null)
@@ -231,7 +233,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Environment.Exit(1);
                 }
 
-                libraryName = repoName.Groups["repoName"].Value;
+                // need to remove .git from end of URL, if there
+                libraryName = repoName.Groups["repoName"].Value.Replace(".git", "");
             }
 
             Console.WriteLine($"Library is: '{libraryName ?? "null"}'");
@@ -255,7 +258,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 libraryName = Directory.GetParent(workingDirectory).Name;
             }
 
-            Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
             Console.WriteLine($"Library is: '{libraryName ?? "null"}'");
 
             // init/reset these
@@ -274,6 +276,12 @@ namespace nanoFramework.Tools.DependencyUpdater
             else
             {
                 solutionFiles = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories);
+            }
+
+            Console.WriteLine($"Solutions are:");
+            foreach (var sln in solutionFiles)
+            {
+                Console.WriteLine($"{sln}");
             }
 
             // find NuGet.Config
