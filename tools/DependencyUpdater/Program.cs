@@ -585,17 +585,17 @@ namespace nanoFramework.Tools.DependencyUpdater
             // check if any packages where updated
             if (updateCount == 0)
             {
-                Console.WriteLine("No packages were updated...");
-
+                Console.WriteLine("INFO: No packages found to update...");
+            }
+            else
+            {   
                 // sanity check for no nuspecs found
                 if (nuspecCounter == 0)
                 {
-                    Console.WriteLine($"ERROR: No nuspecs files found!");
+                    Console.WriteLine($"ERROR: No nuspecs files updated!");
                     Environment.Exit(1);
                 }
-            }
-            else
-            {
+
                 Console.WriteLine($"INFO: {updateCount} packages updated");
 
                 // need this line so nfbot flags the PR appropriately
