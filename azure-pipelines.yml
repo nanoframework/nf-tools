@@ -181,8 +181,8 @@ jobs:
 - job: Build_DependencyUpdater
   condition: >-
     or(
-      eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_NANOVC'], true),
-      eq(variables['BUILD_NANOVC'], 'true')
+      eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_NANODU'], true),
+      eq(variables['BUILD_DEPENDENCYUPDATER'], 'true')
     )
   dependsOn:
     Check_Build_Options
