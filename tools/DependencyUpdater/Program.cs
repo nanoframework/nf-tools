@@ -28,12 +28,30 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static RunningEnvironment _runningEnvironment;
         private static string _gitHubAuth;
 
-        static void Main(string workingDirectory = null,
-                        bool stablePackages = false,
-                        bool previewPackages = true,
-                        string[] solutionsToCheck = default,
-                        string[] reposToUpdate = default)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="workingDirectory">Working directory. Required when updating a single repository.</param>
+        /// <param name="stablePackages">This is to use stable package versions.</param>
+        /// <param name="previewPackages">This is to use preview package versions.</param>
+        /// <param name="solutionsToCheck">This is to update the Solution(s) in the <paramref name="workingDirectory"/>.</param>
+        /// <param name="reposToUpdate">This is to update the specified repository(es).</param>
+        /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
+        static void Main(
+            string workingDirectory = null,
+            bool stablePackages = false,
+            bool previewPackages = true,
+            bool solutionsToCheck = false,
+            bool reposToUpdate = false,
+            string[] args = null)
         {
+            // sanity check 
+            if(!solutionsToCheck && ! reposToUpdate)
+            {
+                Console.WriteLine($"ERROR: need to specify update options. Either '--solutions-to-check' or '--repos-to-update'.");
+                Environment.Exit(1);
+            }
+
             // check build environment
             _runningEnvironment = RunningEnvironment.Other;
 
@@ -86,18 +104,18 @@ namespace nanoFramework.Tools.DependencyUpdater
             _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"nfbot:{Environment.GetEnvironmentVariable("GITHUB_TOKEN")}"))}";
 #endif
 
-
             // choose work-flow
-            if (reposToUpdate is null)
+            if (reposToUpdate)
             {
                 // this is updating a repository and this running from a github repository folder
+
 
                 // go for the library update
                 UpdateLibrary(
                     workingDirectory,
                     stablePackages,
                     previewPackages,
-                    solutionsToCheck);
+                    args);
             }
             else
             {
@@ -116,10 +134,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Environment.SetEnvironmentVariable("GIT_REDIRECT_STDERR", "2>&1");
                 }
 
-                foreach (var repoName in reposToUpdate)
+                foreach (var repoName in args)
                 {
                     // remove quotes, if any
                     var library = repoName.Replace("'", "");
+
+
                     string baseBranch = "develop";
 
                     Console.WriteLine();
@@ -144,17 +164,17 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // check for special repos that have sources on different location
                     if (library == "amqpnetlite")
                     {
-                        solutionsToCheck = Directory.GetFiles(
+                        args = Directory.GetFiles(
                             workingDirectory,
                             "amqp-nanoFramework.sln",
-                            SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray(); ;
+                            SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray();
 
                         // CD-CI branch is not 'develop'
                         baseBranch = "nanoframework-dev";
                     }
                     else
                     {
-                        solutionsToCheck = Directory.GetFiles(
+                        args = Directory.GetFiles(
                             workingDirectory,
                             "*.sln",
                             SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray();
@@ -170,7 +190,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         workingDirectory,
                         false,
                         true,
-                        solutionsToCheck);
+                        args);
                 }
             }
 
@@ -258,8 +278,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 libraryName = Directory.GetParent(workingDirectory).Name;
             }
 
-            Console.WriteLine($"Library is: '{libraryName ?? "null"}'");
-
             // init/reset these
             int updateCount = 0;
             int nuspecCounter = 0;
@@ -271,7 +289,24 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (solutionsToCheck is not null)
             {
-                solutionFiles = Directory.GetFiles(workingDirectory, $"{string.Join(";", solutionsToCheck)}", SearchOption.AllDirectories);
+                string searchFilter = "";
+
+                foreach(var sln in solutionsToCheck)
+                {
+                    if(!sln.EndsWith("sln"))
+                    {
+                        searchFilter += $"*{sln}*.sln;";
+                    }
+                    else
+                    {
+                        searchFilter += $"{sln};";
+                    }
+                }
+
+                // remove trailing ';'
+                searchFilter = searchFilter.Substring(0, searchFilter.Length - 1);
+
+                solutionFiles = Directory.GetFiles(workingDirectory, $"{searchFilter}", SearchOption.AllDirectories);
             }
             else
             {
