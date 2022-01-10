@@ -32,10 +32,10 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// 
         /// </summary>
         /// <param name="workingDirectory">Working directory. Required when updating a single repository.</param>
-        /// <param name="stablePackages">This is to use stable package versions.</param>
-        /// <param name="previewPackages">This is to use preview package versions.</param>
-        /// <param name="solutionsToCheck">This is to update the Solution(s) in the <paramref name="workingDirectory"/>.</param>
-        /// <param name="reposToUpdate">This is to update the specified repository(es).</param>
+        /// <param name="stablePackages">Use stable NuGet package versions.</param>
+        /// <param name="previewPackages">Use preview NuGet package versions.</param>
+        /// <param name="solutionsToCheck">List of Solution(s) to update in the <paramref name="workingDirectory"/> directory.</param>
+        /// <param name="reposToUpdate">List of repository(es) to update.</param>
         /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
         static void Main(
             string workingDirectory = null,
@@ -60,13 +60,13 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 // these variables are only available on Azure Pipelines build
                 _runningEnvironment = RunningEnvironment.AzurePipelines;
-                Console.WriteLine($"Running at Azure Pipeline");
+                Console.WriteLine($"Running in an Azure Pipeline");
             }
             else if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") is not null)
             {
                 // this variable it's only set when running on a GitHub action
                 _runningEnvironment = RunningEnvironment.GitHubAction;
-                Console.WriteLine($"Running at GitHub Action");
+                Console.WriteLine($"Running in a GitHub Action");
             }
             else
             {
@@ -105,10 +105,9 @@ namespace nanoFramework.Tools.DependencyUpdater
 #endif
 
             // choose work-flow
-            if (reposToUpdate)
+            if (solutionsToCheck)
             {
-                // this is updating a repository and this running from a github repository folder
-
+                // this is updating solution(s) on a repository
 
                 // go for the library update
                 UpdateLibrary(
@@ -119,17 +118,14 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
             else
             {
-                // this is to setup everything to perform update of a repository
+                // because it can take sometime for the package to become available on the NuGet providers
+                // need to hang here for 1 minute
+                Console.WriteLine("Waiting 1 minute to let package process flow in Azure Artifacts feed...");
 
-                // handle differently
+                Thread.Sleep((int)TimeSpan.FromMinutes(1).TotalMilliseconds);
+
                 if (_runningEnvironment == RunningEnvironment.AzurePipelines)
                 {
-                    // because it can take sometime for the package to become available on the NuGet providers
-                    // need to hang here for 2 minutes (2 * 60)
-                    Console.WriteLine("Waiting 2 minutes to let package process flow in Azure Artifacts feed...");
-
-                    Thread.Sleep((int)TimeSpan.FromMinutes(2).TotalMilliseconds);
-
                     // need this to remove definition of redirect stdErr (only on Azure Pipelines image fo VS2019)
                     Environment.SetEnvironmentVariable("GIT_REDIRECT_STDERR", "2>&1");
                 }
@@ -138,7 +134,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     // remove quotes, if any
                     var library = repoName.Replace("'", "");
-
 
                     string baseBranch = "develop";
 
@@ -153,6 +148,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // working directory is Agent Temporary directory
                     workingDirectory = Environment.GetEnvironmentVariable("Agent_TempDirectory");
 #endif
+
+                    Console.WriteLine();
+                    Console.WriteLine($"INFO: cloning '{library}' repository");
 
                     if (!RunGitCli($"clone --depth 1 https://github.com/nanoframework/{library} {library}", workingDirectory))
                     {
