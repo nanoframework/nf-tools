@@ -255,7 +255,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 libraryName = repoName.Groups["repoName"].Value.Replace(".git", "");
             }
 
-            Console.WriteLine($"Library is: '{libraryName ?? "null"}'");
+            Console.WriteLine($"Repository is: '{libraryName ?? "null"}'");
 
             if ((!stablePackages && !previewPackages)
                 || (stablePackages && previewPackages))
@@ -289,20 +289,28 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 string searchFilter = "";
 
-                foreach(var sln in solutionsToCheck)
+                if (solutionsToCheck.Count() == 1
+                    & solutionsToCheck[0] == "*.sln")
                 {
-                    if(!sln.EndsWith("sln"))
-                    {
-                        searchFilter += $"*{sln}*.sln;";
-                    }
-                    else
-                    {
-                        searchFilter += $"{sln};";
-                    }
+                    searchFilter = "*.sln";
                 }
+                else
+                {
+                    foreach (var sln in solutionsToCheck)
+                    {
+                        if (!sln.EndsWith("sln"))
+                        {
+                            searchFilter += $"*{sln}*.sln;";
+                        }
+                        else
+                        {
+                            searchFilter += $"{sln};";
+                        }
+                    }
 
-                // remove trailing ';'
-                searchFilter = searchFilter.Substring(0, searchFilter.Length - 1);
+                    // remove trailing ';'
+                    searchFilter = searchFilter.Substring(0, searchFilter.Length - 1);
+                }
 
                 solutionFiles = Directory.GetFiles(workingDirectory, $"{searchFilter}", SearchOption.AllDirectories);
             }
@@ -314,7 +322,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             Console.WriteLine($"Solutions are:");
             foreach (var sln in solutionFiles)
             {
-                Console.WriteLine($"{sln}");
+                Console.WriteLine($"{Path.GetRelativePath(workingDirectory, sln)}");
             }
 
             // find NuGet.Config
@@ -365,6 +373,14 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                 Console.WriteLine($"Found {packageConfigs.Length} packages.config files...");
 
+                // for solutions and projects outside the working directory, need to specify repository path
+                string repositoryPath = "";
+
+                if (solutionPath != workingDirectory)
+                {
+                    repositoryPath = $"-RepositoryPath {Directory.GetParent(solutionFile).FullName}\\packages";
+                }
+
                 foreach (var packageConfigFile in packageConfigs)
                 {
                     Console.WriteLine();
@@ -373,7 +389,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // check if the project the packages.config belongs to it's in the solution 
                     var projectPath = Directory.GetParent(packageConfigFile).FullName;
 
-                    var projectPathInSln = Path.GetRelativePath(workingDirectory, Directory.GetParent(packageConfigFile).FullName);
+                    var projectPathInSln = Path.GetRelativePath(solutionPath, Directory.GetParent(packageConfigFile).FullName);
 
                     // check for project in the same folder
                     if (projectPathInSln == ".")
@@ -444,7 +460,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // perform NuGet update
                                 if (!RunNugetCLI(
                                     "update",
-                                    $"{projectPath} -Id {packageName} -FileConflictAction Overwrite",
+                                    $"{projectPath} -Id {packageName}  {repositoryPath} -FileConflictAction Overwrite",
                                     true,
                                     ref updateResult))
                                 {
@@ -469,7 +485,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // perform NuGet update
                                 if (!RunNugetCLI(
                                     "update",
-                                    $"{projectToUpdate} -Id {packageName} -Version {unitsNetVersion} -FileConflictAction Overwrite",
+                                    $"{projectToUpdate} -Id {packageName} -Version {unitsNetVersion} {repositoryPath} -FileConflictAction Overwrite",
                                     true,
                                     ref updateResult))
                                 {
@@ -483,7 +499,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // perform NuGet update
                                 if (!RunNugetCLI(
                                     "update",
-                                    $"{projectToUpdate} -Id {packageName} -PreRelease -FileConflictAction Overwrite",
+                                    $"{projectToUpdate} -Id {packageName} -PreRelease  {repositoryPath} -FileConflictAction Overwrite",
                                     true,
                                     ref updateResult))
                                 {
@@ -533,7 +549,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                 // update nuspec
                                 // compose nuspec file
-                                var nuspecFileName = Path.Combine(workingDirectory, $"{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec");
+                                var nuspecFileName = Path.Combine(solutionPath, $"{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec");
 
                                 // sanity check for nuspec file
                                 if (!File.Exists(nuspecFileName))
