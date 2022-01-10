@@ -46,7 +46,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string[] args = null)
         {
             // sanity check 
-            if(!solutionsToCheck && ! reposToUpdate)
+            if (!solutionsToCheck && !reposToUpdate)
             {
                 Console.WriteLine($"ERROR: need to specify update options. Either '--solutions-to-check' or '--repos-to-update'.");
                 Environment.Exit(1);
@@ -604,7 +604,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine("INFO: No packages found to update...");
             }
             else
-            {   
+            {
                 // sanity check for no nuspecs found
                 if (nuspecCounter == 0)
                 {
