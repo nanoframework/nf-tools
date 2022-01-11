@@ -760,12 +760,16 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (previewCounter > 0)
             {
+                Console.WriteLine($"INFO: preview packages being referenced.");
+
                 // check if current version it's already preview
                 if (!RunNbgv("nbgv get-version -v \"NuGetPackageVersion\"", ref nbgvOutput, solutionPath))
                 {
                     Console.WriteLine($"ERROR: failed to get version from nbgv. Make sure nbgv is installed.");
                     Environment.Exit(1);
                 }
+
+                Console.WriteLine($"INFO: current version is {nbgvOutput}");
 
                 // is the current version already a preview
                 if (nbgvOutput.Contains("preview"))
@@ -781,6 +785,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                     packageVersion.Minor,
                     packageVersion.Build + 1);
 
+                Console.WriteLine($"INFO: bumping version to {packageVersion.ToString(3)}-preview");
+
                 if (!RunNbgv($"nbgv set-version \"{packageVersion.ToString(3)}-preview.{{height}}\"", ref nbgvOutput, solutionPath))
                 {
                     Console.WriteLine($"ERROR: failed to set version with nbgv. Make sure nbgv is installed.");
@@ -791,12 +797,16 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
             else
             {
+                Console.WriteLine($"INFO: only stable packages being referenced.");
+
                 // check if current version has preview
                 if (!RunNbgv("nbgv get-version -v \"NuGetPackageVersion\"", ref nbgvOutput, solutionPath))
                 {
                     Console.WriteLine($"ERROR: failed to get version from nbgv. Make sure nbgv is installed.");
                     Environment.Exit(1);
                 }
+
+                Console.WriteLine($"INFO: current version is {nbgvOutput}");
 
                 // is the current version already a stable one
                 if (!nbgvOutput.Contains("preview"))
@@ -807,6 +817,8 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                 // set new version by removing preview
                 var newVersion = nbgvOutput.Substring(0, nbgvOutput.IndexOf("-preview"));
+
+                Console.WriteLine($"INFO: bumping version to {newVersion}");
 
                 if (!RunNbgv($"nbgv set-version \"{newVersion}\"", ref nbgvOutput, solutionPath))
                 {
