@@ -163,10 +163,21 @@ namespace nanoFramework.Tools.DependencyUpdater
                     workingDirectory = Environment.GetEnvironmentVariable("Agent_TempDirectory");
 #endif
 
+                    // clone depth
+                    string cloneDepth = "--depth 1";
+
+                    // if we are updating IoT bindings repo, can't use a shallow clone
+                    // because we need to be able to compute a version
+                    if (Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") is not null
+                        && Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") == "nanoframework/nanoFramework.IoT.Device")
+                    {
+                        cloneDepth = "";
+                    }
+
                     Console.WriteLine();
                     Console.WriteLine($"INFO: cloning '{library}' repository");
 
-                    if (!RunGitCli($"clone --depth 1 https://github.com/nanoframework/{library} {library}", workingDirectory))
+                    if (!RunGitCli($"clone {cloneDepth} https://github.com/nanoframework/{library} {library}", workingDirectory))
                     {
                         Environment.Exit(1);
                     }
