@@ -1,0 +1,69 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+parameters:
+  repositoriesToUpdate: ''
+
+steps:
+- task: PowerShell@2
+  displayName: Update dependent class libs
+  condition: >-
+    and(
+      succeeded(),
+      ne(variables['StartReleaseCandidate'], 'true'),
+      or(
+        eq(variables['UPDATE_DEPENDENTS'], 'true'),
+        startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+      )
+    )
+  env:
+    REPOS_TO_UPDATE: ${{ parameters.repositoriesToUpdate }}
+  inputs:
+    targetType: 'inline'
+    script: |
+
+      # because it can take sometime for the package to become available on the NuGet providers
+      # need to hang here for 1 minutes (1 * 60)
+      "Waiting 1 minutes to let package process flow in Azure Artifacts feed..." | Write-Host
+      Start-Sleep -Seconds 60 
+
+      $librariesToUpdate = $env:REPOS_TO_UPDATE.Split([environment]::NewLine)
+    
+      ForEach($library in $librariesToUpdate)
+      {
+          # remove quotes, if any
+          $library = $library -replace "'", ""
+
+          "" | Write-Host
+          "*******************************" | Write-Host
+          "Firing update for $library" | Write-Host
+
+          $requestContent = @{event_type="update-dependencies"} | ConvertTo-Json
+          $requestUrl = "https://api.github.com/repos/nanoframework/$library/dispatches"
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+          # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
+          # 'encoded token' is the Base64 of the string "nfbot:personal-token"
+          $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$(GitHubToken)"))))"
+
+          $headers = @{}
+          $headers.Add("Authorization","$auth")
+          $headers.Add("Accept","application/vnd.github.v3+json")
+
+          try 
+          {
+              $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $requestUrl -Header $headers -ContentType "application/json" -Body $requestContent
+              'Fire GitHub Action to update dependencies...' | Write-Host -NoNewline
+              'OK' | Write-Host -ForegroundColor Green
+          }
+          catch 
+          {
+              $result = $_.Exception.Response.GetResponseStream()
+              $reader = New-Object System.IO.StreamReader($result)
+              $reader.BaseStream.Position = 0
+              $reader.DiscardBufferedData()
+              $responseBody = $reader.ReadToEnd();
+
+              throw "Error firing GitHub action: $responseBody"
+          }
+      }
