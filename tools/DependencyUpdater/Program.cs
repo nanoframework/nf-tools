@@ -397,7 +397,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 // counter for updates in this solution
-                int solutionUpdates = 0;
+                int solutionNuspecUpdates = 0;
 
                 // find ALL packages.config files inside the solution projects
                 var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
@@ -561,9 +561,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                             }
                             else
                             {
-                                // bump counters
+                                // bump counter
                                 updateCount++;
-                                solutionUpdates++;
 
                                 // build commit message
                                 string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
@@ -626,8 +625,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                                         nuspecStreamWriter.Close();
                                     }
 
-                                    // bump counter
+                                    // bump counters
                                     nuspecCounter++;
+                                    solutionNuspecUpdates++;
                                 }
                             }
                         }
@@ -635,8 +635,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 // if we are updating IoT binding repo, check if version need to be bumped
-                // only if there were any updates on this libary
-                if (solutionUpdates > 0
+                // only if there were any updates on the nuspec for this library
+                if (solutionNuspecUpdates > 0
                     && Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") is not null
                     && Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") == "nanoframework/nanoFramework.IoT.Device")
                 {
