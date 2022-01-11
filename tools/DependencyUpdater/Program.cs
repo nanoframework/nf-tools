@@ -27,6 +27,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         static readonly GitHubClient _octokitClient = new(new ProductHeaderValue("nanodu"));
         private static RunningEnvironment _runningEnvironment;
         private static string _gitHubAuth;
+        private static string[] _solutionsExclusionList;
 
         /// <summary>
         /// 
@@ -36,6 +37,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <param name="previewPackages">Use preview NuGet package versions.</param>
         /// <param name="solutionsToCheck">List of Solution(s) to update in the <paramref name="workingDirectory"/> directory.</param>
         /// <param name="reposToUpdate">List of repository(es) to update.</param>
+        /// <param name="exclusionList">List of solution names to exclude from the update. Comma separated, name only.</param>
         /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
         static void Main(
             string workingDirectory = null,
@@ -43,6 +45,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             bool previewPackages = true,
             bool solutionsToCheck = false,
             bool reposToUpdate = false,
+            string exclusionList = null,
             string[] args = null)
         {
             // sanity check 
@@ -103,6 +106,17 @@ namespace nanoFramework.Tools.DependencyUpdater
             // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
             _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"nfbot:{Environment.GetEnvironmentVariable("GITHUB_TOKEN")}"))}";
 #endif
+
+            // store exclusion list
+            try
+            {
+                _solutionsExclusionList = exclusionList is not null ? exclusionList.Split(",") : Array.Empty<string>();
+            }
+            catch
+            {
+                Console.WriteLine($"ERROR: exception parsing {nameof(exclusionList)}. Make sure to follow the instructions and pass a comma separated list of solution names.");
+                Environment.Exit(1);
+            }
 
             // choose work-flow
             if (solutionsToCheck)
@@ -318,11 +332,24 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 solutionFiles = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories);
             }
+            
+            // list solutions to check
+            Console.WriteLine("");
+            Console.WriteLine($"Solutions to check are:");
 
-            Console.WriteLine($"Solutions are:");
             foreach (var sln in solutionFiles)
             {
-                Console.WriteLine($"{Path.GetRelativePath(workingDirectory, sln)}");
+                Console.Write($"{Path.GetRelativePath(workingDirectory, sln)}");
+
+                // check if this on is in the exclusion list
+                if(_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(sln)))
+                {
+                    Console.WriteLine(" *** EXCLUDED ***");
+                }
+                else
+                {
+                    Console.WriteLine("");
+                }
             }
 
             // find NuGet.Config
@@ -342,7 +369,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             // setup list to nugets to skip update
             HashSet<PackageReference> nugetsToSkip = new();
 
-            foreach (var solutionFile in solutionFiles)
+            // go through each solution (filter out the ones in the exclusion list)
+            foreach (var solutionFile in solutionFiles.Where(s => !_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(s))))
             {
                 Console.WriteLine();
                 Console.WriteLine("************");
