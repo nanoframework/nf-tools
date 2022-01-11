@@ -332,7 +332,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 solutionFiles = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories);
             }
-            
+
             // list solutions to check
             Console.WriteLine("");
             Console.WriteLine($"Solutions to check are:");
@@ -342,7 +342,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.Write($"{Path.GetRelativePath(workingDirectory, sln)}");
 
                 // check if this on is in the exclusion list
-                if(_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(sln)))
+                if (_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(sln)))
                 {
                     Console.WriteLine(" *** EXCLUDED ***");
                 }
@@ -374,7 +374,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine();
                 Console.WriteLine("************");
-                Console.WriteLine($"Processing: '{solutionFile}'");
+                Console.WriteLine($"Processing solution '{solutionFile}'");
 
                 // look for nfproj
                 var slnFileContent = File.ReadAllText(solutionFile);
@@ -396,18 +396,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Environment.Exit(1);
                 }
 
-                // find ALL packages.config files in the solution projects
+                // find ALL packages.config files inside the solution projects
                 var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
 
                 Console.WriteLine($"Found {packageConfigs.Length} packages.config files...");
 
-                // for solutions and projects outside the working directory, need to specify repository path
-                string repositoryPath = "";
-
-                if (solutionPath != workingDirectory)
-                {
-                    repositoryPath = $"-RepositoryPath {Directory.GetParent(solutionFile).FullName}\\packages";
-                }
+                // specify repository path, just in case
+                string repositoryPath = $"-RepositoryPath {Directory.GetParent(solutionFile).FullName}\\packages";
 
                 foreach (var packageConfigFile in packageConfigs)
                 {
@@ -443,13 +438,16 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     var projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["project"].Value, SearchOption.AllDirectories).FirstOrDefault();
 
-                    Console.WriteLine($"Updating project {Path.GetFileNameWithoutExtension(projectPath)}");
+                    Console.WriteLine($"Updating project '{Path.GetFileNameWithoutExtension(projectPath)}'");
 
                     // load packages.config 
                     var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
 
                     // filter out Nerdbank.GitVersioning package and development dependencies
                     var packageList = packageReader.GetPackages().Where(p => !p.IsDevelopmentDependency && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
+
+                    // reset warning var
+                    string nuspecNotFoundMessage = "";
 
                     if (packageList.Any())
                     {
@@ -476,7 +474,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 continue;
                             }
 
-                            Console.WriteLine($"Attempting to update package {packageName}.{packageOriginVersion}");
+                            Console.WriteLine($"Checking updates for {packageName}.{packageOriginVersion}");
 
                             string updateResult = "";
 
@@ -560,15 +558,22 @@ namespace nanoFramework.Tools.DependencyUpdater
                             }
                             else
                             {
+                                // bump counter
+                                updateCount++;
+
+                                // build commit message
+                                string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
+
+                                // append to commit message, if not already reported
+                                if (!commitMessage.ToString().Contains(updateMessage))
+                                {
+                                    commitMessage.Append(updateMessage);
+                                }
+
                                 // if we are updating samples repo, OK to move to next one
                                 if (Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") is not null &&
                                     Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") == "nanoframework/Samples")
                                 {
-                                    updateCount++;
-
-                                    // build commit message
-                                    commitMessage.Append($"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>");
-
                                     // done here
                                     continue;
                                 }
@@ -582,9 +587,15 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // sanity check for nuspec file
                                 if (!File.Exists(nuspecFileName))
                                 {
-                                    Console.WriteLine("**********************************************");
-                                    Console.WriteLine($"INFO: Can't find nuspec file '{nuspecFileName}'");
-                                    Console.WriteLine("**********************************************");
+                                    if (!nuspecNotFoundMessage.Contains(nuspecFileName))
+                                    {
+                                        Console.WriteLine("**********************************************");
+                                        Console.WriteLine($"INFO: Can't find nuspec file '{nuspecFileName}'");
+                                        Console.WriteLine("**********************************************");
+
+                                        // store file, so the warning shows only once
+                                        nuspecNotFoundMessage += nuspecFileName;
+                                    }
 
                                     continue;
                                 }
@@ -603,22 +614,17 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr).Attributes["version"].Value = packageTargetVersion;
 
                                     // save back changes
-                                    nuspecFile.Save(nuspecFileName);
+                                    // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
+                                    // not being saved thus causing bogus updates on the nuspec content
+                                    using (StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName))
+                                    {
+
+                                        nuspecFile.Save(nuspecStreamWriter);
+                                        nuspecStreamWriter.Close();
+                                    }
 
                                     // bump counter
                                     nuspecCounter++;
-                                }
-
-                                // build commit message
-                                string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
-
-                                // append to commit message, if not already reported
-                                if (!commitMessage.ToString().Contains(updateMessage))
-                                {
-                                    commitMessage.Append(updateMessage);
-
-                                    // bump counter
-                                    updateCount++;
                                 }
                             }
                         }
@@ -636,8 +642,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // sanity check for no nuspecs found
                 if (nuspecCounter == 0)
                 {
-                    Console.WriteLine($"ERROR: No nuspecs files updated!");
-                    Environment.Exit(1);
+                    Console.WriteLine($"*** WARNING: No nuspecs files updated... Maybe worth checking ***");
                 }
 
                 Console.WriteLine($"INFO: {updateCount} packages updated");
