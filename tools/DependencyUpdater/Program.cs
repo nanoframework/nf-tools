@@ -581,7 +581,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
 
                                 // update nuspec
-                                // compose nuspec file
                                 var nuspecFileName = Path.Combine(solutionPath, $"{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec");
 
                                 // sanity check for nuspec file
@@ -629,6 +628,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                             }
                         }
                     }
+                }
+
+                // if we are updating IoT binding repo, check if version need to be bumped
+                if (Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") is not null &&
+                    Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") == "nanoframework/nanoFramework.IoT.Device")
+                {
+                    UpdatePackageVersion(solutionPath);
                 }
             }
 
@@ -720,6 +726,90 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
         }
 
+        private static void UpdatePackageVersion(string solutionPath)
+        {
+            // read nuspec file for this library
+            var nuspecFile = new XmlDocument();
+            nuspecFile.Load(Path.Combine(
+                solutionPath,
+                $"{Path.GetFileNameWithoutExtension(solutionPath)}.nuspec"));
+
+            XmlNamespaceManager nsmgr = new(nuspecFile.NameTable);
+            nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
+
+            // preview counter
+            int previewCounter = 0;
+
+            // update version
+            foreach(XmlElement packageDependency in nuspecFile.SelectNodes($"descendant::package:dependency", nsmgr))
+            {
+                if (packageDependency.Attributes["version"].Value.Contains("preview"))
+                {
+                    // bump counter
+                    previewCounter++;
+                }
+            }
+
+            string nbgvOutput = "";
+
+            if (previewCounter > 0)
+            {
+                // check if current version it's already preview
+                if(!RunNbgv("nbgv get-version -v \"NuGetPackageVersion\"", ref nbgvOutput, solutionPath))
+                {
+                    Console.WriteLine($"ERROR: failed to get version from nbgv. Make sure nbgv is installed.");
+                    Environment.Exit(1);
+                }
+ 
+                // is the current version already a preview
+                if(nbgvOutput.Contains("preview"))
+                {
+                    // yes, we're done here
+                    return;
+                }
+
+                // bump version and add preview
+                Version packageVersion = Version.Parse(nbgvOutput);
+                packageVersion = new Version(
+                    packageVersion.Major,
+                    packageVersion.Minor,
+                    packageVersion.Build + 1);
+
+                if (!RunNbgv($"nbgv set-version \"{packageVersion.ToString(3)}-preview.{{height}}\"", ref nbgvOutput, solutionPath))
+                {
+                    Console.WriteLine($"ERROR: failed to set version with nbgv. Make sure nbgv is installed.");
+                    Environment.Exit(1);
+                }
+
+                // done here
+            }
+            else
+            {
+                // check if current version has preview
+                if (!RunNbgv("nbgv get-version -v \"NuGetPackageVersion\"", ref nbgvOutput, solutionPath))
+                {
+                    Console.WriteLine($"ERROR: failed to get version from nbgv. Make sure nbgv is installed.");
+                    Environment.Exit(1);
+                }
+
+                // is the current version already a stable one
+                if (!nbgvOutput.Contains("preview"))
+                {
+                    // yes, we're done here
+                    return;
+                }
+
+                // set new version by removing preview
+                var newVersion = nbgvOutput.Substring(0, nbgvOutput.IndexOf("-preview"));
+
+                if (!RunNbgv($"nbgv set-version \"{newVersion}\"", ref nbgvOutput, solutionPath))
+                {
+                    Console.WriteLine($"ERROR: failed to set version with nbgv. Make sure nbgv is installed.");
+                    Environment.Exit(1);
+                }
+            }
+        }
+
         private static bool RunNugetCLI(string command, string arguments)
         {
             string dummy = null;
@@ -805,6 +895,41 @@ namespace nanoFramework.Tools.DependencyUpdater
             else
             {
                 Console.WriteLine($"ERROR: git CLI exited with code {cliResult.ExitCode}");
+                Console.WriteLine($"{cliResult.StandardError}");
+                return false;
+            }
+        }
+
+
+        private static bool RunNbgv(
+            string arguments,
+            ref string output,
+            string workingDirectory)
+        {
+            var cmd = Cli.Wrap("nbgv")
+                .WithArguments($"{arguments}")
+                .WithWorkingDirectory(workingDirectory)
+                .WithValidation(CommandResultValidation.None);
+
+            // setup cancellation token with a timeout of 1 minute
+            using var cts = new CancellationTokenSource();
+            cts.CancelAfter(TimeSpan.FromMinutes(1));
+
+            var cliResult = cmd.ExecuteBufferedAsync(cts.Token).GetAwaiter().GetResult();
+
+            if (cliResult.ExitCode == 0)
+            {
+                // grab output, if required
+                if (output is not null)
+                {
+                    output = cliResult.StandardOutput;
+                }
+
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"ERROR: nbgv exited with code {cliResult.ExitCode}");
                 Console.WriteLine($"{cliResult.StandardError}");
                 return false;
             }
