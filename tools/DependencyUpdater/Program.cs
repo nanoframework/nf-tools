@@ -396,6 +396,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Environment.Exit(1);
                 }
 
+                // counter for updates in this solution
+                int solutionUpdates = 0;
+
                 // find ALL packages.config files inside the solution projects
                 var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
 
@@ -558,8 +561,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                             }
                             else
                             {
-                                // bump counter
+                                // bump counters
                                 updateCount++;
+                                solutionUpdates++;
 
                                 // build commit message
                                 string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
@@ -631,8 +635,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 // if we are updating IoT binding repo, check if version need to be bumped
-                if (Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") is not null &&
-                    Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") == "nanoframework/nanoFramework.IoT.Device")
+                // only if there were any updates on this libary
+                if (solutionUpdates > 0
+                    && Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") is not null
+                    && Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") == "nanoframework/nanoFramework.IoT.Device")
                 {
                     UpdatePackageVersion(solutionPath);
                 }
@@ -741,7 +747,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             int previewCounter = 0;
 
             // update version
-            foreach(XmlElement packageDependency in nuspecFile.SelectNodes($"descendant::package:dependency", nsmgr))
+            foreach (XmlElement packageDependency in nuspecFile.SelectNodes($"descendant::package:dependency", nsmgr))
             {
                 if (packageDependency.Attributes["version"].Value.Contains("preview"))
                 {
@@ -755,14 +761,14 @@ namespace nanoFramework.Tools.DependencyUpdater
             if (previewCounter > 0)
             {
                 // check if current version it's already preview
-                if(!RunNbgv("nbgv get-version -v \"NuGetPackageVersion\"", ref nbgvOutput, solutionPath))
+                if (!RunNbgv("nbgv get-version -v \"NuGetPackageVersion\"", ref nbgvOutput, solutionPath))
                 {
                     Console.WriteLine($"ERROR: failed to get version from nbgv. Make sure nbgv is installed.");
                     Environment.Exit(1);
                 }
- 
+
                 // is the current version already a preview
-                if(nbgvOutput.Contains("preview"))
+                if (nbgvOutput.Contains("preview"))
                 {
                     // yes, we're done here
                     return;
