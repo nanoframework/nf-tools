@@ -443,16 +443,17 @@ namespace nanoFramework.Tools.DependencyUpdater
                         projectPathInSln += "\\\\";
                     }
 
-                    var match = Regex.Match(slnFileContent, $"(?>\\\", \\\"{projectPathInSln})(?'project'[a-zA-Z0-9_.-]+.nfproj)(\\\")");
+                    var match = Regex.Match(slnFileContent, $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")");
                     if (!match.Success)
                     {
                         Console.WriteLine($"INFO: couldn't find a project matching this packages.config. *** SKIPPING ***.");
                         continue;
                     }
 
-                    var projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["project"].Value, SearchOption.AllDirectories).FirstOrDefault();
+                    var projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
+                    var projectName = match.Groups["projectname"].Value;
 
-                    Console.WriteLine($"Updating project '{Path.GetFileNameWithoutExtension(projectPath)}'");
+                    Console.WriteLine($"Updating project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
 
                     // load packages.config 
                     var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
@@ -600,46 +601,52 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // sanity check for nuspec file
                                 if (!File.Exists(nuspecFileName))
                                 {
-                                    if (!nuspecNotFoundMessage.Contains(nuspecFileName))
+                                    // try again with project name
+                                    nuspecFileName = Path.Combine(solutionPath, $"{projectName}.nuspec");
+
+                                    if (!File.Exists(nuspecFileName))
                                     {
-                                        Console.WriteLine("**********************************************");
-                                        Console.WriteLine($"INFO: Can't find nuspec file '{nuspecFileName}'");
-                                        Console.WriteLine("**********************************************");
 
-                                        // store file, so the warning shows only once
-                                        nuspecNotFoundMessage += nuspecFileName;
+                                        if (!nuspecNotFoundMessage.Contains(nuspecFileName))
+                                        {
+                                            Console.WriteLine("**********************************************");
+                                            Console.WriteLine($"INFO: Can't find nuspec file '{nuspecFileName}'");
+                                            Console.WriteLine("**********************************************");
+
+                                            // store file, so the warning shows only once
+                                            nuspecNotFoundMessage += nuspecFileName;
+                                        }
+
+                                        continue;
                                     }
-
-                                    continue;
                                 }
-                                else
+
+                                Console.WriteLine($"Updating nuspec file '{nuspecFileName}'");
+
+                                // load nuspec file content
+                                var nuspecFile = new XmlDocument();
+                                nuspecFile.Load(nuspecFileName);
+
+                                XmlNamespaceManager nsmgr = new XmlNamespaceManager(nuspecFile.NameTable);
+                                nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
+
+                                // update version
+                                nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr).Attributes["version"].Value = packageTargetVersion;
+
+                                // save back changes
+                                // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
+                                // not being saved thus causing bogus updates on the nuspec content
+                                using (StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName))
                                 {
-                                    Console.WriteLine($"Updating nuspec file '{nuspecFileName}'");
 
-                                    // load nuspec file content
-                                    var nuspecFile = new XmlDocument();
-                                    nuspecFile.Load(nuspecFileName);
-
-                                    XmlNamespaceManager nsmgr = new XmlNamespaceManager(nuspecFile.NameTable);
-                                    nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
-
-                                    // update version
-                                    nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr).Attributes["version"].Value = packageTargetVersion;
-
-                                    // save back changes
-                                    // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
-                                    // not being saved thus causing bogus updates on the nuspec content
-                                    using (StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName))
-                                    {
-
-                                        nuspecFile.Save(nuspecStreamWriter);
-                                        nuspecStreamWriter.Close();
-                                    }
-
-                                    // bump counters
-                                    nuspecCounter++;
-                                    solutionNuspecUpdates++;
+                                    nuspecFile.Save(nuspecStreamWriter);
+                                    nuspecStreamWriter.Close();
                                 }
+
+                                // bump counters
+                                nuspecCounter++;
+                                solutionNuspecUpdates++;
+                                
                             }
                         }
                     }
