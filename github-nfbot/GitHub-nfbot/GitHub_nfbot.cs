@@ -1272,6 +1272,10 @@ namespace nanoFramework.Tools.GitHub
                 Replace("[x ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
                 Replace("[ X]", "[x]", StringComparison.InvariantCultureIgnoreCase).
                 Replace("[X ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
+                Replace("x[ ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
+                Replace("X[ ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
+                Replace(" x[ ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
+                Replace(" X[ ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
                 Replace("[]", "[ ]", StringComparison.InvariantCultureIgnoreCase);
 
             if (prBodyHash != prBodyFixed.GetHashCode())
