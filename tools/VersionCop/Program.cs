@@ -196,7 +196,7 @@ class Program
                     return 1;
                 }
 
-                Console.WriteLine($"INFO: AssemblyName is {assemblyName}");
+                Console.WriteLine($"INFO: AssemblyName is '{assemblyName}'");
 
                 // reset flags
                 projectCheckFailed = false;
@@ -278,7 +278,7 @@ class Program
                     {
                         Console.WriteLine();
                         Console.WriteLine("*****************************************************************");
-                        Console.WriteLine($"Couldn't find it in {Path.GetFileNameWithoutExtension(projectToCheck)}");
+                        Console.WriteLine($"Couldn't find it in '{Path.GetFileName(projectToCheck)}'");
                         Console.WriteLine("*****************************************************************");
                         Console.WriteLine();
                     }
@@ -341,7 +341,7 @@ class Program
                             {
                                 Console.WriteLine();
                                 Console.WriteLine("*****************************************************************");
-                                Console.WriteLine($"Couldn't find it in {Path.GetFileNameWithoutExtension(nuspecFile)}");
+                                Console.WriteLine($"Couldn't find it in '{Path.GetFileName(nuspecFile)}'");
                                 Console.WriteLine($"And it is not a dependency on any of the listed dependency packages");
                                 Console.WriteLine("*****************************************************************");
                                 Console.WriteLine();
