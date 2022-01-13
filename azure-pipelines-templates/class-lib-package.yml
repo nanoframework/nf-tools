@@ -7,8 +7,6 @@ parameters:
 
 steps:
 
-- template: download-logo.yml
-
 - task: NuGetCommand@2
   condition: >-
     and(
