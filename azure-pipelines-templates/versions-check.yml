@@ -40,7 +40,7 @@ steps:
 
         echo "##vso[task.setvariable variable=SolutionToCheck;isOutput=true]$SolutionToCheck" 
 
-  - script: nanovc --working-directory $(System.DefaultWorkingDirectory) --solution-to-check $(PrepVersionCop.SolutionToCheck) --nuspec-file $(nugetPackageName).nuspec
+  - script: nanovc --working-directory $(System.DefaultWorkingDirectory) --solution-to-check $(PrepVersionCop.SolutionToCheck)
     displayName: 'Check versions match'
     condition: >-
       and(
