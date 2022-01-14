@@ -100,11 +100,7 @@ class Program
         // read nuspec file content
         NuspecReader nuspecReader = null;
 
-        if (nuspecFile is null)
-        {
-            Console.WriteLine("INFO: No nuspec file in the build");
-        }
-        else
+        if (nuspecFile is not null)
         {
             nuspecReader = new NuspecReader(XDocument.Load(nuspecFile));
         }
@@ -142,7 +138,7 @@ class Program
                 projectPathInSln += "\\\\";
             }
 
-            var match = Regex.Match(slnFileContent, $"(?>\\\", \\\"{projectPathInSln})(?'project'[a-zA-Z0-9_.]+.nfproj)(\\\")");
+            var match = Regex.Match(slnFileContent, $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")");
             if (!match.Success)
             {
                 Console.WriteLine($"INFO: couldn't find a project matching this packages.config. *** SKIPPING ***.");
@@ -150,15 +146,42 @@ class Program
             }
 
             Console.WriteLine();
-            Console.WriteLine($"Checking '" + match.Groups["project"] + "' project file...");
+            Console.WriteLine($"Checking '" + match.Groups["projectname"] + "' project file...");
 
             // compose project path
-            var projectToCheck = Path.Combine(projectPath.FullName, match.Groups["project"].Value);
+            var projectToCheck = Directory.GetFiles(workingDirectory, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
+            var projectName = match.Groups["projectname"].Value;
 
             Console.WriteLine($"INFO: Reading packages.config for '{Path.GetFileNameWithoutExtension(projectToCheck)}'");
 
-            // set chekc flag
+            // set check flag
             bool checkNuspec = false;
+
+            // try to find nuspec for this in case one wasn't specified?
+            if (nuspecFile is null)
+            {
+                var nuspecFileName = Path.Combine(workingDirectory, $"{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec");
+
+                if (File.Exists(nuspecFileName))
+                {
+                    nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
+                }
+                else
+                {
+                    // try again with project name
+                    nuspecFileName = Path.Combine(workingDirectory, $"{projectName}.nuspec");
+
+                    if (File.Exists(nuspecFileName))
+                    {
+                        nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
+                    }
+                    else
+                    {
+                        // make sure nuspec reader is null
+                        nuspecReader = null;
+                    }
+                }
+            }
 
             Console.WriteLine("INFO: Building package list...");
 
