@@ -114,13 +114,14 @@ namespace nanoFramework.Tools.GitHub
             // process PR (make sure it's not a PR review)
             if (payload.pull_request != null && payload.review == null)
             {
+                // get PR
+                Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+
                 // PR opened or edited
                 if (payload.action == "opened" ||
                     payload.action == "edited")
                 {
                     log.LogInformation($"Processing PR #{payload.pull_request.number}:{payload.pull_request.title} submitted by {payload.pull_request.user.login}");
-
-                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
 
                     ////////////////////////////////////////////////////////////
                     // processing exceptions
@@ -221,9 +222,6 @@ namespace nanoFramework.Tools.GitHub
                 {
                     log.LogInformation($"Processing PR #{payload.pull_request.number} closed event...");
 
-                    // get PR
-                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
-
                     // check for PR authored by nfbot or git-actions bot
                     if (pr.User.Login == "nfbot" ||
                         pr.User.Login == "github-actions[bot]")
@@ -311,6 +309,12 @@ namespace nanoFramework.Tools.GitHub
                             // done here
                             break;
                         }
+                    }
+
+                    if (branchesClangFix.Any())
+                    {
+                        // remove nfbot comments with the code style fixes
+                        await RemovenfbotCommentsAsync(pr, log);
                     }
                 }
             }
