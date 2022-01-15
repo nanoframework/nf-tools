@@ -27,13 +27,18 @@ class Program
     {
         Console.WriteLine($"Solution is: '{solutionToCheck}'");
         Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
-        Console.WriteLine($"Nuspec file is: '{nuspecFile ?? "null"}'");
+        Console.WriteLine($"Nuspec file is: '{nuspecFile ?? "*** NONE PROVIDED ***"}'");
 
         // sanity checks
         if (workingDirectory is not null
             && !Directory.Exists(workingDirectory))
         {
+            Console.ForegroundColor = ConsoleColor.Red;
+
             Console.WriteLine($"ERROR: directory '{workingDirectory}' does not exist!");
+
+            Console.ForegroundColor = ConsoleColor.White;
+
             return 1;
         }
 
@@ -48,7 +53,12 @@ class Program
             }
             else
             {
+                Console.ForegroundColor = ConsoleColor.Red;
+
                 Console.WriteLine($"ERROR: solution file '{solutionToCheck}' does not exist!");
+
+                Console.ForegroundColor = ConsoleColor.White;
+
                 return 1;
             }
         }
@@ -65,7 +75,12 @@ class Program
             }
             else
             {
+                Console.ForegroundColor = ConsoleColor.Red;
+
                 Console.WriteLine($"ERROR: nuspec file '{solutionToCheck}' does not exist!");
+
+                Console.ForegroundColor = ConsoleColor.White;
+
                 return 1;
             }
         }
@@ -93,7 +108,12 @@ class Program
         // check for nfproj
         if (!File.ReadAllText(solutionToCheck).Contains(".nfproj"))
         {
+            Console.ForegroundColor = ConsoleColor.Red;
+
             Console.WriteLine($"ERROR: solution file '{solutionToCheck}' doesn't have any nfproj file??");
+
+            Console.ForegroundColor = ConsoleColor.White;
+
             return 1;
         }
 
@@ -141,7 +161,12 @@ class Program
             var match = Regex.Match(slnFileContent, $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")");
             if (!match.Success)
             {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+
                 Console.WriteLine($"INFO: couldn't find a project matching this packages.config. *** SKIPPING ***.");
+
+                Console.ForegroundColor = ConsoleColor.White;
+
                 continue;
             }
 
@@ -157,26 +182,43 @@ class Program
             // set check flag
             bool checkNuspec = false;
 
-            // try to find nuspec for this in case one wasn't specified?
+            // try to find nuspec for this in case none was specified
             if (nuspecFile is null)
             {
-                var nuspecFileName = Path.Combine(workingDirectory, $"{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec");
+                var nuspecFileName = Directory.GetFiles(workingDirectory, $"*{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec", SearchOption.TopDirectoryOnly).FirstOrDefault();
 
-                if (File.Exists(nuspecFileName))
+                if (nuspecFileName is not null)
                 {
+                    // report finding
+                    Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
+
+                    // load nuspec file
                     nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
                 }
                 else
                 {
                     // try again with project name
-                    nuspecFileName = Path.Combine(workingDirectory, $"{projectName}.nuspec");
+                    nuspecFileName = Directory.GetFiles(workingDirectory, $"*{projectName}.nuspec", SearchOption.TopDirectoryOnly).FirstOrDefault();
 
-                    if (File.Exists(nuspecFileName))
+                    if (nuspecFileName is not null)
                     {
+                        // report finding
+                        Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
+                        
+                        // load nuspec file
                         nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
                     }
                     else
                     {
+                        // better report this...
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+
+                        Console.WriteLine("INFO: couldn't find a nuspec file for the project...");
+                        Console.WriteLine($"INFO: tried '*{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec'");
+                        Console.WriteLine($"INFO: and also '*{projectName}.nuspec'");
+
+                        Console.ForegroundColor = ConsoleColor.White;
+
                         // make sure nuspec reader is null
                         nuspecReader = null;
                     }
@@ -215,7 +257,12 @@ class Program
                 }
                 else
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
+
                     Console.WriteLine("ERROR: couldn't read assembly name from project file");
+
+                    Console.ForegroundColor = ConsoleColor.White;
+
                     return 1;
                 }
 
@@ -299,15 +346,23 @@ class Program
 
                     if (projectCheckFailed)
                     {
+                        Console.ForegroundColor = ConsoleColor.Red;
+
                         Console.WriteLine();
                         Console.WriteLine("*****************************************************************");
                         Console.WriteLine($"Couldn't find it in '{Path.GetFileName(projectToCheck)}'");
                         Console.WriteLine("*****************************************************************");
                         Console.WriteLine();
+
+                        Console.ForegroundColor = ConsoleColor.White;
                     }
                     else
                     {
+                        Console.ForegroundColor = ConsoleColor.Green;
+
                         Console.Write("nfproj OK! ");
+
+                        Console.ForegroundColor = ConsoleColor.White;
                     }
 
                     // nuspec check outcome, if any
@@ -362,12 +417,16 @@ class Program
 
                             if (!dependencyFound)
                             {
+                                Console.ForegroundColor = ConsoleColor.Red;
+
                                 Console.WriteLine();
                                 Console.WriteLine("*****************************************************************");
                                 Console.WriteLine($"Couldn't find it in '{Path.GetFileName(nuspecFile)}'");
                                 Console.WriteLine($"And it is not a dependency on any of the listed dependency packages");
                                 Console.WriteLine("*****************************************************************");
                                 Console.WriteLine();
+
+                                Console.ForegroundColor = ConsoleColor.White;
 
                                 // flag failed check
                                 nuspecCheckFailed = true;
@@ -376,21 +435,34 @@ class Program
                             {
                                 // this is a dependency from one of the declared dependencies
                                 // it's OK that's not listed as a dependency
-                                Console.WriteLine(" NOT listed in nuspec, but it's OK");
+
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+
+                                Console.WriteLine(" NOT listed in nuspec, but that's OK");
+
+                                Console.ForegroundColor = ConsoleColor.White;
 
                                 nuspecPackageMissing = false;
                             }
                         }
                         else
                         {
+                            Console.ForegroundColor = ConsoleColor.Green;
+
                             Console.WriteLine("nuspec OK! ");
+
+                            Console.ForegroundColor = ConsoleColor.White;
                         }
                     }
                 }
             }
             else
             {
+                Console.ForegroundColor = ConsoleColor.Red;
+
                 Console.WriteLine("ERROR: couldn't identify any nuget packages to check for??");
+
+                Console.ForegroundColor = ConsoleColor.White;
                 return 1;
             }
 
@@ -406,11 +478,15 @@ class Program
 
         if (!nuspecChecked)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
+
             Console.WriteLine();
             Console.WriteLine("********************************************************************");
             Console.WriteLine("nuspec wasn't checked!! Verify package ID/Title and/or assembly name");
             Console.WriteLine("********************************************************************");
             Console.WriteLine();
+
+            Console.ForegroundColor = ConsoleColor.White;
 
             // exit with error code
             return 1;
