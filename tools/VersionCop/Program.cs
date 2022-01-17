@@ -404,7 +404,8 @@ class Program
                                             new NullLogger(),
                                             CancellationToken.None).Result;
 
-                                        if (dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
+                                        if (dependencyInfo is not null 
+                                            && dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
                                         {
                                             dependencyFound = true;
 
