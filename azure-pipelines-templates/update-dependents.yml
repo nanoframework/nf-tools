@@ -18,14 +18,10 @@ steps:
     )
   env:
     REPOS_TO_UPDATE: ${{ parameters.repositoriesToUpdate }}
+    GITHUB_TOKEN: $(GitHubToken)
   inputs:
     targetType: 'inline'
     script: |
-
-      # because it can take sometime for the package to become available on the NuGet providers
-      # need to hang here for 1 minutes (1 * 60)
-      "Waiting 1 minutes to let package process flow in Azure Artifacts feed..." | Write-Host
-      Start-Sleep -Seconds 60 
 
       $librariesToUpdate = $env:REPOS_TO_UPDATE.Split([environment]::NewLine)
     
@@ -36,7 +32,7 @@ steps:
 
           "" | Write-Host
           "*******************************" | Write-Host
-          "Firing update for $library" | Write-Host
+          "Firing update for '$library'" | Write-Host
 
           $requestContent = @{event_type="update-dependencies"} | ConvertTo-Json
           $requestUrl = "https://api.github.com/repos/nanoframework/$library/dispatches"
@@ -44,7 +40,7 @@ steps:
 
           # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
           # 'encoded token' is the Base64 of the string "nfbot:personal-token"
-          $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$(GitHubToken)"))))"
+          $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$env:GITHUB_TOKEN"))))"
 
           $headers = @{}
           $headers.Add("Authorization","$auth")
