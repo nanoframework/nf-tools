@@ -327,11 +327,31 @@ steps:
   inputs:
     sourceFolder: $(Build.SourcesDirectory)
     Contents: |
-      $(nugetPackageName)*.nupkg
-      $(nugetPackageName)*.snupkg
+      *$(nugetPackageName)*.nupkg
+      *$(nugetPackageName)*.snupkg
       CHANGELOG.md
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
+
+- task: PowerShell@2
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
+  displayName: Check deployable artifacts
+  inputs:
+    targetType: 'inline'
+    script: |
+
+      $artifacts = (Get-ChildItem -Path "$env:Build_ArtifactStagingDirectory" -Recurse)
+
+      if ($artifacts.Count -eq 0)
+      {
+          Write-Error "No deployable artifacts found!"
+          Exit 1
+      }
 
 - task: DotNetCoreCLI@2
   displayName: Install SignTool tool
@@ -437,7 +457,7 @@ steps:
     title: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
     releaseNotesSource: inline
     releaseNotesInline: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
-    assets: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
+    assets: '$(Build.ArtifactStagingDirectory)/*$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
     assetUploadMode: replace
     isPreRelease: true
     addChangeLog: false
@@ -460,7 +480,7 @@ steps:
     title: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
     releaseNotesSource: inline
     releaseNotesInline: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
-    assets: '$(Build.ArtifactStagingDirectory)/$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
+    assets: '$(Build.ArtifactStagingDirectory)/*$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
     assetUploadMode: replace
     isPreRelease: false
     addChangeLog: false

@@ -132,6 +132,26 @@ jobs:
       TargetFolder: '$(Build.ArtifactStagingDirectory)'
       flattenFolders: true
 
+  - task: PowerShell@2
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['StartReleaseCandidate'], false),
+        not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      )
+    displayName: Check deployable artifacts
+    inputs:
+      targetType: 'inline'
+      script: |
+
+        $artifacts = (Get-ChildItem -Path "$env:Build_ArtifactStagingDirectory" -Recurse)
+
+        if ($artifacts.Count -eq 0)
+        {
+            Write-Error "No deployable artifacts found!"
+            Exit 1
+        }
+
   - task: DotNetCoreCLI@2
     displayName: Install SignTool tool
     condition: succeeded()
@@ -232,6 +252,26 @@ jobs:
         **\nanodu*.nupkg
       TargetFolder: '$(Build.ArtifactStagingDirectory)'
       flattenFolders: true
+
+  - task: PowerShell@2
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['StartReleaseCandidate'], false),
+        not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      )
+    displayName: Check deployable artifacts
+    inputs:
+      targetType: 'inline'
+      script: |
+
+        $artifacts = (Get-ChildItem -Path "$env:Build_ArtifactStagingDirectory" -Recurse)
+
+        if ($artifacts.Count -eq 0)
+        {
+            Write-Error "No deployable artifacts found!"
+            Exit 1
+        }
 
   - task: DotNetCoreCLI@2
     displayName: Install SignTool tool
