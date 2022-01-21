@@ -452,8 +452,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // load packages.config 
                     var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
 
-                    // filter out Nerdbank.GitVersioning package and development dependencies
-                    var packageList = packageReader.GetPackages().Where(p => !p.IsDevelopmentDependency && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
+                    // filter out Nerdbank.GitVersioning package and development dependencies (except our Test Framework)
+                    var packageList = packageReader.GetPackages()
+                        .Where(p => (!p.IsDevelopmentDependency || p.PackageIdentity.Id == "nanoFramework.TestFramework")
+                                    && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
 
                     // reset warning var
                     string nuspecNotFoundMessage = "";
@@ -588,6 +590,17 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 }
 
                                 Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
+
+                                // if this is the Test Framework, need to update the nfproj file too
+                                if(packageName == "nanoFramework.TestFramework")
+                                {
+                                    // read nfproj file
+                                    var nfprojFileContent = File.ReadAllText(projectToUpdate);
+
+                                    var updatedProjContent = Regex.Replace(nfprojFileContent,  $"(?<=packages\\\\nanoFramework\\.TestFramework\\.)(?'version'\\d+\\.\\d+\\.\\d+)(?=\\\\build\\\\)",  packageTargetVersion, RegexOptions.ExplicitCapture);
+
+                                    File.WriteAllText(projectToUpdate, updatedProjContent);
+                                }
 
                                 // try to find nuspec to update it
                                 string nuspecFileName = null;
