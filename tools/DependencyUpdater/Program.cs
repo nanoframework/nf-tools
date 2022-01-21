@@ -610,9 +610,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                                         nuspecFileName = candidateNuspecFiles.FirstOrDefault();
                                     }
 
-                                    if (!File.Exists(nuspecFileName))
+                                    if (nuspecFileName is null)
                                     {
-
                                         if (!nuspecNotFoundMessage.Contains(nuspecFileName))
                                         {
                                             Console.WriteLine("**********************************************");
@@ -627,7 +626,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
                                 }
 
-                                Console.WriteLine($"Updating nuspec file '{nuspecFileName}'");
+                                Console.WriteLine($"Updating nuspec file '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
 
                                 // load nuspec file content
                                 var nuspecFile = new XmlDocument();
