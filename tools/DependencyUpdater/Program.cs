@@ -592,12 +592,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
 
                                 // if this is the Test Framework, need to update the nfproj file too
-                                if(packageName == "nanoFramework.TestFramework")
+                                if (packageName == "nanoFramework.TestFramework")
                                 {
                                     // read nfproj file
                                     var nfprojFileContent = File.ReadAllText(projectToUpdate);
 
-                                    var updatedProjContent = Regex.Replace(nfprojFileContent,  $"(?<=packages\\\\nanoFramework\\.TestFramework\\.)(?'version'\\d+\\.\\d+\\.\\d+)(?=\\\\build\\\\)",  packageTargetVersion, RegexOptions.ExplicitCapture);
+                                    var updatedProjContent = Regex.Replace(nfprojFileContent, $"(?<=packages\\\\nanoFramework\\.TestFramework\\.)(?'version'\\d+\\.\\d+\\.\\d+)(?=\\\\build\\\\)", packageTargetVersion, RegexOptions.ExplicitCapture);
 
                                     File.WriteAllText(projectToUpdate, updatedProjContent);
                                 }
@@ -625,12 +625,15 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                     if (nuspecFileName is null)
                                     {
-                                        Console.WriteLine("**********************************************");
-                                        Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
-                                        Console.WriteLine("**********************************************");
+                                        if (!nuspecNotFoundMessage.Contains(projectToUpdate))
+                                        {
+                                            Console.WriteLine("**********************************************");
+                                            Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
+                                            Console.WriteLine("**********************************************");
 
-                                        // store project name, so the warning shows only once
-                                        nuspecNotFoundMessage += projectToUpdate;
+                                            // store project name, so the warning shows only once
+                                            nuspecNotFoundMessage += projectToUpdate;
+                                        }
 
                                         continue;
                                     }
