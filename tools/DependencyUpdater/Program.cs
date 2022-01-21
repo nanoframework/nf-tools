@@ -777,11 +777,12 @@ namespace nanoFramework.Tools.DependencyUpdater
 
         private static void UpdatePackageVersion(string solutionPath)
         {
-            // read nuspec file for this library
+            // read nuspec file for this library, it's the only one at solution level
             var nuspecFile = new XmlDocument();
-            nuspecFile.Load(Path.Combine(
+            nuspecFile.Load(Directory.GetFiles(
                 solutionPath,
-                $"{Path.GetFileNameWithoutExtension(solutionPath)}.nuspec"));
+                "*.nuspec",
+                SearchOption.TopDirectoryOnly).FirstOrDefault());
 
             XmlNamespaceManager nsmgr = new(nuspecFile.NameTable);
             nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
