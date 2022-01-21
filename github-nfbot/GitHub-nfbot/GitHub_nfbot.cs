@@ -249,7 +249,7 @@ namespace nanoFramework.Tools.GitHub
                                 payload.repository.name.ToString(),
                                 new PullRequestRequest() { State = ItemStateFilter.Open });
 
-                            log.LogInformation($"Found {openPrs} open PRs");
+                            log.LogInformation($"Found {openPrs.Count} open PRs");
 
                             // filter PRs created by our bots, only about version updates and earlier than the current PR 
                             foreach (var pull in openPrs.Where(
@@ -264,7 +264,7 @@ namespace nanoFramework.Tools.GitHub
                                     _gitOwner,
                                     payload.repository.name.ToString(),
                                     pull.Number,
-                                    new PullRequestUpdate() { State = ItemState.Open });
+                                    new PullRequestUpdate() { State = ItemState.Closed });
                             }
                         }
                     }
