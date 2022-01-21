@@ -132,12 +132,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
             else
             {
-                // because it can take sometime for the package to become available on the NuGet providers
-                // need to hang here for 1 minute
-                Console.WriteLine("Waiting 1 minute to let package process flow in Azure Artifacts feed...");
-
-                Thread.Sleep((int)TimeSpan.FromMinutes(1).TotalMilliseconds);
-
                 if (_runningEnvironment == RunningEnvironment.AzurePipelines)
                 {
                     // need this to remove definition of redirect stdErr (only on Azure Pipelines image fo VS2019)
@@ -573,9 +567,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                             }
                             else
                             {
-                                // bump counter
-                                updateCount++;
-
                                 // build commit message
                                 string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
 
@@ -583,6 +574,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 if (!commitMessage.ToString().Contains(updateMessage))
                                 {
                                     commitMessage.Append(updateMessage);
+
+                                    // bump counter
+                                    updateCount++;
                                 }
 
                                 // if we are updating samples repo, OK to move to next one
@@ -595,14 +589,26 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                 Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
 
-                                // update nuspec
-                                var nuspecFileName = Path.Combine(solutionPath, $"{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec");
+                                // try to find nuspec to update it
+                                string nuspecFileName = null;
+
+                                var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec");
+                                if (candidateNuspecFiles.Any())
+                                {
+                                    // take 1st
+                                    nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                                }
 
                                 // sanity check for nuspec file
-                                if (!File.Exists(nuspecFileName))
+                                if (nuspecFileName is null)
                                 {
                                     // try again with project name
-                                    nuspecFileName = Path.Combine(solutionPath, $"{projectName}.nuspec");
+                                    candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName}.nuspec");
+                                    if (candidateNuspecFiles.Any())
+                                    {
+                                        // take 1st
+                                        nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                                    }
 
                                     if (!File.Exists(nuspecFileName))
                                     {
@@ -646,7 +652,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // bump counters
                                 nuspecCounter++;
                                 solutionNuspecUpdates++;
-                                
+
                             }
                         }
                     }
