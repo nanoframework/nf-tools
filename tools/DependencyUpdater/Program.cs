@@ -626,8 +626,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
                                 }
 
-                                Console.WriteLine($"Updating nuspec file '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
-
                                 // load nuspec file content
                                 var nuspecFile = new XmlDocument();
                                 nuspecFile.Load(nuspecFileName);
@@ -635,17 +633,26 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 XmlNamespaceManager nsmgr = new XmlNamespaceManager(nuspecFile.NameTable);
                                 nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
 
-                                // update version
-                                nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr).Attributes["version"].Value = packageTargetVersion;
-
-                                // save back changes
-                                // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
-                                // not being saved thus causing bogus updates on the nuspec content
-                                using (StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName))
+                                // update version, if this dependency is listed
+                                var dependency = nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr);
+                                if (dependency is not null)
                                 {
+                                    dependency.Attributes["version"].Value = packageTargetVersion;
 
-                                    nuspecFile.Save(nuspecStreamWriter);
-                                    nuspecStreamWriter.Close();
+                                    Console.WriteLine($"Updating nuspec file '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
+
+                                    // save back changes
+                                    // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
+                                    // not being saved thus causing bogus updates on the nuspec content
+                                    using (StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName))
+                                    {
+                                        nuspecFile.Save(nuspecStreamWriter);
+                                        nuspecStreamWriter.Close();
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"INFO: {packageName} not listed in '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
                                 }
 
                                 // bump counters
