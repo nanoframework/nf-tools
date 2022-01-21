@@ -88,6 +88,9 @@ namespace nanoFramework.Tools.GitHub
         private const string _labelInvalidName = "invalid";
         private const string _labelUpForGrabs = "up-for-grabs";
 
+
+        private const string _tagVersionUpdate = "[version update]";
+
         // DevOps client
         private const string _nfOrganizationUrl = "https://dev.azure.com/nanoframework";
 
@@ -143,7 +146,7 @@ namespace nanoFramework.Tools.GitHub
                     {
                         string prBody = payload.pull_request.body;
 
-                        if (prBody.Contains("[version update]"))
+                        if (prBody.Contains(_tagVersionUpdate))
                         {
                             // this is a [version update] commit
 
@@ -234,6 +237,30 @@ namespace nanoFramework.Tools.GitHub
                         log.LogInformation($"Deleting URL \"heads/{originBranch}\"");
 
                         await _octokitClient.Git.Reference.Delete(_gitOwner, payload.repository.name.ToString(), $"heads/{originBranch}");
+
+                        // was this PR updating versions?
+                        if(pr.Body.Contains(_tagVersionUpdate))
+                        {
+                            // grab all other open PRs at this repo
+                            IReadOnlyList<Octokit.PullRequest> openPrs = await _octokitClient.PullRequest.GetAllForRepository(
+                                _gitOwner,
+                                payload.repository.name.ToString(),
+                                new PullRequestRequest() {State = ItemStateFilter.Open});
+
+                            // filter PRs created by our bots, only about version updates and earlier than the current PR 
+                            foreach(var pull in openPrs.Where(
+                                p => (p.User.Login == "nfbot" 
+                                || pr.User.Login == "github-actions[bot]") 
+                                && p.Body.Contains(_tagVersionUpdate)
+                                && p.Number < pr.Number))
+                            {
+                                await _octokitClient.PullRequest.Update(
+                                    _gitOwner,
+                                    payload.repository.name.ToString(),
+                                    pull.Number,
+                                    new PullRequestUpdate() { State = ItemState.Open });
+                            }
+                        }
                     }
 
                     // developer note: hang in there a few seconds before checking if the PR was merged
@@ -520,7 +547,7 @@ namespace nanoFramework.Tools.GitHub
                     // get PR
                     Octokit.PullRequest pr = await _octokitClient.PullRequest.Get((long)payload.repository.id, matchingPr.Number);
 
-                    bool isVersionUpdate = pr.Body.Contains("[version update]");
+                    bool isVersionUpdate = pr.Body.Contains(_tagVersionUpdate);
                     bool isReleaseCandidate = pr.Body.Contains("[release candidate]");
 
                     // check if PR it's a version update
