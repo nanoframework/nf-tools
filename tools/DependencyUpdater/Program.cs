@@ -612,15 +612,12 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                     if (nuspecFileName is null)
                                     {
-                                        if (!nuspecNotFoundMessage.Contains(nuspecFileName))
-                                        {
-                                            Console.WriteLine("**********************************************");
-                                            Console.WriteLine($"INFO: Can't find nuspec file '{nuspecFileName}'");
-                                            Console.WriteLine("**********************************************");
+                                        Console.WriteLine("**********************************************");
+                                        Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
+                                        Console.WriteLine("**********************************************");
 
-                                            // store file, so the warning shows only once
-                                            nuspecNotFoundMessage += nuspecFileName;
-                                        }
+                                        // store project name, so the warning shows only once
+                                        nuspecNotFoundMessage += projectToUpdate;
 
                                         continue;
                                     }
