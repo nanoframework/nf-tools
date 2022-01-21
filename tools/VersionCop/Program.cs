@@ -179,13 +179,15 @@ class Program
 
             Console.WriteLine($"INFO: Reading packages.config for '{Path.GetFileNameWithoutExtension(projectToCheck)}'");
 
+            string nuspecFileName = string.Empty;
+
             // set check flag
             bool checkNuspec = false;
 
             // try to find nuspec for this in case none was specified
             if (nuspecFile is null)
             {
-                var nuspecFileName = Directory.GetFiles(workingDirectory, $"*{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                nuspecFileName = Directory.GetFiles(workingDirectory, $"*{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec", SearchOption.TopDirectoryOnly).FirstOrDefault();
 
                 if (nuspecFileName is not null)
                 {
@@ -193,7 +195,7 @@ class Program
                     Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
 
                     // load nuspec file
-                    nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
+                    nuspecReader = GetNuspecReader(nuspecFileName);
                 }
                 else
                 {
@@ -204,9 +206,9 @@ class Program
                     {
                         // report finding
                         Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
-                        
+
                         // load nuspec file
-                        nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
+                        nuspecReader = GetNuspecReader(nuspecFileName);
                     }
                     else
                     {
@@ -230,7 +232,7 @@ class Program
             // load packages.config 
             var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(Path.Combine(Directory.GetParent(projectToCheck).FullName, "packages.config")));
 
-            // filter out Nerdbank.GitVersioning package
+            // filter out these packages: Nerdbank.GitVersioning
             var packageList = packageReader.GetPackages().Where(p => !p.IsDevelopmentDependency && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
 
             if (packageList.Any())
@@ -404,7 +406,17 @@ class Program
                                             new NullLogger(),
                                             CancellationToken.None).Result;
 
-                                        if (dependencyInfo is not null 
+                                        // if we are checking nanoFramework.Logging companion nuspecs, skip check on the parent one           
+                                        if ((nuspecFileName.EndsWith("nanoFramework.Logging.Serial.nuspec")
+                                            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec"))
+                                            && dependencyPackage.Id == "nanoFramework.Logging")
+                                        {
+                                            dependencyFound = true;
+                                            // done here
+                                            break;
+                                        }
+
+                                        if (dependencyInfo is not null
                                             && dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
                                         {
                                             dependencyFound = true;
@@ -497,5 +509,39 @@ class Program
 
         // exit OK
         return 0;
+    }
+
+    private static NuspecReader GetNuspecReader(string nuspecFileName)
+    {
+        string originalVersion = "version=\"$version$\"";
+        string replacementVersion = "version=\"9.99.999.9999\"";
+        string nuspecContent = string.Empty;
+
+        // handle edge cases in nanoFramework libraries
+        if (nuspecFileName.EndsWith("nanoFramework.Logging.Serial.nuspec")
+            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec"))
+        {
+            // these two use a hack in the version for nanoFramework.Logging dependency
+            // need to replace it with a valid version string, read and then replace it back
+
+            nuspecContent = File.ReadAllText(nuspecFileName);
+
+            nuspecContent = nuspecContent.Replace(originalVersion, replacementVersion);
+
+            File.WriteAllText(nuspecFileName, nuspecContent);
+        }
+
+        var nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
+
+        // replace back the original version string
+        if (nuspecFileName.EndsWith("nanoFramework.Logging.Serial.nuspec")
+            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec"))
+        {
+            nuspecContent = nuspecContent.Replace(replacementVersion, originalVersion);
+
+            File.WriteAllText(nuspecFileName, nuspecContent);
+        }
+
+        return nuspecReader;
     }
 }
