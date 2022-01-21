@@ -406,16 +406,6 @@ class Program
                                             new NullLogger(),
                                             CancellationToken.None).Result;
 
-                                        // if we are checking nanoFramework.Logging companion nuspecs, skip check on the parent one           
-                                        if ((nuspecFileName.EndsWith("nanoFramework.Logging.Serial.nuspec")
-                                            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec"))
-                                            && dependencyPackage.Id == "nanoFramework.Logging")
-                                        {
-                                            dependencyFound = true;
-                                            // done here
-                                            break;
-                                        }
-
                                         if (dependencyInfo is not null
                                             && dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
                                         {
