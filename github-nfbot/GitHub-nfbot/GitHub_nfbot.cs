@@ -239,21 +239,27 @@ namespace nanoFramework.Tools.GitHub
                         await _octokitClient.Git.Reference.Delete(_gitOwner, payload.repository.name.ToString(), $"heads/{originBranch}");
 
                         // was this PR updating versions?
-                        if(pr.Body.Contains(_tagVersionUpdate))
+                        if (pr.Body.Contains(_tagVersionUpdate))
                         {
+                            log.LogInformation($"PR for version update, check similar PRs");
+
                             // grab all other open PRs at this repo
                             IReadOnlyList<Octokit.PullRequest> openPrs = await _octokitClient.PullRequest.GetAllForRepository(
                                 _gitOwner,
                                 payload.repository.name.ToString(),
-                                new PullRequestRequest() {State = ItemStateFilter.Open});
+                                new PullRequestRequest() { State = ItemStateFilter.Open });
+
+                            log.LogInformation($"Found {openPrs} open PRs");
 
                             // filter PRs created by our bots, only about version updates and earlier than the current PR 
-                            foreach(var pull in openPrs.Where(
-                                p => (p.User.Login == "nfbot" 
-                                || pr.User.Login == "github-actions[bot]") 
+                            foreach (var pull in openPrs.Where(
+                                p => (p.User.Login == "nfbot"
+                                || pr.User.Login == "github-actions[bot]")
                                 && p.Body.Contains(_tagVersionUpdate)
                                 && p.Number < pr.Number))
                             {
+                                log.LogInformation($"Closing PR {pull.Number}");
+
                                 await _octokitClient.PullRequest.Update(
                                     _gitOwner,
                                     payload.repository.name.ToString(),
