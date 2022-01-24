@@ -1,0 +1,94 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+steps:
+- task: PowerShell@2
+  displayName: Update UnitsNet
+  condition: >-
+    and(
+      succeeded(),
+      ne(variables['StartReleaseCandidate'], 'true'),
+      or(
+        eq(variables['UPDATE_DEPENDENTS'], 'true'),
+        startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+      )
+    )
+  env:
+    GITHUB_TOKEN: $(GitHubToken)
+  inputs:
+    targetType: 'inline'
+    script: |
+
+      "" | Write-Host
+      "**************************" | Write-Host
+      "Firing update for UnitsNet" | Write-Host
+      "" | Write-Host
+
+      # working directory is agent temp directory
+      Write-Debug "cd to $env:Agent_TempDirectory"
+      cd "$env:Agent_TempDirectory" > $null
+
+      git clone --depth 1 https://github.com/angularsen/UnitsNet UnitsNet
+
+      cd UnitsNet > $null
+
+      # git remote add origin https://github.com/nfbot/UnitsNet
+      git config gc.auto 0
+      git config user.name nfbot
+      git config user.email nfbot@users.noreply.github.com
+
+      # new branch name
+      $newBranch = "nfbot/nano-update/"+[guid]::NewGuid().ToString()
+
+      # create branch to perform updates
+      git checkout master
+      git checkout -b $newBranch master
+
+      cd CodeGen > $null
+      dotnet run --update-nano-framework-dependencies
+
+      # check if anything was changed
+      $repoStatus = "$(git status --short --porcelain)"
+
+      if ($repoStatus -ne "")
+      {
+        "Commit changes..." | Write-Host -ForegroundColor White
+
+        # commit changed files
+        git add -A 2>&1
+        git commit -m "Update .NET nanoFramework NuGets" -m "Automated update" > $null
+    
+        "Pushing changes..." | Write-Host -ForegroundColor White
+
+        # push to nfbot repo
+        git -c http.extraheader="AUTHORIZATION: $auth" push --porcelain --set-upstream upstream "$newBranch"
+
+        # submit PR 
+        $prRequestBody = @{title="Update .NET nanoFramework NuGets";body="Automated update from @nfbot.";head="nfbot:$newBranch";base="$($pr.head.ref)"} | ConvertTo-Json
+
+        # start PR
+        "Creating PR..." | Write-Host -ForegroundColor White
+
+        $githubApiEndpoint = "https://api.github.com/repos/angularsen/UnitsNet/pulls"
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+        try 
+        {
+            $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $githubApiEndpoint -Header @{"Authorization"="$auth"} -ContentType "application/json" -Body $prRequestBody
+            'Submitting PR with code style fixes...' | Write-Host -ForegroundColor White -NoNewline
+
+            'OK' | Write-Host -ForegroundColor Green
+        }
+        catch 
+        {
+            "Failed" | Write-Host -ForegroundColor Red
+
+            $result = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($result)
+            $reader.BaseStream.Position = 0
+            $reader.DiscardBufferedData()
+            $responseBody = $reader.ReadToEnd()
+
+            "Error submitting PR: $responseBody" | Write-Host -ForegroundColor Red
+        }
+      }
