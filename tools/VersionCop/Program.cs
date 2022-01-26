@@ -321,6 +321,28 @@ class Program
                             checkNuspec = false;
                         }
 
+                        try
+                        {
+                            if (checkNuspec)
+                            {
+                                nuspecReader.GetVersion();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // In this case we may have a variable like $version$
+                            var matchingVariable = Regex.Match(ex.Message, "\\$[a-zA-Z]*\\$");
+                            if (matchingVariable.Success)
+                            {
+                                checkNuspec = false;
+
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.WriteLine();
+                                Console.WriteLine($"Skipping {assemblyName}, version is most likely a parameter: {matchingVariable.Value}");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
+                        }
+
                         if (checkNuspec)
                         {
                             // nuspec is being checked: set flag
