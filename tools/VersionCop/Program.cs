@@ -195,6 +195,7 @@ class Program
                     Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
 
                     // load nuspec file
+                    // NOTE: this is replacing as well $version$ by 9.99.99.999
                     nuspecReader = GetNuspecReader(nuspecFileName);
                 }
                 else
@@ -208,6 +209,7 @@ class Program
                         Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
 
                         // load nuspec file
+                        // NOTE: this is replacing as well $version$ by 9.99.99.999
                         nuspecReader = GetNuspecReader(nuspecFileName);
                     }
                     else
@@ -319,6 +321,28 @@ class Program
                             ))
                         {
                             checkNuspec = false;
+                        }
+
+                        try
+                        {
+                            if (checkNuspec)
+                            {
+                                nuspecReader.GetVersion();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // In this case we may have a variable like $version$
+                            var matchingVariable = Regex.Match(ex.Message, "\\$[a-zA-Z]*\\$");
+                            if (matchingVariable.Success)
+                            {
+                                checkNuspec = false;
+
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.WriteLine();
+                                Console.WriteLine($"Skipping {assemblyName}, version is most likely a parameter: {matchingVariable.Value}");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
                         }
 
                         if (checkNuspec)
@@ -509,10 +533,15 @@ class Program
 
         // handle edge cases in nanoFramework libraries
         if (nuspecFileName.EndsWith("nanoFramework.Logging.Serial.nuspec")
-            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec"))
+            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec")
+            || nuspecFileName.EndsWith("nanoFramework.Logging.Syslog.nuspec"))
         {
             // these two use a hack in the version for nanoFramework.Logging dependency
             // need to replace it with a valid version string, read and then replace it back
+
+            Console.ForegroundColor= ConsoleColor.Yellow;
+            Console.WriteLine($"Replacing $version$ by 9.99.999.9999 in {nuspecFileName}");
+            Console.ForegroundColor = ConsoleColor.White;
 
             nuspecContent = File.ReadAllText(nuspecFileName);
 
@@ -525,8 +554,13 @@ class Program
 
         // replace back the original version string
         if (nuspecFileName.EndsWith("nanoFramework.Logging.Serial.nuspec")
-            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec"))
+            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec")
+            || nuspecFileName.EndsWith("nanoFramework.Logging.Syslog.nuspec"))
         {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"Replacing back 9.99.999.9999 by $version$ in {nuspecFileName}");
+            Console.ForegroundColor = ConsoleColor.White;
+
             nuspecContent = nuspecContent.Replace(replacementVersion, originalVersion);
 
             File.WriteAllText(nuspecFileName, nuspecContent);
