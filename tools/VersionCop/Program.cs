@@ -516,11 +516,6 @@ class Program
         {
             // these two use a hack in the version for nanoFramework.Logging dependency
             // need to replace it with a valid version string, read and then replace it back
-
-            Console.ForegroundColor= ConsoleColor.Yellow;
-            Console.WriteLine($"Replacing $version$ by 9.99.999.9999 in {nuspecFileName}");
-            Console.ForegroundColor = ConsoleColor.White;
-
             nuspecContent = File.ReadAllText(nuspecFileName);
 
             nuspecContent = nuspecContent.Replace(originalVersion, replacementVersion);
