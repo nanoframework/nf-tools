@@ -323,28 +323,6 @@ class Program
                             checkNuspec = false;
                         }
 
-                        try
-                        {
-                            if (checkNuspec)
-                            {
-                                nuspecReader.GetVersion();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // In this case we may have a variable like $version$
-                            var matchingVariable = Regex.Match(ex.Message, "\\$[a-zA-Z]*\\$");
-                            if (matchingVariable.Success)
-                            {
-                                checkNuspec = false;
-
-                                Console.ForegroundColor = ConsoleColor.Yellow;
-                                Console.WriteLine();
-                                Console.WriteLine($"Skipping {assemblyName}, version is most likely a parameter: {matchingVariable.Value}");
-                                Console.ForegroundColor = ConsoleColor.White;
-                            }
-                        }
-
                         if (checkNuspec)
                         {
                             // nuspec is being checked: set flag
@@ -557,10 +535,6 @@ class Program
             || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec")
             || nuspecFileName.EndsWith("nanoFramework.Logging.Syslog.nuspec"))
         {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"Replacing back 9.99.999.9999 by $version$ in {nuspecFileName}");
-            Console.ForegroundColor = ConsoleColor.White;
-
             nuspecContent = nuspecContent.Replace(replacementVersion, originalVersion);
 
             File.WriteAllText(nuspecFileName, nuspecContent);
