@@ -28,14 +28,16 @@ steps:
       Write-Debug "cd to $env:Agent_TempDirectory"
       cd "$env:Agent_TempDirectory" > $null
 
-      git clone --depth 1 https://github.com/angularsen/UnitsNet UnitsNet
+      git clone https://github.com/angularsen/UnitsNet UnitsNet
 
       cd UnitsNet > $null
 
-      # git remote add origin https://github.com/nfbot/UnitsNet
-      git config gc.auto 0
-      git config user.name nfbot
-      git config user.email nfbot@users.noreply.github.com
+      git remote add myorigin https://github.com/nfbot/UnitsNet
+      git config --global gc.auto 0
+      git config --global user.email "nfbot"
+      git config --global user.name "nanoframework@outlook.com"
+
+      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$env:GITHUB_TOKEN"))))"
 
       # new branch name
       $newBranch = "nfbot/nano-update/"+[guid]::NewGuid().ToString()
@@ -44,8 +46,11 @@ steps:
       git checkout master
       git checkout -b $newBranch master
 
+      nuget restore UnitsNet.NanoFramework/GeneratedCode/UnitsNet.NanoFramework.sln
+
       cd CodeGen > $null
-      dotnet run --update-nano-framework-dependencies
+
+      dotnet run --update-nano-framework-dependencies --skip-wrc
 
       # check if anything was changed
       $repoStatus = "$(git status --short --porcelain)"
@@ -61,10 +66,10 @@ steps:
         "Pushing changes..." | Write-Host -ForegroundColor White
 
         # push to nfbot repo
-        git -c http.extraheader="AUTHORIZATION: $auth" push --porcelain --set-upstream upstream "$newBranch"
+        git -c http.extraheader="AUTHORIZATION: $auth" push --porcelain --set-upstream myorigin "$newBranch"
 
         # submit PR 
-        $prRequestBody = @{title="Update .NET nanoFramework NuGets";body="Automated update from @nfbot.";head="nfbot:$newBranch";base="$($pr.head.ref)"} | ConvertTo-Json
+        $prRequestBody = @{title="Update .NET nanoFramework NuGets";body="Automated update from @nfbot.";head="nfbot:$newBranch";base="master"} | ConvertTo-Json
 
         # start PR
         "Creating PR..." | Write-Host -ForegroundColor White
@@ -75,7 +80,7 @@ steps:
         try 
         {
             $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $githubApiEndpoint -Header @{"Authorization"="$auth"} -ContentType "application/json" -Body $prRequestBody
-            'Submitting PR with code style fixes...' | Write-Host -ForegroundColor White -NoNewline
+            'Submitting PR with updates...' | Write-Host -ForegroundColor White -NoNewline
 
             'OK' | Write-Host -ForegroundColor Green
         }
