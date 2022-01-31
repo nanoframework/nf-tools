@@ -118,6 +118,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
+            // parse args in case these are in a single line
+            if (args.Count() == 1 && args[0].Contains("\r\n"))
+            {
+                args = args[0].Split("\r\n");
+            }
+
             // choose work-flow
             if (solutionsToCheck)
             {
@@ -302,7 +308,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string newBranchName = "nfbot/update-dependencies/" + Guid.NewGuid().ToString();
 
             // collect solution(s)
-            string[] solutionFiles = default;
+            List<string> solutionFiles = new();
 
             if (solutionsToCheck is not null)
             {
@@ -317,25 +323,19 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     foreach (var sln in solutionsToCheck)
                     {
-                        if (!sln.EndsWith("sln"))
+                        var solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
+
+                        if (solutions.Any())
                         {
-                            searchFilter += $"*{sln}*.sln;";
-                        }
-                        else
-                        {
-                            searchFilter += $"{sln};";
+                            solutionFiles.AddRange(solutions);
                         }
                     }
-
-                    // remove trailing ';'
-                    searchFilter = searchFilter.Substring(0, searchFilter.Length - 1);
                 }
 
-                solutionFiles = Directory.GetFiles(workingDirectory, $"{searchFilter}", SearchOption.AllDirectories);
             }
             else
             {
-                solutionFiles = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories);
+                solutionFiles = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories).ToList();
             }
 
             // list solutions to check
