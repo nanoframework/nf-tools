@@ -11,6 +11,7 @@ using NuGet.Protocol.Core.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml.Linq;
@@ -380,6 +381,8 @@ class Program
                         {
                             bool dependencyFound = false;
 
+                            string hintMessage = null;
+
                             // setup NuGet source and dependency resolver
                             PackageSourceProvider sourceProvider = new(NullSettings.Instance, new[]
                             {
@@ -416,6 +419,17 @@ class Program
                                             // done here
                                             break;
                                         }
+
+                                        // check on package name BUT version mismatch
+                                        if (dependencyInfo is not null
+                                           && dependencyInfo.Dependencies.Any(d => d.Id == packageName))
+                                        {
+                                            // looks like this is it!
+                                            hintMessage = $"Found it as dependency of '{dependencyPackage.Id}' {Environment.NewLine}with requested version being '{packageVersion}' BUT {Environment.NewLine}NuGet package is declaring version as '{dependencyInfo.Dependencies.First(d => d.Id == packageName).VersionRange.ToShortString()}'";
+
+                                            // done here
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -426,8 +440,17 @@ class Program
 
                                 Console.WriteLine();
                                 Console.WriteLine("*****************************************************************");
-                                Console.WriteLine($"Couldn't find it in '{Path.GetFileName(nuspecFile)}'");
-                                Console.WriteLine($"And it is not a dependency on any of the listed dependency packages");
+
+                                if (hintMessage is null)
+                                {
+                                    Console.WriteLine($"Couldn't find it in '{Path.GetFileName(nuspecFileName)}'");
+                                    Console.WriteLine($"And it is not a dependency on any of the listed dependency packages");
+                                }
+                                else
+                                {
+                                    Console.WriteLine(hintMessage);
+                                }
+
                                 Console.WriteLine("*****************************************************************");
                                 Console.WriteLine();
 
