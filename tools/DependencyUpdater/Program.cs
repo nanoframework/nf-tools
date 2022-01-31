@@ -320,12 +320,10 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (solutionsToCheck is not null)
             {
-                string searchFilter = "";
-
                 if (solutionsToCheck.Count() == 1
                     & solutionsToCheck[0] == "*.sln")
                 {
-                    searchFilter = "*.sln";
+                    var solutions = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories);
                 }
                 else
                 {
