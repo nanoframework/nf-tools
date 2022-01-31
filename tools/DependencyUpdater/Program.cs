@@ -121,7 +121,15 @@ namespace nanoFramework.Tools.DependencyUpdater
             // parse args in case these are in a single line
             if (args.Count() == 1 && args[0].Contains("\r\n"))
             {
+                Console.WriteLine($"INFO: rebuilding args list with new lines.");
+
                 args = args[0].Split("\r\n");
+            }
+            else if (args.Count() == 1 && args[0].Contains("\n"))
+            {
+                Console.WriteLine($"INFO: rebuilding args list with new lines.");
+
+                args = args[0].Split("\n");
             }
 
             // choose work-flow
