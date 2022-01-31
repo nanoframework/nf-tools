@@ -324,6 +324,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                     & solutionsToCheck[0] == "*.sln")
                 {
                     var solutions = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories);
+
+                    if (solutions.Any())
+                    {
+                        solutionFiles.AddRange(solutions);
+                    }
                 }
                 else
                 {
