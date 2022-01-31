@@ -386,12 +386,14 @@ class Program
                             // setup NuGet source and dependency resolver
                             PackageSourceProvider sourceProvider = new(NullSettings.Instance, new[]
                             {
-                                new PackageSource("https://api.nuget.org/v3/index.json")
+                                new PackageSource("https://api.nuget.org/v3/index.json"),
+                                new PackageSource("https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json")
                             });
                             var sourceRepositoryProvider = new SourceRepositoryProvider(sourceProvider, Repository.Provider.GetCoreV3());
                             var repositories = sourceRepositoryProvider.GetRepositories();
 
-                            var dependencyInfoResource = repositories.First().GetResource<DependencyInfoResource>();
+                            var dependencyInfoResourceNuGet = repositories.ElementAt(0).GetResource<DependencyInfoResource>();
+                            var dependencyInfoResourceAzureFeed = repositories.ElementAt(1).GetResource<DependencyInfoResource>();
 
                             // find out if this is a dependency from one of the listed packages
                             foreach (var dependency in nuspecReader.GetDependencyGroups(true))
@@ -404,7 +406,36 @@ class Program
                                             dependencyPackage.Id,
                                             new NuGet.Versioning.NuGetVersion(dependencyPackage.VersionRange.OriginalString));
 
-                                        var dependencyInfo = dependencyInfoResource.ResolvePackage(
+                                        // 1st round on NuGet
+                                        var dependencyInfo = dependencyInfoResourceNuGet.ResolvePackage(
+                                            packageIdentity,
+                                            dependency.TargetFramework,
+                                            new SourceCacheContext(),
+                                            new NullLogger(),
+                                            CancellationToken.None).Result;
+
+                                        if (dependencyInfo is not null
+                                            && dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
+                                        {
+                                            dependencyFound = true;
+
+                                            // done here
+                                            break;
+                                        }
+
+                                        // check on package name BUT version mismatch
+                                        if (dependencyInfo is not null
+                                           && dependencyInfo.Dependencies.Any(d => d.Id == packageName))
+                                        {
+                                            // looks like this is it!
+                                            hintMessage = $"Found it as dependency of '{dependencyPackage.Id}' {Environment.NewLine}with requested version being '{packageVersion}' BUT {Environment.NewLine}NuGet package is declaring version as '{dependencyInfo.Dependencies.First(d => d.Id == packageName).VersionRange.ToShortString()}'";
+
+                                            // done here
+                                            break;
+                                        }
+
+                                        // 2nd round on nanoFramework Azure Feed
+                                        dependencyInfo = dependencyInfoResourceAzureFeed.ResolvePackage(
                                             packageIdentity,
                                             dependency.TargetFramework,
                                             new SourceCacheContext(),
