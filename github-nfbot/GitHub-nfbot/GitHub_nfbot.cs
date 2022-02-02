@@ -996,7 +996,7 @@ namespace nanoFramework.Tools.GitHub
             foreach (var nuspecFile in nuspecFiles)
             {
                 // get content of nuspec
-                string nuspecContent = Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, repositoryName, nuspecFile.Name));
+                string nuspecContent = Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, repositoryName, nuspecFile.Path));
 
                 if (nuspecContent.Contains("-preview"))
                 {
@@ -1022,8 +1022,8 @@ namespace nanoFramework.Tools.GitHub
 
             var buildDefs = await buildClient.GetDefinitionsAsync(repositoryName);
 
-            // so far we only have projects with a single build definition so check this and take the 1st one
-            if (buildDefs.Count == 1)
+            // we have a couple of projects with more than one pipeline so grab the 1st with name closest to the repository name
+            if (buildDefs.Count() > 0)
             {
                 // compose build request
                 var buildRequest = new Build
