@@ -606,11 +606,12 @@ namespace nanoFramework.Tools.GitHub
                                         // get labels for this PR
                                         List<Label> prLabels = (List<Label>)pr.Labels;
 
-                                        // check if this was a dependencies update
+                                        // check if this was a dependencies update OR a version update
                                         var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
-                                        if (dependenciesLabel != null)
+                                        if (dependenciesLabel != null
+                                            || isVersionUpdate)
                                         {
-                                            // this is a dependencies update PR
+                                            // this is a dependencies/version update PR
 
                                             // get which packages where updated
                                             IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
