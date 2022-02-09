@@ -40,8 +40,8 @@ namespace nanoFramework.Tools.GitHub
         private const string _issueMissingAreaContent = ":disappointed: Information about the nanoFramework area is missing. Please make sure to follow the template and remove only the instruction comments and any sections that are not relevant. After doing so, feel free to reopen the issue.";
         private const string _issueCommentInvalidDeviceCaps = ":disappointed: If that's relevant, make sure to include the complete Device Capabilities output.\r\n.If it isn't, just remove the section completely.\r\nAfter fixing that, feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\r\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\r\n\r\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, **DO NOT** open an issue here. It is best to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T) or to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag.";
-        private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm afraid you'll have to use the PR template like the rest of us...\\r\\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
-        private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\\r\\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
+        private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm afraid you'll have to use the PR template like the rest of us...\r\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
+        private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\r\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
         private const string _prCommunityTargetMissingTargetContent = ":disappointed: You need to check which targets are affected in the list...\\r\\nMake sure you follow the PR template. After doing that feel free to reopen the PR.\\r\\nIf you have questions we are here to help.";
         private const string _fixCheckListComment = "I've fixed the checklist for you.\\r\\nFYI, the correct format is [x], no spaces inside brackets.";
 
@@ -66,8 +66,7 @@ namespace nanoFramework.Tools.GitHub
         // strings for PR content
         private const string _prDescription = "## Description";
         private const string _prTypesOfChanges = "## Types of changes";
-        private const string _prChecklist = "## Checklist:";
-        private const string _prChanges = "## Checklist:";
+        private const string _prChecklist = "## Checklist";
 
         // labels
         private const string _labelConfigAndBuildName = "Area: Config-and-Build";
