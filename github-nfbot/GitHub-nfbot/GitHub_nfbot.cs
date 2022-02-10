@@ -70,6 +70,7 @@ namespace nanoFramework.Tools.GitHub
 
         // labels
         private const string _labelConfigAndBuildName = "Area: Config-and-Build";
+        private const string _labelDevContainersName = "Area: Dev-Containers";
         private const string _labelBreakingChangeName = "Breaking-change";
 
         private const string _labelCiUpdateDependentsName = "CI: Update Dependents";
@@ -1243,6 +1244,12 @@ namespace nanoFramework.Tools.GitHub
             {
                 // add the Type: Breaking change label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelConfigAndBuildName });
+            }
+
+            if (pr.Body.Contains("[x] Dev Containers", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // add the area dev containers label
+                await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelDevContainersName });
             }
 
             if (pr.Body.Contains("[x] Dependencies", StringComparison.InvariantCultureIgnoreCase))
