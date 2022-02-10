@@ -31,12 +31,7 @@ namespace nanoFramework.Tools.GitHub
     {
         // strings to be used in messages and comments
         private const string _fixRequestTagComment = "<!-- nfbot fix request DO NOT REMOVE -->";
-        private const string _bugReportForClassLibTagComment = "<!-- bug-report-clas-lib-tag DO NOT REMOVE -->";
-        private const string _bugReportToolsTagComment = "<!-- bug-report-tools-tag DO NOT REMOVE -->";
-        private const string _featureRequestTagComment = "<!-- feature-request-tag DO NOT REMOVE -->";
         private const string _todoTagComment = "<!-- todo-tag DO NOT REMOVE -->";
-        private const string _issueCommentUnwantedContent = ":disappointed: Looks like you haven't read the instructions with enough care and forgot to cleanup the instructions. Please make sure to follow the template and remove only the instruction comments and any sections that are not relevant. After doing so, feel free to reopen the issue.";
-        private const string _issueMissingAreaContent = ":disappointed: Information about the nanoFramework area is missing. Please make sure to follow the template and remove only the instruction comments and any sections that are not relevant. After doing so, feel free to reopen the issue.";
         private const string _issueCommentInvalidDeviceCaps = ":disappointed: If that's relevant, make sure to include the complete Device Capabilities output.\r\n.If it isn't, just remove the section completely.\r\nAfter fixing that, feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = ":disappointed: I couldn't figure out what type of issue you're trying to open...\r\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\r\n\r\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, **DO NOT** open an issue here. It is best to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T) or to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag.";
         private const string _prCommentUserIgnoringTemplateContent = ":disappointed: I'm afraid you'll have to use the PR template like the rest of us...\r\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
@@ -1547,88 +1542,11 @@ namespace nanoFramework.Tools.GitHub
             }
 
             // check for expected/mandatory content
-            bool issueIsFeatureRequest = false;
-            bool issueIsBugReport = false;
-            bool issueIsToolBugReport = false;
-            bool issueIsClassLibBugReport = false;
             bool issueIsTodo = false;
 
-            if (issue.Body.Contains(_bugReportForClassLibTagComment))
-            {
-                issueIsClassLibBugReport = true;
-            }
-            if (issue.Body.Contains(_bugReportToolsTagComment))
-            {
-                issueIsToolBugReport = true;
-            }
             if (issue.Body.Contains(_todoTagComment))
             {
                 issueIsTodo = true;
-            }
-
-            if (issueIsClassLibBugReport ||
-                issueIsToolBugReport)
-            {
-                // check for mandatory content
-                if (issue.Body.Contains(_issueDescription))
-                {
-                    issueIsBugReport = true;
-
-                    if (issueIsToolBugReport &&
-                        !issue.Body.Contains(_issueArea))
-                    {
-                        issueIsBugReport = false;
-
-                        await _octokitClient.Issue.Comment.Create((int)payload.repository.id, issue.Number, $"Hi @{payload.issue.user.login},\r\n\r\n{_issueMissingAreaContent}\r\n{_fixRequestTagComment}");
-                    }
-                }
-            }
-            else if (issue.Body.Contains(_featureRequestTagComment))
-            {
-                // check for mandatory content
-                if (!issue.Body.Contains(_issueArea))
-                {
-                    await _octokitClient.Issue.Comment.Create((int)payload.repository.id, issue.Number, $"Hi @{payload.issue.user.login},\r\n\r\n{_issueMissingAreaContent}\r\n{_fixRequestTagComment}");
-                }
-                else
-                {
-                    // looks like a feature request
-                    issueIsFeatureRequest = true;
-                }
-            }
-
-            if (issueIsBugReport &&
-                    issueIsToolBugReport)
-            {
-                // class lib bug reports have to include device caps
-
-                if (issue.Body.Contains(_issueDeviceCaps))
-                {
-                    // check for valid content
-                    if (issue.Body.Contains("System Information") &&
-                        issue.Body.Contains("HAL build info:") &&
-                        issue.Body.Contains("Firmware build Info:") &&
-                        issue.Body.Contains("Assemblies:") &&
-                        issue.Body.Contains("Native Assemblies:") &&
-                        issue.Body.Contains("++ Memory Map ++") &&
-                        issue.Body.Contains("++ Flash Sector Map ++") &&
-                        issue.Body.Contains("++ Storage Usage Map ++"))
-                    {
-                        // device caps seems complete
-                    }
-
-                    log.LogInformation($"Incomplete or invalid device caps. Adding comment before closing.");
-
-                    await _octokitClient.Issue.Comment.Create((int)payload.repository.id, issue.Number, $"Hi @{payload.issue.user.login},\r\n\r\n{_issueCommentInvalidDeviceCaps}\r\n{_fixRequestTagComment}");
-
-                    // close issue
-                    await CloseIssue(
-                        (int)payload.repository.id,
-                        issue,
-                        log);
-
-                    return new OkObjectResult("");
-                }
             }
 
             if (issueIsTodo)
@@ -1639,49 +1557,23 @@ namespace nanoFramework.Tools.GitHub
 
             if (isOpenAction)
             {
-                // does this issue look legit?
-                if (issueIsFeatureRequest)
+                if (!authorIsMemberOrOwner)
                 {
-                    // OK to label with feature request
-                    log.LogInformation($"Adding 'feature request label.");
+                    // process this only if author is NOT member or owner
 
-                    // add label
-                    await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelTypeFeatureRequestName });
+                    // not sure what this is about...
+                    log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
+
+                    await _octokitClient.Issue.Comment.Create((int)payload.repository.id, issue.Number, $"Hi @{payload.issue.user.login},\r\n\r\n{_issueCommentUnshureAboutIssueContent}\r\n{_fixRequestTagComment}");
+
+                    // close issue
+                    await CloseIssue(
+                        (int)payload.repository.id,
+                        issue,
+                        log);
                 }
-                else if (issueIsBugReport)
-                {
-                    // OK to label with bug
-                    log.LogInformation($"Adding 'bug label.");
 
-                    // add label
-                    await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelTypeBugName });
-
-                    // OK to label for triage
-                    log.LogInformation($"Adding 'triage label.");
-
-                    // add the triage label
-                    await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { _labelStatusWaitingTriageName });
-                }
-                else
-                {
-                    if (!authorIsMemberOrOwner)
-                    {
-                        // process this only if author is NOT member or owner
-
-                        // not sure what this is about...
-                        log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
-
-                        await _octokitClient.Issue.Comment.Create((int)payload.repository.id, issue.Number, $"Hi @{payload.issue.user.login},\r\n\r\n{_issueCommentUnshureAboutIssueContent}\r\n{_fixRequestTagComment}");
-
-                        // close issue
-                        await CloseIssue(
-                            (int)payload.repository.id,
-                            issue,
-                            log);
-                    }
-
-                    return new OkObjectResult("");
-                }
+                return new OkObjectResult("");
             }
             else
             {
