@@ -1220,9 +1220,10 @@ namespace nanoFramework.Tools.GitHub
 
         private static async Task ManageLabelsAsync(Octokit.PullRequest pr, ILogger log)
         {
+            // go through the check list and add the respective labels
+
             if (pr.Body.Contains("[x] Bug fix", StringComparison.InvariantCultureIgnoreCase))
             {
-                // add the Type: dependency label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeBugName });
             }
 
@@ -1230,43 +1231,36 @@ namespace nanoFramework.Tools.GitHub
                 pr.Body.Contains("[x] Improvement", StringComparison.InvariantCultureIgnoreCase) ||
                 pr.Body.Contains("[x] New feature", StringComparison.InvariantCultureIgnoreCase))
             {
-                // add the Type: enhancement label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeEnhancementName });
             }
 
             if (pr.Body.Contains("[x] Breaking change", StringComparison.InvariantCultureIgnoreCase))
             {
-                // add the Type: Breaking change label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelBreakingChangeName });
             }
 
             if (pr.Body.Contains("[x] Config and build", StringComparison.InvariantCultureIgnoreCase))
             {
-                // add the Type: Breaking change label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelConfigAndBuildName });
             }
 
             if (pr.Body.Contains("[x] Dev Containers", StringComparison.InvariantCultureIgnoreCase))
             {
-                // add the area dev containers label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelDevContainersName });
             }
 
             if (pr.Body.Contains("[x] Dependencies", StringComparison.InvariantCultureIgnoreCase))
             {
-                // add the Type: Breaking change label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeDependenciesName });
             }
 
             if (pr.Body.Contains("[x] Unit Tests", StringComparison.InvariantCultureIgnoreCase))
             {
-                // add the Type: Unit Tests label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelTypeUnitTestsName });
             }
 
             if (pr.Body.Contains("[x] Documentation", StringComparison.InvariantCultureIgnoreCase))
             {
-                // add the Type: Documentation label
                 await _octokitClient.Issue.Labels.AddToIssue(pr.Base.Repository.Id, pr.Number, new string[] { _labelDocumentationName });
             }
         }
