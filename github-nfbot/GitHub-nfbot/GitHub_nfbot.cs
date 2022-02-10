@@ -32,7 +32,6 @@ namespace nanoFramework.Tools.GitHub
         // strings to be used in messages and comments
         private const string _fixRequestTagComment = "<!-- nfbot fix request DO NOT REMOVE -->";
         private const string _bugReportForClassLibTagComment = "<!-- bug-report-clas-lib-tag DO NOT REMOVE -->";
-        private const string _bugReportFirmwareTagComment = "<!-- bug-report-fw-tag DO NOT REMOVE -->";
         private const string _bugReportToolsTagComment = "<!-- bug-report-tools-tag DO NOT REMOVE -->";
         private const string _featureRequestTagComment = "<!-- feature-request-tag DO NOT REMOVE -->";
         private const string _todoTagComment = "<!-- todo-tag DO NOT REMOVE -->";
@@ -1536,23 +1535,6 @@ namespace nanoFramework.Tools.GitHub
 
             log.LogInformation($"Processing issue #{issue.Number}");
 
-            // check unwanted content
-            if (issue.Body.Contains(_issueContentBeforePosting) ||
-                    issue.Body.Contains(_issueContentRemoveContentInstruction))
-            {
-                log.LogInformation($"Unwanted content on issue. Adding comment before closing.");
-
-                await _octokitClient.Issue.Comment.Create((int)payload.repository.id, issue.Number, $"Hi @{payload.issue.user.login},\r\n\r\n{_issueCommentUnwantedContent}.{_fixRequestTagComment}");
-
-                // close issue
-                await CloseIssue(
-                    (int)payload.repository.id,
-                    issue,
-                    log);
-
-                return new OkObjectResult("");
-            }
-
             // fix title if needed
             if (issue.Title.EndsWith("."))
             {
@@ -1569,16 +1551,11 @@ namespace nanoFramework.Tools.GitHub
             bool issueIsBugReport = false;
             bool issueIsToolBugReport = false;
             bool issueIsClassLibBugReport = false;
-            bool issueIsFwBugReport = false;
             bool issueIsTodo = false;
 
             if (issue.Body.Contains(_bugReportForClassLibTagComment))
             {
                 issueIsClassLibBugReport = true;
-            }
-            if (issue.Body.Contains(_bugReportFirmwareTagComment))
-            {
-                issueIsFwBugReport = true;
             }
             if (issue.Body.Contains(_bugReportToolsTagComment))
             {
@@ -1590,7 +1567,6 @@ namespace nanoFramework.Tools.GitHub
             }
 
             if (issueIsClassLibBugReport ||
-                issueIsFwBugReport ||
                 issueIsToolBugReport)
             {
                 // check for mandatory content
@@ -1622,10 +1598,9 @@ namespace nanoFramework.Tools.GitHub
             }
 
             if (issueIsBugReport &&
-                (issueIsFwBugReport ||
-                    issueIsToolBugReport))
+                    issueIsToolBugReport)
             {
-                // fw and class lib bug reports have to include device caps
+                // class lib bug reports have to include device caps
 
                 if (issue.Body.Contains(_issueDeviceCaps))
                 {
