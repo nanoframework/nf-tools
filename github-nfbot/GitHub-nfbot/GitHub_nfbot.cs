@@ -1557,22 +1557,6 @@ namespace nanoFramework.Tools.GitHub
 
             if (isOpenAction)
             {
-                if (!authorIsMemberOrOwner)
-                {
-                    // process this only if author is NOT member or owner
-
-                    // not sure what this is about...
-                    log.LogInformation($"not sure what this issue is about. Adding comment before closing.");
-
-                    await _octokitClient.Issue.Comment.Create((int)payload.repository.id, issue.Number, $"Hi @{payload.issue.user.login},\r\n\r\n{_issueCommentUnshureAboutIssueContent}\r\n{_fixRequestTagComment}");
-
-                    // close issue
-                    await CloseIssue(
-                        (int)payload.repository.id,
-                        issue,
-                        log);
-                }
-
                 return new OkObjectResult("");
             }
             else
