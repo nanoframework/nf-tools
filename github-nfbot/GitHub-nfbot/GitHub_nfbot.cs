@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) .NET Foundation and Contributors
 // See LICENSE file in the project root for full license information.
 //
@@ -38,6 +38,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\r\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
         private const string _prCommunityTargetMissingTargetContent = ":disappointed: You need to check which targets are affected in the list...\\r\\nMake sure you follow the PR template. After doing that feel free to reopen the PR.\\r\\nIf you have questions we are here to help.";
         private const string _fixCheckListComment = "I've fixed the checklist for you.\\r\\nFYI, the correct format is [x], no spaces inside brackets.";
+        private const string _missingProjectToReproduceComment = "please provide a minimal solution that reproduces the issue you’re reporting, preferably a link to a GitHub repository (or similar).\r\nWhy? Unless the code to reproduce the issue it’s just a couple of lines from the standard API, it takes time! 😯\r\nSetup a full project on Visual Studio, adding references to the required NuGets and/or whatever other projects you may be referencing, chasing the correct versions, copying, pasting, and adapting whatever code you may have provided, etc. All that takes time to the developer working on this. Just to get started. It’s not even working on the issue yet and has already wasted a lot of precious time.\r\nWe’ll help you, for sure! But, hey, make our life easy, OK? 😅";
 
         // strings for issues content
         private const string _issueContentRemoveContentInstruction = ":exclamation: Remove the content above here and fill out details below. :exclamation:";
@@ -78,6 +79,7 @@ namespace nanoFramework.Tools.GitHub
 
         private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
         private const string _labelDocumentationName = "Type: documentation";
+        private const string _labelStatusMissingProjectToReproduce = "Status: missing project to reproduce";
 
         private const string _labelInvalidName = "invalid";
         private const string _labelUpForGrabs = "up-for-grabs";
@@ -884,11 +886,20 @@ namespace nanoFramework.Tools.GitHub
                     log.LogInformation($"Error message received: {res.ReasonPhrase}");
                 }
             }
+            else if (payload.label.name.ToString() == _missingProjectToReproduceComment)
+            {
+                log.LogInformation("Requesting project to reproduce the issue");
+
+                // add comment to issue
+                _ = await _octokitClient.Issue.Comment.Create(
+                    (int)payload.repository.id,
+                    (int)payload.pull_request.number,
+                    $"@{payload.pull_request.user.login} {_missingProjectToReproduceComment}.");
+            }
             else
             {
                 log.LogInformation("Skipping event as this is NOT up-for-grabs");
             }
-
 
             return new OkObjectResult("");
         }
