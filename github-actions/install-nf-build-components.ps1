@@ -50,19 +50,19 @@ Write-Output "Latest VS is: $VsInstance"
 if($vsInstance.Contains('2022'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2022].content.src
-    $vsixPath = Join-Path  $($tempDir) "nanoFramework.Tools.VS2022.Extension.zip"
+    $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
     $extensionVersion = $feedDetails.feed.entry[$idVS2022].Vsix.Version
 }
 elseif($vsInstance.Contains('2019'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2019].content.src
-    $vsixPath = Join-Path  $($tempDir) "nanoFramework.Tools.VS2019.Extension.zip"
+    $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2019.Extension.zip"
     $extensionVersion = $feedDetails.feed.entry[$idVS2019].Vsix.Version
 }
 elseif($vsInstance.Contains('2017'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2017].content.src
-    $vsixPath = Join-Path  $($tempDir) "nanoFramework.Tools.VS2017.Extension.zip"
+    $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2017.Extension.zip"
     $extensionVersion = $feedDetails.feed.entry[$idVS2017].Vsix.Version
 }
 
