@@ -7,37 +7,37 @@ function DownloadVsixFile($fileUrl, $downloadFileName)
     $webClient.DownloadFile($fileUrl,$downloadFileName)
 }
 
-$tempDir = $Env:RUNNER_TEMP
+$tempDir = $($Env:RUNNER_TEMP)
 
-# Get extension information from VSIX Gallery feed
+# Get nanoFramework VS extension information from Open VSIX Gallery feed
 $vsixFeedXml = Join-Path $tempDir "vs-extension-feed.xml"
 $webClient.DownloadFile("http://vsixgallery.com/feed/author/nanoframework", $vsixFeedXml)
 [xml]$feedDetails = Get-Content $vsixFeedXml
 
-# find which entry corresponds to which VS version
+# Find which entry corresponds to which VS version
 for ($i = 0; $i -lt $feedDetails.feed.entry.Count; $i++) {
 
     if($feedDetails.feed.entry[$i].id -eq '455f2be5-bb07-451e-b351-a9faf3018dc9')
     {
-        # Write-Output "VS2019->$i"
+        Write-Host "VS2019->$i"
         $idVS2019 = $i
     }
     elseif($feedDetails.feed.entry[$i].id -eq 'bf694e17-fa5f-4877-9317-6d3664b2689a')
     {
-        # Write-Output "VS2022->$i"
+        Write-Host "VS2022->$i"
         $idVS2022 = $i
     }
     elseif($feedDetails.feed.entry[$i].id -eq '47973986-ed3c-4b64-ba40-a9da73b44ef7')
     {
-        # Write-Output "VS2017->$i"
+        Write-Host "VS2017->$i"
         $idVS2017 = $i
     }
     else {
-        # Write-Output "?????[$i]"
+        Write-Host "?????[$i]"
     }
 }
 
-# find which VS version is installed
+# Find which VS version is installed
 $VsWherePath = "${env:PROGRAMFILES(X86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 
 Write-Output "VsWherePath is: $VsWherePath"
@@ -46,7 +46,7 @@ $VsInstance = $(&$VSWherePath -latest -property displayName)
 
 Write-Output "Latest VS is: $VsInstance"
 
-# grab extension details according to VS version, starting from VS2022 down to VS2017
+# Get extension details according to VS version, starting from VS2022 down to VS2017
 if($vsInstance.Contains('2022'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2022].content.src
@@ -69,8 +69,8 @@ elseif($vsInstance.Contains('2017'))
 # Download VS extension
 DownloadVsixFile $extensionUrl $vsixPath
 
-# unzip extension
-Write-Host "Unzip extension content"
+# Unzip extension
+Write-Host "Unzip VS extension content"
 Expand-Archive -LiteralPath $vsixPath -DestinationPath $tempDir\nf-extension\
 
 # copy build files to msbuild location
