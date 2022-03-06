@@ -19,17 +19,17 @@ for ($i = 0; $i -lt $feedDetails.feed.entry.Count; $i++) {
 
     if($feedDetails.feed.entry[$i].id -eq '455f2be5-bb07-451e-b351-a9faf3018dc9')
     {
-        Write-Host "VS2019->$i"
+        # Write-Host "VS2019->$i"
         $idVS2019 = $i
     }
     elseif($feedDetails.feed.entry[$i].id -eq 'bf694e17-fa5f-4877-9317-6d3664b2689a')
     {
-        Write-Host "VS2022->$i"
+        # Write-Host "VS2022->$i"
         $idVS2022 = $i
     }
     elseif($feedDetails.feed.entry[$i].id -eq '47973986-ed3c-4b64-ba40-a9da73b44ef7')
     {
-        Write-Host "VS2017->$i"
+        # Write-Host "VS2017->$i"
         $idVS2017 = $i
     }
     else {
