@@ -16,12 +16,14 @@ function DownloadVsixFile($fileUrl, $downloadFileName)
     $webClient.DownloadFile($fileUrl,$downloadFileName)
 }
 
-# get extension information from Open VSIX Gallery feed
-$vsixFeedXml = Join-Path  $($env:Agent_TempDirectory) "vs-extension-feed.xml"
+$tempDir = $($env:Agent_TempDirectory)
+
+# Get nanoFramework VS extension information from Open VSIX Gallery feed
+$vsixFeedXml = Join-Path $tempDir "vs-extension-feed.xml"
 $webClient.DownloadFile("http://vsixgallery.com/feed/author/nanoframework", $vsixFeedXml)
 [xml]$feedDetails = Get-Content $vsixFeedXml
 
-# find which entry corresponds to which VS version
+# Find which entry corresponds to which VS version
 for ($i = 0; $i -lt $feedDetails.feed.entry.Count; $i++) {
 
     if($feedDetails.feed.entry[$i].id -eq '455f2be5-bb07-451e-b351-a9faf3018dc9')
@@ -44,7 +46,7 @@ for ($i = 0; $i -lt $feedDetails.feed.entry.Count; $i++) {
     }
 }
 
-# find which VS version is installed
+# Find which VS version is installed
 $VsWherePath = "${env:PROGRAMFILES(X86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 
 Write-Output "VsWherePath is: $VsWherePath"
@@ -53,35 +55,32 @@ $VsInstance = $(&$VSWherePath -latest -property displayName)
 
 Write-Output "Latest VS is: $VsInstance"
 
-# grab extension details according to VS version, starting from VS2022 down to VS2017
+# Get extension details according to VS version, starting from VS2022 down to VS2017
 if($vsInstance.Contains('2022'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2022].content.src
-    $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2022.Extension.zip"
+    $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
     $extensionVersion = $feedDetails.feed.entry[$idVS2022].Vsix.Version
 }
 elseif($vsInstance.Contains('2019'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2019].content.src
-    $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2019.Extension.zip"
+    $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2019.Extension.zip"
     $extensionVersion = $feedDetails.feed.entry[$idVS2019].Vsix.Version
 }
 elseif($vsInstance.Contains('2017'))
 {
     $extensionUrl = $feedDetails.feed.entry[$idVS2017].content.src
-    $vsixPath = Join-Path  $($env:Agent_TempDirectory) "nanoFramework.Tools.VS2017.Extension.zip"
+    $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2017.Extension.zip"
     $extensionVersion = $feedDetails.feed.entry[$idVS2017].Vsix.Version
 }
 
-# download VS extension
+# Download VS extension
 DownloadVsixFile $extensionUrl $vsixPath
 
-# get path to 7zip
-$sevenZip = "$PSScriptRoot\7zip\7z.exe"
-
-# unzip extension
-Write-Debug "Unzip extension content"
-Invoke-VstsTool -FileName $sevenZip -Arguments " x $vsixPath -bd -o$env:Agent_TempDirectory\nf-extension" > $null
+# Unzip extension
+Write-Debug "Unzip VS extension content"
+Expand-Archive -LiteralPath $vsixPath -DestinationPath $tempDir\nf-extension\
 
 # copy build files to msbuild location
 $VsPath = $(&$VsWherePath -latest -property installationPath)
@@ -90,7 +89,7 @@ Write-Debug "Copy build files to msbuild location"
 
 $msbuildPath = $VsPath + "\MSBuild"
 
-Copy-Item -Path "$env:Agent_TempDirectory\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
+Copy-Item -Path "$tempDir\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
 
 Write-Output "Installed VS extension v$extensionVersion"
 
