@@ -787,12 +787,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 try
                 {
                     // create PR
-
-                    var user = _octokitClient.User.Current().Result;
-                    var username = user.Login;
-
                     // developer note: head must be in the format 'user:branch'
-                    var updatePr = _octokitClient.PullRequest.Create("nanoFramework", libraryName, new NewPullRequest(prTitle, $"{username}:{newBranchName}", branchToPr)).Result;
+                    var updatePr = _octokitClient.PullRequest.Create("nanoFramework", libraryName, new NewPullRequest(prTitle, $"nanoframework:{newBranchName}", branchToPr)).Result;
                     // update PR body
                     var updatePrBody = new PullRequestUpdate() { Body = commitMessage.ToString() };
                     _ = _octokitClient.PullRequest.Update("nanoFramework", libraryName, updatePr.Number, updatePrBody).Result;
