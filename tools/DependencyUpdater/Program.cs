@@ -38,6 +38,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <param name="solutionsToCheck">List of Solution(s) to update in the <paramref name="workingDirectory"/> directory.</param>
         /// <param name="reposToUpdate">List of repository(es) to update.</param>
         /// <param name="exclusionList">List of solution names to exclude from the update. Comma separated, name only.</param>
+        /// <param name="branchToPr">Name of the branch to submit PR with updates.</param>
         /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
         static void Main(
             string workingDirectory = null,
@@ -46,6 +47,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             bool solutionsToCheck = false,
             bool reposToUpdate = false,
             string exclusionList = null,
+            string branchToPr = "develop",
             string[] args = null)
         {
             // sanity check 
@@ -142,6 +144,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     workingDirectory,
                     stablePackages,
                     previewPackages,
+                    branchToPr,
                     args);
             }
             else
@@ -221,6 +224,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         workingDirectory,
                         false,
                         true,
+                        branchToPr,
                         args);
                 }
             }
@@ -232,6 +236,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         static void UpdateLibrary(string workingDirectory,
                         bool stablePackages = false,
                         bool previewPackages = true,
+                        string branchToPr = "develop",
                         string[] solutionsToCheck = default)
         {
             string releaseType = stablePackages ? "stable" : previewPackages ? "preview" : "?????";
@@ -771,7 +776,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     // create PR
                     // developer note: head must be in the format 'user:branch'
-                    var updatePr = _octokitClient.PullRequest.Create("nanoFramework", libraryName, new NewPullRequest(prTitle, $"nanoframework:{newBranchName}", "develop")).Result;
+                    var updatePr = _octokitClient.PullRequest.Create("nanoFramework", libraryName, new NewPullRequest(prTitle, $"nanoframework:{newBranchName}", branchToPr)).Result;
                     // update PR body
                     var updatePrBody = new PullRequestUpdate() { Body = commitMessage.ToString() };
                     _ = _octokitClient.PullRequest.Update("nanoFramework", libraryName, updatePr.Number, updatePrBody).Result;
