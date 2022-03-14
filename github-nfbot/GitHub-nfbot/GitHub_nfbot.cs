@@ -886,7 +886,7 @@ namespace nanoFramework.Tools.GitHub
                     log.LogInformation($"Error message received: {res.ReasonPhrase}");
                 }
             }
-            else if (payload.label.name.ToString() == _missingProjectToReproduceComment)
+            else if (payload.label.name.ToString() == _labelStatusMissingProjectToReproduce)
             {
                 log.LogInformation("Requesting project to reproduce the issue");
 
