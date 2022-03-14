@@ -621,7 +621,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // try to find nuspec to update it
                                 string nuspecFileName = null;
 
-                                var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec");
+                                var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec", SearchOption.AllDirectories);
                                 if (candidateNuspecFiles.Any())
                                 {
                                     // take 1st
@@ -632,11 +632,23 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 if (nuspecFileName is null)
                                 {
                                     // try again with project name
-                                    candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName}.nuspec");
+                                    candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName}.nuspec", SearchOption.AllDirectories);
                                     if (candidateNuspecFiles.Any())
                                     {
                                         // take 1st
                                         nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                                    }
+
+                                    // if this is AMQPLite, there is a different pattern for the nuspec names
+                                    if (libraryName == "amqpnetlite")
+                                    {
+                                        candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite")}.nuspec", SearchOption.AllDirectories);
+
+                                        if (candidateNuspecFiles.Any())
+                                        {
+                                            // take 1st
+                                            nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                                        }
                                     }
 
                                     if (nuspecFileName is null)
