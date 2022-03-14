@@ -642,7 +642,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     // if this is AMQPLite, there is a different pattern for the nuspec names
                                     if (libraryName == "amqpnetlite")
                                     {
-                                        candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite")}.nuspec", SearchOption.AllDirectories);
+                                        candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
 
                                         if (candidateNuspecFiles.Any())
                                         {
