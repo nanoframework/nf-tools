@@ -799,8 +799,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                         repoOwner = "Azure";
                     }
 
+                    Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: nanoframework:{ newBranchName}, base:{branchToPr}");
+
                     // developer note: head must be in the format 'user:branch'
                     var updatePr = _octokitClient.PullRequest.Create(repoOwner, libraryName, new NewPullRequest(prTitle, $"nanoframework:{newBranchName}", branchToPr)).Result;
+                    
                     // update PR body
                     var updatePrBody = new PullRequestUpdate() { Body = commitMessage.ToString() };
                     _ = _octokitClient.PullRequest.Update(repoOwner, libraryName, updatePr.Number, updatePrBody).Result;
@@ -809,7 +812,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}{Environment.NewLine}{ex.InnerException.Message}");
+                    Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}:{ex.InnerException.Message}");
                     Environment.Exit(1);
                 }
             }
