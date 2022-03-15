@@ -79,6 +79,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"Running at _another_ machine");
             }
 
+            Console.WriteLine($"Branch to submit PR: {branchToPr}");
+
 #if DEBUG
             var config = new ConfigurationBuilder()
             .AddUserSecrets<Program>()
