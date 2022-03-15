@@ -809,7 +809,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}");
+                    Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}{Environment.NewLine}{ex.InnerException.Message}");
                     Environment.Exit(1);
                 }
             }
