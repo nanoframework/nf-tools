@@ -22,6 +22,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 {
     internal class Program
     {
+        private const string AMQPLiteLibraryName = "amqpnetlite";
         private static string _nuGetConfigFile;
 
         static readonly GitHubClient _octokitClient = new(new ProductHeaderValue("nanodu"));
@@ -640,7 +641,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
 
                                     // if this is AMQPLite, there is a different pattern for the nuspec names
-                                    if (libraryName == "amqpnetlite")
+                                    if (libraryName == AMQPLiteLibraryName)
                                     {
                                         candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
 
@@ -787,13 +788,24 @@ namespace nanoFramework.Tools.DependencyUpdater
                 try
                 {
                     // create PR
+
+                    string repoOwner = "nanoFramework";
+
+
+                    // handle differently for:
+                    // AMQPLite
+                    if (libraryName == AMQPLiteLibraryName)
+                    {
+                        repoOwner = "Azure";
+                    }
+
                     // developer note: head must be in the format 'user:branch'
-                    var updatePr = _octokitClient.PullRequest.Create("nanoFramework", libraryName, new NewPullRequest(prTitle, $"nanoframework:{newBranchName}", branchToPr)).Result;
+                    var updatePr = _octokitClient.PullRequest.Create(repoOwner, libraryName, new NewPullRequest(prTitle, $"nanoframework:{newBranchName}", branchToPr)).Result;
                     // update PR body
                     var updatePrBody = new PullRequestUpdate() { Body = commitMessage.ToString() };
-                    _ = _octokitClient.PullRequest.Update("nanoFramework", libraryName, updatePr.Number, updatePrBody).Result;
+                    _ = _octokitClient.PullRequest.Update(repoOwner, libraryName, updatePr.Number, updatePrBody).Result;
 
-                    Console.WriteLine($"INFO: created PR #{updatePr.Number} @ nanoFramework/{libraryName}");
+                    Console.WriteLine($"INFO: created PR #{updatePr.Number} @ {repoOwner}/{libraryName}");
                 }
                 catch (Exception ex)
                 {
