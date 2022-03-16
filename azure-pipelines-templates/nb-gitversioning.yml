@@ -2,14 +2,6 @@
 # See LICENSE file in the project root for full license information.
 
 steps:
-  - task: DotNetCoreCLI@2  
-    inputs:
-      command: custom
-      custom: tool
-      arguments: install --tool-path . nbgv
-    condition: ne(variables['system.pullrequest.isfork'], true)
-    displayName: Install NBGV tool
-
   - script: nbgv cloud -a -c
     condition: ne(variables['system.pullrequest.isfork'], true)
     displayName: Set build number
