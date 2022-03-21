@@ -787,36 +787,56 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Environment.Exit(1);
                 }
 
-                try
+                CretePRWithUpdate(branchToPr, libraryName, commitMessage.ToString(), newBranchName, prTitle);
+            }
+        }
+
+        private static void CretePRWithUpdate(
+            string branchToPr,
+            string libraryName,
+            string commitMessage,
+            string newBranchName,
+            string prTitle)
+        {
+            try
+            {
+                // create PR
+                string repoOwner = "nanoFramework";
+
+                // handle differently for:
+                // AMQPLite
+                if (libraryName == AMQPLiteLibraryName)
                 {
-                    // create PR
+                    repoOwner = "Azure";
+                }
 
-                    string repoOwner = "nanoFramework";
+                // check if there is already a PR with these updates
+                var openPRs = _octokitClient.PullRequest.GetAllForRepository(repoOwner, libraryName, new PullRequestRequest() { State = ItemStateFilter.Open }).Result;
 
+                var updatePRs = openPRs.Where(pr => pr.User.Login == "nfbot" && pr.Title == prTitle && pr.Body == commitMessage);
 
-                    // handle differently for:
-                    // AMQPLite
-                    if (libraryName == AMQPLiteLibraryName)
-                    {
-                        repoOwner = "Azure";
-                    }
-
+                if (updatePRs.Count() > 0)
+                {
+                    Console.WriteLine($"INFO: found existing PR with the same update: {repoOwner}/{libraryName}/pull/{updatePRs.First().Number}. Skipping PR creation.");
+                }
+                else
+                {
                     Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: nanoframework:{ newBranchName}, base:{branchToPr}");
 
                     // developer note: head must be in the format 'user:branch'
                     var updatePr = _octokitClient.PullRequest.Create(repoOwner, libraryName, new NewPullRequest(prTitle, $"nanoframework:{newBranchName}", branchToPr)).Result;
-                    
+
                     // update PR body
-                    var updatePrBody = new PullRequestUpdate() { Body = commitMessage.ToString() };
+                    var updatePrBody = new PullRequestUpdate() { Body = commitMessage };
                     _ = _octokitClient.PullRequest.Update(repoOwner, libraryName, updatePr.Number, updatePrBody).Result;
 
                     Console.WriteLine($"INFO: created PR #{updatePr.Number} @ {repoOwner}/{libraryName}");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}:{ex.InnerException.Message}");
-                    Environment.Exit(1);
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}:{ex.InnerException.Message}");
+                Environment.Exit(1);
             }
         }
 
