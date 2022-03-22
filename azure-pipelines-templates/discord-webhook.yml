@@ -10,21 +10,19 @@ parameters:
 steps:
 - task: PowerShell@2
   displayName: Call Discord webhook
+  env:
+    GITHUB_TOKEN: $(GitHubToken)
   inputs:
     errorActionPreference: 'silentlyContinue'    
     targetType: 'inline'
     script: |
-
-      Install-Module -Name PowerShellForGitHub -Scope CurrentUser -Force
 
       # check if this is a PR
       if($env:System_PullRequest_PullRequestId -ne $null)
       {
           Write-Host "Building from PR"
 
-          $pr = Get-GitHubIssue -Uri "https://github.com/$env:Build_Repository_Name" -Issue $env:System_PullRequest_PullRequestNumber
-
-          $user = [String]$pr.user.login
+          $user = $(gh pr view $env:System_PullRequest_PullRequestNumber --json author --jq .author.login)
 
           Write-Host "PR from user: $user"
 
