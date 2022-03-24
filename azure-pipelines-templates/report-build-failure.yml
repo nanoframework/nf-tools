@@ -8,23 +8,19 @@ steps:
 - task: PowerShell@2
   displayName: Report build failure
   condition: or( failed(), eq( ${{ parameters.forceRun }}, true ) )
+  env:
+    GITHUB_TOKEN: $(GitHubToken)
   inputs:
     errorActionPreference: 'silentlyContinue'    
     targetType: 'inline'
     script: |
-
-      Install-Module -Name PowerShellForGitHub -Scope CurrentUser -Force
-
-      $secureString = ("$(GitHubToken)" | ConvertTo-SecureString -AsPlainText -Force)
-      $cred = New-Object System.Management.Automation.PSCredential "username is ignored", $secureString
-      Set-GitHubAuthentication -Credential $cred -SessionOnly
 
       # check if this is a PR
       if($env:System_PullRequest_PullRequestId -ne $null)
       {
           Write-Host "Building from PR $env:System_PullRequest_PullRequestId"
 
-          $pr = Get-GitHubIssue -Uri "https://github.com/$env:Build_Repository_Name" -Issue $env:System_PullRequest_PullRequestNumber
+          $user = $(gh pr view $env:System_PullRequest_PullRequestNumber --json author --jq .author.login)
 
           $user = [String]$pr.user.login
 
@@ -37,17 +33,23 @@ steps:
           {
               Write-Host "Sending warning to $user"
 
-              $comment = New-GitHubIssueComment -Uri "https://github.com/$env:Build_Repository_Name" -Issue $env:System_PullRequest_PullRequestNumber -Body "Hey @$user!`n`nSeems that the build is failing for this PR... :disappointed: Please check it."
+              $commentBody = "Hey @$user!`n`nSeems that the build is failing for this PR... :hushed: Please check it."
 
-              $commentId = [String]$comment.CommentId 
               Write-Host "Adding comment $commentId"
+              $comment = gh pr comment $env:System_PullRequest_PullRequestNumber --body $commentBody
+
+              $comment -match '(\d+\#issuecomment\-)(?<CommentId>\d+)'
+
+              $commentId = $matches.CommentId
+              
+              Write-Host "Added comment $commentId"
 
               # need to wait a few seconds, otherwise github won't pickup the comment for sending
               Start-Sleep -Seconds 10
+              
+              gh api "repos/$env:Build_Repository_Name/issues/comments/$commentId" --method DELETE
 
-              Remove-GitHubIssueComment -Uri "https://github.com/$env:Build_Repository_Name" -CommentID $commentId -Force
-
-              Write-Host "Removed comment"
+              Write-Host "Comment removed"
           }
       }
       else
