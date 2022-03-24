@@ -50,6 +50,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _issueContentExpectedBehaviour = "A clear and concise description of what you expected to happen.";
         private const string _issueContentBugDescription = "A clear and concise description of what the bug is.";
         private const string _issueContentDescribeAlternatives = "A clear and concise description of any alternative solutions or features you've considered.";
+        private const string _issueSupportOptionsNotice = "\r\nIf you are a commercial user, time to market maybe be important to you. Know that [Professional Support](https://docs.nanoframework.net/content/support/professional-support.html) options are available.\r\nIf you are stuck on something, need your bug fixed in a hurry or would like to sponsor the feature that you're currently missing, feel free to reach out to us here or on the project's [Discord server](https://discordapp.com/invite/gCyBu8T).\r\nIf this it not of interest to you, that's fine too. This issue will get into the queue and will be eventually addressed.";
 
         private const string _issueArea = "nanoFramework area:";
         private const string _issueFeatureRequest = "### Is your feature request related to a problem?";
@@ -367,7 +368,7 @@ namespace nanoFramework.Tools.GitHub
                     return await ProcessOpenOrEditIssueAsync(
                         issue,
                         payload,
-                        log);
+                        log, _octokitClient);
                 }
                 else if (payload.action == "closed")
                 {
@@ -1529,15 +1530,12 @@ namespace nanoFramework.Tools.GitHub
         private static async Task<IActionResult> ProcessOpenOrEditIssueAsync(
             Octokit.Issue issue,
             dynamic payload,
-            ILogger log)
+            ILogger log, GitHubClient _octokitClient)
         {
             // check for content that shouldn't be there and shows that the author hadn't read the instructions or is being lazy
 
             // flag that this is a open/reopen event
             bool isOpenAction = payload.action == "opened" || payload.action == "reopened";
-
-            // flag if author is member or owner
-            bool authorIsMemberOrOwner = payload.issue.author_association == "MEMBER" || payload.issue.author_association == "OWNER";
 
             log.LogInformation($"Processing issue #{issue.Number}");
 
@@ -1568,6 +1566,27 @@ namespace nanoFramework.Tools.GitHub
 
             if (isOpenAction)
             {
+                // is author 
+
+                // flag if author is member or owner
+                string authorAssociation = (string)payload.issue.author_association;
+                List<string> rolesExcludedFromSponsorship = new List<string>() { "COLLABORATOR", "MEMBER", "OWNER" };
+
+                if (!rolesExcludedFromSponsorship.Contains(authorAssociation))
+                {
+                    // add comment about support options
+                    var newComment = await _octokitClient.Issue.Comment.Create(
+                        (long)payload.repository.id,
+                        (int)payload.issue.number,
+                        $"Hey @{payload.issue.user.login}! {_issueSupportOptionsNotice}.");
+
+                    // hang here for a while to let the comment flow through GitHub
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+
+                    // delete comment
+                    await _octokitClient.Issue.Comment.Delete((long)payload.repository.id, newComment.Id);
+                }
+
                 return new OkObjectResult("");
             }
             else
