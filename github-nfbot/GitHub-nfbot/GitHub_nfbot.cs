@@ -89,6 +89,9 @@ namespace nanoFramework.Tools.GitHub
 
         private const string _tagVersionUpdate = "[version update]";
 
+        // if author is member or owner
+        private static List<string> _rolesWithProjectOrgPermissions = new List<string>() { "COLLABORATOR", "MEMBER", "OWNER" };
+
         // DevOps client
         private const string _nfOrganizationUrl = "https://dev.azure.com/nanoframework";
 
@@ -210,10 +213,13 @@ namespace nanoFramework.Tools.GitHub
 
                         if (linkedIssuesReference)
                         {
-                            // everything looks OK, remove all comments from nfbot
-                            await RemovenfbotCommentsAsync(
-                                pr,
-                                log);
+                            // everything looks OK, remove all comments from nfbot, if any
+                            if (pr.Comments > 0)
+                            {
+                                await RemovenfbotCommentsAsync(
+                                    pr,
+                                    log);
+                            }
                         }
                     }
                 }
@@ -345,7 +351,10 @@ namespace nanoFramework.Tools.GitHub
                     if (branchesClangFix.Any())
                     {
                         // remove nfbot comments with the code style fixes
-                        await RemovenfbotCommentsAsync(pr, log);
+                        if (pr.Comments > 0)
+                        {
+                            await RemovenfbotCommentsAsync(pr, log);
+                        }
                     }
                 }
             }
@@ -360,6 +369,7 @@ namespace nanoFramework.Tools.GitHub
 
                 // get issue
                 Octokit.Issue issue = await _octokitClient.Issue.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.issue.number);
+                long repositoryId = (long)payload.repository.id;
 
                 if ((payload.action == "opened" ||
                       payload.action == "edited" ||
@@ -368,6 +378,7 @@ namespace nanoFramework.Tools.GitHub
                 {
                     return await ProcessOpenOrEditIssueAsync(
                         issue,
+                        repositoryId,
                         payload,
                         log, _octokitClient);
                 }
@@ -375,6 +386,7 @@ namespace nanoFramework.Tools.GitHub
                 {
                     return await ProcessClosedIssueAsync(
                         issue,
+                        repositoryId,
                         payload,
                         log);
                 }
@@ -397,22 +409,22 @@ namespace nanoFramework.Tools.GitHub
                             if (processResult == StartReleaseResult.Executed)
                             {
                                 // add thumbs up reaction to comment
-                                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Plus1));
+                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (int)payload.comment.id, new NewReaction(ReactionType.Plus1));
                             }
                             else if (processResult == StartReleaseResult.Started)
                             {
                                 // add rocket reaction to comment
-                                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Rocket));
+                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (int)payload.comment.id, new NewReaction(ReactionType.Rocket));
                             }
                             else if (processResult == StartReleaseResult.WatchoutConditions)
                             {
                                 // add eyes reaction to comment
-                                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Eyes));
+                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (int)payload.comment.id, new NewReaction(ReactionType.Eyes));
                             }
                             else
                             {
                                 // add confused reaction to comment
-                                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Confused));
+                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (int)payload.comment.id, new NewReaction(ReactionType.Confused));
                             }
                         }
                         else
@@ -420,7 +432,7 @@ namespace nanoFramework.Tools.GitHub
                             log.LogInformation($"User has no permission to execute command");
 
                             // add thumbs down reaction to comment
-                            await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Minus1));
+                            await _octokitClient.Reaction.IssueComment.Create(repositoryId, (int)payload.comment.id, new NewReaction(ReactionType.Minus1));
                         }
                     }
                 }
@@ -1444,11 +1456,12 @@ namespace nanoFramework.Tools.GitHub
 
         private static async Task<IActionResult> ProcessClosedIssueAsync(
             Octokit.Issue issue,
+            long repositoryId,
             dynamic payload,
             ILogger log)
         {
             // get timeline of issue
-            var issueTimeLine = await _octokitClient.Issue.Timeline.GetAllForIssue((int)payload.repository.id, issue.Number);
+            var issueTimeLine = await _octokitClient.Issue.Timeline.GetAllForIssue(repositoryId, issue.Number);
             var crossRefs = issueTimeLine.Where(t => t.Event == EventInfoState.Crossreferenced).OrderByDescending(t => t.CreatedAt);
 
             if (crossRefs.Any())
@@ -1475,7 +1488,7 @@ namespace nanoFramework.Tools.GitHub
                                label.Name.Contains("Priority") ||
                                label.Name.Contains("pinned"))
                             {
-                                _ = await _octokitClient.Issue.Labels.RemoveFromIssue((int)payload.repository.id, issue.Number, label.Name);
+                                _ = await _octokitClient.Issue.Labels.RemoveFromIssue(repositoryId, issue.Number, label.Name);
                             }
                         }
 
@@ -1484,13 +1497,13 @@ namespace nanoFramework.Tools.GitHub
                         {
                             if (label.Name == "Type: Bug")
                             {
-                                _ = await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { "Status: FIXED" });
+                                _ = await _octokitClient.Issue.Labels.AddToIssue(repositoryId, issue.Number, new string[] { "Status: FIXED" });
                             }
                             else if (label.Name == "Type: Chores"
                                      || label.Name == "Type: Enhancement"
                                      || label.Name == "Type: Feature request")
                             {
-                                _ = await _octokitClient.Issue.Labels.AddToIssue((int)payload.repository.id, issue.Number, new string[] { "Status: DONE" });
+                                _ = await _octokitClient.Issue.Labels.AddToIssue(repositoryId, issue.Number, new string[] { "Status: DONE" });
                             }
                         }
 
@@ -1520,7 +1533,7 @@ namespace nanoFramework.Tools.GitHub
                        label.Name == "Type: Feature request" ||
                        label.Name == "Status: Waiting Triage")
                     {
-                        _ = await _octokitClient.Issue.Labels.RemoveFromIssue((int)payload.repository.id, issue.Number, label.Name);
+                        _ = await _octokitClient.Issue.Labels.RemoveFromIssue(repositoryId, issue.Number, label.Name);
                     }
                 }
             }
@@ -1530,13 +1543,17 @@ namespace nanoFramework.Tools.GitHub
 
         private static async Task<IActionResult> ProcessOpenOrEditIssueAsync(
             Octokit.Issue issue,
+            long repositoryId,
             dynamic payload,
-            ILogger log, GitHubClient _octokitClient)
+            ILogger log,
+            GitHubClient _octokitClient)
         {
+
             // check for content that shouldn't be there and shows that the author hadn't read the instructions or is being lazy
 
             // flag that this is a open/reopen event
             bool isOpenAction = payload.action == "opened" || payload.action == "reopened";
+            string authorAssociation = (string)payload.issue.author_association;
 
             log.LogInformation($"Processing issue #{issue.Number}");
 
@@ -1548,7 +1565,10 @@ namespace nanoFramework.Tools.GitHub
                     Title = issue.Title.Substring(0, issue.Title.Length - 1)
                 };
 
-                issue = await _octokitClient.Issue.Update((int)payload.repository.id, issue.Number, fixedIssue);
+                issue = await _octokitClient.Issue.Update(
+                    repositoryId,
+                    issue.Number,
+                    fixedIssue);
             }
 
             // check for expected/mandatory content
@@ -1605,10 +1625,14 @@ namespace nanoFramework.Tools.GitHub
             }
             else
             {
-                // everything looks OK, remove all comments from nfbot
-                await RemovenfbotCommentsAsync(
-                    issue,
-                    log);
+                // everything looks OK, remove all comments from nfbot, if any
+                if (issue.Comments > 0)
+                {
+                    await RemovenfbotCommentsAsync(
+                        repositoryId,
+                        issue.Number,
+                        log);
+                }
             }
 
             return new OkObjectResult("");
@@ -1619,17 +1643,13 @@ namespace nanoFramework.Tools.GitHub
             await RemovenfbotCommentsAsync(pr.Base.Repository.Id, pr.Number, log);
         }
 
-        private static async Task RemovenfbotCommentsAsync(Octokit.Issue issue, ILogger log)
-        {
-            await RemovenfbotCommentsAsync(issue.Repository.Id, issue.Number, log);
-        }
-
         private static async Task RemovenfbotCommentsAsync(long repoId, int id, ILogger log)
         {
             // list all comments from nfbot
-            var commentsForThisIssue = await _octokitClient.Issue.Comment.GetAllForIssue(repoId, id);
+            var commentList = await _octokitClient.Issue.Comment.GetAllForIssue(repoId, id);
 
-            var commentsToRemove = commentsForThisIssue.Where(c => c.User.Login == "nfbot");
+            var commentsToRemove = commentList.Where(c => c.User.Login == "nfbot");
+
 
             foreach (var comment in commentsToRemove)
             {
