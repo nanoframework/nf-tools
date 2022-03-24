@@ -51,6 +51,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _issueContentBugDescription = "A clear and concise description of what the bug is.";
         private const string _issueContentDescribeAlternatives = "A clear and concise description of any alternative solutions or features you've considered.";
         private const string _issueSupportOptionsNotice = "\r\nIf you are a commercial user, time to market maybe be important to you. Know that [Professional Support](https://docs.nanoframework.net/content/support/professional-support.html) options are available.\r\nIf you are stuck on something, need your bug fixed in a hurry or would like to sponsor the feature that you're currently missing, feel free to reach out to us here or on the project's [Discord server](https://discordapp.com/invite/gCyBu8T).\r\nIf this it not of interest to you, that's fine too. This issue will get into the queue and will be eventually addressed.";
+        private const string _issueTodoWihtouPermission = "\r\n🤨 Well... we've told you that this issue type was reserved to project Team Members. And we meant that. So, we're closing it now. Please choose an appropriate one.";
 
         private const string _issueArea = "nanoFramework area:";
         private const string _issueFeatureRequest = "### Is your feature request related to a problem?";
@@ -1562,17 +1563,30 @@ namespace nanoFramework.Tools.GitHub
             {
                 // users outside members team can't open TODOs
                 // need to proceed with the author check
+
+                if (!_rolesWithProjectOrgPermissions.Contains(authorAssociation))
+                {
+                    // comment on issue
+                    _ = await _octokitClient.Issue.Comment.Create(
+                                            repositoryId,
+                                            (int)payload.issue.number,
+                                            $"{_issueTodoWihtouPermission}.");
+
+                    // close issue
+                    _ = await _octokitClient.Issue.Update(
+                        (long)payload.repository.id,
+                        (int)payload.issue.number,
+                        new IssueUpdate() { State = ItemState.Closed });
+
+                    // done here
+                    return new OkObjectResult("");
+                }
             }
 
             if (isOpenAction)
             {
                 // is author 
-
-                // flag if author is member or owner
-                string authorAssociation = (string)payload.issue.author_association;
-                List<string> rolesExcludedFromSponsorship = new List<string>() { "COLLABORATOR", "MEMBER", "OWNER" };
-
-                if (!rolesExcludedFromSponsorship.Contains(authorAssociation))
+                if (!_rolesWithProjectOrgPermissions.Contains(authorAssociation))
                 {
                     // add comment about support options
                     var newComment = await _octokitClient.Issue.Comment.Create(
