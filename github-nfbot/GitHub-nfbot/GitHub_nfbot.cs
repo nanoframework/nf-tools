@@ -1462,59 +1462,53 @@ namespace nanoFramework.Tools.GitHub
         {
             // get timeline of issue
             var issueTimeLine = await _octokitClient.Issue.Timeline.GetAllForIssue(repositoryId, issue.Number);
-            var crossRefs = issueTimeLine.Where(t => t.Event == EventInfoState.Crossreferenced).OrderByDescending(t => t.CreatedAt);
 
-            if (crossRefs.Any())
+            // get all cross referenced PRs
+            var crossRefPrs = issueTimeLine.Where(t => t.Event == EventInfoState.Crossreferenced && t.Source.Issue?.PullRequest != null).OrderByDescending(t => t.CreatedAt);
+
+            if (crossRefPrs.Any())
             {
-                foreach (var eventInfo in crossRefs)
+                // there are PRs referenced, check if they are all closed
+                if (crossRefPrs.Count(pr => pr.Source.Issue.State.Value == ItemState.Closed) == crossRefPrs.Count())
                 {
-                    if (eventInfo.Source.Issue != null &&
-                        eventInfo.Source.Issue.PullRequest != null &&
-                        eventInfo.Source.Issue.State.Value == ItemState.Closed
-                        )
+                    // this issue was linked to PRs that are all closed now
+                    // it's safe to assume that it was just closed by it
+
+                    // clear all labels that don't belong here anymore
+                    foreach (var label in issue.Labels)
                     {
-                        // this issue is linked to a PR that is closed
-                        // it's safe to assume that it was just closed by it
-
-                        // clear all labels that don't belong here anymore
-                        foreach (var label in issue.Labels)
+                        if (label.Name == "up-for-grabs" ||
+                           label.Name == "good first issue" ||
+                           label.Name == "FOR DISCUSSION" ||
+                           label.Name == "HELP WANTED" ||
+                           label.Name.StartsWith("Status") ||
+                           label.Name.Contains("trivial") ||
+                           label.Name.Contains("Priority") ||
+                           label.Name.Contains("pinned"))
                         {
-                            if (label.Name == "up-for-grabs" ||
-                               label.Name == "good first issue" ||
-                               label.Name == "FOR DISCUSSION" ||
-                               label.Name == "HELP WANTED" ||
-                               label.Name.StartsWith("Status") ||
-                               label.Name.Contains("trivial") ||
-                               label.Name.Contains("Priority") ||
-                               label.Name.Contains("pinned"))
-                            {
-                                _ = await _octokitClient.Issue.Labels.RemoveFromIssue(repositoryId, issue.Number, label.Name);
-                            }
+                            _ = await _octokitClient.Issue.Labels.RemoveFromIssue(repositoryId, issue.Number, label.Name);
                         }
+                    }
 
-                        // set the appropriate label after the issue closure
-                        foreach (var label in issue.Labels)
+                    // set the appropriate label after the issue closure
+                    foreach (var label in issue.Labels)
+                    {
+                        if (label.Name == "Type: Bug")
                         {
-                            if (label.Name == "Type: Bug")
-                            {
-                                _ = await _octokitClient.Issue.Labels.AddToIssue(repositoryId, issue.Number, new string[] { "Status: FIXED" });
-                            }
-                            else if (label.Name == "Type: Chores"
-                                     || label.Name == "Type: Enhancement"
-                                     || label.Name == "Type: Feature request")
-                            {
-                                _ = await _octokitClient.Issue.Labels.AddToIssue(repositoryId, issue.Number, new string[] { "Status: DONE" });
-                            }
+                            _ = await _octokitClient.Issue.Labels.AddToIssue(repositoryId, issue.Number, new string[] { "Status: FIXED" });
                         }
-
-                        // no need to process any other time line event
-                        break;
+                        else if (label.Name == "Type: Chores"
+                                 || label.Name == "Type: Enhancement"
+                                 || label.Name == "Type: Feature request")
+                        {
+                            _ = await _octokitClient.Issue.Labels.AddToIssue(repositoryId, issue.Number, new string[] { "Status: DONE" });
+                        }
                     }
                 }
             }
             else
             {
-                // this issue has no links
+                // this issue has no link to any PRs
 
                 // clear all labels that don't belong here anymore
                 foreach (var label in issue.Labels)
@@ -1526,12 +1520,7 @@ namespace nanoFramework.Tools.GitHub
                        label.Name.StartsWith("Status") ||
                        label.Name.Contains("trivial") ||
                        label.Name.Contains("Priority") ||
-                       label.Name.Contains("pinned") ||
-                       label.Name == "Type: Bug" ||
-                       label.Name == "Type: Chores" ||
-                       label.Name == "Type: Enhancement" ||
-                       label.Name == "Type: Feature request" ||
-                       label.Name == "Status: Waiting Triage")
+                       label.Name.Contains("pinned"))
                     {
                         _ = await _octokitClient.Issue.Labels.RemoveFromIssue(repositoryId, issue.Number, label.Name);
                     }
