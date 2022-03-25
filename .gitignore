@@ -14,3 +14,5 @@ NanoFramework-GitHubBot - Web Deploy.pubxml
 # VS Code
 .vscode
 /NuGet.Config
+AzureDevOps/TaskInstallMSBuildComponents/node_modules
+AzureDevOps/TaskUpdateNativeAssemblyDeclaration/node_modules
