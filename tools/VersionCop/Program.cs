@@ -591,13 +591,16 @@ class Program
                     CancellationToken.None).Result;
             }
 
-            foreach (var nextLevelDependencyPackage in dependencyInfo?.Dependencies)
+            if (dependencyInfo is not null)
             {
-                dependencyFound = FindDependency(packageName, packageVersion, isDeclaredDependency, nextLevelDependencyPackage, targetFramework, ref dependencyPackageId, ref hintMessage, false);
-
-                if (dependencyFound)
+                foreach (var nextLevelDependencyPackage in dependencyInfo.Dependencies)
                 {
-                    break;
+                    dependencyFound = FindDependency(packageName, packageVersion, isDeclaredDependency, nextLevelDependencyPackage, targetFramework, ref dependencyPackageId, ref hintMessage, false);
+
+                    if (dependencyFound)
+                    {
+                        break;
+                    }
                 }
             }
 
