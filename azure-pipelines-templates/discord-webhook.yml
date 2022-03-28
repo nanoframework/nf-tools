@@ -27,7 +27,7 @@ steps:
           Write-Host "PR from user: $user"
 
           # only report to Discord if this is from an automated build
-          if($user -eq 'nfbot' -or $user -eq 'github-actions[bot]' -or $user -eq 'dependabot[bot]')
+          if($user -eq 'nfbot' -or $user -eq 'github-actions[bot]' -or $user -eq 'github-actions' -or $user -eq 'dependabot[bot]' -or $user -eq 'dependabot')
           {
               Write-Host "Go and report failure to Discord"
 
