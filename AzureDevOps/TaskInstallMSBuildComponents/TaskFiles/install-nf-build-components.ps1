@@ -73,6 +73,6 @@ $msbuildPath = $VsPath + "\MSBuild"
 
 Copy-Item -Path "$tempDir\nf-extension\`$MSBuild\nanoFramework" -Destination $msbuildPath -Recurse
 
-Write-Output "Installed VS extension v$extensionVersion"
+Write-Output "Installed VS extension $extensionVersion"
 
 Trace-VstsLeavingInvocation $MyInvocation
