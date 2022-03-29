@@ -22,8 +22,6 @@ steps:
 
           $user = $(gh pr view $env:System_PullRequest_PullRequestNumber --json author --jq .author.login)
 
-          $user = [String]$pr.user.login
-
           # only warn user if it's NOT an automated build
           if($user -eq 'nfbot' -or $user -eq 'github-actions[bot]' -or $user -eq 'github-actions' -or $user -eq 'dependabot[bot]' -or $user -eq 'dependabot')
           {
