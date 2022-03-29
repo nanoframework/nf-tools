@@ -19,6 +19,8 @@ using System.Xml.Linq;
 class Program
 {
     private static IEnumerable<SourceRepository> _nugetRepositories;
+    private static DependencyInfoResource _dependencyInfoResourceAzureFeed;
+    private static DependencyInfoResource _dependencyInfoResourceNuGet;
 
     /// <param name="solutionToCheck">Path to the solution to check.</param>
     /// <param name="workingDirectory">Path of the working directory where solutions will be searched.</param>
@@ -142,11 +144,18 @@ class Program
         // setup NuGet source and dependency resolver
         PackageSourceProvider sourceProvider = new(NullSettings.Instance, new[]
         {
-            new PackageSource("https://api.nuget.org/v3/index.json"),
-            new PackageSource("https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json")
+            new PackageSource("https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json"),
+            new PackageSource("https://api.nuget.org/v3/index.json")
         });
         var sourceRepositoryProvider = new SourceRepositoryProvider(sourceProvider, Repository.Provider.GetCoreV3());
         _nugetRepositories = sourceRepositoryProvider.GetRepositories();
+
+        _dependencyInfoResourceAzureFeed = _nugetRepositories.ElementAt(0).GetResource<DependencyInfoResource>();
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // use only .NET nanoFramework feed in Azure DevOps so stats in NuGet are not messed up with the versions check
+        //_dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // read solution file content
         var slnFileContent = File.ReadAllText(solutionToCheck);
@@ -299,6 +308,8 @@ class Program
                 projectCheckFailed = false;
                 nuspecCheckFailed = false;
                 bool refMissingFromNuspec = false;
+                bool idMismatchInNuspec = false;
+                string idFoundInNuspec = "";
                 checkNuspec = true;
 
                 Console.WriteLine();
@@ -357,10 +368,21 @@ class Program
                                 {
                                     foreach (var dependencyPackage in dependency.Packages)
                                     {
-                                        if (dependencyPackage.Id == packageName
-                                            && dependencyPackage.VersionRange.OriginalString == packageVersion)
+                                        if (dependencyPackage.Id == packageName)
                                         {
-                                            refMissingFromNuspec = false;
+                                            // package found
+                                            // now check version
+                                            if (dependencyPackage.VersionRange.OriginalString == packageVersion)
+                                            {
+                                                refMissingFromNuspec = false;
+                                            }
+                                            else
+                                            {
+                                                // version doesn't match!
+                                                nuspecCheckFailed = true;
+                                                idMismatchInNuspec = true;
+                                                idFoundInNuspec = dependencyPackage.VersionRange.OriginalString;
+                                            }
 
                                             // done here
                                             break;
@@ -390,6 +412,19 @@ class Program
                         Console.Write("nfproj OK! ");
 
                         Console.ForegroundColor = ConsoleColor.White;
+
+                        if (idMismatchInNuspec)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+
+                            Console.WriteLine();
+                            Console.WriteLine("*****************************************************************");
+                            Console.WriteLine($"Found in nuspec, but declared dependency version doesn't match!");
+                            Console.WriteLine($"expecting '{packageVersion}' but found '{idFoundInNuspec}'");
+                            Console.WriteLine("*****************************************************************");
+
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
                     }
 
                     // nuspec check outcome, if any
@@ -415,7 +450,7 @@ class Program
                                 {
                                     foreach (var dependencyPackage in dependency.Packages)
                                     {
-                                        dependencyFound = FindDependency(packageName, packageVersion, isDeclaredDependency, dependencyPackage, dependency.TargetFramework, ref dependencyPackageId, ref hintMessage);
+                                        dependencyFound = FindDependency(packageName, packageVersion, analyseNuspec ? false : isDeclaredDependency, dependencyPackage, dependency.TargetFramework, ref dependencyPackageId, ref hintMessage);
 
                                         if (dependencyFound)
                                         {
@@ -427,7 +462,7 @@ class Program
                                     {
                                         foreach (var dependencyPackage in dependency.Packages)
                                         {
-                                            dependencyFound = FindDependency(packageName, packageVersion, isDeclaredDependency, dependencyPackage, dependency.TargetFramework, ref dependencyPackageId, ref hintMessage, true);
+                                            dependencyFound = FindDependency(packageName, packageVersion, !refMissingFromNuspec && isDeclaredDependency, dependencyPackage, dependency.TargetFramework, ref dependencyPackageId, ref hintMessage, true);
 
                                             if (dependencyFound)
                                             {
@@ -468,22 +503,27 @@ class Program
                                 // this is a dependency from one of the declared dependencies
                                 // it's OK that's not listed as a dependency
 
-                                if (!isDeclaredDependency)
+                                if (!idMismatchInNuspec)
+                                {
+                                    if (!isDeclaredDependency)
+                                    {
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+
+                                        Console.WriteLine(" NOT listed in nuspec, but that's OK");
+                                    }
+                                    else
+                                    {
+                                        Console.ForegroundColor = ConsoleColor.Green;
+
+                                        Console.WriteLine("nuspec OK! ");
+                                    }
+                                }
+
+                                if (analyseNuspec && (!refMissingFromNuspec || idMismatchInNuspec) && packageName != dependencyPackageId && packageName != "nanoFramework.CoreLibrary")
                                 {
                                     Console.ForegroundColor = ConsoleColor.Yellow;
 
-                                    Console.WriteLine(" NOT listed in nuspec, but that's OK");
-                                }
-                                else
-                                {
-                                    Console.ForegroundColor = ConsoleColor.Green;
-
-                                    Console.WriteLine("nuspec OK! ");
-                                }
-
-                                if (analyseNuspec && isDeclaredDependency && refMissingFromNuspec)
-                                {
-                                    Console.WriteLine($"*** OK to remove it because it's declared as a dependency of {dependencyPackageId} ***");
+                                    Console.WriteLine($"*** OK to remove it because it's declared as a dependency of '{dependencyPackageId}' ***");
 
                                     // flag this
                                     nuspecDependenciesToRemove = true;
@@ -558,9 +598,6 @@ class Program
 
     private static bool FindDependency(string packageName, string packageVersion, bool isDeclaredDependency, PackageDependency dependencyPackage, NuGet.Frameworks.NuGetFramework targetFramework, ref string dependencyPackageId, ref string hintMessage, bool recurring = false)
     {
-        var dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(0).GetResource<DependencyInfoResource>();
-        var dependencyInfoResourceAzureFeed = _nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
-
         PackageIdentity packageIdentity = new(
             dependencyPackage.Id,
             new NuGet.Versioning.NuGetVersion(dependencyPackage.VersionRange.ToShortString()));
@@ -569,8 +606,8 @@ class Program
 
         if (recurring)
         {
-            // 2nd round on nanoFramework Azure Feed
-            dependencyInfo = dependencyInfoResourceAzureFeed.ResolvePackage(
+            // 2nd round
+            dependencyInfo = _dependencyInfoResourceAzureFeed.ResolvePackage(
                 packageIdentity,
                 targetFramework,
                 new SourceCacheContext(),
@@ -579,11 +616,11 @@ class Program
 
             bool dependencyFound = false;
 
-            if (dependencyInfo is null)
+            if (_dependencyInfoResourceNuGet is not null && dependencyInfo is null)
             {
-                // try to find it in NuGet
+                // try to find it in NuGet, if feed is available
 
-                dependencyInfo = dependencyInfoResourceNuGet.ResolvePackage(
+                dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
                     packageIdentity,
                     targetFramework,
                     new SourceCacheContext(),
@@ -595,54 +632,77 @@ class Program
             {
                 foreach (var nextLevelDependencyPackage in dependencyInfo.Dependencies)
                 {
-                    dependencyFound = FindDependency(packageName, packageVersion, isDeclaredDependency, nextLevelDependencyPackage, targetFramework, ref dependencyPackageId, ref hintMessage, false);
+                    dependencyFound = FindDependency(packageName, packageVersion, true, nextLevelDependencyPackage, targetFramework, ref dependencyPackageId, ref hintMessage, false);
 
                     if (dependencyFound)
                     {
+                        dependencyPackageId = nextLevelDependencyPackage.Id;
+
                         break;
                     }
                 }
             }
 
+            if (!dependencyFound && packageIdentity.Id == packageName)
+            {
+                dependencyPackageId = packageName;
+
+                if (packageIdentity.Version.ToNormalizedString() != packageVersion)
+                {
+                    hintMessage = $"Found it as dependency of '{dependencyPackageId}' {Environment.NewLine}with requested version being '{packageVersion}' BUT {Environment.NewLine}NuGet package is declaring version as '{packageIdentity.Version.ToNormalizedString()}'";
+                }
+
+                // done here
+                return true;
+            }
+
             return dependencyFound;
         }
 
-        if (isDeclaredDependency && packageIdentity.Id == packageName && packageIdentity.Version.ToNormalizedString() == packageVersion)
+        if (isDeclaredDependency && packageIdentity.Id == packageName)
         {
-            // done here
-            return true;
-        }
-
-        // 1st round on NuGet
-        dependencyInfo = dependencyInfoResourceNuGet.ResolvePackage(
-            packageIdentity,
-            targetFramework,
-            new SourceCacheContext(),
-            new NullLogger(),
-            CancellationToken.None).Result;
-
-        if (dependencyInfo is not null
-            && dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
-        {
-            dependencyPackageId = dependencyInfo.Id;
+            if (packageIdentity.Version.ToNormalizedString() != packageVersion)
+            {
+                hintMessage = $"Found it as dependency of '{dependencyPackageId}' {Environment.NewLine}with requested version being '{packageVersion}' BUT {Environment.NewLine}NuGet package is declaring version as '{packageIdentity.Version.ToNormalizedString()}'";
+            }
 
             // done here
             return true;
         }
 
-        // check on package name BUT version mismatch
-        if (dependencyInfo is not null
-           && dependencyInfo.Dependencies.Any(d => d.Id == packageName))
+        // 1st round on NuGet, if feed is available
+        if (_dependencyInfoResourceNuGet is not null)
         {
-            // looks like this is it!
-            hintMessage = $"Found it as dependency of '{dependencyPackage.Id}' {Environment.NewLine}with requested version being '{packageVersion}' BUT {Environment.NewLine}NuGet package is declaring version as '{dependencyInfo.Dependencies.First(d => d.Id == packageName).VersionRange.ToShortString()}'";
+            dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
+                packageIdentity,
+                targetFramework,
+                new SourceCacheContext(),
+                new NullLogger(),
+                CancellationToken.None).Result;
 
-            // done here
-            return false;
+            if (dependencyInfo is not null
+                && dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
+            {
+                dependencyPackageId = dependencyInfo.Id;
+
+                // done here
+                return true;
+            }
+
+            // check on package name BUT version mismatch
+            if (dependencyInfo is not null
+               && dependencyInfo.Dependencies.Any(d => d.Id == packageName))
+            {
+                // looks like this is it!
+                hintMessage = $"Found it as dependency of '{dependencyPackage.Id}' {Environment.NewLine}with requested version being '{packageVersion}' BUT {Environment.NewLine}NuGet package is declaring version as '{dependencyInfo.Dependencies.First(d => d.Id == packageName).VersionRange.ToShortString()}'";
+
+                // done here
+                return false;
+            }
         }
 
         // 2nd round on nanoFramework Azure Feed
-        dependencyInfo = dependencyInfoResourceAzureFeed.ResolvePackage(
+        dependencyInfo = _dependencyInfoResourceAzureFeed.ResolvePackage(
             packageIdentity,
             targetFramework,
             new SourceCacheContext(),
