@@ -928,7 +928,10 @@ namespace nanoFramework.Tools.GitHub
             // arguments (optional)
 
             // remove start of message
-            var command = payload.comment.body.ToString().Substring("@nfbot ".Length);
+            string command = payload.comment.body.ToString().Substring("@nfbot ".Length);
+            command = command.Trim();
+            // clean up trailing CR and LF
+            command = command.Replace("\r", "").Replace("\n", "");
 
             // get repository
             string repositoryName = payload.repository.name.ToString();
