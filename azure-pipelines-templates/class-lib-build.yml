@@ -217,6 +217,7 @@ steps:
   inputs:
     versionSpec: '= 3.0' 
     addToPath: true
+
 # Cache change log cache files
 - task: Cache@2
   displayName: Cache change log cache files
