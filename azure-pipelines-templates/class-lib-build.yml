@@ -449,28 +449,6 @@ steps:
     includeSymbols: true
     publishFeedCredentials: 'NuGet-$(System.TeamProject)'
 
-# create or update GitHub release
-- task: GithubRelease@1
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
-      eq(variables['StartReleaseCandidate'], false)
-    )
-  displayName: Create/Update GitHub PREVIEW release
-  inputs:
-    gitHubConnection: 'github.com_nano-$(System.TeamProject)'
-    tagSource: userSpecifiedTag
-    tag: v$(MY_NUGET_VERSION)
-    title: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
-    releaseNotesSource: inline
-    releaseNotesInline: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
-    assets: '$(Build.ArtifactStagingDirectory)/*$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
-    assetUploadMode: replace
-    isPreRelease: true
-    addChangeLog: false
-
 # create or update GitHub release ON tags from release or main branches
 - task: GithubRelease@1
   condition: >-
