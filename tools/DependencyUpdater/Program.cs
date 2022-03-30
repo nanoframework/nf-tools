@@ -34,21 +34,21 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// 
         /// </summary>
         /// <param name="workingDirectory">Working directory. Required when updating a single repository.</param>
-        /// <param name="stablePackages">Use stable NuGet package versions.</param>
+        /// <param name="stablePackages">Use stable NuGet package versions. This is the default configuration.</param>
         /// <param name="previewPackages">Use preview NuGet package versions.</param>
         /// <param name="solutionsToCheck">List of Solution(s) to update in the <paramref name="workingDirectory"/> directory.</param>
         /// <param name="reposToUpdate">List of repository(es) to update.</param>
         /// <param name="exclusionList">List of solution names to exclude from the update. Comma separated, name only.</param>
-        /// <param name="branchToPr">Name of the branch to submit PR with updates.</param>
+        /// <param name="branchToPr">Name of the branch to submit PR with updates. Default is 'main'.</param>
         /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
         static void Main(
             string workingDirectory = null,
-            bool stablePackages = false,
-            bool previewPackages = true,
+            bool stablePackages = true,
+            bool previewPackages = false,
             bool solutionsToCheck = false,
             bool reposToUpdate = false,
             string exclusionList = null,
-            string branchToPr = "develop",
+            string branchToPr = "main",
             string[] args = null)
         {
             // sanity check 
