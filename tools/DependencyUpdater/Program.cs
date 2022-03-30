@@ -380,6 +380,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config", SearchOption.TopDirectoryOnly).FirstOrDefault();
             if (nugetConfig is not null)
             {
+                Console.WriteLine();
                 Console.WriteLine($"INFO: working with '{nugetConfig}'");
 
                 // compose option for nuget CLI 
@@ -413,6 +414,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 var solutionPath = Directory.GetParent(solutionFile).FullName;
 
                 // perform NuGet restore
+                Console.WriteLine();
                 Console.WriteLine($"INFO: restoring solution...");
 
                 if (!RunNugetCLI("restore", solutionFile))
@@ -516,7 +518,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // perform NuGet update
                                 if (!RunNugetCLI(
                                     "update",
-                                    $"{projectPath} -Id {packageName}  {repositoryPath} -FileConflictAction Overwrite",
+                                    $"{projectToUpdate} -Id {packageName}  {repositoryPath} -FileConflictAction Overwrite",
                                     true,
                                     ref updateResult))
                                 {
@@ -658,6 +660,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     {
                                         if (!nuspecNotFoundMessage.Contains(projectToUpdate))
                                         {
+                                            Console.WriteLine();
                                             Console.WriteLine("**********************************************");
                                             Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
                                             Console.WriteLine("**********************************************");
@@ -696,6 +699,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 }
                                 else
                                 {
+                                    Console.WriteLine();
                                     Console.WriteLine($"INFO: {packageName} not listed in '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
                                 }
 
@@ -712,6 +716,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             // check if any packages where updated
             if (updateCount == 0)
             {
+                Console.WriteLine();
                 Console.WriteLine("INFO: No packages found to update...");
             }
             else
@@ -719,9 +724,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // sanity check for no nuspecs found
                 if (nuspecCounter == 0)
                 {
+                    Console.WriteLine();
                     Console.WriteLine($"*** WARNING: No nuspecs files updated... Maybe worth checking ***");
                 }
 
+                Console.WriteLine();
                 Console.WriteLine($"INFO: {updateCount} packages updated");
 
                 // need this line so nfbot flags the PR appropriately
