@@ -219,29 +219,35 @@ steps:
     versionSpec: '= 3.0' 
     addToPath: true
 
+# Cache change log cache files
+- task: Cache@2
+  displayName: Cache change log cache files
+  condition: >-
+    and(
+      succeeded(),
+      or(
+        eq(variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True'),
+        and(
+          eq(variables['System.PullRequest.PullRequestId'], ''),
+          not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+          startsWith(variables['Build.SourceBranchName'], 'main'),
+          not(contains(variables['Build.SourceBranchName'], 'update-dependencies'))
+        )
+      ),
+      eq(variables['StartReleaseCandidate'], false)
+    )
+  inputs:
+    key: 'changeLogCacheFiles'
+    restoreKeys: 1_0
+    path: |
+      $env:AGENT_TEMPDIRECTORY/github-changelog-logger.log
+      $env:AGENT_TEMPDIRECTORY/github-changelog-http-cache
+
 # generate change log
 - powershell: |
     gem install github_changelog_generator --quiet --no-document
     # need to call it passing both cache options with full path otherwise it won't work
     github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True'),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
-      not(startsWith(variables['Build.SourceBranchName'], 'main')),
-      not(contains(variables['Build.SourceBranchName'], 'update-dependencies')),
-      eq(variables['StartReleaseCandidate'], false)
-    )
-  displayName: Generate change log
-  continueOnError: true
-
-# generate change log including future version
-- powershell: |
-    gem install github_changelog_generator --quiet --no-document
-    # need to call it passing both cache options with full path otherwise it won't work
-    github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels --future-release v$env:MY_NUGET_VERSION
   condition: >-
     and(
       succeeded(),
