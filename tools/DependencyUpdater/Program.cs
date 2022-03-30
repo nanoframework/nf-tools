@@ -707,15 +707,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                         }
                     }
                 }
-
-                // if we are updating IoT binding repo, check if version need to be bumped
-                // only if there were any updates on the nuspec for this library
-                if (solutionNuspecUpdates > 0
-                    && Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") is not null
-                    && Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") == "nanoframework/nanoFramework.IoT.Device")
-                {
-                    UpdatePackageVersion(solutionPath);
-                }
             }
 
             // check if any packages where updated
@@ -837,103 +828,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}:{ex.InnerException.Message}");
                 Environment.Exit(1);
-            }
-        }
-
-        private static void UpdatePackageVersion(string solutionPath)
-        {
-            // read nuspec file for this library, it's the only one at solution level
-            var nuspecFile = new XmlDocument();
-            nuspecFile.Load(Directory.GetFiles(
-                solutionPath,
-                "*.nuspec",
-                SearchOption.TopDirectoryOnly).FirstOrDefault());
-
-            XmlNamespaceManager nsmgr = new(nuspecFile.NameTable);
-            nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
-
-            // preview counter
-            int previewCounter = 0;
-
-            // update version
-            foreach (XmlElement packageDependency in nuspecFile.SelectNodes($"descendant::package:dependency", nsmgr))
-            {
-                if (packageDependency.Attributes["version"].Value.Contains("preview"))
-                {
-                    // bump counter
-                    previewCounter++;
-                }
-            }
-
-            string nbgvOutput = "";
-
-            if (previewCounter > 0)
-            {
-                Console.WriteLine($"INFO: preview packages being referenced.");
-
-                // check if current version it's already preview
-                if (!RunNbgv("nbgv get-version -v \"NuGetPackageVersion\"", ref nbgvOutput, solutionPath))
-                {
-                    Console.WriteLine($"ERROR: failed to get version from nbgv. Make sure nbgv is installed.");
-                    Environment.Exit(1);
-                }
-
-                Console.WriteLine($"INFO: current version is {nbgvOutput}");
-
-                // is the current version already a preview
-                if (nbgvOutput.Contains("preview"))
-                {
-                    // yes, we're done here
-                    return;
-                }
-
-                // bump version and add preview
-                Version packageVersion = Version.Parse(nbgvOutput);
-                packageVersion = new Version(
-                    packageVersion.Major,
-                    packageVersion.Minor,
-                    packageVersion.Build + 1);
-
-                Console.WriteLine($"INFO: bumping version to {packageVersion.ToString(3)}-preview");
-
-                if (!RunNbgv($"nbgv set-version \"{packageVersion.ToString(3)}-preview.{{height}}\"", ref nbgvOutput, solutionPath))
-                {
-                    Console.WriteLine($"ERROR: failed to set version with nbgv. Make sure nbgv is installed.");
-                    Environment.Exit(1);
-                }
-
-                // done here
-            }
-            else
-            {
-                Console.WriteLine($"INFO: only stable packages being referenced.");
-
-                // check if current version has preview
-                if (!RunNbgv("nbgv get-version -v \"NuGetPackageVersion\"", ref nbgvOutput, solutionPath))
-                {
-                    Console.WriteLine($"ERROR: failed to get version from nbgv. Make sure nbgv is installed.");
-                    Environment.Exit(1);
-                }
-
-                Console.WriteLine($"INFO: current version is {nbgvOutput}");
-
-                // is the current version already a stable one
-                if (!nbgvOutput.Contains("preview"))
-                {
-                    // yes, we're done here
-                    return;
-                }
-
-                // set new version by removing preview
-                var newVersion = nbgvOutput.Substring(0, nbgvOutput.IndexOf("-preview"));
-
-                Console.WriteLine($"INFO: bumping version to {newVersion}");
-
-                if (!RunNbgv($"nbgv set-version \"{newVersion}\"", ref nbgvOutput, solutionPath))
-                {
-                    Console.WriteLine($"ERROR: failed to set version with nbgv. Make sure nbgv is installed.");
-                    Environment.Exit(1);
-                }
             }
         }
 
