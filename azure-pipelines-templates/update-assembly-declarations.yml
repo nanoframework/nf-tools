@@ -34,8 +34,8 @@ steps:
     Write-Host "$("##vso[task.setvariable variable=NEW_BRANCH_NAME]")$newBranch"
 
     # create branch to perform updates
-    git checkout develop
-    git checkout -b $newBranch develop
+    git checkout main
+    git checkout -b $newBranch main
    
     # replace version in assembly declaration
     $newVersion = $env:NBGV_Version -replace "\." , ", "
@@ -91,7 +91,7 @@ steps:
 
 - powershell: |
 
-    $prRequestBody = @{title="$env:COMMIT_MESSAGE";body="$env:COMMIT_MESSAGE`n`nStarted from $env:Build_Repository_Uri/commit/$env:Build_SourceVersion`n`n[version update]";head="$env:NEW_BRANCH_NAME";base="develop"} | ConvertTo-Json
+    $prRequestBody = @{title="$env:COMMIT_MESSAGE";body="$env:COMMIT_MESSAGE`n`nStarted from $env:Build_Repository_Uri/commit/$env:Build_SourceVersion`n`n[version update]";head="$env:NEW_BRANCH_NAME";base="main"} | ConvertTo-Json
 
     $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
 
