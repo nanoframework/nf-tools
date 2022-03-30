@@ -52,7 +52,7 @@ steps:
       targetType: 'inline'
       script: |
 
-        if($env:System_PullRequest_PullRequestId -ne $null)
+        if($null -ne $env:System_PullRequest_PullRequestId)
         {
             # this is a PR build, perform analysis on nuspec dependencies
             nanovc --working-directory $(System.DefaultWorkingDirectory) --solution-to-check $(PrepVersionCop.SolutionToCheck) --analyse-nuspec
