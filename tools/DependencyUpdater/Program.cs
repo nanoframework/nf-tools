@@ -343,7 +343,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     foreach (var sln in solutionsToCheck)
                     {
-                        var solutions = Directory.GetFiles(workingDirectory, $"{sln}.sln", SearchOption.AllDirectories);
+                        var solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
 
                         if (solutions.Any())
                         {
