@@ -570,8 +570,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 && !packageName.StartsWith("UnitsNet."))
                             {
                                 // don't allow prerelease for release, main branches and UnitsNet packages
-
-                                updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -DependencyVersion Highest -FileConflictAction Overwrite";
+                                // go with our Azure feed
+                                updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -DependencyVersion Highest -FileConflictAction Overwrite  -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
                             }
                             else if (packageName.StartsWith("UnitsNet."))
                             {
@@ -588,13 +588,14 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                 var unitsNetVersion = unitsNetPackageInfo.Split("\r\n")[2].Split('|')[1].Trim();
 
-                                updateParameters = $"{projectToUpdate} -Id {packageName} -Version {unitsNetVersion} {repositoryPath} -FileConflictAction Overwrite";
+                                // we have to use nuget.org with UnitsNet
+                                updateParameters = $"{projectToUpdate} -Id {packageName} -Version {unitsNetVersion} {repositoryPath} -FileConflictAction Overwrite  -Source \"https://api.nuget.org/v3/index.json\"";
                             }
                             else
                             {
                                 // all the rest, use prerelase packages
-
-                                updateParameters = $"{projectToUpdate} -Id {packageName} -PreRelease {repositoryPath} -DependencyVersion Highest -FileConflictAction Overwrite";
+                                // go with our Azure feed
+                                updateParameters = $"{projectToUpdate} -Id {packageName} -PreRelease {repositoryPath} -DependencyVersion Highest -FileConflictAction Overwrite  -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
                             }
 
                             bool okToRetry = true;
@@ -605,7 +606,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             if (!RunNugetCLI(
                                 "update",
                                 updateParameters,
-                                true,
+                                false,
                                 ref updateResult))
                             {
                                 Environment.Exit(1);
