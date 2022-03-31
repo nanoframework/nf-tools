@@ -166,6 +166,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     string baseBranch = "develop";
 
                     Console.WriteLine();
+                    Console.WriteLine();
                     Console.WriteLine("*******************************");
                     Console.WriteLine($"Updating {library}");
 
@@ -391,12 +392,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine("INFO: couldn't find a nuget.config");
             }
 
-            // setup list to nugets to skip update
-            HashSet<PackageReference> nugetsToSkip = new();
-
             // go through each solution (filter out the ones in the exclusion list)
             foreach (var solutionFile in solutionFiles.Where(s => !_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(s))))
             {
+                Console.WriteLine();
                 Console.WriteLine();
                 Console.WriteLine("************");
                 Console.WriteLine($"Processing solution '{solutionFile}'");
@@ -436,6 +435,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 foreach (var packageConfigFile in packageConfigs)
                 {
                     Console.WriteLine();
+                    Console.WriteLine();
                     Console.WriteLine($"INFO: working file is {packageConfigFile}");
 
                     // check if the project the packages.config belongs to it's in the solution 
@@ -468,6 +468,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     var projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
                     var projectName = match.Groups["projectname"].Value;
 
+                    Console.WriteLine();
                     Console.WriteLine($"Updating project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
 
                     // load packages.config 
@@ -520,9 +521,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                             if (!nuspecNotFoundMessage.Contains(projectToUpdate))
                             {
                                 Console.WriteLine();
+                                Console.WriteLine();
                                 Console.WriteLine("**********************************************");
                                 Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
                                 Console.WriteLine("**********************************************");
+                                Console.WriteLine();
 
                                 // store project name, so the warning shows only once
                                 nuspecNotFoundMessage += projectToUpdate;
@@ -540,12 +543,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                     {
                         // list packages to check
                         Console.WriteLine();
+                        Console.WriteLine();
                         Console.WriteLine("-- NuGet packages to update --");
                         foreach (var package in packageList)
                         {
                             Console.WriteLine($"{package.PackageIdentity}");
                         }
                         Console.WriteLine("--------- end of list --------");
+                        Console.WriteLine();
                         Console.WriteLine();
 
                         // check all packages
@@ -555,14 +560,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             string packageName = package.PackageIdentity.Id;
                             string packageOriginVersion = package.PackageIdentity.Version.ToNormalizedString();
 
-                            // skip this package if it's on the list
-                            if (nugetsToSkip.Any(p => p.PackageIdentity.Id == package.PackageIdentity.Id && p.PackageIdentity.Version == package.PackageIdentity.Version))
-                            {
-                                Console.WriteLine($"Skipping update of {package.PackageIdentity.Id}.{packageOriginVersion} as there is no newer version available");
-
-                                continue;
-                            }
-
+                            Console.WriteLine();
                             Console.WriteLine($"Checking updates for {packageName}.{packageOriginVersion}");
 
                             string updateResult = "";
@@ -600,6 +598,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             }
 
                             bool okToRetry = true;
+                            string packageTargetVersion = "";
 
                         performUpdate:
                             // perform NuGet update
@@ -622,12 +621,21 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // check for no updates available message
                                 if (updateResult.Contains("There are no new updates available"))
                                 {
-                                    Console.WriteLine($"No newer version, skipping");
+                                    // this could have been updated as a nested dependency
+                                    // refresh package list
+                                    // load packages.config 
+                                    packageReader = new PackagesConfigReader(XDocument.Load(packageConfigFile));
 
-                                    // add to list of packages to skip
-                                    nugetsToSkip.Add(package);
+                                    // filter out Nerdbank.GitVersioning package and development dependencies (except our Test Framework)
+                                    var packageToRefresh = packageReader.GetPackages().FirstOrDefault(p => p.PackageIdentity.Id == packageName);
 
-                                    continue;
+                                    // grab target version
+                                    packageTargetVersion = packageToRefresh.PackageIdentity.Version.ToNormalizedString();
+
+                                    if (packageOriginVersion == packageTargetVersion)
+                                    {
+                                        Console.WriteLine($"No newer version");
+                                    }
                                 }
                                 else
                                 {
@@ -650,9 +658,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
                                 }
                             }
-
-                            // grab target version
-                            var packageTargetVersion = updateOutcome.Groups["newVersion"].Value;
+                            else
+                            {
+                                // grab target version
+                                packageTargetVersion = updateOutcome.Groups["newVersion"].Value;
+                            }
 
                             // sanity check
                             if (packageTargetVersion.Contains("alpha"))
@@ -665,15 +675,18 @@ namespace nanoFramework.Tools.DependencyUpdater
                             else
                             {
                                 // build commit message
-                                string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
-
-                                // append to commit message, if not already reported
-                                if (!commitMessage.ToString().Contains(updateMessage))
+                                if (packageOriginVersion != packageTargetVersion)
                                 {
-                                    commitMessage.Append(updateMessage);
+                                    string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
 
-                                    // bump counter
-                                    updateCount++;
+                                    // append to commit message, if not already reported
+                                    if (!commitMessage.ToString().Contains(updateMessage))
+                                    {
+                                        commitMessage.Append(updateMessage);
+
+                                        // bump counter
+                                        updateCount++;
+                                    }
                                 }
 
                                 // if we are updating samples repo, OK to move to next one
