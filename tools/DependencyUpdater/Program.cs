@@ -343,7 +343,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     foreach (var sln in solutionsToCheck)
                     {
-                        var solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
+                        var solutions = Directory.GetFiles(workingDirectory, $"{sln}.sln", SearchOption.AllDirectories);
 
                         if (solutions.Any())
                         {
@@ -358,38 +358,48 @@ namespace nanoFramework.Tools.DependencyUpdater
                 solutionFiles = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories).ToList();
             }
 
-            // list solutions to check
-            Console.WriteLine("");
-            Console.WriteLine($"Solutions to check are:");
-
-            foreach (var sln in solutionFiles)
+            if (solutionFiles.Any())
             {
-                Console.Write($"{Path.GetRelativePath(workingDirectory, sln)}");
+                // list solutions to check
+                Console.WriteLine("");
+                Console.WriteLine($"Solutions to check are:");
 
-                // check if this on is in the exclusion list
-                if (_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(sln)))
+                foreach (var sln in solutionFiles)
                 {
-                    Console.WriteLine(" *** EXCLUDED ***");
+                    Console.Write($"{Path.GetRelativePath(workingDirectory, sln)}");
+
+                    // check if this on is in the exclusion list
+                    if (_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(sln)))
+                    {
+                        Console.WriteLine(" *** EXCLUDED ***");
+                    }
+                    else
+                    {
+                        Console.WriteLine("");
+                    }
+                }
+
+                // find NuGet.Config
+                var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                if (nugetConfig is not null)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"INFO: working with '{nugetConfig}'");
+
+                    // compose option for nuget CLI 
+                    _nuGetConfigFile = $" -ConfigFile {nugetConfig}";
                 }
                 else
                 {
-                    Console.WriteLine("");
+                    Console.WriteLine("INFO: couldn't find a nuget.config");
                 }
-            }
-
-            // find NuGet.Config
-            var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config", SearchOption.TopDirectoryOnly).FirstOrDefault();
-            if (nugetConfig is not null)
-            {
-                Console.WriteLine();
-                Console.WriteLine($"INFO: working with '{nugetConfig}'");
-
-                // compose option for nuget CLI 
-                _nuGetConfigFile = $" -ConfigFile {nugetConfig}";
             }
             else
             {
-                Console.WriteLine("INFO: couldn't find a nuget.config");
+                Console.WriteLine();
+                Console.WriteLine("INFO: No solutions found...");
+
+                return;
             }
 
             // go through each solution (filter out the ones in the exclusion list)
