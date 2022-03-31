@@ -581,7 +581,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             {
                                 // don't allow prerelease for release, main branches and UnitsNet packages
                                 // go with our Azure feed
-                                updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -DependencyVersion Highest -FileConflictAction Overwrite  -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
+                                updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -FileConflictAction Overwrite  -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
                             }
                             else if (packageName.StartsWith("UnitsNet."))
                             {
@@ -605,7 +605,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             {
                                 // all the rest, use prerelase packages
                                 // go with our Azure feed
-                                updateParameters = $"{projectToUpdate} -Id {packageName} -PreRelease {repositoryPath} -DependencyVersion Highest -FileConflictAction Overwrite  -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
+                                updateParameters = $"{projectToUpdate} -Id {packageName} -PreRelease {repositoryPath} -FileConflictAction Overwrite  -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
                             }
 
                             bool okToRetry = true;
