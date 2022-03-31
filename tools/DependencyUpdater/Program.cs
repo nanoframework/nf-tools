@@ -688,6 +688,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                                         // bump counter
                                         updateCount++;
                                     }
+
+                                    Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
                                 }
 
                                 // if we are updating samples repo, OK to move to next one
@@ -697,8 +699,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     // done here
                                     continue;
                                 }
-
-                                Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
 
                                 // if this is the Test Framework, need to update the nfproj file too
                                 if (packageName == "nanoFramework.TestFramework")
