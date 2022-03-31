@@ -481,6 +481,61 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // reset warning var
                     string nuspecNotFoundMessage = "";
 
+
+                    // try to find nuspec to update it
+                    string nuspecFileName = null;
+
+                    var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec", SearchOption.AllDirectories);
+                    if (candidateNuspecFiles.Any())
+                    {
+                        // take 1st
+                        nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                    }
+
+                    // sanity check for nuspec file
+                    if (nuspecFileName is null)
+                    {
+                        // try again with project name
+                        candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName}.nuspec", SearchOption.AllDirectories);
+                        if (candidateNuspecFiles.Any())
+                        {
+                            // take 1st
+                            nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                        }
+
+                        // if this is AMQPLite, there is a different pattern for the nuspec names
+                        if (libraryName == AMQPLiteLibraryName)
+                        {
+                            candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
+
+                            if (candidateNuspecFiles.Any())
+                            {
+                                // take 1st
+                                nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                            }
+                        }
+
+                        if (nuspecFileName is null)
+                        {
+                            if (!nuspecNotFoundMessage.Contains(projectToUpdate))
+                            {
+                                Console.WriteLine();
+                                Console.WriteLine("**********************************************");
+                                Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
+                                Console.WriteLine("**********************************************");
+
+                                // store project name, so the warning shows only once
+                                nuspecNotFoundMessage += projectToUpdate;
+                            }
+                        }
+
+                        if (nuspecFileName is not null)
+                        {
+                            Console.WriteLine();
+                            Console.WriteLine($"nuspec file to update is '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
+                        }
+                    }
+
                     if (packageList.Any())
                     {
                         // list packages to check
@@ -503,27 +558,22 @@ namespace nanoFramework.Tools.DependencyUpdater
                             // skip this package if it's on the list
                             if (nugetsToSkip.Any(p => p.PackageIdentity.Id == package.PackageIdentity.Id && p.PackageIdentity.Version == package.PackageIdentity.Version))
                             {
+                                Console.WriteLine($"Skipping update of {package.PackageIdentity.Id}.{packageOriginVersion} as there is no newer version available");
+
                                 continue;
                             }
 
                             Console.WriteLine($"Checking updates for {packageName}.{packageOriginVersion}");
 
                             string updateResult = "";
+                            string updateParameters;
 
                             if (useStablePackages
                                 && !packageName.StartsWith("UnitsNet."))
                             {
                                 // don't allow prerelease for release, main branches and UnitsNet packages
 
-                                // perform NuGet update
-                                if (!RunNugetCLI(
-                                    "update",
-                                    $"{projectToUpdate} -Id {packageName}  {repositoryPath} -FileConflictAction Overwrite",
-                                    true,
-                                    ref updateResult))
-                                {
-                                    Environment.Exit(1);
-                                }
+                                updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -DependencyVersion Highest -FileConflictAction Overwrite";
                             }
                             else if (packageName.StartsWith("UnitsNet."))
                             {
@@ -540,41 +590,65 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                 var unitsNetVersion = unitsNetPackageInfo.Split("\r\n")[2].Split('|')[1].Trim();
 
-                                // perform NuGet update
-                                if (!RunNugetCLI(
-                                    "update",
-                                    $"{projectToUpdate} -Id {packageName} -Version {unitsNetVersion} {repositoryPath} -FileConflictAction Overwrite",
-                                    true,
-                                    ref updateResult))
-                                {
-                                    Environment.Exit(1);
-                                }
+                                updateParameters = $"{projectToUpdate} -Id {packageName} -Version {unitsNetVersion} {repositoryPath} -FileConflictAction Overwrite";
                             }
                             else
                             {
                                 // all the rest, use prerelase packages
 
-                                // perform NuGet update
-                                if (!RunNugetCLI(
-                                    "update",
-                                    $"{projectToUpdate} -Id {packageName} -PreRelease  {repositoryPath} -FileConflictAction Overwrite",
-                                    true,
-                                    ref updateResult))
-                                {
-                                    Environment.Exit(1);
-                                }
+                                updateParameters = $"{projectToUpdate} -Id {packageName} -PreRelease {repositoryPath} -DependencyVersion Highest -FileConflictAction Overwrite";
+                            }
+
+                            bool okToRetry = true;
+
+                        performUpdate:
+                            // perform NuGet update
+                            if (!RunNugetCLI(
+                                "update",
+                                updateParameters,
+                                true,
+                                ref updateResult))
+                            {
+                                Environment.Exit(1);
                             }
 
                             // check update outcome
-                            var updateOutcome = Regex.Match(updateResult, $"(?:Successfully\\sinstalled\\s\\'{packageName.Replace(".", "\\.")}\\s)(?'newVersion'\\S+)(?:\\'\\sto\\s)");
+                            string updateRegex = $"(?:Successfully\\sinstalled\\s\\'{packageName.Replace(".", "\\.")}\\s)(?'newVersion'\\S+)(?:\\'\\sto\\s)";
+
+                            var updateOutcome = Regex.Match(updateResult, updateRegex);
+
                             if (!updateOutcome.Success)
                             {
-                                Console.WriteLine($"No newer version, skipping");
+                                // check for no updates available message
+                                if (updateResult.Contains("There are no new updates available"))
+                                {
+                                    Console.WriteLine($"No newer version, skipping");
 
-                                // add to list of packages to skip
-                                nugetsToSkip.Add(package);
+                                    // add to list of packages to skip
+                                    nugetsToSkip.Add(package);
 
-                                continue;
+                                    continue;
+                                }
+                                else
+                                {
+                                    // something wrong happened!
+                                    // output update message for the log
+                                    Console.WriteLine();
+                                    Console.WriteLine($"INFO: unexpected update outcome {Environment.NewLine}>>>>>>>{Environment.NewLine}{updateResult}{Environment.NewLine}>>>>>>>{Environment.NewLine}");
+                                    Console.WriteLine();
+
+                                    if (okToRetry)
+                                    {
+                                        // reset flag
+                                        okToRetry = false;
+
+                                        goto performUpdate;
+                                    }
+                                    else
+                                    {
+                                        Environment.Exit(1);
+                                    }
+                                }
                             }
 
                             // grab target version
@@ -623,90 +697,43 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     File.WriteAllText(projectToUpdate, updatedProjContent);
                                 }
 
-                                // try to find nuspec to update it
-                                string nuspecFileName = null;
-
-                                var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec", SearchOption.AllDirectories);
-                                if (candidateNuspecFiles.Any())
+                                // load nuspec file content, if there is a nuspec file to update
+                                if (nuspecFileName is not null)
                                 {
-                                    // take 1st
-                                    nuspecFileName = candidateNuspecFiles.FirstOrDefault();
-                                }
+                                    var nuspecFile = new XmlDocument();
+                                    nuspecFile.Load(nuspecFileName);
 
-                                // sanity check for nuspec file
-                                if (nuspecFileName is null)
-                                {
-                                    // try again with project name
-                                    candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName}.nuspec", SearchOption.AllDirectories);
-                                    if (candidateNuspecFiles.Any())
+                                    XmlNamespaceManager nsmgr = new XmlNamespaceManager(nuspecFile.NameTable);
+                                    nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
+
+                                    // update version, if this dependency is listed
+                                    var dependency = nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr);
+                                    if (dependency is not null)
                                     {
-                                        // take 1st
-                                        nuspecFileName = candidateNuspecFiles.FirstOrDefault();
-                                    }
+                                        dependency.Attributes["version"].Value = packageTargetVersion;
 
-                                    // if this is AMQPLite, there is a different pattern for the nuspec names
-                                    if (libraryName == AMQPLiteLibraryName)
-                                    {
-                                        candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
+                                        Console.WriteLine($"Updating nuspec: '{dependency.Attributes["id"].Value}' ---> {packageTargetVersion}");
 
-                                        if (candidateNuspecFiles.Any())
+                                        // save back changes
+                                        // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
+                                        // not being saved thus causing bogus updates on the nuspec content
+                                        using (StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName))
                                         {
-                                            // take 1st
-                                            nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                                            nuspecFile.Save(nuspecStreamWriter);
+                                            nuspecStreamWriter.Flush();
+                                            nuspecStreamWriter.Close();
                                         }
                                     }
-
-                                    if (nuspecFileName is null)
+                                    else
                                     {
-                                        if (!nuspecNotFoundMessage.Contains(projectToUpdate))
-                                        {
-                                            Console.WriteLine();
-                                            Console.WriteLine("**********************************************");
-                                            Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
-                                            Console.WriteLine("**********************************************");
-
-                                            // store project name, so the warning shows only once
-                                            nuspecNotFoundMessage += projectToUpdate;
-                                        }
-
-                                        continue;
+                                        Console.WriteLine();
+                                        Console.WriteLine($"INFO: {packageName} not listed in '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
                                     }
+
+                                    // bump counters
+                                    nuspecCounter++;
+                                    solutionNuspecUpdates++;
                                 }
-
-                                // load nuspec file content
-                                var nuspecFile = new XmlDocument();
-                                nuspecFile.Load(nuspecFileName);
-
-                                XmlNamespaceManager nsmgr = new XmlNamespaceManager(nuspecFile.NameTable);
-                                nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
-
-                                // update version, if this dependency is listed
-                                var dependency = nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr);
-                                if (dependency is not null)
-                                {
-                                    dependency.Attributes["version"].Value = packageTargetVersion;
-
-                                    Console.WriteLine($"Updating nuspec file '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
-
-                                    // save back changes
-                                    // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
-                                    // not being saved thus causing bogus updates on the nuspec content
-                                    using (StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName))
-                                    {
-                                        nuspecFile.Save(nuspecStreamWriter);
-                                        nuspecStreamWriter.Close();
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine();
-                                    Console.WriteLine($"INFO: {packageName} not listed in '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
-                                }
-
-                                // bump counters
-                                nuspecCounter++;
-                                solutionNuspecUpdates++;
-
                             }
                         }
                     }
