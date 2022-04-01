@@ -163,7 +163,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // remove quotes, if any
                     var library = repoName.Replace("'", "");
 
-                    string baseBranch = "develop";
+                    string baseBranch = "main";
 
                     Console.WriteLine();
                     Console.WriteLine();
