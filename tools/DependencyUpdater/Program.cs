@@ -489,68 +489,80 @@ namespace nanoFramework.Tools.DependencyUpdater
                         .Where(p => (!p.IsDevelopmentDependency || p.PackageIdentity.Id == "nanoFramework.TestFramework")
                                     && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
 
-                    // reset warning var
-                    string nuspecNotFoundMessage = "";
-
-
-                    // try to find nuspec to update it
-                    string nuspecFileName = null;
-
-                    var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec", SearchOption.AllDirectories);
-                    if (candidateNuspecFiles.Any())
+                    if (!packageList.Any())
                     {
-                        // take 1st
-                        nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                        // no packages to update
+                        Console.WriteLine();
+                        Console.WriteLine($"INFO: no packages found to update. *** SKIPPING ***.");
+
+                        continue;
                     }
 
-                    // sanity check for nuspec file
-                    if (nuspecFileName is null)
+                    if (libraryName == "Samples")
                     {
-                        // try again with project name
-                        candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName}.nuspec", SearchOption.AllDirectories);
+                        UpdateProject(projectToUpdate, repositoryPath, ref updateCount, ref commitMessage);
+                    }
+                    else
+                    {
+                        // reset warning var
+                        string nuspecNotFoundMessage = "";
+
+                        // try to find nuspec to update it
+                        string nuspecFileName = null;
+
+                        var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec", SearchOption.AllDirectories);
                         if (candidateNuspecFiles.Any())
                         {
                             // take 1st
                             nuspecFileName = candidateNuspecFiles.FirstOrDefault();
                         }
 
-                        // if this is AMQPLite, there is a different pattern for the nuspec names
-                        if (libraryName == AMQPLiteLibraryName)
+                        // sanity check for nuspec file
+                        if (nuspecFileName is null)
                         {
-                            candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
-
+                            // try again with project name
+                            candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName}.nuspec", SearchOption.AllDirectories);
                             if (candidateNuspecFiles.Any())
                             {
                                 // take 1st
                                 nuspecFileName = candidateNuspecFiles.FirstOrDefault();
                             }
-                        }
 
-                        if (nuspecFileName is null)
-                        {
-                            if (!nuspecNotFoundMessage.Contains(projectToUpdate))
+                            // if this is AMQPLite, there is a different pattern for the nuspec names
+                            if (libraryName == AMQPLiteLibraryName)
+                            {
+                                candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
+
+                                if (candidateNuspecFiles.Any())
+                                {
+                                    // take 1st
+                                    nuspecFileName = candidateNuspecFiles.FirstOrDefault();
+                                }
+                            }
+
+                            if (nuspecFileName is null)
+                            {
+                                if (!nuspecNotFoundMessage.Contains(projectToUpdate))
+                                {
+                                    Console.WriteLine();
+                                    Console.WriteLine();
+                                    Console.WriteLine("**********************************************");
+                                    Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
+                                    Console.WriteLine("**********************************************");
+                                    Console.WriteLine();
+
+                                    // store project name, so the warning shows only once
+                                    nuspecNotFoundMessage += projectToUpdate;
+                                }
+                            }
+
+                            if (nuspecFileName is not null)
                             {
                                 Console.WriteLine();
-                                Console.WriteLine();
-                                Console.WriteLine("**********************************************");
-                                Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
-                                Console.WriteLine("**********************************************");
-                                Console.WriteLine();
-
-                                // store project name, so the warning shows only once
-                                nuspecNotFoundMessage += projectToUpdate;
+                                Console.WriteLine($"nuspec file to update is '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
                             }
                         }
 
-                        if (nuspecFileName is not null)
-                        {
-                            Console.WriteLine();
-                            Console.WriteLine($"nuspec file to update is '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
-                        }
-                    }
-
-                    if (packageList.Any())
-                    {
                         // list packages to check
                         Console.WriteLine();
                         Console.WriteLine();
@@ -702,14 +714,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
                                 }
 
-                                // if we are updating samples repo, OK to move to next one
-                                if (Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") is not null &&
-                                    Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") == "nanoframework/Samples")
-                                {
-                                    // done here
-                                    continue;
-                                }
-
                                 // if this is the Test Framework, need to update the nfproj file too
                                 if (packageName == "nanoFramework.TestFramework")
                                 {
@@ -837,6 +841,41 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 CretePRWithUpdate(branchToPr, libraryName, commitMessage.ToString(), newBranchName, prTitle);
+            }
+        }
+
+        private static void UpdateProject(string projectToUpdate, string repositoryPath, ref int updateCount, ref StringBuilder commitMessage)
+        {
+            string updateResult = "";
+
+            // perform NuGet update
+            if (!RunNugetCLI(
+                "update",
+                $"{projectToUpdate} {repositoryPath} -FileConflictAction Overwrite  -Source \"https://api.nuget.org/v3/index.json\"",
+                false,
+                ref updateResult))
+            {
+                Environment.Exit(1);
+            }
+
+            string updateRegex = "(?:Successfully installed \\')(?'package'.+)(?:' to )";
+
+            var updateOutcome = Regex.Matches(updateResult, updateRegex);
+
+            if (updateOutcome.Count > 0)
+            {
+                foreach (Match packageUpdatedInfo in updateOutcome)
+                {
+                    string updateMessage = $"Bumps {packageUpdatedInfo.Groups["package"].Value.Replace(" ", " to ")}</br>";
+
+                    // append to commit message, if not already reported
+                    if (!commitMessage.ToString().Contains(updateMessage))
+                    {
+                        commitMessage.Append(updateMessage);
+
+                        updateCount++;
+                    }
+                }
             }
         }
 
