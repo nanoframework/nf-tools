@@ -156,7 +156,7 @@ steps:
 
       Write-Host "AssemblyNativeVersion is $nativeVersion"
 
-      Write-Host "$("##vso[task.setvariable variable=ASSEMBLY_NATIVE_VERSION]")$nativeVersion"
+      Write-Host "$("##vso[task.setvariable variable=NF_ASSEMBLY_NATIVE_VERSION]")$nativeVersion"
 
 - powershell: |
     # get subject and commit message for commit

@@ -157,7 +157,7 @@ steps:
 
       Write-Host "AssemblyNativeVersion is $nativeVersion"
 
-      Write-Host "$("##vso[task.setvariable variable=ASSEMBLY_NATIVE_VERSION]")$nativeVersion"
+      Write-Host "$("##vso[task.setvariable variable=NF_ASSEMBLY_NATIVE_VERSION]")$nativeVersion"
 
 - powershell: |
     # get subject and commit message for commit
@@ -318,7 +318,7 @@ steps:
   displayName: Pack NuGet with class library
   inputs:
     command: 'custom' 
-    arguments: 'pack $(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NATIVE_ASSEMBLY_CHECKSUM)"'
+    arguments: 'pack $(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(NF_ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NF_NATIVE_ASSEMBLY_CHECKSUM)"'
 
 # - task: NuGetCommand@2
 #   inputs:
