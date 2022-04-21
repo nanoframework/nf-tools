@@ -450,16 +450,17 @@ steps:
     includeSymbols: true
     publishFeedCredentials: 'NuGet-$(System.TeamProject)'
 
-# create or update GitHub release ON tags from release or main branches
+# create GitHub release build from main branch
 - task: GithubRelease@1
   condition: >-
     and(
       succeeded(),
-      startsWith(variables['Build.SourceBranch'], 'refs/tags/v'),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      startsWith(variables['Build.SourceBranch'], 'refs/heads/main'),
       not(contains(variables['Build.SourceBranch'], 'preview')),
       eq(variables['StartReleaseCandidate'], false)
     )
-  displayName: Create/Update GitHub stable release
+  displayName: Create/Update GitHub release
   inputs:
     action: edit
     gitHubConnection: 'github.com_nano-$(System.TeamProject)'
@@ -469,7 +470,6 @@ steps:
     releaseNotesSource: inline
     releaseNotesInline: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
     assets: '$(Build.ArtifactStagingDirectory)/*$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
-    assetUploadMode: replace
     isPreRelease: false
     addChangeLog: false
     
