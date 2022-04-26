@@ -236,6 +236,7 @@ steps:
       ),
       eq(variables['StartReleaseCandidate'], false)
     )
+  continueOnError: true
   inputs:
     key: 'changeLogCacheFiles'
     restoreKeys: 1_0
