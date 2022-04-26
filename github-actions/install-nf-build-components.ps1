@@ -15,12 +15,12 @@ $tempDir = $($Env:RUNNER_TEMP)
 # Get latest releases of nanoFramework VS extension
 $releaseList = [string]::Concat($(gh release list --limit 10 --repo nanoframework/nf-Visual-Studio-extension))
 
-if($releaseList -match '\s\s(?<VS2022_version>v2022\.\d+\.\d+\.\d+)')
+if($releaseList -match '\s+(?<VS2022_version>v2022\.\d+\.\d+\.\d+)\s+')
 {
     $vs2022Tag =  $Matches.VS2022_version
 }
 
-if($releaseList -match '\s\s(?<VS2019_version>v2019\.\d+\.\d+\.\d+)')
+if($releaseList -match '\s+(?<VS2019_version>v2019\.\d+\.\d+\.\d+)\s+')
 {
     $vs2019Tag =  $Matches.VS2019_version
 }
