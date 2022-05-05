@@ -13,6 +13,10 @@ steps:
       custom: tool
       arguments: update -g nbgv
 
+  - script: nbgv --version
+    condition: succeeded()
+    displayName: Show nvgb version
+
   - script: nbgv cloud -a -c
     condition: succeeded()
     displayName: Set build number
