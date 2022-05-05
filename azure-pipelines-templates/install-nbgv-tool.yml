@@ -4,14 +4,14 @@
 steps:
 
   #######################################
-  # need to have this here when there is a new release that hasn't made it to the CI VMs
-  - task: DotNetCoreCLI@2  
-    displayName: Update NBGV tool
-    condition: succeeded()
-    inputs:
-      command: custom
-      custom: tool
-      arguments: update -g nbgv
+  # # need to have this here when there is a new release that hasn't made it to the CI VMs
+  # - task: DotNetCoreCLI@2  
+  #   displayName: Update NBGV tool
+  #   condition: succeeded()
+  #   inputs:
+  #     command: custom
+  #     custom: tool
+  #     arguments: update -g nbgv
 
   - script: nbgv --version
     condition: succeeded()
