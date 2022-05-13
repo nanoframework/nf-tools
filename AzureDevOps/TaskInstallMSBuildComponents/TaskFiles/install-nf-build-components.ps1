@@ -22,7 +22,7 @@ function DownloadVsixFile($fileUrl, $downloadFileName)
 $tempDir = $($env:Agent_TempDirectory)
 
 # Get latest releases of nanoFramework VS extension
-$releaseList = [string]::Concat($(gh release list --limit 10 --repo nanoframework/nf-Visual-Studio-extension))
+$releaseList = [string]::Concat($(gh release list --exclude-drafts --limit 10 --repo nanoframework/nf-Visual-Studio-extension))
 
 if($releaseList -match '\s+(?<VS2022_version>v2022\.\d+\.\d+\.\d+)\s+')
 {
