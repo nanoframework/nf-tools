@@ -16,7 +16,7 @@ jobs:
 ##############################
 - job: Check_Build_Options
   pool:
-    vmImage: 'windows-2019'
+    vmImage: 'windows-latest'
 
   steps:
   
@@ -87,7 +87,7 @@ jobs:
     Check_Build_Options
 
   pool:
-    vmImage: 'windows-2019'
+    vmImage: 'windows-latest'
 
   variables:
     DOTNET_NOLOGO: true
@@ -200,7 +200,7 @@ jobs:
     Check_Build_Options
 
   pool:
-    vmImage: 'windows-2019'
+    vmImage: 'windows-latest'
 
   variables:
     DOTNET_NOLOGO: true
@@ -317,7 +317,7 @@ jobs:
     )
 
   pool:
-    vmImage: 'windows-2019'
+    vmImage: 'windows-latest'
 
   steps:
 
