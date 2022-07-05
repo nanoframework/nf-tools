@@ -32,6 +32,7 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <None Remove="DependencyUpdater.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -55,6 +56,20 @@
     <Content Include="$(PkgNuGet_CommandLine)\tools\NuGet.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>DependencyUpdater.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="DependencyUpdater.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="DependencyUpdater.Tests\**" />
   </ItemGroup>
   
 </Project>

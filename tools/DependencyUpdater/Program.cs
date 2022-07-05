@@ -237,6 +237,17 @@ namespace nanoFramework.Tools.DependencyUpdater
             Environment.Exit(0);
         }
 
+        internal static Match GetRepoNameFromInputString(string input)
+        {
+            return Regex.Match(input, "(?:https:\\/\\/github\\.com\\/(.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
+        }
+
+        internal static string GetLibNameFromRegexMatch(Match match)
+        {
+            // need to remove .git from end of URL, if there
+            return match.Groups["repoName"].Value.Replace(".git", "");
+        }
+
         static void UpdateLibrary(string workingDirectory,
                         bool stablePackages = false,
                         bool previewPackages = true,
@@ -286,15 +297,14 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
             else
             {
-                var repoName = Regex.Match(gitRepo, "(?:https:\\/\\/github\\.com\\/nanoframework\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
+                var repoName = GetRepoNameFromInputString(gitRepo);
                 if (!repoName.Success)
                 {
                     Console.WriteLine($"ERROR: couldn't determine repository name.");
                     Environment.Exit(1);
                 }
 
-                // need to remove .git from end of URL, if there
-                libraryName = repoName.Groups["repoName"].Value.Replace(".git", "");
+                libraryName = GetLibNameFromRegexMatch(repoName);
             }
 
             Console.WriteLine($"Repository is: '{libraryName ?? "null"}'");
