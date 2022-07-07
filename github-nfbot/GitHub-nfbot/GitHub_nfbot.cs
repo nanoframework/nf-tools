@@ -1298,7 +1298,7 @@ namespace nanoFramework.Tools.GitHub
             }
             else if (pr.Body.Contains("Fixes/Closes/Resolves"))
             {
-                commentContent = ":disappointed: You have to make up your mind on how this PR addresses the issue. It either **fixes**, **closes** or **resolves** it. Can't have them all...";
+                commentContent = "🤪 You have to make up your mind on how this PR addresses the issue. It either **fixes**, **closes** or **resolves** it. Can't have them all...";
             }
             // TODO replace this with a regex
             //else if ( ( prBody.Contains("- Fixes") ||
