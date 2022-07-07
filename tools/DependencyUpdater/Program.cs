@@ -54,6 +54,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string branchToPr = "main",
             string gitHubUser = "nfbot",
             string gitHubEmail = "nanoframework@outlook.com",
+            string repoOwner = null,
             string[] args = null)
         {
             // sanity check 
@@ -61,6 +62,24 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine($"ERROR: need to specify update options. Either '--solutions-to-check' or '--repos-to-update'.");
                 Environment.Exit(1);
+            }
+
+            // check if this is running on a git repo
+            string gitRepo = "";
+            if (!RunGitCli("remote -v", ref gitRepo, workingDirectory))
+            {
+                Environment.Exit(1);
+            }
+
+            if (gitRepo.Contains("fatal: not a git repository"))
+            {
+                Console.WriteLine($"ERROR: working directory is not a git repository");
+                Environment.Exit(1);
+            }
+            
+            if (repoOwner is null)
+            {
+                repoOwner = GetRepoOwnerFromInputString(gitRepo);
             }
             
             if (workingDirectory is null)
@@ -129,6 +148,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                     stablePackages,
                     previewPackages,
                     branchToPr,
+                    repoOwner,
+                    gitRepo,
                     args);
             }
             else
@@ -202,6 +223,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                         false,
                         true,
                         branchToPr,
+                        repoOwner,
+                        gitRepo,
                         args);
                 }
             }
@@ -292,6 +315,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                         bool stablePackages,
                         bool previewPackages,
                         string branchToPr,
+                        string repoOwner,
+                        string gitRepo,
                         string[] solutionsToCheck )
         {
             string releaseType = stablePackages ? "stable" : previewPackages ? "preview" : "?????";
@@ -308,31 +333,15 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine("Targeting every solution in the repository.");
             }
-
-            // check if this is running on a git repo
-            string libraryName = null;
-            string gitRepo = "";
-            if (!RunGitCli("remote -v", ref gitRepo, workingDirectory))
+            
+            var repoName = GetRepoNameFromInputString(gitRepo);
+            if (!repoName.Success)
             {
+                Console.WriteLine($"ERROR: couldn't determine repository name.");
                 Environment.Exit(1);
             }
 
-            if (gitRepo.Contains("fatal: not a git repository"))
-            {
-                Console.WriteLine($"ERROR: working directory is not a git repository");
-                Environment.Exit(1);
-            }
-            else
-            {
-                var repoName = GetRepoNameFromInputString(gitRepo);
-                if (!repoName.Success)
-                {
-                    Console.WriteLine($"ERROR: couldn't determine repository name.");
-                    Environment.Exit(1);
-                }
-
-                libraryName = GetLibNameFromRegexMatch(repoName);
-            }
+            var libraryName = GetLibNameFromRegexMatch(repoName);
 
             Console.WriteLine($"Repository is: '{libraryName ?? "null"}'");
             
@@ -828,8 +837,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Environment.Exit(1);
             }
-
-            var repoOwner = GetRepoOwnerFromInputString(gitRepo);
+            
             CretePRWithUpdate(branchToPr, libraryName, commitMessage.ToString(), newBranchName, prTitle, repoOwner);
         }
 
