@@ -835,9 +835,11 @@ namespace nanoFramework.Tools.GitHub
 
             #region process sponsorship event 
 
-            else if (payload.sponsorship != null && payload.action == "created")
+            else if (payload.sponsorship != null
+                     && payload.action == "created"
+                     && payload.privacy_level == "public")
             {
-                // we have a new sponsor
+                // we have a new PUBLIC sponsor
                 // send message to Discord channel
 
                 log.LogInformation($"Processing new sponsor contribution from {payload.sponsorship.sponsor.login.ToString()}");
