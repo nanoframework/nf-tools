@@ -229,14 +229,6 @@ jobs:
 
   - task: DotNetCoreCLI@2
     condition: succeeded()
-    displayName: 'Install ReportGenerator'
-    inputs:
-      command: custom
-      custom: tool
-      arguments: 'install --global dotnet-reportgenerator-globaltool'
-
-  - task: DotNetCoreCLI@2
-    condition: succeeded()
     displayName: 'Tests - Unit'
     inputs:
       command: 'test'
@@ -247,17 +239,12 @@ jobs:
       arguments: '--configuration Release --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
       testRunTitle: 'Unit Tests'
 
-  - task: reportgenerator@4
-    condition: succeeded()
-    inputs:
-      reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
-      targetdir: 'coveragereport'
-
   - task: PublishCodeCoverageResults@1
     condition: succeeded()
+    displayName: 'Publish code coverage'
     inputs:
-      codeCoverageTool: 'Cobertura'
-      summaryFileLocation: '**/coverage.cobertura.xml'
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
       failIfCoverageEmpty: false
 
   - task: CopyFiles@1
