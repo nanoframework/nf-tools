@@ -229,6 +229,14 @@ jobs:
 
   - task: DotNetCoreCLI@2
     condition: succeeded()
+    displayName: 'Install ReportGenerator'
+    inputs:
+      command: custom
+      custom: tool
+      arguments: 'install --global dotnet-reportgenerator-globaltool'
+
+  - task: DotNetCoreCLI@2
+    condition: succeeded()
     displayName: 'Tests - Unit'
     inputs:
       command: 'test'
@@ -240,6 +248,7 @@ jobs:
       testRunTitle: 'Unit Tests'
 
   - task: reportgenerator@4
+    condition: succeeded()
     inputs:
       reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
       targetdir: 'coveragereport'
