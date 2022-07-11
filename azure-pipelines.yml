@@ -228,6 +228,7 @@ jobs:
     workingDirectory: '$(System.DefaultWorkingDirectory)/tools/DependencyUpdater'
 
   - task: DotNetCoreCLI@2
+    condition: succeeded()
     displayName: 'Tests - Unit'
     inputs:
       command: 'test'
@@ -239,6 +240,7 @@ jobs:
       testRunTitle: 'Unit Tests'
 
   - task: PublishCodeCoverageResults@1
+    condition: succeeded()
     inputs:
       codeCoverageTool: 'Cobertura'
       summaryFileLocation: '**/coveragereport/Cobertura.xml'
