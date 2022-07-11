@@ -236,7 +236,7 @@ jobs:
         **/*Tests.csproj
         !**/obj/**
         !**/bin/**/ref/**
-      arguments: '--configuration 'Release' --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
+      arguments: '--configuration Release --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
       testRunTitle: 'Unit Tests'
 
   - task: PublishCodeCoverageResults@1
