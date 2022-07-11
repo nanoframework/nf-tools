@@ -227,6 +227,23 @@ jobs:
     condition: succeeded()
     workingDirectory: '$(System.DefaultWorkingDirectory)/tools/DependencyUpdater'
 
+  - task: DotNetCoreCLI@2
+    displayName: 'Tests - Unit'
+    inputs:
+      command: 'test'
+      projects: |
+        **/*Tests.csproj
+        !**/obj/**
+        !**/bin/**/ref/**
+      arguments: '--configuration 'Release' --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
+      testRunTitle: 'Unit Tests'
+
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: '**/coveragereport/Cobertura.xml'
+      failIfCoverageEmpty: false
+
   - task: CopyFiles@1
     condition: succeeded()
     displayName: Collecting deployable artifacts
