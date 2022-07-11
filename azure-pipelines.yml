@@ -243,7 +243,7 @@ jobs:
     condition: succeeded()
     inputs:
       codeCoverageTool: 'Cobertura'
-      summaryFileLocation: '**/coveragereport/Cobertura.xml'
+      summaryFileLocation: '**/coverage.cobertura.xml'
       failIfCoverageEmpty: false
 
   - task: CopyFiles@1
