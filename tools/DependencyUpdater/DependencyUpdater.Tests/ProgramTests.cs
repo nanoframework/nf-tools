@@ -29,10 +29,4 @@ public class ProgramTests
         var result = nanoFramework.Tools.DependencyUpdater.Program.GetRepoOwnerFromInputString(inputData);
         Assert.AreEqual(expectedResult, result);
     }
-
-    [TestMethod]
-    public void FailingTest()
-    {
-        throw new NotImplementedException();
-    }
 }
