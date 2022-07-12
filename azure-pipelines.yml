@@ -229,7 +229,7 @@ jobs:
 
   - task: DotNetCoreCLI@2
     condition: succeeded()
-    displayName: 'Tests - Unit'
+    displayName: 'Running Unit Tests'
     inputs:
       command: 'test'
       projects: |
