@@ -251,7 +251,7 @@ jobs:
     inputs:
       codeCoverageTool: Cobertura
       summaryFileLocation: '$(Build.SourcesDirectory)/CodeCoverage/Cobertura.xml'
-      condition: always()
+    condition: always()
 
   - task: CopyFiles@1
     condition: succeeded()
