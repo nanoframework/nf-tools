@@ -249,7 +249,7 @@ jobs:
     displayName: 'Publish code coverage results'
     inputs:
       codeCoverageTool: Cobertura
-      summaryFileLocation: '$(Pipeline.Workspace)/coverlet/Cobertura.xml'
+      summaryFileLocation: '$(Build.SourcesDirectory)/CodeCoverage/Cobertura.xml'
 
   - task: CopyFiles@1
     condition: succeeded()
