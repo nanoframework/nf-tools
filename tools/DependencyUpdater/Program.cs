@@ -29,6 +29,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static RunningEnvironment _runningEnvironment;
         private static string _gitHubAuth;
         private static string[] _solutionsExclusionList;
+        private static string _gitHubUser;
 
         /// <summary>
         /// 
@@ -40,6 +41,9 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <param name="reposToUpdate">List of repository(es) to update.</param>
         /// <param name="exclusionList">List of solution names to exclude from the update. Comma separated, name only.</param>
         /// <param name="branchToPr">Name of the branch to submit PR with updates. Default is 'main'.</param>
+        /// <param name="gitHubUser">Name of the git hub users. Used for creating PR and authentication. Default is 'nfbot'</param>
+        /// <param name="gitHubEmail">Email of the git hub users. Used for creating commits. Default is 'nanoframework@outlook.com'</param>
+        /// <param name="repoOwner">Github repository owner (https://github.com/[repoOwner]/repositoryName). If not provided, created based on github repository url where the tool was invoked.</param>
         /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
         static void Main(
             string workingDirectory = null,
@@ -49,6 +53,9 @@ namespace nanoFramework.Tools.DependencyUpdater
             bool reposToUpdate = false,
             string exclusionList = null,
             string branchToPr = "main",
+            string gitHubUser = "nfbot",
+            string gitHubEmail = "nanoframework@outlook.com",
+            string repoOwner = null,
             string[] args = null)
         {
             // sanity check 
@@ -58,60 +65,66 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
-            // check build environment
-            _runningEnvironment = RunningEnvironment.Other;
-
-            if (Environment.GetEnvironmentVariable("Agent_HomeDirectory") is not null
-                && Environment.GetEnvironmentVariable("Build_BuildNumber") is not null)
+            // check if this is running on a git repo
+            string gitRepo = "";
+            if (!RunGitCli("remote -v", ref gitRepo, workingDirectory))
             {
-                // these variables are only available on Azure Pipelines build
-                _runningEnvironment = RunningEnvironment.AzurePipelines;
-                Console.WriteLine($"Running in an Azure Pipeline");
-            }
-            else if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") is not null)
-            {
-                // this variable it's only set when running on a GitHub action
-                _runningEnvironment = RunningEnvironment.GitHubAction;
-                Console.WriteLine($"Running in a GitHub Action");
-            }
-            else
-            {
-                Console.WriteLine($"Running at _another_ machine");
-            }
-
-            Console.WriteLine($"Branch to submit PR: {branchToPr}");
-
-#if DEBUG
-            var config = new ConfigurationBuilder()
-            .AddUserSecrets<Program>()
-            .Build();
-
-            _octokitClient.Credentials = new Octokit.Credentials(config.GetSection("GITHUB_TOKEN").Value);
-
-            // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
-            _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"nfbot:{config.GetSection("GITHUB_TOKEN").Value}"))}";
-#else
-            // setup git stuff
-            RunGitCli("config --global gc.auto 0", "");
-            RunGitCli("config --global user.name nfbot", "");
-            RunGitCli("config --global user.email nanoframework@outlook.com", "");
-            RunGitCli("config --global core.autocrlf true", "");
-
-            // setup OctoKit authentication
-            if (Environment.GetEnvironmentVariable("GITHUB_TOKEN") is null)
-            {
-                Console.WriteLine($"ERROR: environment variable with GitHub token not found");
-
-                // exit with error
                 Environment.Exit(1);
             }
 
-            _octokitClient.Credentials = new Octokit.Credentials(Environment.GetEnvironmentVariable("GITHUB_TOKEN"));
+            if (gitRepo.Contains("fatal: not a git repository"))
+            {
+                Console.WriteLine($"ERROR: working directory is not a git repository");
+                Environment.Exit(1);
+            }
+            
+            if (repoOwner is null)
+            {
+                repoOwner = GetRepoOwnerFromInputString(gitRepo);
+            }
+            
+            if (workingDirectory is null)
+            {
+                // default to current directory
+                workingDirectory = Environment.CurrentDirectory;
+            }
+            
+            if (!Directory.Exists(workingDirectory))
+            {
+                Console.WriteLine($"ERROR: directory '{workingDirectory}' does not exist!");
+                Environment.Exit(1);
+            }
+            
+            if (!stablePackages && !previewPackages)
+            {
+                Console.WriteLine($"ERROR: can't specify stable and preview NuGet packages simultaneously!");
+                Environment.Exit(1);
+            }
+            
+            if (stablePackages && previewPackages)
+            {
+                Console.WriteLine($"ERROR: can't specify stable and preview NuGet packages simultaneously!");
+                Environment.Exit(1);
+            }
 
-            // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
-            _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"nfbot:{Environment.GetEnvironmentVariable("GITHUB_TOKEN")}"))}";
+            _gitHubUser = gitHubUser;
+            _runningEnvironment = GetRunningEnvironment();
+            Console.WriteLine($"Running on {_runningEnvironment.ToString()} environment");
+            Console.WriteLine($"Branch to submit PR: {branchToPr}");
+
+#if DEBUG
+            // setup git stuff
+            RunGitCli("config --global gc.auto 0", "");
+            RunGitCli($"config --global user.name {gitHubUser}", "");
+            RunGitCli($"config --global user.email {gitHubEmail}", "");
+            RunGitCli("config --global core.autocrlf true", "");
 #endif
-
+            
+            var gitHubToken = GetGitHubToken();
+            _octokitClient.Credentials = new Octokit.Credentials(gitHubToken);
+            // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
+            _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{gitHubUser}:{gitHubToken}"))}";
+            
             // store exclusion list
             try
             {
@@ -123,19 +136,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
-            // parse args in case these are in a single line
-            if (args.Count() == 1 && args[0].Contains("\r\n"))
-            {
-                Console.WriteLine($"INFO: rebuilding args list with new lines.");
-
-                args = args[0].Split("\r\n");
-            }
-            else if (args.Count() == 1 && args[0].Contains("\n"))
-            {
-                Console.WriteLine($"INFO: rebuilding args list with new lines.");
-
-                args = args[0].Split("\n");
-            }
+            args = RebuildArgsListWithNewLinesIfNeeded(args);
 
             // choose work-flow
             if (solutionsToCheck)
@@ -148,6 +149,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                     stablePackages,
                     previewPackages,
                     branchToPr,
+                    repoOwner,
+                    gitRepo,
                     args);
             }
             else
@@ -169,14 +172,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Console.WriteLine();
                     Console.WriteLine("*******************************");
                     Console.WriteLine($"Updating {library}");
-
-#if DEBUG
-                    // working directory is user Temporary directory
-                    workingDirectory = Path.GetTempPath();
-#else
-                    // working directory is Agent Temporary directory
-                    workingDirectory = Environment.GetEnvironmentVariable("Agent_TempDirectory");
-#endif
 
                     // clone depth
                     string cloneDepth = "--depth 1";
@@ -229,6 +224,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                         false,
                         true,
                         branchToPr,
+                        repoOwner,
+                        gitRepo,
                         args);
                 }
             }
@@ -237,27 +234,94 @@ namespace nanoFramework.Tools.DependencyUpdater
             Environment.Exit(0);
         }
 
-        static void UpdateLibrary(string workingDirectory,
-                        bool stablePackages = false,
-                        bool previewPackages = true,
-                        string branchToPr = "develop",
-                        string[] solutionsToCheck = default)
+        private static string[] RebuildArgsListWithNewLinesIfNeeded(string[] args)
         {
-            string releaseType = stablePackages ? "stable" : previewPackages ? "preview" : "?????";
-            bool useStablePackages = stablePackages;
-
-            // sanity checks
-            if (workingDirectory is null)
+            // parse args in case these are in a single line
+            if (args.Count() == 1 && args[0].Contains("\r\n"))
             {
-                // default to current directory
-                workingDirectory = Environment.CurrentDirectory;
+                Console.WriteLine($"INFO: rebuilding args list with new lines.");
+                return args[0].Split("\r\n");
             }
-            else if (!Directory.Exists(workingDirectory))
+            
+            if (args.Count() == 1 && args[0].Contains("\n"))
             {
-                Console.WriteLine($"ERROR: directory '{workingDirectory}' does not exist!");
+                Console.WriteLine($"INFO: rebuilding args list with new lines.");
+                return args[0].Split("\n");
+            }
+
+            return args;
+        }
+
+        private static string GetGitHubToken()
+        {
+#if DEBUG
+                var config = new ConfigurationBuilder()
+                    .AddUserSecrets<Program>()
+                    .Build();
+                return config.GetSection("GITHUB_TOKEN").Value;
+#else
+            var tokenFromEnvironmentVariable = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+            if (tokenFromEnvironmentVariable is null)
+            {
+                Console.WriteLine($"ERROR: environment variable with GitHub token not found");
+
+                // exit with error
                 Environment.Exit(1);
             }
 
+            return tokenFromEnvironmentVariable;
+#endif
+
+        }
+
+        private static RunningEnvironment GetRunningEnvironment()
+        {
+            // these variables are only available on Azure Pipelines build
+            if (Environment.GetEnvironmentVariable("Agent_HomeDirectory") is not null
+                && Environment.GetEnvironmentVariable("Build_BuildNumber") is not null)
+            {
+                return RunningEnvironment.AzurePipelines;
+            }
+            
+            // this variable it's only set when running on a GitHub action
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") is not null)
+            {
+                return RunningEnvironment.GitHubAction;
+            }
+
+            return RunningEnvironment.Other;
+        }
+
+        internal static Match GetRepoNameFromInputString(string input)
+        {
+            return Regex.Match(input, "(?:https:\\/\\/github\\.com\\/(.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
+        }
+
+        internal static string GetRepoOwnerFromInputString(string input)
+        {
+            var regexResult = Regex.Match(input, "(?:https:\\/\\/github\\.com\\/(?'repoOwner'.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
+            if (!regexResult.Success)
+                throw new Exception($"Unable to find repository owner in {input}");
+
+            return regexResult.Groups["repoOwner"].Value;
+        }
+
+        internal static string GetLibNameFromRegexMatch(Match match)
+        {
+            // need to remove .git from end of URL, if there
+            return match.Groups["repoName"].Value.Replace(".git", "");
+        }
+
+        static void UpdateLibrary(string workingDirectory,
+                        bool stablePackages,
+                        bool previewPackages,
+                        string branchToPr,
+                        string repoOwner,
+                        string gitRepo,
+                        string[] solutionsToCheck )
+        {
+            string releaseType = stablePackages ? "stable" : previewPackages ? "preview" : "?????";
+            
             Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
 
             Console.WriteLine($"Using {releaseType} NuGet packages.");
@@ -270,42 +334,18 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine("Targeting every solution in the repository.");
             }
-
-            // check if this is running on a git repo
-            string libraryName = null;
-            string gitRepo = "";
-            if (!RunGitCli("remote -v", ref gitRepo, workingDirectory))
+            
+            var repoName = GetRepoNameFromInputString(gitRepo);
+            if (!repoName.Success)
             {
+                Console.WriteLine($"ERROR: couldn't determine repository name.");
                 Environment.Exit(1);
             }
 
-            if (gitRepo.Contains("fatal: not a git repository"))
-            {
-                Console.WriteLine($"ERROR: working directory is not a git repository");
-                Environment.Exit(1);
-            }
-            else
-            {
-                var repoName = Regex.Match(gitRepo, "(?:https:\\/\\/github\\.com\\/nanoframework\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
-                if (!repoName.Success)
-                {
-                    Console.WriteLine($"ERROR: couldn't determine repository name.");
-                    Environment.Exit(1);
-                }
-
-                // need to remove .git from end of URL, if there
-                libraryName = repoName.Groups["repoName"].Value.Replace(".git", "");
-            }
+            var libraryName = GetLibNameFromRegexMatch(repoName);
 
             Console.WriteLine($"Repository is: '{libraryName ?? "null"}'");
-
-            if ((!stablePackages && !previewPackages)
-                || (stablePackages && previewPackages))
-            {
-                Console.WriteLine($"ERROR: can't specify stable and preview NuGet packages simultaneously!");
-                Environment.Exit(1);
-            }
-
+            
             // adjust location and 
             if (_runningEnvironment == RunningEnvironment.AzurePipelines)
             {
@@ -322,84 +362,51 @@ namespace nanoFramework.Tools.DependencyUpdater
             int updateCount = 0;
             int nuspecCounter = 0;
             StringBuilder commitMessage = new();
-            string newBranchName = "nfbot/update-dependencies/" + Guid.NewGuid().ToString();
+            string newBranchName = $"{_gitHubUser}/update-dependencies/{Guid.NewGuid().ToString()}";
 
             // collect solution(s)
-            List<string> solutionFiles = new();
+            List<string> solutionFiles = CollectSolutions(workingDirectory, solutionsToCheck);
 
-            if (solutionsToCheck is not null)
-            {
-                if (solutionsToCheck.Count() == 1
-                    & solutionsToCheck[0] == "*.sln")
-                {
-                    var solutions = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories);
-
-                    if (solutions.Any())
-                    {
-                        solutionFiles.AddRange(solutions);
-                    }
-                }
-                else
-                {
-                    foreach (var sln in solutionsToCheck)
-                    {
-                        var solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
-
-                        if (solutions.Any())
-                        {
-                            solutionFiles.AddRange(solutions);
-                        }
-                    }
-                }
-
-            }
-            else
-            {
-                solutionFiles = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories).ToList();
-            }
-
-            if (solutionFiles.Any())
-            {
-                // list solutions to check
-                Console.WriteLine("");
-                Console.WriteLine($"Solutions to check are:");
-
-                foreach (var sln in solutionFiles)
-                {
-                    Console.Write($"{Path.GetRelativePath(workingDirectory, sln)}");
-
-                    // check if this on is in the exclusion list
-                    if (_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(sln)))
-                    {
-                        Console.WriteLine(" *** EXCLUDED ***");
-                    }
-                    else
-                    {
-                        Console.WriteLine("");
-                    }
-                }
-
-                // find NuGet.Config
-                var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config", SearchOption.TopDirectoryOnly).FirstOrDefault();
-                if (nugetConfig is not null)
-                {
-                    Console.WriteLine();
-                    Console.WriteLine($"INFO: working with '{nugetConfig}'");
-
-                    // compose option for nuget CLI 
-                    _nuGetConfigFile = $" -ConfigFile {nugetConfig}";
-                }
-                else
-                {
-                    Console.WriteLine("INFO: couldn't find a nuget.config");
-                }
-            }
-            else
+            if (!solutionFiles.Any())
             {
                 Console.WriteLine();
                 Console.WriteLine("INFO: No solutions found...");
-
                 return;
+            }
+
+            // list solutions to check
+            Console.WriteLine("");
+            Console.WriteLine($"Solutions to check are:");
+
+            foreach (var sln in solutionFiles)
+            {
+                Console.Write($"{Path.GetRelativePath(workingDirectory, sln)}");
+
+                // check if this on is in the exclusion list
+                if (_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(sln)))
+                {
+                    Console.WriteLine(" *** EXCLUDED ***");
+                }
+                else
+                {
+                    Console.WriteLine("");
+                }
+            }
+
+            // find NuGet.Config
+            var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault();
+            if (nugetConfig is not null)
+            {
+                Console.WriteLine();
+                Console.WriteLine($"INFO: working with '{nugetConfig}'");
+
+                // compose option for nuget CLI 
+                _nuGetConfigFile = $" -ConfigFile {nugetConfig}";
+            }
+            else
+            {
+                Console.WriteLine("INFO: couldn't find a nuget.config");
             }
 
             // go through each solution (filter out the ones in the exclusion list)
@@ -431,9 +438,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Environment.Exit(1);
                 }
 
-                // counter for updates in this solution
-                int solutionNuspecUpdates = 0;
-
                 // find ALL packages.config files inside the solution projects
                 var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
 
@@ -449,8 +453,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Console.WriteLine($"INFO: working file is {packageConfigFile}");
 
                     // check if the project the packages.config belongs to it's in the solution 
-                    var projectPath = Directory.GetParent(packageConfigFile).FullName;
-
                     var projectPathInSln = Path.GetRelativePath(solutionPath, Directory.GetParent(packageConfigFile).FullName);
 
                     // check for project in the same folder
@@ -588,8 +590,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             string updateResult = "";
                             string updateParameters;
 
-                            if (useStablePackages
-                                && !packageName.StartsWith("UnitsNet."))
+                            if (stablePackages && !packageName.StartsWith("UnitsNet."))
                             {
                                 // don't allow prerelease for release, main branches and UnitsNet packages
                                 // go with our Azure feed
@@ -642,30 +643,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                             if (!updateOutcome.Success)
                             {
                                 // check for no updates available message
-                                if (updateResult.Contains("There are no new updates available"))
-                                {
-                                    // this could have been updated as a nested dependency
-                                    // refresh package list
-                                    // load packages.config 
-                                    packageReader = new PackagesConfigReader(XDocument.Load(packageConfigFile));
-
-                                    // filter out Nerdbank.GitVersioning package and development dependencies (except our Test Framework)
-                                    var packageToRefresh = packageReader.GetPackages().FirstOrDefault(p => p.PackageIdentity.Id == packageName);
-
-                                    // grab target version
-                                    packageTargetVersion = packageToRefresh.PackageIdentity.Version.ToNormalizedString();
-
-                                    if (packageOriginVersion == packageTargetVersion)
-                                    {
-                                        Console.WriteLine($"No newer version");
-                                    }
-                                }
-                                else
+                                if (!updateResult.Contains("There are no new updates available"))
                                 {
                                     // something wrong happened!
                                     // output update message for the log
                                     Console.WriteLine();
-                                    Console.WriteLine($"INFO: unexpected update outcome {Environment.NewLine}>>>>>>>{Environment.NewLine}{updateResult}{Environment.NewLine}>>>>>>>{Environment.NewLine}");
+                                    Console.WriteLine(
+                                        $"INFO: unexpected update outcome {Environment.NewLine}>>>>>>>{Environment.NewLine}{updateResult}{Environment.NewLine}>>>>>>>{Environment.NewLine}");
                                     Console.WriteLine();
 
                                     if (okToRetry)
@@ -675,10 +659,26 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                         goto performUpdate;
                                     }
-                                    else
-                                    {
-                                        Environment.Exit(1);
-                                    }
+
+                                    Environment.Exit(1);
+                                }
+
+                                // this could have been updated as a nested dependency
+                                // refresh package list
+                                // load packages.config 
+                                packageReader = new PackagesConfigReader(XDocument.Load(packageConfigFile));
+
+                                // filter out Nerdbank.GitVersioning package and development dependencies (except our Test Framework)
+                                var packageToRefresh = packageReader.GetPackages()
+                                    .FirstOrDefault(p => p.PackageIdentity.Id == packageName);
+
+                                // grab target version
+                                packageTargetVersion =
+                                    packageToRefresh.PackageIdentity.Version.ToNormalizedString();
+
+                                if (packageOriginVersion == packageTargetVersion)
+                                {
+                                    Console.WriteLine($"No newer version");
                                 }
                             }
                             else
@@ -760,7 +760,6 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                     // bump counters
                                     nuspecCounter++;
-                                    solutionNuspecUpdates++;
                                 }
                             }
                         }
@@ -773,75 +772,100 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine();
                 Console.WriteLine("INFO: No packages found to update...");
+                return;
+            }
+
+            // sanity check for no nuspecs found
+            if (nuspecCounter == 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine($"*** WARNING: No nuspecs files updated... Maybe worth checking ***");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine($"INFO: {updateCount} packages updated");
+
+            // need this line so nfbot flags the PR appropriately
+            commitMessage.Append("\n[version update]\n\n");
+
+            // better add this warning line               
+            commitMessage.Append("### :warning: This is an automated update. :warning:\n");
+
+            Console.WriteLine($"INFO: generating PR information");
+
+            Console.WriteLine($"INFO: creating branch to perform updates");
+
+            // create branch to perform updates
+            if (!RunGitCli($"branch {newBranchName}", workingDirectory))
+            {
+                Environment.Exit(1);
+            }
+
+            // checkout branch
+            if (!RunGitCli($"checkout {newBranchName}", workingDirectory))
+            {
+                Environment.Exit(1);
+            }
+
+            Console.WriteLine($"INFO: adding changes");
+
+            // add changes
+            if (!RunGitCli("add -A", workingDirectory))
+            {
+                Environment.Exit(1);
+            }
+
+            string prTitle = $"Update {updateCount} NuGet dependencies";
+
+            // commit message with a different title if one or more dependencies are updated
+            if (updateCount > 1)
+            {
+                if (!RunGitCli($"commit -m \"Update {updateCount} NuGet dependencies\" -m\"{commitMessage}\"", workingDirectory))
+                {
+                    Environment.Exit(1);
+                }
             }
             else
             {
-                // sanity check for no nuspecs found
-                if (nuspecCounter == 0)
-                {
-                    Console.WriteLine();
-                    Console.WriteLine($"*** WARNING: No nuspecs files updated... Maybe worth checking ***");
-                }
-
-                Console.WriteLine();
-                Console.WriteLine($"INFO: {updateCount} packages updated");
-
-                // need this line so nfbot flags the PR appropriately
-                commitMessage.Append("\n[version update]\n\n");
-
-                // better add this warning line               
-                commitMessage.Append("### :warning: This is an automated update. :warning:\n");
-
-                Console.WriteLine($"INFO: generating PR information");
-
-                Console.WriteLine($"INFO: creating branch to perform updates");
-
-                // create branch to perform updates
-                if (!RunGitCli($"branch {newBranchName}", workingDirectory))
+                if (!RunGitCli($"commit -m \"{prTitle}\" -m\"{commitMessage}\"", workingDirectory))
                 {
                     Environment.Exit(1);
                 }
-
-                // checkout branch
-                if (!RunGitCli($"checkout {newBranchName}", workingDirectory))
-                {
-                    Environment.Exit(1);
-                }
-
-                Console.WriteLine($"INFO: adding changes");
-
-                // add changes
-                if (!RunGitCli("add -A", workingDirectory))
-                {
-                    Environment.Exit(1);
-                }
-
-                string prTitle = $"Update {updateCount} NuGet dependencies";
-
-                // commit message with a different title if one or more dependencies are updated
-                if (updateCount > 1)
-                {
-                    if (!RunGitCli($"commit -m \"Update {updateCount} NuGet dependencies\" -m\"{commitMessage}\"", workingDirectory))
-                    {
-                        Environment.Exit(1);
-                    }
-                }
-                else
-                {
-                    if (!RunGitCli($"commit -m \"{prTitle}\" -m\"{commitMessage}\"", workingDirectory))
-                    {
-                        Environment.Exit(1);
-                    }
-                }
-
-                // push changes to github
-                if (!RunGitCli($"-c http.extraheader=\"AUTHORIZATION: {_gitHubAuth}\" push --set-upstream origin {newBranchName}", workingDirectory))
-                {
-                    Environment.Exit(1);
-                }
-
-                CretePRWithUpdate(branchToPr, libraryName, commitMessage.ToString(), newBranchName, prTitle);
             }
+
+            // push changes to github
+            if (!RunGitCli($"-c http.extraheader=\"AUTHORIZATION: {_gitHubAuth}\" push --set-upstream origin {newBranchName}", workingDirectory))
+            {
+                Environment.Exit(1);
+            }
+            
+            CretePRWithUpdate(branchToPr, libraryName, commitMessage.ToString(), newBranchName, prTitle, repoOwner);
+        }
+
+        private static List<string> CollectSolutions(string workingDirectory, string[] solutionsToCheck)
+        {
+            if (solutionsToCheck is null)
+            {
+                return Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories).ToList();
+            }
+
+            if (solutionsToCheck.Length == 1 & solutionsToCheck[0] == "*.sln")
+            {
+                return Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories).ToList();
+            }
+
+            var listToReturn = new List<string>();
+            foreach (var sln in solutionsToCheck)
+            {
+                var solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
+
+                if (solutions.Any())
+                {
+                    listToReturn.AddRange(solutions);
+                }
+            }
+
+            return listToReturn;
         }
 
         private static void UpdateProject(string projectToUpdate, string repositoryPath, ref int updateCount, ref StringBuilder commitMessage)
@@ -884,42 +908,33 @@ namespace nanoFramework.Tools.DependencyUpdater
             string libraryName,
             string commitMessage,
             string newBranchName,
-            string prTitle)
+            string prTitle,
+            string repoOwner)
         {
             try
             {
                 // create PR
-                string repoOwner = "nanoFramework";
-
-                // handle differently for:
-                // AMQPLite
-                if (libraryName == AMQPLiteLibraryName)
-                {
-                    repoOwner = "Azure";
-                }
-
                 // check if there is already a PR with these updates
                 var openPRs = _octokitClient.PullRequest.GetAllForRepository(repoOwner, libraryName, new PullRequestRequest() { State = ItemStateFilter.Open }).Result;
 
-                var updatePRs = openPRs.Where(pr => pr.User.Login == "nfbot" && pr.Title == prTitle && pr.Body == commitMessage);
+                var updatePRs = openPRs.Where(pr => pr.User.Login == _gitHubUser && pr.Title == prTitle && pr.Body == commitMessage);
 
-                if (updatePRs.Count() > 0)
+                if (updatePRs.Any())
                 {
                     Console.WriteLine($"INFO: found existing PR with the same update: {repoOwner}/{libraryName}/pull/{updatePRs.First().Number}. Skipping PR creation.");
+                    return;
                 }
-                else
-                {
-                    Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: nanoframework:{ newBranchName}, base:{branchToPr}");
 
-                    // developer note: head must be in the format 'user:branch'
-                    var updatePr = _octokitClient.PullRequest.Create(repoOwner, libraryName, new NewPullRequest(prTitle, $"nanoframework:{newBranchName}", branchToPr)).Result;
+                Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: {repoOwner}:{newBranchName}, base:{branchToPr}");
 
-                    // update PR body
-                    var updatePrBody = new PullRequestUpdate() { Body = commitMessage };
-                    _ = _octokitClient.PullRequest.Update(repoOwner, libraryName, updatePr.Number, updatePrBody).Result;
+                // developer note: head must be in the format 'user:branch'
+                var updatePr = _octokitClient.PullRequest.Create(repoOwner, libraryName, new NewPullRequest(prTitle, $"{repoOwner}:{newBranchName}", branchToPr)).Result;
 
-                    Console.WriteLine($"INFO: created PR #{updatePr.Number} @ {repoOwner}/{libraryName}");
-                }
+                // update PR body
+                var updatePrBody = new PullRequestUpdate() { Body = commitMessage };
+                _ = _octokitClient.PullRequest.Update(repoOwner, libraryName, updatePr.Number, updatePrBody).Result;
+
+                Console.WriteLine($"INFO: created PR #{updatePr.Number} @ {repoOwner}/{libraryName}");
             }
             catch (Exception ex)
             {
@@ -965,12 +980,10 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                 return true;
             }
-            else
-            {
-                Console.WriteLine($"ERROR: nuget CLI exited with code {cliResult.ExitCode}");
-                Console.WriteLine($"{cliResult.StandardError}");
-                return false;
-            }
+
+            Console.WriteLine($"ERROR: nuget CLI exited with code {cliResult.ExitCode}");
+            Console.WriteLine($"{cliResult.StandardError}");
+            return false;
         }
 
         private static bool RunGitCli(
@@ -1010,12 +1023,10 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                 return true;
             }
-            else
-            {
-                Console.WriteLine($"ERROR: git CLI exited with code {cliResult.ExitCode}");
-                Console.WriteLine($"{cliResult.StandardError}");
-                return false;
-            }
+
+            Console.WriteLine($"ERROR: git CLI exited with code {cliResult.ExitCode}");
+            Console.WriteLine($"{cliResult.StandardError}");
+            return false;
         }
 
 

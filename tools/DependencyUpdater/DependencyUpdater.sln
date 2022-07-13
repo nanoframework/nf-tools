@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdater", "DependencyUpdater.csproj", "{96810A57-0356-4ED3-91DB-9811A4A553A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdater.Tests", "DependencyUpdater.Tests\DependencyUpdater.Tests.csproj", "{DFCC960B-6B6E-4A11-B5ED-DA9D1A682CDD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{96810A57-0356-4ED3-91DB-9811A4A553A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96810A57-0356-4ED3-91DB-9811A4A553A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96810A57-0356-4ED3-91DB-9811A4A553A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFCC960B-6B6E-4A11-B5ED-DA9D1A682CDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFCC960B-6B6E-4A11-B5ED-DA9D1A682CDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFCC960B-6B6E-4A11-B5ED-DA9D1A682CDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFCC960B-6B6E-4A11-B5ED-DA9D1A682CDD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
