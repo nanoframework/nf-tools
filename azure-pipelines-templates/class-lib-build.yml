@@ -272,7 +272,7 @@ steps:
     targetType: 'inline'
     script: |
       git add CHANGELOG.md
-      git commit -m "Update CHANGELOG for v$(NBGV_Version)" -m"***NO_CI***"
+      git commit -m "Update CHANGELOG for v$(MY_NUGET_VERSION)" -m"***NO_CI***"
 
       git config user.email ${{ parameters.gitEmail }}
       git config user.name ${{ parameters.gitUser }}
