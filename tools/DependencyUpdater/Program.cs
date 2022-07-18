@@ -112,13 +112,11 @@ namespace nanoFramework.Tools.DependencyUpdater
             Console.WriteLine($"Running on {_runningEnvironment.ToString()} environment");
             Console.WriteLine($"Branch to submit PR: {branchToPr}");
 
-#if DEBUG
             // setup git stuff
             RunGitCli("config --global gc.auto 0", "");
             RunGitCli($"config --global user.name {gitHubUser}", "");
             RunGitCli($"config --global user.email {gitHubEmail}", "");
             RunGitCli("config --global core.autocrlf true", "");
-#endif
             
             var gitHubToken = GetGitHubToken();
             _octokitClient.Credentials = new Octokit.Credentials(gitHubToken);
