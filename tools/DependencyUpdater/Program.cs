@@ -77,30 +77,30 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"ERROR: working directory is not a git repository");
                 Environment.Exit(1);
             }
-            
+
             if (repoOwner is null)
             {
                 repoOwner = GetRepoOwnerFromInputString(gitRepo);
             }
-            
+
             if (workingDirectory is null)
             {
                 // default to current directory
                 workingDirectory = Environment.CurrentDirectory;
             }
-            
+
             if (!Directory.Exists(workingDirectory))
             {
                 Console.WriteLine($"ERROR: directory '{workingDirectory}' does not exist!");
                 Environment.Exit(1);
             }
-            
+
             if (!stablePackages && !previewPackages)
             {
                 Console.WriteLine($"ERROR: can't specify stable and preview NuGet packages simultaneously!");
                 Environment.Exit(1);
             }
-            
+
             if (stablePackages && previewPackages)
             {
                 Console.WriteLine($"ERROR: can't specify stable and preview NuGet packages simultaneously!");
@@ -112,17 +112,19 @@ namespace nanoFramework.Tools.DependencyUpdater
             Console.WriteLine($"Running on {_runningEnvironment.ToString()} environment");
             Console.WriteLine($"Branch to submit PR: {branchToPr}");
 
-            // setup git stuff
+            // setup git stuff, only if we are not in debug mode
+#if !DEBUG
             RunGitCli("config --global gc.auto 0", "");
             RunGitCli($"config --global user.name {gitHubUser}", "");
             RunGitCli($"config --global user.email {gitHubEmail}", "");
             RunGitCli("config --global core.autocrlf true", "");
-            
+#endif
+
             var gitHubToken = GetGitHubToken();
             _octokitClient.Credentials = new Octokit.Credentials(gitHubToken);
             // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
             _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{gitHubUser}:{gitHubToken}"))}";
-            
+
             // store exclusion list
             try
             {
@@ -240,7 +242,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"INFO: rebuilding args list with new lines.");
                 return args[0].Split("\r\n");
             }
-            
+
             if (args.Count() == 1 && args[0].Contains("\n"))
             {
                 Console.WriteLine($"INFO: rebuilding args list with new lines.");
@@ -253,10 +255,10 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static string GetGitHubToken()
         {
 #if DEBUG
-                var config = new ConfigurationBuilder()
-                    .AddUserSecrets<Program>()
-                    .Build();
-                return config.GetSection("GITHUB_TOKEN").Value;
+            var config = new ConfigurationBuilder()
+                .AddUserSecrets<Program>()
+                .Build();
+            return config.GetSection("GITHUB_TOKEN").Value;
 #else
             var tokenFromEnvironmentVariable = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
             if (tokenFromEnvironmentVariable is null)
@@ -280,7 +282,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 return RunningEnvironment.AzurePipelines;
             }
-            
+
             // this variable it's only set when running on a GitHub action
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") is not null)
             {
@@ -316,10 +318,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                         string branchToPr,
                         string repoOwner,
                         string gitRepo,
-                        string[] solutionsToCheck )
+                        string[] solutionsToCheck)
         {
             string releaseType = stablePackages ? "stable" : previewPackages ? "preview" : "?????";
-            
+
             Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
 
             Console.WriteLine($"Using {releaseType} NuGet packages.");
@@ -332,7 +334,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine("Targeting every solution in the repository.");
             }
-            
+
             var repoName = GetRepoNameFromInputString(gitRepo);
             if (!repoName.Success)
             {
@@ -343,7 +345,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             var libraryName = GetLibNameFromRegexMatch(repoName);
 
             Console.WriteLine($"Repository is: '{libraryName ?? "null"}'");
-            
+
             // adjust location and 
             if (_runningEnvironment == RunningEnvironment.AzurePipelines)
             {
@@ -592,7 +594,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             {
                                 // don't allow prerelease for release, main branches and UnitsNet packages
                                 // go with our Azure feed
-                                updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -FileConflictAction Overwrite  -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
+                                updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -FileConflictAction Overwrite";
                             }
                             else if (packageName.StartsWith("UnitsNet."))
                             {
@@ -616,7 +618,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             {
                                 // all the rest, use prerelase packages
                                 // go with our Azure feed
-                                updateParameters = $"{projectToUpdate} -Id {packageName} -PreRelease {repositoryPath} -FileConflictAction Overwrite  -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
+                                updateParameters = $"{projectToUpdate} -Id {packageName} -PreRelease {repositoryPath} -FileConflictAction Overwrite";
                             }
 
                             bool okToRetry = true;
@@ -627,7 +629,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             if (!RunNugetCLI(
                                 "update",
                                 updateParameters,
-                                false,
+                                true,
                                 ref updateResult))
                             {
                                 Environment.Exit(1);
@@ -669,6 +671,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // filter out Nerdbank.GitVersioning package and development dependencies (except our Test Framework)
                                 var packageToRefresh = packageReader.GetPackages()
                                     .FirstOrDefault(p => p.PackageIdentity.Id == packageName);
+
+                                if (packageToRefresh is null)
+                                {
+                                    Console.WriteLine();
+                                    Console.WriteLine($"INFO: {packageName} not found in any nuget source. Skipping update.");
+                                    Console.WriteLine();
+                                    continue;
+                                }
 
                                 // grab target version
                                 packageTargetVersion =
@@ -836,7 +846,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Environment.Exit(1);
             }
-            
+
             CretePRWithUpdate(branchToPr, libraryName, commitMessage.ToString(), newBranchName, prTitle, repoOwner);
         }
 
@@ -873,8 +883,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             // perform NuGet update
             if (!RunNugetCLI(
                 "update",
-                $"{projectToUpdate} {repositoryPath} -FileConflictAction Overwrite  -Source \"https://api.nuget.org/v3/index.json\"",
-                false,
+                $"{projectToUpdate} {repositoryPath} -FileConflictAction Overwrite",
+                true,
                 ref updateResult))
             {
                 Environment.Exit(1);
@@ -952,12 +962,35 @@ namespace nanoFramework.Tools.DependencyUpdater
                 ref dummy);
         }
 
+        private static bool ShouldAppendDefaultSourcesToNuGetCommand(bool useNuGetConfig, string arguments)
+        {
+            // If we are using nugetconfig file and the file was found, we do not want to override it
+            if (useNuGetConfig && !string.IsNullOrEmpty(_nuGetConfigFile))
+            {
+                return false;
+            }
+
+            // If arguments already contains Source, do not override it
+            if (arguments.Contains("-Source"))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private static bool RunNugetCLI(
             string command,
             string arguments,
             bool useNugetConfig,
             ref string output)
         {
+            if (ShouldAppendDefaultSourcesToNuGetCommand(useNugetConfig, arguments))
+            {
+                arguments += " -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
+                arguments += " -Source \"https://api.nuget.org/v3/index.json\"";
+            }
+
             var cmd = Cli.Wrap(Path.Combine(AppContext.BaseDirectory, "NuGet.exe"))
                 .WithArguments($" {command} {arguments} {(useNugetConfig ? _nuGetConfigFile : null)}")
                 .WithValidation(CommandResultValidation.None);
