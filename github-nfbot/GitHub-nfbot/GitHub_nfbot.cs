@@ -78,6 +78,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _labelTypeBugName = "Type: bug";
         private const string _labelTypeEnhancementName = "Type: enhancement";
         private const string _labelTypeUnitTestsName = "Type: Unit Tests";
+        private const string _labelTypeChoresName = "Type: Chores";
 
         private const string _labelStatusWaitingTriageName = "Status: Waiting triage";
         private const string _labelDocumentationName = "Type: documentation";
@@ -1568,7 +1569,7 @@ namespace nanoFramework.Tools.GitHub
             // check for expected/mandatory content
             bool issueIsTodo = false;
 
-            if (issue.Body.Contains(_todoTagComment))
+            if (issue.Labels.Any(l => l.Name == _labelTypeChoresName) || issue.Body.Contains(_todoTagComment))
             {
                 issueIsTodo = true;
             }
