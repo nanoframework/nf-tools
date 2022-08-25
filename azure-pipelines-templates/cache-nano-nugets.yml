@@ -15,11 +15,11 @@ steps:
 
       Write-Host "Found packages folder for solution at: $packagesLocation"
 
-      echo "##vso[task.setvariable variable=NUGET_PACKAGES]$packagesLocation"
+      echo "##vso[task.setvariable variable=MY_NUGET_PACKAGES]$packagesLocation"
 
 - task: Cache@2
   displayName: Cache NuGet packages
   condition: succeeded()
   inputs:
     key: 'nuget | **/packages.lock.json'
-    path: $(NUGET_PACKAGES)
+    path: $(MY_NUGET_PACKAGES)
