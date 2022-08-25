@@ -125,7 +125,7 @@ class Program
         {
             Console.ForegroundColor = ConsoleColor.Red;
 
-            Console.WriteLine($"ERROR: solution file '{solutionToCheck}' doesn't have any nfproj file??");
+            Console.WriteLine($"ERROR: solution file '{solutionToCheck}' doesn't have any nfproj files??");
 
             Console.ForegroundColor = ConsoleColor.White;
 
@@ -224,7 +224,7 @@ class Program
                 if (nuspecFileName is not null)
                 {
                     // report finding
-                    Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
+                    Console.WriteLine($"INFO: found a matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
 
                     // load nuspec file
                     // NOTE: this is replacing as well $version$ by 9.99.99.999
@@ -238,7 +238,7 @@ class Program
                     if (nuspecFileName is not null)
                     {
                         // report finding
-                        Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
+                        Console.WriteLine($"INFO: found a matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
 
                         // load nuspec file
                         // NOTE: this is replacing as well $version$ by 9.99.99.999
@@ -295,7 +295,7 @@ class Program
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
 
-                    Console.WriteLine("ERROR: couldn't read assembly name from project file");
+                    Console.WriteLine("ERROR: couldn't read the assembly name from project file");
 
                     Console.ForegroundColor = ConsoleColor.White;
 
@@ -399,7 +399,7 @@ class Program
 
                         Console.WriteLine();
                         Console.WriteLine("*****************************************************************");
-                        Console.WriteLine($"Couldn't find it in '{Path.GetFileName(projectToCheck)}'");
+                        Console.WriteLine($"Couldn't find dependency in '{Path.GetFileName(projectToCheck)}'");
                         Console.WriteLine("*****************************************************************");
                         Console.WriteLine();
 
@@ -409,7 +409,7 @@ class Program
                     {
                         Console.ForegroundColor = ConsoleColor.Green;
 
-                        Console.Write("nfproj OK! ");
+                        Console.WriteLine("    nfproj file OK! ");
 
                         Console.ForegroundColor = ConsoleColor.White;
 
@@ -419,8 +419,9 @@ class Program
 
                             Console.WriteLine();
                             Console.WriteLine("*****************************************************************");
-                            Console.WriteLine($"Found in nuspec, but declared dependency version doesn't match!");
-                            Console.WriteLine($"expecting '{packageVersion}' but found '{idFoundInNuspec}'");
+                            Console.WriteLine($"DEPENDENCY VERSION MISMATCH!");
+                            Console.WriteLine($"The nfproj file has: '{packageVersion}',");
+                            Console.WriteLine($"but the nuspec file has: '{idFoundInNuspec}'");
                             Console.WriteLine("*****************************************************************");
 
                             Console.ForegroundColor = ConsoleColor.White;
@@ -482,6 +483,7 @@ class Program
 
                                 if (hintMessage is null)
                                 {
+                                    Console.WriteLine($"DEPENDENCY MISSING!");
                                     Console.WriteLine($"Couldn't find it in '{Path.GetFileName(nuspecFileName)}'");
                                     Console.WriteLine($"And it is not a dependency on any of the listed dependency packages");
                                 }
@@ -515,7 +517,7 @@ class Program
                                     {
                                         Console.ForegroundColor = ConsoleColor.Green;
 
-                                        Console.WriteLine("nuspec OK! ");
+                                        Console.WriteLine("    nuspec file OK! ");
                                     }
                                 }
 
@@ -538,7 +540,7 @@ class Program
                         {
                             Console.ForegroundColor = ConsoleColor.Green;
 
-                            Console.WriteLine("nuspec OK! ");
+                            Console.WriteLine("    nuspec file OK! ");
 
                             Console.ForegroundColor = ConsoleColor.White;
                         }
