@@ -62,6 +62,7 @@ steps:
     GITHUB_TOKEN: $(GitHubToken)
 
 - template: install-nuget.yml
+- template: cache-nano-nugets.yml
 
 - task: NuGetCommand@2
   condition: >-
