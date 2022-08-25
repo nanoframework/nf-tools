@@ -7,4 +7,4 @@ steps:
   condition: succeeded()
   displayName: 'Install specific version of NuGet'
   inputs:
-    versionSpec: '>=5.10.0'
+    versionSpec: '>=6.2.0'
