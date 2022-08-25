@@ -21,7 +21,5 @@ steps:
   displayName: Cache NuGet packages
   condition: succeeded()
   inputs:
-    key: 'nuget | **/packages.config'
-    restoreKeys: |
-        nuget | "$(Agent.OS)"
+    key: 'nuget | **/packages.lock.json'
     path: $(NUGET_PACKAGES)
