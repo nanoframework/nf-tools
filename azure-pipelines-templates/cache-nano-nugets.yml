@@ -6,6 +6,7 @@ steps:
 - task: Cache@2
   displayName: Cache NuGet packages
   condition: succeeded()
+  continueOnError: true
   inputs:
     key: 'nuget | **/packages.lock.json'
     path: $(Pipeline.Workspace)/.nuget/packages
