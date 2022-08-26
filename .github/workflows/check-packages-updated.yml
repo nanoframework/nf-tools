@@ -1,0 +1,81 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+name: Check if NuGets are using the latest version
+
+on:
+  workflow_call:
+    inputs:
+      solution_location:
+        required: false
+        default: .
+        type: string
+      solution:
+        required: false
+        type: string
+
+jobs:
+  check_nugets_using_latest_version:
+    name: NuGets using latest version
+    timeout-minutes: 15
+    runs-on: windows-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - uses: nanoframework/nanobuild@v1
+        name: Install nanoFramework build components
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          
+      - name: Check NuGets updated
+        env:
+          solution_location:  ${{ inputs.solution_location }}
+          solution:  ${{ inputs.solution }}
+        run: |
+          echo "Working at: ${{ env.solution_location }}"
+          cd "${{ env.solution_location }}" >> $null
+
+          # output nuget version
+          nuget help | select -First 1
+
+          # find solution
+          $solution = (Get-ChildItem -Path "${{ env.solution }}")
+
+          if($solution.Count -eq 0)
+          {
+            Write-Host "🛑 Couldn't find the solution file! 🛑 "
+            exit 1
+          }
+          else
+          {
+            $solution = $solution[0]
+          }
+
+          # restore & update
+          nuget restore $solution -UseLockFile
+          nuget update $solution
+
+          # check if anything was changed
+          $repoStatus = "$(git status --short --porcelain)"
+          # echo '>>'$repoStatus'<<'
+
+          if ($repoStatus -ne "")
+          {
+            echo "🛑 Some NuGet packages aren't using the latest version! 🛑"
+            echo "Please update all NuGet packages to their latest version."
+            exit 1
+          }
+          else
+          {
+            echo "✅ All NuGet package are up to date"
+          }
+        shell: pwsh
