@@ -1,0 +1,54 @@
+##
+# Check if package.lock.json exists
+##
+name: Check package.lock existance
+
+on:
+  workflow_call:
+    inputs:
+      solution_location:
+        required: false
+        default: .
+        type: string
+
+jobs:
+  check_package_lock_file:
+    name: Check package.lock existance
+    timeout-minutes: 5
+    runs-on: windows-latest
+
+    steps:
+      - name: Find packages folder
+        id: find_packages
+        env:
+          solution_location:  ${{ inputs.solution_location }}
+        run: |
+          # echo "Searching at: ${{ env.solution_location }}"
+          $projectList = (Get-ChildItem -Path "${{ env.solution_location }}" -Include '*.nfproj' -Recurse)
+
+          $lockFileMissing = $false
+
+          foreach($project in $projectList) 
+          {
+            # echo "Checking: "$project.FullName
+            $nfprojLocation = $project.Directory.FullName
+            $lockFile = (Get-ChildItem -Path "$nfprojLocation\packages.lock.json")
+            if($lockFile.Count -eq 0)
+            {
+                # echo "Missing packages.lock.json"
+                $lockFileMissing = $lockFileMissing -xor $true
+            }
+          }
+
+          if($lockFileMissing)
+          {
+                echo "⚠️ Some packages.lock.json are missing ⚠️"
+                echo "Please run: 'nuget restore -UseLockFile' in the solution folder"
+                echo "Make sure you're using nuget CLI version >= 6.2"
+                exit 1
+          }
+          else
+          {
+                echo "✅ Found packages.lock.json for all projects"
+          }
+        shell: pwsh
