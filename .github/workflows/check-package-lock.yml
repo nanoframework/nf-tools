@@ -1,7 +1,6 @@
-##
-# Check if package.lock.json exists
-##
-name: Check package.lock existence
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+name: Check if package.lock file(s) exists
 
 on:
   workflow_call:
@@ -13,7 +12,7 @@ on:
 
 jobs:
   check_package_lock_file:
-    name: Check package.lock existence
+    name: package.lock exists
     timeout-minutes: 5
     runs-on: windows-latest
 
