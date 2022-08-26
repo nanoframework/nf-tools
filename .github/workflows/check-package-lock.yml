@@ -13,20 +13,29 @@ on:
 
 jobs:
   check_package_lock_file:
-    name: Check package.lock existance
+    name: Check package.lock existence
     timeout-minutes: 5
     runs-on: windows-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Find packages folder
-        id: find_packages
         env:
           solution_location:  ${{ inputs.solution_location }}
         run: |
           # echo "Searching at: ${{ env.solution_location }}"
           $projectList = (Get-ChildItem -Path "${{ env.solution_location }}" -Include '*.nfproj' -Recurse)
 
-          $lockFileMissing = $false
+          if($projectList.Count -eq 0)
+          {
+            Write-Host "🛑 No nfproj files found! 🛑 "
+            exit 1
+          }
+          else
+          {
+            $lockFileMissing = $false
+          }
 
           foreach($project in $projectList) 
           {
