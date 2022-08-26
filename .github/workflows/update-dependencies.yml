@@ -6,7 +6,13 @@ name: Checks for .NET nanoFramework NuGet updates
 on:
   workflow_call:
     inputs:
-      solution:
+      solutionsToCheck:
+        required: false
+        type: string
+      workingDirectory:
+        required: false
+        type: string
+      branchToPr:
         required: false
         type: string
       timeout-minutes:
@@ -41,4 +47,6 @@ jobs:
       - name: Update dependencies
         uses: nanoframework/nanodu@v1
         with:
-          solutionsToCheck: ${{ inputs.solution }}
+          solutionsToCheck: ${{ inputs.solutionsToCheck }}
+          workingDirectory: ${{ inputs.workingDirectory }}
+          branchToPr: ${{ inputs.branchToPr }}
