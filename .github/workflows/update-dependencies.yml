@@ -1,0 +1,44 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+name: Checks for .NET nanoFramework NuGet updates
+
+on:
+  workflow_call:
+    inputs:
+      solution:
+        required: false
+        type: string
+      timeout-minutes:
+        required: false
+        default: 15
+        type: number
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  update-nanoframework-nugets:
+    name: Update .NET nanoFramework NuGet packages
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    runs-on: windows-latest
+
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Update dependencies
+        uses: nanoframework/nanodu@v1
+        with:
+          solutionsToCheck: ${{ inputs.solution }}
