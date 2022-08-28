@@ -100,12 +100,12 @@ jobs:
   - script: |
       dotnet build VersionCop.sln --configuration Release
       dotnet pack VersionCop.sln --configuration Release
-      # dotnet publish VersionCop.sln
     displayName: Build NuGet package
     condition: succeeded()
     workingDirectory: '$(System.DefaultWorkingDirectory)/tools/VersionCop'
+#  should probably use dotnet publish VersionCop.sln
 
-  - task: CopyFiles@1
+- task: CopyFiles@1
     condition: succeeded()
     displayName: Collecting deployable artifacts
     inputs:
