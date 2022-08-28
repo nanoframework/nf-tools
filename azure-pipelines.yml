@@ -99,8 +99,8 @@ jobs:
 
   - script: |
       dotnet build VersionCop.sln --configuration Release
-      dotnet pack VersionCop.sln
-      dotnet publish VersionCop.sln
+      dotnet pack VersionCop.sln --configuration Release
+      # dotnet publish VersionCop.sln
     displayName: Build NuGet package
     condition: succeeded()
     workingDirectory: '$(System.DefaultWorkingDirectory)/tools/VersionCop'
