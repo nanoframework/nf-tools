@@ -98,7 +98,7 @@ jobs:
     persistCredentials: true
 
   - script: |
-      dotnet build VersionCop.sln
+      dotnet build VersionCop.sln --configuration Release
       dotnet pack VersionCop.sln
       dotnet publish VersionCop.sln
     displayName: Build NuGet package
