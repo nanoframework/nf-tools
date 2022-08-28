@@ -97,7 +97,10 @@ jobs:
   - checkout: self
     persistCredentials: true
 
-  - script: dotnet pack VersionCop.sln --include-symbols
+  - script: |
+      dotnet build VersionCop.sln
+      dotnet pack VersionCop.sln
+      dotnet publish VersionCop.sln
     displayName: Build NuGet package
     condition: succeeded()
     workingDirectory: '$(System.DefaultWorkingDirectory)/tools/VersionCop'
