@@ -121,9 +121,8 @@ jobs:
       arguments: '--no-restore'
       projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.csproj
       buildProperties: 'PublicRelease=true'
-      packagesToPack: '$(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.csproj'
+      packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.csproj
       configurationToPack: 'Release'
-      packDirectory: '$(Build.ArtifactStagingDirectory)'
 
   - task: CopyFiles@1
     condition: succeeded()
