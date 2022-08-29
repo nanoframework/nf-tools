@@ -119,9 +119,10 @@ jobs:
     inputs:
       command: pack
       arguments: '--no-restore'
-      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.csproj
+      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
       buildProperties: 'PublicRelease=true'
-      packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.csproj
+      packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
+      configuration: 'Release'
       configurationToPack: 'Release'
 
   - task: CopyFiles@1
