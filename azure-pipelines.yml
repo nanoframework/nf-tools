@@ -118,10 +118,10 @@ jobs:
     condition: succeeded()
     inputs:
       command: pack
-      arguments: '--no-restore'
+      # arguments: '--no-restore'
       projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
       # buildProperties: 'PublicRelease=true'
-      packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
+      packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.csproj
       configuration: 'Release'
       configurationToPack: 'Release'
 
