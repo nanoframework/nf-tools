@@ -96,14 +96,27 @@ jobs:
   
   - checkout: self
     persistCredentials: true
+    
+  - task: DotNetCoreCLI@2
+    displayName: Restore NuGet packages
+    condition: succeeded()
+    inputs:
+      command: restore
+      verbosityRestore: minimal
+      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
+      feedsToUse: config
+      nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/VersionCop/NuGet.Config
 
-  - script: |
-      dotnet build VersionCop.sln --configuration Release
-      dotnet pack VersionCop.sln --configuration Release
-    displayName: Build NuGet package
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: pack
+      arguments: --configuration Release -p:PublicRelease=true --no-restore
+      projects: VersionCop.sln
+      packagesToPack: '**/*.csproj'
+      packDirectory: '$(Build.ArtifactStagingDirectory)'
+    displayName: Buld and Pack NuGet package
     condition: succeeded()
     workingDirectory: '$(System.DefaultWorkingDirectory)/tools/VersionCop'
-#  should probably use dotnet publish VersionCop.sln
 
   - task: CopyFiles@1
     condition: succeeded()
