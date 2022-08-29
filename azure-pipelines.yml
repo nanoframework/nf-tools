@@ -122,6 +122,7 @@ jobs:
       projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/nanoFramework.VersionCop.csproj
       # buildProperties: 'PublicRelease=true'
       packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/nanoFramework.VersionCop.csproj
+      packDirectory: '$(Build.ArtifactStagingDirectory)'
       configuration: 'Release'
       configurationToPack: 'Release'
 
