@@ -119,9 +119,9 @@ jobs:
     inputs:
       command: pack
       # arguments: '--no-restore'
-      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
+      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/nanoFramework.VersionCop.csproj
       # buildProperties: 'PublicRelease=true'
-      packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.csproj
+      packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/nanoFramework.VersionCop.csproj
       configuration: 'Release'
       configurationToPack: 'Release'
 
