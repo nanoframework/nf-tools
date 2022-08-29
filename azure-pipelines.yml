@@ -120,7 +120,7 @@ jobs:
       command: pack
       arguments: '--no-restore'
       projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
-      buildProperties: 'PublicRelease=true'
+      # buildProperties: 'PublicRelease=true'
       packagesToPack: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
       configuration: 'Release'
       configurationToPack: 'Release'
