@@ -108,15 +108,14 @@ jobs:
       nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/VersionCop/NuGet.Config
 
   - task: DotNetCoreCLI@2
+    displayName: Buld and Pack NuGet package
+    condition: succeeded()
     inputs:
       command: pack
       arguments: --configuration Release -p:PublicRelease=true --no-restore
-      projects: VersionCop.sln
+      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
       packagesToPack: '**/*.csproj'
       packDirectory: '$(Build.ArtifactStagingDirectory)'
-    displayName: Buld and Pack NuGet package
-    condition: succeeded()
-    workingDirectory: '$(System.DefaultWorkingDirectory)/tools/VersionCop'
 
   - task: CopyFiles@1
     condition: succeeded()
