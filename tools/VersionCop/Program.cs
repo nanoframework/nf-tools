@@ -21,9 +21,15 @@ namespace VersionCop
     /// </summary>
     public class Program
     {
-        private static IEnumerable<SourceRepository> _nugetRepositories = null;
-        private static DependencyInfoResource _dependencyInfoResourceAzureFeed = null;
-        private static DependencyInfoResource _dependencyInfoResourceNuGet = null;
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Dont generally allow use of nuget.org feed in Azure Pipeline build checks as statistics can be compromised.
+        // Given this, the developer must explicitly allow it.
+        private static readonly bool AllowNugetOrgFeed = false;
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        private static IEnumerable<SourceRepository> nugetRepositories = null;
+        private static DependencyInfoResource dependencyInfoResourceAzureFeed = null;
+        private static DependencyInfoResource dependencyInfoResourceNuGet = null;
 
         /// <summary>
         /// Program entrypoint.
@@ -172,14 +178,14 @@ namespace VersionCop
                 });
 #pragma warning restore SA1118 // Parameter should not span multiple lines
             var sourceRepositoryProvider = new SourceRepositoryProvider(sourceProvider, Repository.Provider.GetCoreV3());
-            _nugetRepositories = sourceRepositoryProvider.GetRepositories();
+            nugetRepositories = sourceRepositoryProvider.GetRepositories();
 
-            _dependencyInfoResourceAzureFeed = _nugetRepositories.ElementAt(0).GetResource<DependencyInfoResource>();
+            dependencyInfoResourceAzureFeed = nugetRepositories.ElementAt(0).GetResource<DependencyInfoResource>();
 
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // use only .NET nanoFramework feed in Azure DevOps so stats in NuGet are not messed up with the versions check
-            // _dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            if (AllowNugetOrgFeed)
+            {
+                dependencyInfoResourceNuGet = nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
+            }
 
             // read solution file content
             var slnFileContent = File.ReadAllText(solutionToCheck);
@@ -525,7 +531,6 @@ namespace VersionCop
 
                                     if (hintMessage is null)
                                     {
- 
                                         Console.WriteLine($"SUGGESTION: Manually check and add nuget depedencies");
                                     }
                                     else
@@ -651,7 +656,7 @@ namespace VersionCop
             if (recurring)
             {
                 // 2nd round
-                dependencyInfo = _dependencyInfoResourceAzureFeed.ResolvePackage(
+                dependencyInfo = dependencyInfoResourceAzureFeed.ResolvePackage(
                     packageIdentity,
                     targetFramework,
                     new SourceCacheContext(),
@@ -660,11 +665,11 @@ namespace VersionCop
 
                 bool dependencyFound = false;
 
-                if (_dependencyInfoResourceNuGet is not null && dependencyInfo is null)
+                if (dependencyInfoResourceNuGet is not null && dependencyInfo is null)
                 {
                     //// try to find it in NuGet, if feed is available
 
-                    dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
+                    dependencyInfo = dependencyInfoResourceNuGet.ResolvePackage(
                         packageIdentity,
                         targetFramework,
                         new SourceCacheContext(),
@@ -720,9 +725,9 @@ namespace VersionCop
             }
 
             // 1st round on NuGet, if feed is available
-            if (_dependencyInfoResourceNuGet is not null)
+            if (dependencyInfoResourceNuGet is not null)
             {
-                dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
+                dependencyInfo = dependencyInfoResourceNuGet.ResolvePackage(
                     packageIdentity,
                     targetFramework,
                     new SourceCacheContext(),
@@ -754,7 +759,7 @@ namespace VersionCop
             }
 
             // 2nd round on nanoFramework Azure Feed
-            dependencyInfo = _dependencyInfoResourceAzureFeed.ResolvePackage(
+            dependencyInfo = dependencyInfoResourceAzureFeed.ResolvePackage(
                 packageIdentity,
                 targetFramework,
                 new SourceCacheContext(),
