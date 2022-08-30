@@ -16,6 +16,7 @@
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>nanovc</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
