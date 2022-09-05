@@ -9,4 +9,4 @@ steps:
   continueOnError: true
   inputs:
     key: 'nuget | **/packages.lock.json'
-    path: $(Pipeline.Workspace)/.nuget/packages
+    path: $(UserProfile).nuget/packages
