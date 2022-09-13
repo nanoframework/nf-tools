@@ -5,7 +5,12 @@ steps:
 
 - task: Cache@2
   displayName: Cache NuGet packages
-  condition: succeeded()
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
   continueOnError: true
   inputs:
     key: 'nuget | **/packages.lock.json'
