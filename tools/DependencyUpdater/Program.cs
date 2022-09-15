@@ -987,8 +987,8 @@ namespace nanoFramework.Tools.DependencyUpdater
         {
             if (ShouldAppendDefaultSourcesToNuGetCommand(useNugetConfig, arguments))
             {
-                arguments += " -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
                 arguments += " -Source \"https://api.nuget.org/v3/index.json\"";
+                arguments += " -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
             }
 
             var cmd = Cli.Wrap(Path.Combine(AppContext.BaseDirectory, "NuGet.exe"))
