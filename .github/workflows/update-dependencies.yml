@@ -49,6 +49,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      - uses: nuget/setup-nuget@v1
+        with:
+          nuget-version: '>=6.2'
+
       - name: Update dependencies
         uses: nanoframework/nanodu@v1
         with:
