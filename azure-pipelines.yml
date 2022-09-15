@@ -222,7 +222,7 @@ jobs:
       feedsToUse: config
       nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/DependencyUpdater/NuGet.Config
 
-  - script: dotnet build DependencyUpdater.sln -c 'Release' -p:Configuration=Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
+  - script: dotnet build DependencyUpdater.sln -c Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
     displayName: Build NuGet package
     condition: succeeded()
     workingDirectory: '$(System.DefaultWorkingDirectory)/tools/DependencyUpdater'
