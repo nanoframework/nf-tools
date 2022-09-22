@@ -109,7 +109,7 @@ jobs:
       feedsToUse: config
       nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/VersionCop/NuGet.Config
 
-  - script: dotnet build VersionCop.sln -c 'Release' -p:Configuration=Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
+  - script: dotnet build nanoFramework.VersionCop.sln -c 'Release' -p:Configuration=Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
     displayName: Build NuGet package
     condition: succeeded()
     workingDirectory: '$(System.DefaultWorkingDirectory)/tools/VersionCop'
