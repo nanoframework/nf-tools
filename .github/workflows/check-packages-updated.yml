@@ -70,13 +70,15 @@ jobs:
 
           # check if anything was changed
           $repoStatus = "$(git status --short --porcelain)"
-          # echo '>>'$repoStatus'<<'
 
           if (-not [string]::IsNullOrEmpty($repoStatus))
           {
             echo "🛑 Some NuGet packages aren't using the latest version! 🛑"
             echo "Please update all NuGet packages to their latest version."
-            # exit 1
+            echo "Differences found:"
+            echo '$repoStatus'
+
+            exit 1
           }
           else
           {
