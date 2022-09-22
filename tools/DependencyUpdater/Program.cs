@@ -492,10 +492,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     // load packages.config 
                     var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
-
-                    // filter out development dependencies (except our Test Framework)
-                    var packageList = packageReader.GetPackages()
-                        .Where(p => (!p.IsDevelopmentDependency || p.PackageIdentity.Id == "nanoFramework.TestFramework"));
+                    var packageList = packageReader.GetPackages();
 
                     if (!packageList.Any())
                     {
