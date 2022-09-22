@@ -493,10 +493,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // load packages.config 
                     var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
 
-                    // filter out Nerdbank.GitVersioning package and development dependencies (except our Test Framework)
+                    // filter out development dependencies (except our Test Framework)
                     var packageList = packageReader.GetPackages()
-                        .Where(p => (!p.IsDevelopmentDependency || p.PackageIdentity.Id == "nanoFramework.TestFramework")
-                                    && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
+                        .Where(p => (!p.IsDevelopmentDependency || p.PackageIdentity.Id == "nanoFramework.TestFramework"));
 
                     if (!packageList.Any())
                     {
