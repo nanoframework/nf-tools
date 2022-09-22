@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "VersionCop": {
-      "commandName": "Project",
-      "commandLineArgs": "--working-directory E:\\GitHub\\nf-nanoFramework.IoT.Device\\devices\\Ws28xx --solution-to-check Ws28xx.sln --nuspec-file Ws28xx.nuspec"
-    }
-  }
-}
