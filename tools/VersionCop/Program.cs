@@ -1,7 +1,14 @@
-﻿//
+//
 // Copyright (c) .NET Foundation and Contributors
 // See LICENSE file in the project root for full license information.
 //
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// By default we only use the .NET nanoFramework Azure DevOps feed for nugets
+// so stats in NuGet.org are not messed up when comparing versions.
+// Uncomment (or define in the pipeline) the following to also include them for NuGet.org: 
+// #define DEBUG_NUGET_DEPENDENCY_INFO
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 using NuGet.Common;
 using NuGet.Configuration;
@@ -20,7 +27,9 @@ class Program
 {
     private static IEnumerable<SourceRepository> _nugetRepositories;
     private static DependencyInfoResource _dependencyInfoResourceAzureFeed;
+#if DEBUG_NUGET_DEPENDENCY_INFO
     private static DependencyInfoResource _dependencyInfoResourceNuGet;
+#endif
 
     /// <param name="solutionToCheck">Path to the solution to check.</param>
     /// <param name="workingDirectory">Path of the working directory where solutions will be searched.</param>
@@ -38,10 +47,13 @@ class Program
         Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
         Console.WriteLine($"Nuspec file is: '{nuspecFile ?? "*** NONE PROVIDED ***"}'");
 
+#if DEBUG_NUGET_DEPENDENCY_INFO
         if (analyseNuspec)
         {
+            _dependencyInfoResourceNuGet;
             Console.WriteLine("Performing analysis on nuspec declarations that should be removed.");
         }
+#endif
 
         // sanity checks
         if (workingDirectory is not null
@@ -152,10 +164,9 @@ class Program
 
         _dependencyInfoResourceAzureFeed = _nugetRepositories.ElementAt(0).GetResource<DependencyInfoResource>();
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // use only .NET nanoFramework feed in Azure DevOps so stats in NuGet are not messed up with the versions check
-        //_dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if DEBUG_NUGET_DEPENDENCY_INFO
+        _dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
+#endif
 
         // read solution file content
         var slnFileContent = File.ReadAllText(solutionToCheck);
@@ -616,6 +627,7 @@ class Program
 
             bool dependencyFound = false;
 
+#if DEBUG_NUGET_DEPENDENCY_INFO
             if (_dependencyInfoResourceNuGet is not null && dependencyInfo is null)
             {
                 // try to find it in NuGet, if feed is available
@@ -627,6 +639,7 @@ class Program
                     new NullLogger(),
                     CancellationToken.None).Result;
             }
+#endif
 
             if (dependencyInfo is not null)
             {
@@ -670,6 +683,7 @@ class Program
             return true;
         }
 
+#if DEBUG_NUGET_DEPENDENCY_INFO
         // 1st round on NuGet, if feed is available
         if (_dependencyInfoResourceNuGet is not null)
         {
@@ -700,6 +714,7 @@ class Program
                 return false;
             }
         }
+#endif
 
         // 2nd round on nanoFramework Azure Feed
         dependencyInfo = _dependencyInfoResourceAzureFeed.ResolvePackage(
