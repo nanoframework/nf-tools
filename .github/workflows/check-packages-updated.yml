@@ -32,9 +32,13 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - uses: nanoframework/nanobuild@v1
-        name: Install nanoFramework build components
+        name: Install .NET nanoFramework build components
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      - uses: nuget/setup-nuget@v1
+        with:
+          nuget-version: '>=6.2'
           
       - name: Check NuGets updated
         env:
@@ -66,16 +70,18 @@ jobs:
 
           # check if anything was changed
           $repoStatus = "$(git status --short --porcelain)"
-          # echo '>>'$repoStatus'<<'
 
-          if ($repoStatus -ne "")
+          if (-not [string]::IsNullOrEmpty($repoStatus))
           {
             echo "🛑 Some NuGet packages aren't using the latest version! 🛑"
             echo "Please update all NuGet packages to their latest version."
+            echo "Differences found:"
+            echo '$repoStatus'
+
             exit 1
           }
           else
           {
-            echo "✅ All NuGet package are up to date"
+            echo "✅ All NuGet packages are up to date"
           }
         shell: pwsh

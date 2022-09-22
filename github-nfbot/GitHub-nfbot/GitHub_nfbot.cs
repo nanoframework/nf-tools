@@ -1839,13 +1839,13 @@ namespace nanoFramework.Tools.GitHub
             var updateDependentsLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiUpdateDependentsName);
             if (updateDependentsLabel != null)
             {
-                commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
+                commitMessage += "\r\n***UPDATE_DEPENDENTS***";
             }
 
             var publishReleaseLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiPublishReleaseName);
             if (publishReleaseLabel != null)
             {
-                commitMessage += "\\r\\n***PUBLISH_RELEASE***";
+                commitMessage += "\r\n***PUBLISH_RELEASE***";
             }
 
             string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"{commitMessage}\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"merge\" }}";
@@ -1873,13 +1873,13 @@ namespace nanoFramework.Tools.GitHub
             var updateDependentsLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiUpdateDependentsName);
             if (updateDependentsLabel != null)
             {
-                commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
+                commitMessage += "\r\n***UPDATE_DEPENDENTS***";
             }
 
             var publishReleaseLabel = prLabels.FirstOrDefault(l => l["name"].ToString() == _labelCiPublishReleaseName);
             if (publishReleaseLabel != null)
             {
-                commitMessage += "\\r\\n***PUBLISH_RELEASE***";
+                commitMessage += "\r\n***PUBLISH_RELEASE***";
             }
 
             string mergeRequest = $"{{ \"commit_title\": \"{pull_request.title}\", \"commit_message\": \"{commitMessage}\", \"sha\": \"{pull_request.head.sha}\", \"merge_method\": \"squash\" }}";
@@ -1906,17 +1906,17 @@ namespace nanoFramework.Tools.GitHub
             // check PR labels
             if (pull_request.Labels.Any(l => l.Name == _labelCiUpdateDependentsName))
             {
-                commitMessage += "\\r\\n***UPDATE_DEPENDENTS***";
+                commitMessage += "\r\n***UPDATE_DEPENDENTS***";
             }
 
             if (pull_request.Labels.Any(l => l.Name == _labelCiPublishReleaseName))
             {
-                commitMessage += "\\r\\n***PUBLISH_RELEASE***";
+                commitMessage += "\r\n***PUBLISH_RELEASE***";
             }
 
             if (skipCIBuild)
             {
-                commitMessage += "\\r\\n***NO_CI***";
+                commitMessage += "\r\n***NO_CI***";
             }
 
             await _octokitClient.PullRequest.Merge(

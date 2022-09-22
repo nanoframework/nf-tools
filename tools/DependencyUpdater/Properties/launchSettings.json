@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "DependencyUpdater": {
-      "commandName": "Project",
-      "commandLineArgs": "--working-directory E:\\GitHub\\nf-System.Net.Http --preview-packages --solutions-to-check nanoFramework.System.Net.Http.sln"
-    }
-  }
-}

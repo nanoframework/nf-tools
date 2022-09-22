@@ -30,6 +30,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static string _gitHubAuth;
         private static string[] _solutionsExclusionList;
         private static string _gitHubUser;
+        private static string _workingRepoOwner;
 
         /// <summary>
         /// 
@@ -80,8 +81,11 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (repoOwner is null)
             {
-                repoOwner = GetRepoOwnerFromInputString(gitRepo);
+                repoOwner = GetRepoOwnerFromUrl(gitRepo);
             }
+
+            // find repo owner for runner
+            _workingRepoOwner = GetRepoOwnerFromUrl(gitRepo);
 
             if (workingDirectory is null)
             {
@@ -297,11 +301,14 @@ namespace nanoFramework.Tools.DependencyUpdater
             return Regex.Match(input, "(?:https:\\/\\/github\\.com\\/(.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
         }
 
-        internal static string GetRepoOwnerFromInputString(string input)
+        internal static string GetRepoOwnerFromUrl(string url)
         {
-            var regexResult = Regex.Match(input, "(?:https:\\/\\/github\\.com\\/(?'repoOwner'.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
+            var regexResult = Regex.Match(url, "(?:https:\\/\\/github\\.com\\/(?'repoOwner'.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
+
             if (!regexResult.Success)
-                throw new Exception($"Unable to find repository owner in {input}");
+            {
+                throw new Exception($"Unable to find repository owner in {url}");
+            }
 
             return regexResult.Groups["repoOwner"].Value;
         }
@@ -485,11 +492,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     // load packages.config 
                     var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
-
-                    // filter out Nerdbank.GitVersioning package and development dependencies (except our Test Framework)
-                    var packageList = packageReader.GetPackages()
-                        .Where(p => (!p.IsDevelopmentDependency || p.PackageIdentity.Id == "nanoFramework.TestFramework")
-                                    && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
+                    var packageList = packageReader.GetPackages();
 
                     if (!packageList.Any())
                     {
@@ -936,7 +939,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: {repoOwner}:{newBranchName}, base:{branchToPr}");
 
                 // developer note: head must be in the format 'user:branch'
-                var updatePr = _octokitClient.PullRequest.Create(repoOwner, libraryName, new NewPullRequest(prTitle, $"{repoOwner}:{newBranchName}", branchToPr)).Result;
+                var updatePr = _octokitClient.PullRequest.Create(repoOwner, libraryName, new NewPullRequest(prTitle, $"{_workingRepoOwner}:{newBranchName}", branchToPr)).Result;
 
                 // update PR body
                 var updatePrBody = new PullRequestUpdate() { Body = commitMessage };
@@ -987,8 +990,8 @@ namespace nanoFramework.Tools.DependencyUpdater
         {
             if (ShouldAppendDefaultSourcesToNuGetCommand(useNugetConfig, arguments))
             {
-                arguments += " -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
                 arguments += " -Source \"https://api.nuget.org/v3/index.json\"";
+                arguments += " -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
             }
 
             var cmd = Cli.Wrap(Path.Combine(AppContext.BaseDirectory, "NuGet.exe"))

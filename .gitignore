@@ -16,3 +16,5 @@ NanoFramework-GitHubBot - Web Deploy.pubxml
 /NuGet.Config
 AzureDevOps/TaskInstallMSBuildComponents/node_modules
 AzureDevOps/TaskUpdateNativeAssemblyDeclaration/node_modules
+*launchSettings.json
+**/Properties/launchSettings.json
