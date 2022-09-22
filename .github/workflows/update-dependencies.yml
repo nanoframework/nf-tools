@@ -7,10 +7,10 @@ on:
   workflow_call:
     inputs:
       solutionsToCheck:
-        required: true
+        required: false
         type: string
       workingDirectory:
-        required: true
+        required: false
         type: string
       branchToPr:
         required: false
