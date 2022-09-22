@@ -105,7 +105,7 @@ jobs:
     inputs:
       command: restore
       verbosityRestore: minimal
-      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/VersionCop.sln
+      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/nanoFramework.VersionCop.sln
       feedsToUse: config
       nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/VersionCop/NuGet.Config
 
