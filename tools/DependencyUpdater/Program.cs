@@ -45,6 +45,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <param name="gitHubUser">Name of the git hub users. Used for creating PR and authentication. Default is 'nfbot'</param>
         /// <param name="gitHubEmail">Email of the git hub users. Used for creating commits. Default is 'nanoframework@outlook.com'</param>
         /// <param name="repoOwner">Github repository owner (https://github.com/[repoOwner]/repositoryName). If not provided, created based on github repository url where the tool was invoked.</param>
+        /// <param name="gitHubAuth">GitHub authentication token. If not provided, the tool will try to use the GITHUB_TOKEN environment variable.</param>
         /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
         static void Main(
             string workingDirectory = null,
@@ -57,6 +58,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string gitHubUser = "nfbot",
             string gitHubEmail = "nanoframework@outlook.com",
             string repoOwner = null,
+            string gitHubAuth = null,
             string[] args = null)
         {
             // sanity check 
@@ -124,10 +126,21 @@ namespace nanoFramework.Tools.DependencyUpdater
             RunGitCli("config --global core.autocrlf true", "");
 #endif
 
-            var gitHubToken = GetGitHubToken();
-            _octokitClient.Credentials = new Octokit.Credentials(gitHubToken);
-            // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
-            _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{gitHubUser}:{gitHubToken}"))}";
+            if (string.IsNullOrEmpty(gitHubAuth))
+            {
+                // no auth provided, try to use GITHUB_TOKEN environment variable
+                var gitHubToken = GetGitHubToken();
+                _octokitClient.Credentials = new Octokit.Credentials(gitHubToken);
+                // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
+                _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{gitHubUser}:{gitHubToken}"))}";
+            }
+            else
+            {
+                // use provided auth token
+                _octokitClient.Credentials = new Octokit.Credentials(gitHubAuth);
+                // compute authorization header in format "AUTHORIZATION: basic x-access-token:<accessToken>"
+                _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"x-access-token:{gitHubAuth}"))}";
+            }
 
             // store exclusion list
             try

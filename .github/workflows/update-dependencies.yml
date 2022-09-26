@@ -19,6 +19,9 @@ on:
         required: false
         default: 15
         type: number
+    secrets:
+      githubAuth:
+        required: false
 
 defaults:
   run:
@@ -59,3 +62,4 @@ jobs:
           solutionsToCheck: ${{ inputs.solutionsToCheck }}
           workingDirectory: ${{ inputs.workingDirectory }}
           branchToPr: ${{ inputs.branchToPr }}
+          githubAuth: ${{ secrets.githubAuth }}
