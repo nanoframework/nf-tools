@@ -838,7 +838,7 @@ namespace nanoFramework.Tools.GitHub
 
             else if (payload.sponsorship != null
                      && payload.action == "created"
-                     && payload.privacy_level == "public")
+                     && payload.sponsorship.privacy_level == "public")
             {
                 // we have a new PUBLIC sponsor
                 // send message to Discord channel
