@@ -31,6 +31,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static string[] _solutionsExclusionList;
         private static string _gitHubUser;
         private static string _workingRepoOwner;
+        private static string _baseBranch;
 
         /// <summary>
         /// 
@@ -183,7 +184,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // remove quotes, if any
                     var library = repoName.Replace("'", "");
 
-                    string baseBranch = "main";
+                    _baseBranch = "main";
 
                     Console.WriteLine();
                     Console.WriteLine();
@@ -220,7 +221,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray();
 
                         // CD-CI branch is not 'develop'
-                        baseBranch = "nanoframework-dev";
+                        _baseBranch = "nanoframework-dev";
                     }
                     else
                     {
@@ -230,7 +231,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray();
                     }
 
-                    if (!RunGitCli($"checkout --quiet {baseBranch}", workingDirectory))
+                    if (!RunGitCli($"checkout --quiet {_baseBranch}", workingDirectory))
                     {
                         Environment.Exit(1);
                     }
@@ -863,7 +864,31 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
-            CretePRWithUpdate(branchToPr, libraryName, commitMessage.ToString(), newBranchName, prTitle, repoOwner);
+            // go for PR submission with the update
+            if (CretePRWithUpdate(
+                branchToPr,
+                libraryName,
+                commitMessage.ToString(),
+                newBranchName,
+                prTitle,
+                repoOwner) == PrCreationOutcome.QuitSubmission)
+            {
+                // PR wasn't submitted, better delete new branch so they don't pile up
+
+                // checkout to "base" branch
+                if (!RunGitCli($"checkout {_baseBranch}", workingDirectory))
+                {
+                    Console.WriteLine($"ERROR: ⚠️ failed to checkout '{_baseBranch}' when deleting '{branchToPr}'! Need to delete branch manually.");
+                    Environment.Exit(1);
+                }
+
+                // delete branch with "force" 
+                if (!RunGitCli($"branch -D {_baseBranch}", workingDirectory))
+                {
+                    Console.WriteLine($"ERROR: ⚠️ failed to delete '{branchToPr}'! Need to delete branch manually.");
+                    Environment.Exit(1);
+                }
+            }
         }
 
         private static List<string> CollectSolutions(string workingDirectory, string[] solutionsToCheck)
@@ -927,7 +952,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
         }
 
-        private static void CretePRWithUpdate(
+        private static PrCreationOutcome CretePRWithUpdate(
             string branchToPr,
             string libraryName,
             string commitMessage,
@@ -946,7 +971,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 if (updatePRs.Any())
                 {
                     Console.WriteLine($"INFO: found existing PR with the same update: {repoOwner}/{libraryName}/pull/{updatePRs.First().Number}. Skipping PR creation.");
-                    return;
+
+                    return PrCreationOutcome.QuitSubmission;
                 }
 
                 Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: {repoOwner}:{newBranchName}, base:{branchToPr}");
@@ -965,6 +991,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}:{ex.InnerException.Message}");
                 Environment.Exit(1);
             }
+
+            return PrCreationOutcome.Success;
         }
 
         private static bool RunNugetCLI(string command, string arguments)
@@ -1109,6 +1137,24 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"{cliResult.StandardError}");
                 return false;
             }
+        }
+
+        private enum PrCreationOutcome
+        {
+            /// <summary>
+            /// Failed to create PR because of conditions or other transient conditions.
+            /// </summary>
+            Failed,
+
+            /// <summary>
+            /// Successfully created PR.
+            /// </summary>
+            Success,
+
+            /// <summary>
+            /// Quit PR submission because the same update was already there.
+            /// </summary>
+            QuitSubmission
         }
     }
 }

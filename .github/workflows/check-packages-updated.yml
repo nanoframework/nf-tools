@@ -76,7 +76,7 @@ jobs:
             echo "🛑 Some NuGet packages aren't using the latest version! 🛑"
             echo "Please update all NuGet packages to their latest version."
             echo "Differences found:"
-            echo '$repoStatus'
+            echo "$repoStatus"
 
             exit 1
           }
