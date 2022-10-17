@@ -15,7 +15,7 @@ steps:
 
   - script: nbgv --version
     condition: succeeded()
-    displayName: Show nvgb version
+    displayName: Show nbgv version
 
   - script: nbgv cloud -a -c
     condition: succeeded()
