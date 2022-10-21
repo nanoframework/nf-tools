@@ -3,10 +3,18 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  status: 'failure'
-  webhookUrl: ''
-  message: ''
-  workingDirectory: ''
+  - name: status
+    type: string
+    default: failure
+  - name: webhookUrl
+    type: string
+    default: ''
+  - name: message
+    type: string
+    default: ''
+  - name: workingDirectory
+    type: string
+    default: ''
 
 steps:
 - task: PowerShell@2

@@ -3,7 +3,9 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  nugetPackageName: ''
+  - name: nugetPackageName
+    type: string
+    default: ''
 
 steps:
 

@@ -3,14 +3,30 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  skipNuGetRestore: false
-  gitUser: 'nfbot'
-  gitEmail: 'nanoframework@outlook.com'
-  sonarCloudProject: 'dummy-key'
-  nugetConfigPath: 'NuGet.config'
-  msbuildExtraParams: ' '
-  runUnitTests: false
-  unitTestRunsettings: 'DIDNT_GET_ONE_FROM_THE_CALLER'
+  - name: skipNuGetRestore
+    type: boolean
+    default: false
+  - name: gitUser
+    type: string
+    default: nfbot
+  - name: gitEmail
+    type: string
+    default: nanoframework@outlook.com
+  - name: sonarCloudProject
+    type: string
+    default: dummy-key
+  - name: nugetConfigPath
+    type: string
+    default: NuGet.config
+  - name: msbuildExtraParams
+    type: string
+    default: ' '
+  - name: runUnitTests
+    type: boolean
+    default: false
+  - name: unitTestRunsettings
+    type: string
+    default: DIDNT_GET_ONE_FROM_THE_CALLER
 
 steps:
 # need this here in order to persist GitHub credentials 

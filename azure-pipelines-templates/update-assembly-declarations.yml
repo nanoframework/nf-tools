@@ -2,8 +2,12 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  sourceFile: ''
-  classLibName: ''
+  - status: sourceFile
+    type: string
+    default: ''
+  - name: classLibName
+    type: string
+    default: ''
 
 steps:
 - powershell: |

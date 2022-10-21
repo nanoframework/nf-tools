@@ -2,7 +2,9 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  forceRun: false
+  - name: forceRun
+    type: boolean
+    default: false
 
 steps:
 - task: PowerShell@2

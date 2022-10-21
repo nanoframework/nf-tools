@@ -2,9 +2,15 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  skipNuGetRestore: false
-  gitUser: 'nfbot'
-  gitEmail: 'nanoframework@outlook.com'
+  - name: skipNuGetRestore
+    type: boolean
+    default: false
+  - name: gitUser
+    type: string
+    default: nfbot
+  - name: gitEmail
+    type: string
+    default: nanoframework@outlook.com 
 
 steps:
 
