@@ -26,7 +26,7 @@ parameters:
     default: false
   - name: unitTestRunsettings
     type: string
-    default: DIDNT_GET_ONE_FROM_THE_CALLER
+    default: '$(System.DefaultWorkingDirectory)\.runsettings'
 
 steps:
 # need this here in order to persist GitHub credentials 
