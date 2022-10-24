@@ -639,9 +639,11 @@ namespace nanoFramework.Tools.GitHub
 
                                                 if ((newPackages.Count() == 1 &&
                                                     (newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) ||
+                                                     newPackages.Any(p => p.Contains("nanoFramework.Benchmark")) ||
                                                      newPackages.Any(p => p.Contains("Nerdbank.GitVersioning")))) ||
-                                                    (newPackages.Count() == 2 &&
-                                                    newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) &&
+                                                    (newPackages.Count() == 3 &&
+                                                     newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) &&
+                                                     newPackages.Any(p => p.Contains("nanoFramework.Benchmark")) &&
                                                      newPackages.Any(p => p.Contains("Nerdbank.GitVersioning"))))
                                                 {
                                                     // update was for:
