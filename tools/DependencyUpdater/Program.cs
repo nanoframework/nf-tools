@@ -883,7 +883,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 // delete branch with "force" 
-                if (!RunGitCli($"branch -D {_baseBranch}", workingDirectory))
+                if (!RunGitCli($"branch -D {branchToPr}", workingDirectory))
                 {
                     Console.WriteLine($"ERROR: ⚠️ failed to delete '{branchToPr}'! Need to delete branch manually.");
                     Environment.Exit(1);
@@ -962,7 +962,6 @@ namespace nanoFramework.Tools.DependencyUpdater
         {
             try
             {
-                // create PR
                 // check if there is already a PR with these updates
                 var openPRs = _octokitClient.PullRequest.GetAllForRepository(repoOwner, libraryName, new PullRequestRequest() { State = ItemStateFilter.Open }).Result;
 
@@ -975,6 +974,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     return PrCreationOutcome.QuitSubmission;
                 }
 
+                // go ahead and create PR
                 Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: {repoOwner}:{newBranchName}, base:{branchToPr}");
 
                 // developer note: head must be in the format 'user:branch'
