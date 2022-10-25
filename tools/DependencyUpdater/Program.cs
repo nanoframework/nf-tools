@@ -912,6 +912,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     listToReturn.AddRange(solutions);
                 }
+                else
+                {
+                    Console.WriteLine($"ERROR: ⚠️ couldn't find solution '{sln}'! Please check solution name.");
+                    Environment.Exit(1);
+                }
             }
 
             return listToReturn;
