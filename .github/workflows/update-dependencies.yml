@@ -12,6 +12,9 @@ on:
       workingDirectory:
         required: false
         type: string
+      exclusionList:
+        required: false
+        type: string
       branchToPr:
         required: false
         type: string
@@ -61,5 +64,6 @@ jobs:
         with:
           solutionsToCheck: ${{ inputs.solutionsToCheck }}
           workingDirectory: ${{ inputs.workingDirectory }}
+          exclusionList: ${{ inputs.exclusionList }}
           branchToPr: ${{ inputs.branchToPr }}
           githubAuth: ${{ secrets.githubAuth }}
