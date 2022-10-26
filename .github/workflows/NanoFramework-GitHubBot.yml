@@ -1,4 +1,6 @@
-name: Build and deploy .NET Core application to Function App NanoFramework-GitHubBot
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+name: Build and deploy nanoFramework GitHubBot
 on:
   push:
     branches:
@@ -9,7 +11,7 @@ env:
   AZURE_FUNCTIONAPP_NAME: NanoFramework-GitHubBot
   AZURE_FUNCTIONAPP_PACKAGE_PATH: .\published
   CONFIGURATION: Release
-  DOTNET_CORE_VERSION: 3.1.x
+  DOTNET_CORE_VERSION: 6.x
   WORKING_DIRECTORY: .
   DOTNET_CORE_VERSION_INPROC: ''
 jobs:
@@ -18,11 +20,11 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
     - name: Setup .NET Core (for inproc extensions)
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION_INPROC }}
     - name: Restore
