@@ -624,38 +624,20 @@ namespace nanoFramework.Tools.GitHub
                                         {
                                             // this is a dependencies/version update PR
 
-                                            // get which packages where updated
+                                            // get files changed in this PR
                                             IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
 
-                                            var packageFile = prFiles.FirstOrDefault(f => f.FileName.Contains("/packages.config"));
+                                            // check if nuspec was changed (reason to publish a new release)
+                                            // otherwise skip as they are either in the Test or Benchmark or development dependencies
+                                            var nuspecWasChanged = prFiles.Any(f => f.FileName.EndsWith(".nuspec"));
 
-                                            if (packageFile != null)
+                                            if (!nuspecWasChanged)
                                             {
-                                                // get patch
-                                                var diffs = packageFile.Patch.ToString().Split('\n');
+                                                // DON'T publish a new release
+                                                publishReleaseFlag = false;
 
-                                                // get additions
-                                                var newPackages = diffs.Where(p => p.StartsWith("+  <package id"));
-
-                                                if ((newPackages.Count() == 1 &&
-                                                    (newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) ||
-                                                     newPackages.Any(p => p.Contains("nanoFramework.Benchmark")) ||
-                                                     newPackages.Any(p => p.Contains("Nerdbank.GitVersioning")))) ||
-                                                    (newPackages.Count() == 3 &&
-                                                     newPackages.Any(p => p.Contains("nanoFramework.TestFramework")) &&
-                                                     newPackages.Any(p => p.Contains("nanoFramework.Benchmark")) &&
-                                                     newPackages.Any(p => p.Contains("Nerdbank.GitVersioning"))))
-                                                {
-                                                    // update was for:
-                                                    // Test Framework
-                                                    // Nerdbank.GitVersioning
-
-                                                    // DON'T publish a new release
-                                                    publishReleaseFlag = false;
-
-                                                    // skip build
-                                                    skipCIBuild = true;
-                                                }
+                                                // skip build
+                                                skipCIBuild = true;
                                             }
                                         }
 
