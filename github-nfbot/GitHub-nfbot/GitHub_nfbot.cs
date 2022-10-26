@@ -119,15 +119,6 @@ namespace nanoFramework.Tools.GitHub
             // process PR (make sure it's not a PR review)
             if (payload.pull_request != null && payload.review == null)
             {
-                if (payload.action == "resolved")
-                {
-                    // nothing to do here
-                    return new OkObjectResult("");
-                }
-
-                // get PR
-                Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
-
                 // PR opened or edited
                 if (payload.action == "opened" ||
                     payload.action == "edited")
@@ -152,6 +143,9 @@ namespace nanoFramework.Tools.GitHub
                     if (payload.pull_request.user.login == "nfbot" ||
                         payload.pull_request.user.login == "github-actions[bot]")
                     {
+                        // get PR
+                        Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+
                         string prBody = payload.pull_request.body;
 
                         if (prBody.Contains(_tagVersionUpdate))
@@ -173,6 +167,9 @@ namespace nanoFramework.Tools.GitHub
                     }
                     else
                     {
+                        // get PR
+                        Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+
                         // fix title if needed
                         if (pr.Title.EndsWith("."))
                         {
@@ -235,6 +232,9 @@ namespace nanoFramework.Tools.GitHub
                 else if (payload.action == "closed")
                 {
                     log.LogInformation($"Processing PR #{payload.pull_request.number} closed event...");
+
+                    // get PR
+                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
 
                     // check for PR authored by nfbot or git-actions bot
                     if (pr.User.Login == "nfbot" ||
@@ -333,6 +333,9 @@ namespace nanoFramework.Tools.GitHub
                 }
                 else if (payload.action == "synchronize")
                 {
+                    // get PR
+                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+
                     // get commits for this PR
                     ReadOnlyCollection<Octokit.PullRequestCommit> prCommits = await _octokitClient.PullRequest.Commits(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
                     var commit = prCommits.First(c => c.Sha == payload.after.ToString());
