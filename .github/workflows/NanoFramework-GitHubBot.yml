@@ -18,7 +18,6 @@ env:
 jobs:
   build-and-deploy:
     runs-on: windows-latest
-    environment: dev
     
     steps:
     - name: 'Checkout GitHub Action'
@@ -29,20 +28,9 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
-    - name: 'Resolve Project Dependencies Using Dotnet'
-      shell: pwsh
+    - name: Build Azure Function
       run: |
-        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-        dotnet build --configuration ${{ env.CONFIGURATION }} --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
-        popd
-
-    - name: 'Run Azure Functions Action'
-      uses: Azure/functions-action@v1
-      id: fa
-      with:
-        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-        package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
-        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+        dotnet build "github-nfbot/GitHub-nfbot" --configuration ${{ env.CONFIGURATION }} --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
 
     - name: Deploy to Azure Function App
       uses: Azure/functions-action@v1
