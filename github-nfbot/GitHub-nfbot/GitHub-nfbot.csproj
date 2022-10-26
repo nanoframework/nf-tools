@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
     <RootNamespace>GitHub_nfbot</RootNamespace>
     <UserSecretsId>eb38317d-abae-4ecf-902b-71be30f7c744</UserSecretsId>
   </PropertyGroup>
@@ -17,9 +17,6 @@
     <PackageReference Include="Octokit" Version="4.0.1" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="local.settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="host.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
