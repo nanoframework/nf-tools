@@ -265,7 +265,7 @@ namespace nanoFramework.Tools.GitHub
                             // filter PRs created by our bots, only about version updates and earlier than the current PR 
                             foreach (var pull in openPrs.Where(
                                 p => (p.User.Login == "nfbot"
-                                || pr.User.Login == "github-actions[bot]")
+                                || p.User.Login == "github-actions[bot]")
                                 && p.Body.Contains(_tagVersionUpdate)
                                 && p.Number < pr.Number))
                             {
@@ -328,6 +328,8 @@ namespace nanoFramework.Tools.GitHub
                         // add the invalid label
                         await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number, new string[] { _labelInvalidName });
                     }
+
+                    return new OkObjectResult("");
                 }
                 else if (payload.action == "synchronize")
                 {
