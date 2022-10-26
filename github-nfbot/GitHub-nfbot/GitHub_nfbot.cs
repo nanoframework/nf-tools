@@ -119,6 +119,12 @@ namespace nanoFramework.Tools.GitHub
             // process PR (make sure it's not a PR review)
             if (payload.pull_request != null && payload.review == null)
             {
+                if (payload.action == "resolved")
+                {
+                    // nothing to do here
+                    return new OkObjectResult("");
+                }
+
                 // get PR
                 Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
 
