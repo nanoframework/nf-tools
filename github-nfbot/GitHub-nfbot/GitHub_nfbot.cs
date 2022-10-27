@@ -842,20 +842,20 @@ namespace nanoFramework.Tools.GitHub
 
                 var slackPayload = new
                 {
-                    text = $"GitHub user <{payload.sponsorship.sponsor.html_url.ToString()}|{payload.sponsorship.sponsor.login.ToString()}> just sponsored the project with a {payload.sponsorship.tier.name.ToString()} contribution. Well done and thank you very much! :clap:",
-                    icon_url = payload.sponsorship.sponsor.avatar_url.ToString(),
+                    text = $"GitHub user <{payload.sender.html_url.ToString()}|{payload.sender.login.ToString()}> just sponsored the project with a {payload.sponsorship.tier.name.ToString()} contribution. Well done and thank you very much! :clap:",
+                    icon_url = payload.sender.avatar_url.ToString(),
                 };
 
                 // Add the DISCORD_CONTRIBUTIONS_WEBHOOK_URL as an app setting, Value for the app setting is the URL from Slack API integration
                 // this is possible because Discord webhooks API supports Slack compatible webhooks
                 // see https://discordapp.com/developers/docs/resources/webhook#execute-slackcompatible-webhook
-                using var client = new HttpClient();
-                var res = await client.PostAsync(
-                Environment.GetEnvironmentVariable("DISCORD_CONTRIBUTIONS_WEBHOOK_URL"),
-                new FormUrlEncodedContent(new[]
-                    {
-                        new KeyValuePair<string, string>("payload", JsonConvert.SerializeObject(slackPayload))
-                    })
+                using HttpClient client = new();
+                using HttpResponseMessage res = await client.PostAsync(
+                    Environment.GetEnvironmentVariable("DISCORD_CONTRIBUTIONS_WEBHOOK_URL"),
+                    new FormUrlEncodedContent(new[]
+                        {
+                            new KeyValuePair<string, string>("payload", JsonConvert.SerializeObject(slackPayload))
+                        })
                 );
             }
 
