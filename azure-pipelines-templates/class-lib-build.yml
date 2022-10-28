@@ -89,6 +89,7 @@ steps:
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: NuGet restore
+  retryCountOnTaskFailure: 2
   inputs:
     restoreSolution: '$(solution)'
     feedsToUse: config
