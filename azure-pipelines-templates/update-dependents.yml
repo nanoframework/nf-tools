@@ -14,8 +14,9 @@ steps:
       succeeded(),
       ne(variables['StartReleaseCandidate'], 'true'),
       or(
-        eq(variables['UPDATE_DEPENDENTS'], 'true'),
-        startsWith(variables['Build.SourceBranch'], 'refs/heads/main')
+        startsWith(variables['Build.SourceBranch'], 'refs/heads/main'),
+        contains(variables['GetCommitDetails.COMMIT_MESSAGE'], '***UPDATE_DEPENDENTS***'),
+        eq(variables['UPDATE_DEPENDENTS'], 'true')
       )
     )
   env:
