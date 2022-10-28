@@ -9,6 +9,9 @@ on:
         required: false
         default: .
         type: string
+      solution:
+        required: false
+        type: string
 
 jobs:
   check_package_lock_file:
@@ -27,6 +30,7 @@ jobs:
       - name: Find packages folder
         env:
           solution_location:  ${{ inputs.solution_location }}
+          solution:  ${{ inputs.solution }}
         run: |
           # echo "Searching at: ${{ env.solution_location }}"
           $projectList = (Get-ChildItem -Path "${{ env.solution_location }}" -Include '*.nfproj' -Recurse)
@@ -41,21 +45,33 @@ jobs:
             $lockFileMissing = $false
           }
 
+          # get solution file content
+          $slnFilecontent = Get-Content((Get-ChildItem -Path "${{ env.solution }}"))
+
           foreach($project in $projectList) 
           {
             # echo "Checking: "$project.FullName
-            $nfprojLocation = $project.Directory.FullName
-            $lockFile = (Get-ChildItem -Path "$nfprojLocation\packages.lock.json")
-            if($lockFile.Count -eq 0)
+           
+            $projectInSolution = ($slnFilecontent | Select-String -Pattern $project.Name).Matches.Success
+            
+            # only check if project is in solution
+            if($projectInSolution)
             {
-                # echo "Missing packages.lock.json"
-                $lockFileMissing = $lockFileMissing -xor $true
+              $nfprojLocation = $project.Directory.FullName
+              if(-Not(Test-Path -Path "$nfprojLocation\packages.lock.json" -PathType Leaf))
+              {
+                  # echo "Missing packages.lock.json"
+                  $lockFileMissing = $lockFileMissing -xor $true
+                  $lockFileMissingCollection += "$nfprojLocation\packages.lock.json`r`n"
+              }
             }
           }
 
           if($lockFileMissing)
           {
                 echo "⚠️ Some packages.lock.json are missing ⚠️"
+                echo $lockFileMissingCollection
+                echo "`r`n"
                 echo "Please run: 'nuget restore -UseLockFile' in the solution folder"
                 echo "Make sure you're using nuget CLI version >= 6.2"
                 exit 1
