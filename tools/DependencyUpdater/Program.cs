@@ -454,7 +454,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine();
                 Console.WriteLine($"INFO: restoring solution...");
 
-                if (!RunNugetCLI("restore", solutionFile))
+                if (!RunNugetCLI("restore", $"\"{solutionFile}\""))
                 {
                     Environment.Exit(1);
                 }
@@ -629,13 +629,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 var unitsNetVersion = unitsNetPackageInfo.Split("\r\n")[2].Split('|')[1].Trim();
 
                                 // we have to use nuget.org with UnitsNet
-                                updateParameters = $"{projectToUpdate} -Id {packageName} -Version {unitsNetVersion} {repositoryPath} -FileConflictAction Overwrite  -Source \"https://api.nuget.org/v3/index.json\"";
+                                updateParameters = $"\"{projectToUpdate}\" -Id {packageName} -Version {unitsNetVersion} {repositoryPath} -FileConflictAction Overwrite  -Source \"https://api.nuget.org/v3/index.json\"";
                             }
                             else
                             {
                                 // all the rest, use prerelase packages
                                 // go with our Azure feed
-                                updateParameters = $"{projectToUpdate} -Id {packageName} -PreRelease {repositoryPath} -FileConflictAction Overwrite";
+                                updateParameters = $"\"{projectToUpdate}\" -Id {packageName} -PreRelease {repositoryPath} -FileConflictAction Overwrite";
                             }
 
                             bool okToRetry = true;
@@ -929,7 +929,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             // perform NuGet update
             if (!RunNugetCLI(
                 "update",
-                $"{projectToUpdate} {repositoryPath} -FileConflictAction Overwrite",
+                $"\"{projectToUpdate}\" {repositoryPath} -FileConflictAction Overwrite",
                 true,
                 ref updateResult))
             {
