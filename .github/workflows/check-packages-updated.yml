@@ -59,6 +59,11 @@ jobs:
             Write-Host "🛑 Couldn't find the solution file! 🛑 "
             exit 1
           }
+          elseif($solution.Count -gt 1)
+          {
+            Write-Host "🛑 Found more than one solution file! 🛑 "
+            exit 1
+          }
           else
           {
             $solution = $solution[0]
