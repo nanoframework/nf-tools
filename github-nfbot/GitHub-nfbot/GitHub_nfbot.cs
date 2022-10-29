@@ -146,9 +146,7 @@ namespace nanoFramework.Tools.GitHub
                         // get PR
                         Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
 
-                        string prBody = payload.pull_request.body;
-
-                        if (prBody.Contains(_tagVersionUpdate))
+                        if (pr.Body.Contains(_tagVersionUpdate))
                         {
                             // this is a [version update] commit
 
