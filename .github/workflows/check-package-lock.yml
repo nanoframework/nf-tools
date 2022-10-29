@@ -12,6 +12,7 @@ on:
       solution:
         required: false
         type: string
+        default: '*.sln'
 
 jobs:
   check_package_lock_file:
@@ -45,8 +46,26 @@ jobs:
             $lockFileMissing = $false
           }
 
+          # find solution
+          $solution = (Get-ChildItem -Path "${{ env.solution }}")
+
+          if($solution.Count -eq 0)
+          {
+            Write-Host "🛑 Couldn't find the solution file! 🛑 "
+            exit 1
+          }
+          elseif($solution.Count -gt 1)
+          {
+            Write-Host "🛑 Found more than one solution file! 🛑 "
+            exit 1
+          }
+          else
+          {
+            $solution = $solution[0]
+          }
+
           # get solution file content
-          $slnFilecontent = Get-Content((Get-ChildItem -Path "${{ env.solution }}"))
+          $slnFilecontent = Get-Content((Get-ChildItem -Path "$solution"))
 
           foreach($project in $projectList) 
           {
