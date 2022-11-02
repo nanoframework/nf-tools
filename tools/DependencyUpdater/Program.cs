@@ -818,7 +818,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             Console.WriteLine($"INFO: generating PR information");
 
-            Console.WriteLine($"INFO: creating branch to perform updates");
+            Console.WriteLine($"INFO: creating branch '{newBranchName}' to perform updates");
 
             // create branch to perform updates
             if (!RunGitCli($"branch {newBranchName}", workingDirectory))
@@ -876,16 +876,18 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // PR wasn't submitted, better delete new branch so they don't pile up
 
                 // checkout to "base" branch
+                Console.WriteLine($"INFO: checking out '{_baseBranch}'.");
                 if (!RunGitCli($"checkout {_baseBranch}", workingDirectory))
                 {
                     Console.WriteLine($"ERROR: ⚠️ failed to checkout '{_baseBranch}' when deleting '{branchToPr}'! Need to delete branch manually.");
                     Environment.Exit(1);
                 }
 
-                // delete branch with "force" 
-                if (!RunGitCli($"branch -D {branchToPr}", workingDirectory))
+                // delete branch with "force"
+                Console.WriteLine($"INFO: deleting '{newBranchName}' branch.");
+                if (!RunGitCli($"branch -D {newBranchName}", workingDirectory))
                 {
-                    Console.WriteLine($"ERROR: ⚠️ failed to delete '{branchToPr}'! Need to delete branch manually.");
+                    Console.WriteLine($"ERROR: ⚠️ failed to delete '{newBranchName}'! Need to delete branch manually.");
                     Environment.Exit(1);
                 }
             }
