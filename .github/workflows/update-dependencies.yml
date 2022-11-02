@@ -63,7 +63,7 @@ jobs:
         uses: nanoframework/nanodu@v1
         with:
           solutionsToCheck: ${{ inputs.solutionsToCheck }}
-          workingDirectory: ${{ inputs.workingDirectory }}
+          workingDirectory: '${{ github.workspace }}/${{ inputs.workingDirectory }}'
           exclusionList: ${{ inputs.exclusionList }}
           branchToPr: ${{ inputs.branchToPr }}
           githubAuth: ${{ secrets.githubAuth }}
