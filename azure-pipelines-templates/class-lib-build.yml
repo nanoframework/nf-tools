@@ -66,7 +66,7 @@ steps:
       sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/**/**.coverage
       sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
 
-- task: InstallnFBuildComponents@1
+- task: InstallNanoMSBuildComponents@1
   condition: >-
     and(
       succeeded(),
@@ -74,8 +74,6 @@ steps:
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: Install .NET nanoFramework MSBuild components
-  env:
-    GITHUB_TOKEN: $(GitHubToken)
 
 - template: install-nuget.yml
 - template: cache-nano-nugets.yml
