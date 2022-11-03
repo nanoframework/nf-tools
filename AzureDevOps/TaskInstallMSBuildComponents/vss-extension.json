@@ -1,21 +1,26 @@
 {
     "manifestVersion": 1,
     "id": "install-nanoframework-msbuild-components",
-    "name": "Install nanoFramework MSBuild components",
-    "version": "1.223.0",
+    "name": "Install .NET nanoFramework MSBuild components",
+    "version": "1.227.0",
     "publisher": "nanoframework",
     "targets": [
         {
             "id": "Microsoft.VisualStudio.Services"
         }
     ],    
-    "description": "Install nanoFramework MSBuild components allowing building a nanoFramework C# application with msbuild.",
+    "description": "Install .NET nanoFramework MSBuild components allowing building a .NET nanoFramework C# application with msbuild.",
     "categories": [
         "Azure Pipelines"
     ],
     "icons": {
         "default": "extension-icon.png"        
     }, 
+    "tags": [
+        "nanoframework",
+        "msbuild",
+        "build"
+    ],
     "files": [
         {
             "path": "TaskFiles"
@@ -37,10 +42,27 @@
         "details": {
             "path": "overview.md"
         }
+    },
+    "links": {
+        "home": {
+            "uri": "https://www.nanoframework.net"
+        },
+        "support": {
+            "uri": "https://discord.gg/gCyBu8T"
+        },
+        "repository": {
+            "uri": "https://github.com/nanoframework/nf-tools"
+        },
+        "issues": {
+            "uri": "https://github.com/nanoframework/Home/issues"
+        }
+    },  
+    "repository": {
+        "type": "git",
+        "uri": "https://github.com/nanoframework/nf-tools"
     },    
     "galleryFlags": [
-        "Private",
-        "Preview"
+        "Public"
     ],
     "CustomerQnASupport": {
         "enableqna":"true"
