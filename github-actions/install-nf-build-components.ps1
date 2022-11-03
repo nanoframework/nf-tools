@@ -13,14 +13,18 @@ function DownloadVsixFile($fileUrl, $downloadFileName)
 $tempDir = $($Env:RUNNER_TEMP)
 
 # Get latest releases of nanoFramework VS extension
-$releaseList = [string]::Concat($(gh release list --exclude-drafts --limit 10 --repo nanoframework/nf-Visual-Studio-extension))
+[System.Net.WebClient]$webClient = New-Object System.Net.WebClient
+$webClient.Headers.Add("User-Agent", "request")
+$webClient.Headers.Add("Accept", "application/vnd.github.v3+json")
 
-if($releaseList -match '\s+(?<VS2022_version>v2022\.\d+\.\d+\.\d+)\s+')
+$releaseList = $webClient.DownloadString('https://api.github.com/repos/nanoframework/nf-Visual-Studio-extension/releases?per_page=100')
+
+if($releaseList -match '\"(?<VS2022_version>v2022\.\d+\.\d+\.\d+)\"')
 {
     $vs2022Tag =  $Matches.VS2022_version
 }
 
-if($releaseList -match '\s+(?<VS2019_version>v2019\.\d+\.\d+\.\d+)\s+')
+if($releaseList -match '\"(?<VS2019_version>v2019\.\d+\.\d+\.\d+)\"')
 {
     $vs2019Tag =  $Matches.VS2019_version
 }
