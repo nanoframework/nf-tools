@@ -205,7 +205,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Console.WriteLine();
                     Console.WriteLine($"INFO: cloning '{library}' repository");
 
-                    if (!RunGitCli($"clone {cloneDepth} https://github.com/nanoframework/{library} {library}", workingDirectory))
+                    if (!RunGitCli($"clone {cloneDepth} https://github.com/{repoOwner}/{library} {library}", workingDirectory))
                     {
                         Environment.Exit(1);
                     }
