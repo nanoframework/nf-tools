@@ -212,10 +212,11 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     workingDirectory = Path.Combine(workingDirectory, library);
 
+                    string[] sln;
                     // check for special repos that have sources on different location
                     if (library == "amqpnetlite")
                     {
-                        args = Directory.GetFiles(
+                        sln = Directory.GetFiles(
                             workingDirectory,
                             "amqp-nanoFramework.sln",
                             SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray();
@@ -225,7 +226,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     }
                     else
                     {
-                        args = Directory.GetFiles(
+                        sln = Directory.GetFiles(
                             workingDirectory,
                             "*.sln",
                             SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray();
@@ -244,7 +245,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         branchToPr,
                         repoOwner,
                         gitRepo,
-                        args);
+                        sln);
                 }
             }
 
