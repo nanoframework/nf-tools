@@ -184,7 +184,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // remove quotes, if any
                     var library = repoName.Replace("'", "");
 
-                    _baseBranch = "main";
+                    _baseBranch = branchToPr;
 
                     Console.WriteLine();
                     Console.WriteLine();
