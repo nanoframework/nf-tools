@@ -184,7 +184,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // remove quotes, if any
                     var library = repoName.Replace("'", "");
 
-                    _baseBranch = "main";
+                    _baseBranch = branchToPr;
 
                     Console.WriteLine();
                     Console.WriteLine();
@@ -205,17 +205,18 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Console.WriteLine();
                     Console.WriteLine($"INFO: cloning '{library}' repository");
 
-                    if (!RunGitCli($"clone {cloneDepth} https://github.com/nanoframework/{library} {library}", workingDirectory))
+                    if (!RunGitCli($"clone {cloneDepth} https://github.com/{repoOwner}/{library} {library}", workingDirectory))
                     {
                         Environment.Exit(1);
                     }
 
                     workingDirectory = Path.Combine(workingDirectory, library);
 
+                    string[] sln;
                     // check for special repos that have sources on different location
                     if (library == "amqpnetlite")
                     {
-                        args = Directory.GetFiles(
+                        sln = Directory.GetFiles(
                             workingDirectory,
                             "amqp-nanoFramework.sln",
                             SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray();
@@ -225,7 +226,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     }
                     else
                     {
-                        args = Directory.GetFiles(
+                        sln = Directory.GetFiles(
                             workingDirectory,
                             "*.sln",
                             SearchOption.TopDirectoryOnly).Select(n => Path.GetFileName(n)).ToArray();
@@ -244,7 +245,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         branchToPr,
                         repoOwner,
                         gitRepo,
-                        args);
+                        sln);
                 }
             }
 
