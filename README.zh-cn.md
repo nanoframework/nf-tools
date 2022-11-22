@@ -11,11 +11,8 @@
 此存储库包含 **nanoFramework** 开发、使用或存储库管理所需的各种工具。
 
 - [Azure DevOps extensions](AzureDevOps)存储库的生成管道中使用的扩展。
-
 - [Azure Pipelines Templates](azure-pipelines-templates) 存储库的 Azure 管道模板。
-
 - [github-actions](github-actions)我们存储库的 Github 操作工作流脚本/模板。
-
 - [GitHub-bot](AzureFunction-github-bot) Azure 函数项目，用于 **nanoFramework** GitHub 机器人，有助于管理通信和拉取请求工作流的各个方面。
 
 ## 反馈和文档
