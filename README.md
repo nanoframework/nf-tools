@@ -2,16 +2,18 @@
 
 ![nanoFramework logo](https://github.com/nanoframework/Home/blob/main/resources/logo/nanoFramework-repo-logo.png)
 
------
+---
+
+Document Language: [English](README.md) | [中文简体](README.zh-cn.md)
 
 ### Welcome to the **nanoFramework** Tools repository!
 
 This repo contains various tools that are required in **nanoFramework** development, usage or repository management.
 
-* [Azure DevOps extensions](AzureDevOps) Extensions used in build pipelines for our repositories.
-* [Azure Pipelines Templates](azure-pipelines-templates) Azure Pipelines templates for our repositories.
-* [github-actions](github-actions) Github Action workflow scripts/templates for our repositories.
-* [GitHub-bot](AzureFunction-github-bot) Azure Function project for **nanoFramework** GitHub bot which help with managing various aspects of communication and the pull requests workflow.
+- [Azure DevOps extensions](AzureDevOps) Extensions used in build pipelines for our repositories.
+- [Azure Pipelines Templates](azure-pipelines-templates) Azure Pipelines templates for our repositories.
+- [github-actions](github-actions) Github Action workflow scripts/templates for our repositories.
+- [GitHub-bot](AzureFunction-github-bot) Azure Function project for **nanoFramework** GitHub bot which help with managing various aspects of communication and the pull requests workflow.
 
 ## Feedback and documentation
 
