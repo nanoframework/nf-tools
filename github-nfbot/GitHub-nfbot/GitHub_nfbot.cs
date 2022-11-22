@@ -72,6 +72,8 @@ namespace nanoFramework.Tools.GitHub
 
         private const string _labelCiUpdateDependentsName = "CI: Update Dependents";
         private const string _labelCiPublishReleaseName = "CI: Publish Release";
+        private const string _labelDontMergeName = ":warning: DO NOT MERGE :warning:";
+        private const string _labelCiSkipBuildName = "CI: SKIP BUILD";
 
         private const string _labelTypeDependenciesName = "Type: dependencies";
         private const string _labelTypeFeatureRequestName = "Type: Feature Request";
@@ -615,16 +617,16 @@ namespace nanoFramework.Tools.GitHub
                             {
                                 if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion != CheckConclusion.Success))
                                 {
+                                    // get labels for this PR
+                                    List<Label> prLabels = (List<Label>)pr.Labels;
+
                                     // check if this is running on samples repo
                                     if (!pr.HtmlUrl.ToString().Contains("nanoframework/Samples"))
                                     {
-                                        // class lib repo
+                                        // other repository
 
                                         // default is TO PUBLISH a new release 
                                         bool publishReleaseFlag = true;
-
-                                        // get labels for this PR
-                                        List<Label> prLabels = (List<Label>)pr.Labels;
 
                                         // check if this was a dependencies update OR a version update
                                         var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
@@ -650,7 +652,9 @@ namespace nanoFramework.Tools.GitHub
                                             }
                                         }
 
-                                        if (publishReleaseFlag)
+                                        // add publish release, unless labeled with SKIP BUILD
+                                        if (publishReleaseFlag &&
+                                            !prLabels.Any(l => l.Name.ToString() == _labelCiSkipBuildName))
                                         {
                                             // add publish release label
 
@@ -659,19 +663,28 @@ namespace nanoFramework.Tools.GitHub
                                             // add the Publish release label
                                             await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)pr.Number, new string[] { _labelCiPublishReleaseName });
                                         }
+
+                                        // check for SKIP BUILD label
+                                        if (prLabels.Any(l => l.Name.ToString() == _labelCiSkipBuildName))
+                                        {
+                                            // set this, no matter what
+                                            skipCIBuild = true;
+                                        }
                                     }
 
                                     // all checks completed successfully
-                                    // merge PR
-                                    // SQUASH if it's a regular PR
-                                    // MERGE if it's a release candidate merge
-                                    await MergePrWithStrategy(
+                                    // merge PR, unless labeled with DON'T MERGE
+                                    if (!prLabels.Any(l => l.Name.ToString() == _labelDontMergeName))
+                                    {
+                                        // SQUASH if it's a regular PR
+                                        // MERGE if it's a release candidate merge
+                                        await MergePrWithStrategy(
                                         pr,
                                         skipCIBuild,
                                         log,
                                         isReleaseCandidate ? PullRequestMergeMethod.Merge : PullRequestMergeMethod.Squash);
+                                    }
                                 }
-
                             }
                             else
                             {
