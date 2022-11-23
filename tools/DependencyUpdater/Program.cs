@@ -60,6 +60,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string gitHubEmail = "nanoframework@outlook.com",
             string repoOwner = null,
             string gitHubAuth = null,
+            bool useGitTokenForClone =  false,
             string[] args = null)
         {
             // sanity check 
@@ -126,7 +127,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             RunGitCli($"config --global user.email {gitHubEmail}", "");
             RunGitCli("config --global core.autocrlf true", "");
 #endif
-
+            
             if (string.IsNullOrEmpty(gitHubAuth))
             {
                 // no auth provided, try to use GITHUB_TOKEN environment variable
@@ -205,7 +206,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Console.WriteLine();
                     Console.WriteLine($"INFO: cloning '{library}' repository");
 
-                    if (!RunGitCli($"clone {cloneDepth} https://github.com/{repoOwner}/{library} {library}", workingDirectory))
+                    var cloneCommand = CreateCloneCommand(cloneDepth, repoOwner, library, useGitTokenForClone, gitHubAuth);
+                    if (!RunGitCli(cloneCommand, workingDirectory))
                     {
                         Environment.Exit(1);
                     }
@@ -251,6 +253,17 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             // exit OK
             Environment.Exit(0);
+        }
+
+        internal static string CreateCloneCommand(string cloneDepth, string repoOwner, string library, bool usePatForClone, string gitHubAuth)
+        {
+            if (usePatForClone)
+            {
+                var token = string.IsNullOrEmpty(gitHubAuth) ? GetGitHubToken() : gitHubAuth;
+                return $"clone {cloneDepth} https://{token}@github.com/{repoOwner}/{library} {library}";
+            }
+            
+            return $"clone {cloneDepth} https://github.com/{repoOwner}/{library} {library}";
         }
 
         private static string[] RebuildArgsListWithNewLinesIfNeeded(string[] args)
