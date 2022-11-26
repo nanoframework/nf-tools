@@ -62,6 +62,4 @@ internal static class GitHubHelper
         // need to remove .git from end of URL, if there
         return match.Groups["repoName"].Value.Replace(".git", "");
     }
-    
-    
 }
