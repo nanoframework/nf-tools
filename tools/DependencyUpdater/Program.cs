@@ -76,11 +76,11 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (repoOwner is null)
             {
-                repoOwner = GetRepoOwnerFromUrl(gitRepo);
+                repoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepo);
             }
 
             // find repo owner for runner
-            _workingRepoOwner = GetRepoOwnerFromUrl(gitRepo);
+            _workingRepoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepo);
 
             if (workingDirectory is null)
             {
@@ -378,14 +378,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine("Targeting every solution in the repository.");
             }
 
-            var repoName = GetRepoNameFromInputString(gitRepo);
+            var repoName = GitHubHelper.GetRepoNameFromInputString(gitRepo);
             if (!repoName.Success)
             {
                 Console.WriteLine($"ERROR: couldn't determine repository name.");
                 Environment.Exit(1);
             }
 
-            var libraryName = GetLibNameFromRegexMatch(repoName);
+            var libraryName = GitHubHelper.GetLibNameFromRegexMatch(repoName);
 
             Console.WriteLine($"Repository is: '{libraryName ?? "null"}'");
 
