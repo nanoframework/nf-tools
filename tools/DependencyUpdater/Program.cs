@@ -229,7 +229,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                     {
                         Environment.Exit(1);
                     }
-
+                    
+                    // get git repo name for each library and repo owner
+                    var gitRepoInternal = GetGitRepoFromWorkingDirectory(workingDirectory);
+                    _workingRepoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepoInternal);
+                    
                     // go for the library update
                     UpdateLibrary(
                         workingDirectory,
@@ -237,7 +241,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         previewPackages,
                         branchToPr,
                         repoOwner,
-                        gitRepo,
+                        gitRepoInternal,
                         sln);
                 }
             }
@@ -330,29 +334,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             return RunningEnvironment.Other;
-        }
-
-        internal static Match GetRepoNameFromInputString(string input)
-        {
-            return Regex.Match(input, "(?:https:\\/\\/github\\.com\\/(.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
-        }
-
-        internal static string GetRepoOwnerFromUrl(string url)
-        {
-            var regexResult = Regex.Match(url, "(?:https:\\/\\/github\\.com\\/(?'repoOwner'.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
-
-            if (!regexResult.Success)
-            {
-                throw new Exception($"Unable to find repository owner in {url}");
-            }
-
-            return regexResult.Groups["repoOwner"].Value;
-        }
-
-        internal static string GetLibNameFromRegexMatch(Match match)
-        {
-            // need to remove .git from end of URL, if there
-            return match.Groups["repoName"].Value.Replace(".git", "");
         }
 
         static void UpdateLibrary(string workingDirectory,
