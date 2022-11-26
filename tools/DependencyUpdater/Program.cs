@@ -233,8 +233,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                     // go for the library update
                     UpdateLibrary(
                         workingDirectory,
-                        false,
-                        true,
+                        stablePackages,
+                        previewPackages,
                         branchToPr,
                         repoOwner,
                         gitRepo,
