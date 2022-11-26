@@ -840,7 +840,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             Console.WriteLine($"INFO: adding changes");
 
             // add changes
-            if (!RunGitCli("add -A", workingDirectory))
+            if (!RunGitCli("add --all -- :!*.runsettings", workingDirectory))
             {
                 Environment.Exit(1);
             }
