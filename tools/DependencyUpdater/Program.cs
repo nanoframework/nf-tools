@@ -72,17 +72,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             // check if this is running on a git repo
-            string gitRepo = "";
-            if (!RunGitCli("remote -v", ref gitRepo, workingDirectory))
-            {
-                Environment.Exit(1);
-            }
-
-            if (gitRepo.Contains("fatal: not a git repository"))
-            {
-                Console.WriteLine($"ERROR: working directory is not a git repository");
-                Environment.Exit(1);
-            }
+            string gitRepo = GetGitRepoFromWorkingDirectory(workingDirectory);
 
             if (repoOwner is null)
             {
@@ -254,6 +244,23 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             // exit OK
             Environment.Exit(0);
+        }
+
+        internal static string GetGitRepoFromWorkingDirectory(string workingDirectory)
+        {
+            var gitRepo = string.Empty;
+            if (!RunGitCli("remote -v", ref gitRepo, workingDirectory))
+            {
+                Environment.Exit(1);
+            }
+
+            if (gitRepo.Contains("fatal: not a git repository"))
+            {
+                Console.WriteLine($"ERROR: working directory is not a git repository");
+                Environment.Exit(1);
+            }
+
+            return gitRepo;
         }
 
         internal static string CreateCloneCommand(string cloneDepth, string repoOwner, string library, bool usePatForClone, string gitHubAuth)
