@@ -418,7 +418,9 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             // find NuGet.Config
-            var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config", SearchOption.TopDirectoryOnly)
+            var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config",
+                    new EnumerationOptions()
+                        { MatchCasing = MatchCasing.CaseInsensitive, RecurseSubdirectories = false })
                 .FirstOrDefault();
             if (nugetConfig is not null)
             {
