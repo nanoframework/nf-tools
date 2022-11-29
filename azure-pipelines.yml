@@ -29,6 +29,8 @@ jobs:
   steps:
   
   - checkout: self
+    fetchDepth: 1
+    clean: true
 
   # check what changed
   - powershell: |
