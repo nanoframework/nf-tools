@@ -72,7 +72,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             // check if this is running on a git repo
-            string gitRepo = GetGitRepoFromWorkingDirectory(workingDirectory);
+            string gitRepo = CheckIfPathIsGitRepo(workingDirectory);
 
             if (repoOwner is null)
             {
@@ -231,7 +231,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     }
                     
                     // get git repo name for each library and repo owner
-                    var gitRepoInternal = GetGitRepoFromWorkingDirectory(workingDirectory);
+                    var gitRepoInternal = CheckIfPathIsGitRepo(workingDirectory);
                     _workingRepoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepoInternal);
                     
                     // go for the library update
@@ -250,7 +250,13 @@ namespace nanoFramework.Tools.DependencyUpdater
             Environment.Exit(0);
         }
 
-        internal static string GetGitRepoFromWorkingDirectory(string workingDirectory)
+        /// <summary>
+        /// Executes git command to check if path is valid git repository.
+        /// Exists application when path is not a git repository. 
+        /// </summary>
+        /// <param name="workingDirectory">Path to check.</param>
+        /// <returns>Remove address of git repository.</returns>
+        private static string CheckIfPathIsGitRepo(string workingDirectory)
         {
             var gitRepo = string.Empty;
             if (!RunGitCli("remote -v", ref gitRepo, workingDirectory))
