@@ -845,7 +845,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             Console.WriteLine($"INFO: adding changes");
 
-            // add changes
+            // add changes without any .runsettings file which may override user config and break unit test execution
             if (!RunGitCli("add --all -- :!*.runsettings", workingDirectory))
             {
                 Environment.Exit(1);
