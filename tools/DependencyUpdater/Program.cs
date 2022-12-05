@@ -331,7 +331,6 @@ namespace nanoFramework.Tools.DependencyUpdater
 
         private static string GetGitHubToken()
         {
-            return "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";
 #if DEBUG
             var config = new ConfigurationBuilder()
                 .AddUserSecrets<Program>()
