@@ -72,13 +72,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             // check if this is running on a git repo
-            string gitRepo = "";
-            if (!RunGitCli("remote -v", ref gitRepo, workingDirectory))
-            {
-                Environment.Exit(1);
-            }
-
-            if (gitRepo.Contains("fatal: not a git repository"))
+            var gitRepo = CheckIfDirectoryIsGitRepo(workingDirectory);
+            if (!gitRepo.Item1)
             {
                 Console.WriteLine($"ERROR: working directory is not a git repository");
                 Environment.Exit(1);
@@ -86,11 +81,11 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (repoOwner is null)
             {
-                repoOwner = GetRepoOwnerFromUrl(gitRepo);
+                repoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepo.Item2);
             }
 
             // find repo owner for runner
-            _workingRepoOwner = GetRepoOwnerFromUrl(gitRepo);
+            _workingRepoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepo.Item2);
 
             if (workingDirectory is null)
             {
@@ -170,7 +165,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     previewPackages,
                     branchToPr,
                     repoOwner,
-                    gitRepo,
+                    gitRepo.Item2,
                     args);
             }
             else
@@ -181,6 +176,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Environment.SetEnvironmentVariable("GIT_REDIRECT_STDERR", "2>&1");
                 }
 
+                var resultCollection = new List<Tuple<bool, string>>();
                 foreach (var repoName in args)
                 {
                     // remove quotes, if any
@@ -210,7 +206,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                     var cloneCommand = CreateCloneCommand(cloneDepth, repoOwner, library, useGitTokenForClone, gitHubAuth);
                     if (!RunGitCli(cloneCommand, workingDirectory))
                     {
-                        Environment.Exit(1);
+                        resultCollection.Add(Tuple.Create(false, $"{repoName} ERROR: unable to clone"));
+                        continue;
                     }
 
                     workingDirectory = Path.Combine(workingDirectory, library);
@@ -237,23 +234,70 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     if (!RunGitCli($"checkout --quiet {_baseBranch}", workingDirectory))
                     {
-                        Environment.Exit(1);
+                        resultCollection.Add(Tuple.Create(false, $"{repoName} ERROR: unable to checkout to {_baseBranch}"));
+                        continue;
                     }
-
+                    
+                    // get git repo name for each library and repo owner
+                    var gitRepoInternal = CheckIfDirectoryIsGitRepo(workingDirectory);
+                    if (!gitRepoInternal.Item1)
+                    {
+                        resultCollection.Add(Tuple.Create(false, $"{repoName} ERROR: working directory is not a git repository"));
+                        continue;
+                    }
+                    
+                    _workingRepoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepoInternal.Item2);
+                    
                     // go for the library update
                     UpdateLibrary(
                         workingDirectory,
-                        false,
-                        true,
+                        stablePackages,
+                        previewPackages,
                         branchToPr,
                         repoOwner,
-                        gitRepo,
+                        gitRepoInternal.Item2,
                         sln);
+                    
+                    resultCollection.Add(Tuple.Create(true, $"{repoName} SUCCESS: Update completed"));
+                }
+                
+                // Print result
+                Console.WriteLine($"Update result");
+                foreach (var result in resultCollection)
+                {
+                    Console.WriteLine($"{result.Item2}");
+                }
+
+                // If any error, exit application with error code
+                if (resultCollection.Any(x => x.Item1))
+                {
+                    Environment.Exit(1);
                 }
             }
 
             // exit OK
             Environment.Exit(0);
+        }
+
+        /// <summary>
+        /// Executes git command to check if directory is valid git repository.
+        /// </summary>
+        /// <param name="directory">Path to check.</param>
+        /// <returns>Tuple with status and remote address of git repository.</returns>
+        private static Tuple<bool, string> CheckIfDirectoryIsGitRepo(string directory)
+        {
+            var gitRepo = string.Empty;
+            if (!RunGitCli("remote -v", ref gitRepo, directory))
+            {
+                return Tuple.Create(false, string.Empty);
+            }
+
+            if (gitRepo.Contains("fatal: not a git repository"))
+            {
+                return Tuple.Create(false, string.Empty);
+            }
+
+            return Tuple.Create(true, gitRepo);
         }
 
         internal static string CreateCloneCommand(string cloneDepth, string repoOwner, string library, bool usePatForClone, string gitHubAuth)
@@ -325,29 +369,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             return RunningEnvironment.Other;
         }
 
-        internal static Match GetRepoNameFromInputString(string input)
-        {
-            return Regex.Match(input, "(?:https:\\/\\/github\\.com\\/(.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
-        }
-
-        internal static string GetRepoOwnerFromUrl(string url)
-        {
-            var regexResult = Regex.Match(url, "(?:https:\\/\\/github\\.com\\/(?'repoOwner'.*)\\/)(?'repoName'\\S+)(?:\\.git\\s\\(fetch\\)|\\s\\(fetch\\))");
-
-            if (!regexResult.Success)
-            {
-                throw new Exception($"Unable to find repository owner in {url}");
-            }
-
-            return regexResult.Groups["repoOwner"].Value;
-        }
-
-        internal static string GetLibNameFromRegexMatch(Match match)
-        {
-            // need to remove .git from end of URL, if there
-            return match.Groups["repoName"].Value.Replace(".git", "");
-        }
-
         static void UpdateLibrary(string workingDirectory,
                         bool stablePackages,
                         bool previewPackages,
@@ -371,14 +392,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine("Targeting every solution in the repository.");
             }
 
-            var repoName = GetRepoNameFromInputString(gitRepo);
+            var repoName = GitHubHelper.GetRepoNameFromInputString(gitRepo);
             if (!repoName.Success)
             {
                 Console.WriteLine($"ERROR: couldn't determine repository name.");
                 Environment.Exit(1);
             }
 
-            var libraryName = GetLibNameFromRegexMatch(repoName);
+            var libraryName = GitHubHelper.GetLibNameFromRegexMatch(repoName);
 
             Console.WriteLine($"Repository is: '{libraryName ?? "null"}'");
 
@@ -430,7 +451,9 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             // find NuGet.Config
-            var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config", SearchOption.TopDirectoryOnly)
+            var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config",
+                    new EnumerationOptions()
+                        { MatchCasing = MatchCasing.CaseInsensitive, RecurseSubdirectories = false })
                 .FirstOrDefault();
             if (nugetConfig is not null)
             {
@@ -849,8 +872,8 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             Console.WriteLine($"INFO: adding changes");
 
-            // add changes
-            if (!RunGitCli("add -A", workingDirectory))
+            // add changes without any .runsettings file which may override user config and break unit test execution
+            if (!RunGitCli("add --all -- :!*.runsettings", workingDirectory))
             {
                 Environment.Exit(1);
             }
