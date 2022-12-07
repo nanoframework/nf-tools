@@ -61,7 +61,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string gitHubEmail = "nanoframework@outlook.com",
             string repoOwner = null,
             string gitHubAuth = null,
-            bool useGitTokenForClone =  false,
+            bool useGitTokenForClone = false,
             string[] args = null)
         {
             // sanity check 
@@ -117,13 +117,16 @@ namespace nanoFramework.Tools.DependencyUpdater
             Console.WriteLine($"Branch to submit PR: {branchToPr}");
 
             // setup git stuff, only if we are not in debug mode
-#if !DEBUG
+#if DEBUG
+            // doing something with this parameter so it doesn't get caught by static analysers
+            _ = gitHubEmail.Contains(_gitHubUser);
+#else
             RunGitCli("config --global gc.auto 0", "");
             RunGitCli($"config --global user.name {gitHubUser}", "");
             RunGitCli($"config --global user.email {gitHubEmail}", "");
             RunGitCli("config --global core.autocrlf true", "");
 #endif
-            
+
             if (string.IsNullOrEmpty(gitHubAuth))
             {
                 // no auth provided, try to use GITHUB_TOKEN environment variable
@@ -214,7 +217,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     string[] sln;
                     // check for special repos that have sources on different location
-                    if (library == "amqpnetlite")
+                    if (library == AMQPLiteLibraryName)
                     {
                         sln = Directory.GetFiles(
                             workingDirectory,
@@ -237,7 +240,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         resultCollection.Add(Tuple.Create(false, $"{repoName} ERROR: unable to checkout to {_baseBranch}"));
                         continue;
                     }
-                    
+
                     // get git repo name for each library and repo owner
                     var gitRepoInternal = CheckIfDirectoryIsGitRepo(workingDirectory);
                     if (!gitRepoInternal.Item1)
@@ -245,9 +248,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                         resultCollection.Add(Tuple.Create(false, $"{repoName} ERROR: working directory is not a git repository"));
                         continue;
                     }
-                    
+
                     _workingRepoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepoInternal.Item2);
-                    
+
                     // go for the library update
                     UpdateLibrary(
                         workingDirectory,
@@ -257,10 +260,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                         repoOwner,
                         gitRepoInternal.Item2,
                         sln);
-                    
+
                     resultCollection.Add(Tuple.Create(true, $"{repoName} SUCCESS: Update completed"));
                 }
-                
+
                 // Print result
                 Console.WriteLine($"Update result");
                 foreach (var result in resultCollection)
@@ -307,7 +310,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 var token = string.IsNullOrEmpty(gitHubAuth) ? GetGitHubToken() : gitHubAuth;
                 return $"clone {cloneDepth} https://{token}@github.com/{repoOwner}/{library} {library}";
             }
-            
+
             return $"clone {cloneDepth} https://github.com/{repoOwner}/{library} {library}";
         }
 
@@ -348,7 +351,6 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             return tokenFromEnvironmentVariable;
 #endif
-
         }
 
         private static RunningEnvironment GetRunningEnvironment()
@@ -453,7 +455,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             // find NuGet.Config
             var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config",
                     new EnumerationOptions()
-                        { MatchCasing = MatchCasing.CaseInsensitive, RecurseSubdirectories = false })
+                    { MatchCasing = MatchCasing.CaseInsensitive, RecurseSubdirectories = false })
                 .FirstOrDefault();
             if (nugetConfig is not null)
             {
@@ -633,7 +635,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         Console.WriteLine();
 
                         // check all packages
-                        foreach (var package in packageList)
+                        foreach (PackageReference package in packageList)
                         {
                             // get package name and target version
                             string packageName = package.PackageIdentity.Id;
@@ -808,12 +810,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                                         // save back changes
                                         // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
                                         // not being saved thus causing bogus updates on the nuspec content
-                                        using (StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName))
-                                        {
-                                            nuspecFile.Save(nuspecStreamWriter);
-                                            nuspecStreamWriter.Flush();
-                                            nuspecStreamWriter.Close();
-                                        }
+                                        using StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName);
+                                        nuspecFile.Save(nuspecStreamWriter);
+                                        nuspecStreamWriter.Flush();
+                                        nuspecStreamWriter.Close();
                                     }
                                     else
                                     {
@@ -1023,11 +1023,22 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: {repoOwner}:{newBranchName}, base:{branchToPr}");
 
                 // developer note: head must be in the format 'user:branch'
-                var updatePr = _octokitClient.PullRequest.Create(repoOwner, libraryName, new NewPullRequest(prTitle, $"{_workingRepoOwner}:{newBranchName}", branchToPr)).Result;
+                var updatePr = _octokitClient.PullRequest.Create(
+                    repoOwner,
+                    libraryName,
+                    new NewPullRequest(
+                        prTitle,
+                        $"{_workingRepoOwner}:{newBranchName}",
+                        branchToPr)).Result;
 
                 // update PR body
                 var updatePrBody = new PullRequestUpdate() { Body = commitMessage };
-                _ = _octokitClient.PullRequest.Update(repoOwner, libraryName, updatePr.Number, updatePrBody).Result;
+
+                _ = _octokitClient.PullRequest.Update(
+                    repoOwner,
+                    libraryName,
+                    updatePr.Number,
+                    updatePrBody).Result;
 
                 Console.WriteLine($"INFO: created PR #{updatePr.Number} @ {repoOwner}/{libraryName}");
             }
@@ -1038,17 +1049,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             return PrCreationOutcome.Success;
-        }
-
-        private static bool RunNugetCLI(string command, string arguments)
-        {
-            string dummy = null;
-
-            return RunNugetCLI(
-                command,
-                arguments,
-                true,
-                ref dummy);
         }
 
         private static bool ShouldAppendDefaultSourcesToNuGetCommand(bool useNuGetConfig, string arguments)
@@ -1066,6 +1066,17 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             return true;
+        }
+
+        private static bool RunNugetCLI(string command, string arguments)
+        {
+            string dummy = null;
+
+            return RunNugetCLI(
+                command,
+                arguments,
+                true,
+                ref dummy);
         }
 
         private static bool RunNugetCLI(
@@ -1103,6 +1114,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             Console.WriteLine($"ERROR: nuget CLI exited with code {cliResult.ExitCode}");
             Console.WriteLine($"{cliResult.StandardError}");
+
             return false;
         }
 
@@ -1111,6 +1123,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string workingDirectory)
         {
             string dummy = null;
+
             return RunGitCli(
                 arguments,
                 ref dummy,
@@ -1147,41 +1160,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             Console.WriteLine($"ERROR: git CLI exited with code {cliResult.ExitCode}");
             Console.WriteLine($"{cliResult.StandardError}");
             return false;
-        }
-
-
-        private static bool RunNbgv(
-            string arguments,
-            ref string output,
-            string workingDirectory)
-        {
-            var cmd = Cli.Wrap("nbgv")
-                .WithArguments($"{arguments}")
-                .WithWorkingDirectory(workingDirectory)
-                .WithValidation(CommandResultValidation.None);
-
-            // setup cancellation token with a timeout of 1 minute
-            using var cts = new CancellationTokenSource();
-            cts.CancelAfter(TimeSpan.FromMinutes(1));
-
-            var cliResult = cmd.ExecuteBufferedAsync(cts.Token).GetAwaiter().GetResult();
-
-            if (cliResult.ExitCode == 0)
-            {
-                // grab output, if required
-                if (output is not null)
-                {
-                    output = cliResult.StandardOutput;
-                }
-
-                return true;
-            }
-            else
-            {
-                Console.WriteLine($"ERROR: nbgv exited with code {cliResult.ExitCode}");
-                Console.WriteLine($"{cliResult.StandardError}");
-                return false;
-            }
         }
 
         private enum PrCreationOutcome
