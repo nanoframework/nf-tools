@@ -8,7 +8,7 @@
   "author": ".NET nanoFramework Project Contributors",
   "license": "MIT",
   "dependencies": {
-    "azure-pipelines-task-lib": "^3.2.0",
+    "azure-pipelines-task-lib": "^3.4.0",
     "vss-web-extension-sdk": "^5.141.0"
   },
   "devDependencies": {
