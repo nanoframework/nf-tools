@@ -1552,8 +1552,8 @@ namespace nanoFramework.Tools.GitHub
 
             // check for content that shouldn't be there and shows that the author hadn't read the instructions or is being lazy
 
-            // flag that this is a open/reopen event
-            bool isOpenAction = payload.action == "opened" || payload.action == "reopened";
+            // flag that this is a "open issue" event
+            bool isOpenAction = payload.action == "opened";
             string authorAssociation = (string)payload.issue.author_association;
 
             log.LogInformation($"Processing issue #{issue.Number}");
