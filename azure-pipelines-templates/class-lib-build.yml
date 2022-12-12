@@ -108,6 +108,7 @@ steps:
     msbuildArgs: '/p:PublicRelease=true ${{ parameters.msbuildExtraParams }}'
     configuration: '$(buildConfiguration)'
     msbuildArchitecture: 'x64'
+    maximumCpuCount: true
 
 - task: VisualStudioTestPlatformInstaller@1
   condition: >-
