@@ -6,6 +6,9 @@ parameters:
   - name: skipNuGetRestore
     type: boolean
     default: false
+  - name: skipNuGetCache
+    type: boolean
+    default: false
   - name: gitUser
     type: string
     default: nfbot
@@ -77,6 +80,8 @@ steps:
 
 - template: install-nuget.yml
 - template: cache-nano-nugets.yml
+  parameters:
+    skipNuGetCache: ${{ parameters.skipNuGetCache }}
 
 - task: NuGetCommand@2
   condition: >-

@@ -1,6 +1,11 @@
 # Copyright (c) .NET Foundation and Contributors
 # See LICENSE file in the project root for full license information.
 
+parameters:
+  - name: skipNuGetCache
+    type: boolean
+    default: false
+
 steps:
 
 - task: Cache@2
@@ -8,6 +13,7 @@ steps:
   condition: >-
     and(
       succeeded(),
+      not(${{ parameters.skipNuGetCache }}),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
