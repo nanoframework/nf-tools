@@ -34,7 +34,7 @@ jobs:
       - uses: nanoframework/nanobuild@v1
         name: Install .NET nanoFramework build components
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_AUTH_TOKEN: ${{ secrets.githubAuth }}
 
       - uses: nuget/setup-nuget@v1
         with:
