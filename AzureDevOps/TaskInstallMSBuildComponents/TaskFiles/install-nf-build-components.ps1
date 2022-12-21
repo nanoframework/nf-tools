@@ -10,6 +10,10 @@ Import-Module $PSScriptRoot\ps_modules\VstsTaskSdk
 
 Import-VstsLocStrings "$PSScriptRoot\Task.json"
 
+# Get the inputs
+[string]$gitHubToken = Get-VstsInput -Name GitHubToken
+
+# setup the web client
 [System.Net.WebClient]$webClient = New-Object System.Net.WebClient
 $webClient.UseDefaultCredentials = $true
 
@@ -25,6 +29,17 @@ $tempDir = $($env:Agent_TempDirectory)
 [System.Net.WebClient]$webClient = New-Object System.Net.WebClient
 $webClient.Headers.Add("User-Agent", "request")
 $webClient.Headers.Add("Accept", "application/vnd.github.v3+json")
+$webClient.Headers.Add("ContentType", "application/json")
+
+if($gitHubToken)
+{
+    Write-Output "Adding authentication header"
+
+    # authorization header with github token
+    $auth = "Bearer $gitHubToken"
+
+    $webClient.Headers.Add("Authorization", $auth)
+}
 
 $releaseList = $webClient.DownloadString('https://api.github.com/repos/nanoframework/nf-Visual-Studio-extension/releases?per_page=100')
 

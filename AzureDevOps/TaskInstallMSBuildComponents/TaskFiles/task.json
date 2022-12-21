@@ -14,10 +14,20 @@
     "author": ".NET nanoFramework Project Contributors",
     "version": {
         "Major": 1,
-        "Minor": 228,
+        "Minor": 230,
         "Patch": 0
     },
-    "preview": true,
+    "inputs": [
+        {
+            "name": "GitHubToken",
+            "type": "string",
+            "label": "GitHub token",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "Optional GitHub token to be used for authenticated requests to GitHub API."
+        }
+    ],
+    "preview": false,
     "instanceNameFormat": "Install .NET nanoFramework MSBuild components",
     "execution": {
         "PowerShell3": {
