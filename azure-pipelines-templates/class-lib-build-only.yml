@@ -77,7 +77,6 @@ steps:
   inputs:
     GitHubToken: 'github.com_nano-$(System.TeamProject)'
 
-- template: install-nuget.yml
 - template: cache-nano-nugets.yml
   parameters:
     skipNuGetCache: ${{ parameters.skipNuGetCache }}
