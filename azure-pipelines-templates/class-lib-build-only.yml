@@ -75,7 +75,7 @@ steps:
     )
   displayName: Install .NET nanoFramework MSBuild components
   inputs:
-    GitHubToken: 'github.com_nano-$(System.TeamProject)'
+    GitHubToken: $(GitHubToken)
 
 - template: cache-nano-nugets.yml
   parameters:
