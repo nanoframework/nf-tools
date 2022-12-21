@@ -74,6 +74,8 @@ steps:
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: Install .NET nanoFramework MSBuild components
+  inputs:
+    GitHubToken: 'github.com_nano-$(System.TeamProject)'
 
 - template: install-nuget.yml
 - template: cache-nano-nugets.yml
