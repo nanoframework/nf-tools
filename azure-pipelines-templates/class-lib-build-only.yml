@@ -77,6 +77,7 @@ steps:
   inputs:
     GitHubToken: $(GitHubToken)
 
+- template: install-nuget.yml
 - template: cache-nano-nugets.yml
   parameters:
     skipNuGetCache: ${{ parameters.skipNuGetCache }}
