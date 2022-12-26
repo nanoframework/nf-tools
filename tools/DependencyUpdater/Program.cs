@@ -45,6 +45,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <param name="branchToPr">Name of the branch to submit PR with updates. Default is 'main'.</param>
         /// <param name="gitHubUser">Name of the git hub users. Used for creating PR and authentication. Default is 'nfbot'</param>
         /// <param name="gitHubEmail">Email of the git hub users. Used for creating commits. Default is 'nanoframework@outlook.com'</param>
+        /// <param name="nugetConfig">Path to nuget.config file to use for update operations. Leave <see langword="null"/> to use 'nuget.org'</param>
         /// <param name="repoOwner">Github repository owner (https://github.com/[repoOwner]/repositoryName). If not provided, created based on github repository url where the tool was invoked.</param>
         /// <param name="gitHubAuth">GitHub authentication token. If not provided, the tool will try to use the GITHUB_TOKEN environment variable.</param>
         /// <param name="useGitTokenForClone">Set to true if you trying to update private GitHub repository. Default is false.</param>
@@ -59,6 +60,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string branchToPr = "main",
             string gitHubUser = "nfbot",
             string gitHubEmail = "nanoframework@outlook.com",
+            string nugetConfig = null,
             string repoOwner = null,
             string gitHubAuth = null,
             bool useGitTokenForClone = false,
@@ -167,6 +169,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     stablePackages,
                     previewPackages,
                     branchToPr,
+                    nugetConfig,
                     repoOwner,
                     gitRepo.Item2,
                     args);
@@ -257,6 +260,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         stablePackages,
                         previewPackages,
                         branchToPr,
+                        nugetConfig,
                         repoOwner,
                         gitRepoInternal.Item2,
                         sln);
@@ -375,6 +379,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         bool stablePackages,
                         bool previewPackages,
                         string branchToPr,
+                        string nugetConfig,
                         string repoOwner,
                         string gitRepo,
                         string[] solutionsToCheck)
@@ -399,6 +404,25 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine($"ERROR: couldn't determine repository name.");
                 Environment.Exit(1);
+            }
+
+            // deal with NuGet.Config
+            if (nugetConfig is not null)
+            {
+                // check if file exists
+                if (File.Exists(nugetConfig))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"INFO: working with '{nugetConfig}'");
+
+                    // compose option for nuget CLI 
+                    _nuGetConfigFile = $" -ConfigFile {nugetConfig}";
+                }
+                else
+                {
+                    Console.WriteLine($"INFO: couldn't find :{nugetConfig}");
+                    Environment.Exit(1);
+                }
             }
 
             var libraryName = GitHubHelper.GetLibNameFromRegexMatch(repoName);
@@ -450,24 +474,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     Console.WriteLine("");
                 }
-            }
-
-            // find NuGet.Config
-            var nugetConfig = Directory.GetFiles(workingDirectory, "NuGet.Config",
-                    new EnumerationOptions()
-                    { MatchCasing = MatchCasing.CaseInsensitive, RecurseSubdirectories = false })
-                .FirstOrDefault();
-            if (nugetConfig is not null)
-            {
-                Console.WriteLine();
-                Console.WriteLine($"INFO: working with '{nugetConfig}'");
-
-                // compose option for nuget CLI 
-                _nuGetConfigFile = $" -ConfigFile {nugetConfig}";
-            }
-            else
-            {
-                Console.WriteLine("INFO: couldn't find a nuget.config");
             }
 
             // go through each solution (filter out the ones in the exclusion list)
@@ -659,8 +665,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 string unitsNetPackageInfo = "";
                                 if (!RunNugetCLI(
                                     "search",
-                                    $" {packageName} -Verbosity quiet -Source \"https://api.nuget.org/v3/index.json\"",
-                                    false,
+                                    $" {packageName} -Verbosity quiet ",
                                     ref unitsNetPackageInfo))
                                 {
                                     Environment.Exit(1);
@@ -686,7 +691,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                             if (!RunNugetCLI(
                                 "update",
                                 updateParameters,
-                                true,
                                 ref updateResult))
                             {
                                 Environment.Exit(1);
@@ -970,7 +974,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             if (!RunNugetCLI(
                 "update",
                 $"\"{projectToUpdate}\" {repositoryPath} -FileConflictAction Overwrite",
-                true,
                 ref updateResult))
             {
                 Environment.Exit(1);
@@ -1054,7 +1057,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static bool ShouldAppendDefaultSourcesToNuGetCommand(bool useNuGetConfig, string arguments)
         {
             // If we are using nugetconfig file and the file was found, we do not want to override it
-            if (useNuGetConfig && !string.IsNullOrEmpty(_nuGetConfigFile))
+            if (!string.IsNullOrEmpty(_nuGetConfigFile))
             {
                 return false;
             }
@@ -1075,24 +1078,21 @@ namespace nanoFramework.Tools.DependencyUpdater
             return RunNugetCLI(
                 command,
                 arguments,
-                true,
                 ref dummy);
         }
 
         private static bool RunNugetCLI(
             string command,
             string arguments,
-            bool useNugetConfig,
             ref string output)
         {
-            if (ShouldAppendDefaultSourcesToNuGetCommand(useNugetConfig, arguments))
+            if (ShouldAppendDefaultSourcesToNuGetCommand(_nuGetConfigFile is not null, arguments))
             {
                 arguments += " -Source \"https://api.nuget.org/v3/index.json\"";
-                arguments += " -Source \"https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json\"";
             }
 
             var cmd = Cli.Wrap(Path.Combine(AppContext.BaseDirectory, "NuGet.exe"))
-                .WithArguments($" {command} {arguments} {(useNugetConfig ? _nuGetConfigFile : null)}")
+                .WithArguments($" {command} {arguments} {(_nuGetConfigFile is not null ? _nuGetConfigFile : null)}")
                 .WithValidation(CommandResultValidation.None);
 
             // setup cancellation token with a timeout of 2 minutes
