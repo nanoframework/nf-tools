@@ -947,7 +947,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 return Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories).ToList();
             }
 
-            if (solutionsToCheck.Length == 1 & solutionsToCheck[0] == "*.sln")
+            if (solutionsToCheck.Length == 1
+                && solutionsToCheck[0] == "*.sln")
             {
                 return Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories).ToList();
             }
