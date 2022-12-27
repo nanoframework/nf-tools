@@ -997,6 +997,13 @@ namespace nanoFramework.Tools.GitHub
                     return StartReleaseResult.Failed;
                 }
             }
+            else if (command.EndsWith("closeupdateprs"))
+            {
+                // add thumbs up reaction to comment to flag start
+                await _octokitClient.Reaction.IssueComment.Create((long)payload.repository.id, (int)payload.comment.id, new NewReaction(ReactionType.Plus1));
+
+                return await CloseUpdatePrsAsync(log);
+            }
 
             // unknown or invalid command
             return StartReleaseResult.Unknwon;
@@ -1190,6 +1197,58 @@ namespace nanoFramework.Tools.GitHub
                 if (result != 204)
                 {
                     failFlag = false;
+                }
+            }
+
+            if (failFlag)
+            {
+                return StartReleaseResult.Failed;
+            }
+            else
+            {
+                return StartReleaseResult.Started;
+            }
+        }
+
+        private static async Task<StartReleaseResult> CloseUpdatePrsAsync(ILogger log)
+        {
+            bool failFlag = false;
+
+            // get all repos for all libraries
+            var allRepos = await _octokitClient.Repository.GetAllForOrg(_gitOwner);
+
+            // filter out:
+            // samples, ST packages, ChibiOS, 
+            var reposToProcess = allRepos.Where(r => r.Name.StartsWith("nanoFramework.")
+                                                     || r.Name.StartsWith("System.")
+                                                     || r.Name.StartsWith("Windows."));
+
+            foreach (var repo in reposToProcess)
+            {
+                try
+                {
+                    // get open PRs
+                    var openPRs = await _octokitClient.PullRequest.GetAllForRepository(_gitOwner, repo.Name, new PullRequestRequest() { State = ItemStateFilter.Open });
+
+                    var updatePRs = openPRs.Where(pr => pr.Labels.Any(l => l.Name == _labelTypeDependenciesName) && pr.Body.Contains(_tagVersionUpdate));
+
+                    if (updatePRs.Any())
+                    {
+                        var prNumber = updatePRs.First().Number;
+
+                        _ = await _octokitClient.PullRequest.Update(
+                                      _gitOwner,
+                                      repo.Name,
+                                      prNumber,
+                                      new PullRequestUpdate() { State = ItemState.Closed });
+                    }
+                }
+                catch
+                {
+                    // something went wrong!
+                    log.LogError($"Error when trying to delete update PRs in {repo.Name}");
+
+                    failFlag = true;
                 }
             }
 
