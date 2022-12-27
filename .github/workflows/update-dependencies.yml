@@ -38,6 +38,7 @@ jobs:
 
     env:
       GITHUB_TOKEN: ${{ github.token }}
+      GITHUB_AUTH_TOKEN: ${{ secrets.NANOBUILD_PAT }}
 
     steps:
       - name: Checkout
