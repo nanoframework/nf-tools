@@ -31,6 +31,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
+      - uses: nanoframework/nanobuild@v1
+        name: Install .NET nanoFramework build components
+        env:
+          GITHUB_AUTH_TOKEN: ${{ secrets.githubAuth }}
+
       - uses: nuget/setup-nuget@v1
         with:
           nuget-version: '>=6.2'
