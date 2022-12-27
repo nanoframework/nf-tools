@@ -39,6 +39,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ github.token }}
       GITHUB_AUTH_TOKEN: ${{ secrets.NANOBUILD_PAT }}
+      GITHUB_AUTH: ${{ secrets.NFBOT_GITHUB_ACTIONS }}
 
     steps:
       - name: Checkout
@@ -65,4 +66,4 @@ jobs:
           workingDirectory: '${{ github.workspace }}/${{ inputs.workingDirectory }}'
           exclusionList: ${{ inputs.exclusionList }}
           branchToPr: ${{ inputs.branchToPr }}
-          githubAuth: ${{ secrets.githubAuth }}
+          githubAuth: ${{ env.GITHUB_AUTH }}
