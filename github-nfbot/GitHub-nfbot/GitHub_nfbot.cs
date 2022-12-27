@@ -982,8 +982,8 @@ namespace nanoFramework.Tools.GitHub
                 }
                 else
                 {
-                    // set to default branch name: 'develop'
-                    branchName = "develop";
+                    // set to default branch name: 'main'
+                    branchName = "main";
                 }
 
                 try
