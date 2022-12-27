@@ -54,6 +54,9 @@ steps:
               $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $requestUrl -Header $headers -ContentType "application/json" -Body $requestContent
               'Fire GitHub Action to update dependencies...' | Write-Host -NoNewline
               'OK' | Write-Host -ForegroundColor Green
+
+              # give some slack for the next action to start the decrease the likelihood of hitting the GitHub API rate limit
+              Start-Sleep -Seconds (63)
           }
           catch 
           {
