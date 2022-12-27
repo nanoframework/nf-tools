@@ -114,6 +114,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             _gitHubUser = gitHubUser;
+            _baseBranch = branchToPr;
+
             _runningEnvironment = GetRunningEnvironment();
             Console.WriteLine($"Running on {_runningEnvironment.ToString()} environment");
             Console.WriteLine($"Branch to submit PR: {branchToPr}");
