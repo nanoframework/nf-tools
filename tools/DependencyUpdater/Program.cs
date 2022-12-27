@@ -924,7 +924,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 if (!RunGitCli($"checkout {_baseBranch}", workingDirectory))
                 {
                     Console.WriteLine($"ERROR: ⚠️ failed to checkout '{_baseBranch}' when deleting '{branchToPr}'! Need to delete branch manually.");
-                    Environment.Exit(1);
                 }
 
                 // delete branch with "force"
@@ -932,7 +931,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 if (!RunGitCli($"branch -D {newBranchName}", workingDirectory))
                 {
                     Console.WriteLine($"ERROR: ⚠️ failed to delete '{newBranchName}'! Need to delete branch manually.");
-                    Environment.Exit(1);
                 }
             }
         }
