@@ -20,7 +20,7 @@ parameters:
     default: dummy-key
   - name: nugetConfigPath
     type: string
-    default: NuGet.config
+    default: ''
   - name: msbuildExtraParams
     type: string
     default: ' '
@@ -94,10 +94,13 @@ steps:
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: NuGet restore
-  retryCountOnTaskFailure: 10
+  retryCountOnTaskFailure: 5
   inputs:
-    restoreSolution: '$(solution)'
-    feedsToUse: config
+    restoreSolution: '**/*.sln'
+    ${{ if eq(parameters.nugetConfigPath, '') }}:
+      feedsToUse: select
+    ${{ else }}:
+      feedsToUse: config
     nugetConfigPath: ${{ parameters.nugetConfigPath }}
 
 - template: versions-check.yml

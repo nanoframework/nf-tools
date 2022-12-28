@@ -20,7 +20,7 @@ parameters:
     default: dummy-key
   - name: nugetConfigPath
     type: string
-    default: NuGet.config
+    default: ''
   - name: runUnitTests
     type: boolean
     default: false
@@ -91,10 +91,13 @@ steps:
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: NuGet restore
-  retryCountOnTaskFailure: 10
+  retryCountOnTaskFailure: 5
   inputs:
     restoreSolution: '**/*.sln'
-    feedsToUse: config
+    ${{ if eq(parameters.nugetConfigPath, '') }}:
+      feedsToUse: select
+    ${{ else }}:
+      feedsToUse: config
     nugetConfigPath: ${{ parameters.nugetConfigPath }}
 
 - template: versions-check.yml
