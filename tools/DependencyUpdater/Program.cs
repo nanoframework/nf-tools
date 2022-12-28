@@ -1092,6 +1092,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             string arguments,
             ref string output)
         {
+            bool retry = true;
+
             if (ShouldAppendDefaultSourcesToNuGetCommand(_nuGetConfigFile is not null, arguments))
             {
                 arguments += " -Source \"https://api.nuget.org/v3/index.json\"";
@@ -1105,21 +1107,42 @@ namespace nanoFramework.Tools.DependencyUpdater
             using var cts = new CancellationTokenSource();
             cts.CancelAfter(TimeSpan.FromMinutes(2));
 
-            var cliResult = cmd.ExecuteBufferedAsync(cts.Token).GetAwaiter().GetResult();
+        execute:
 
-            if (cliResult.ExitCode == 0)
+            try
             {
-                // grab output, if required
-                if (output is not null)
+                var cliResult = cmd.ExecuteBufferedAsync(cts.Token).GetAwaiter().GetResult();
+
+                if (cliResult.ExitCode == 0)
                 {
-                    output = cliResult.StandardOutput;
+                    // grab output, if required
+                    if (output is not null)
+                    {
+                        output = cliResult.StandardOutput;
+                    }
+
+                    return true;
                 }
 
-                return true;
+                Console.WriteLine($"ERROR: nuget CLI exited with code {cliResult.ExitCode}");
+                Console.WriteLine($"{cliResult.StandardError}");
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: exception on 1st attempt to run nuget CLI {ex}");
 
-            Console.WriteLine($"ERROR: nuget CLI exited with code {cliResult.ExitCode}");
-            Console.WriteLine($"{cliResult.StandardError}");
+                if (retry)
+                {
+                    // lower flag
+                    retry = false;
+
+                    // wait a sec here
+                    Thread.Sleep(1000);
+
+                    // try again
+                    goto execute;
+                }
+            }
 
             return false;
         }
@@ -1141,6 +1164,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             ref string output,
             string workingDirectory)
         {
+            bool retry = true;
+
             var cmd = Cli.Wrap("git")
                 .WithArguments($"{arguments}")
                 .WithWorkingDirectory(workingDirectory)
@@ -1150,21 +1175,43 @@ namespace nanoFramework.Tools.DependencyUpdater
             using var cts = new CancellationTokenSource();
             cts.CancelAfter(TimeSpan.FromMinutes(2));
 
-            var cliResult = cmd.ExecuteBufferedAsync(cts.Token).GetAwaiter().GetResult();
+        execute:
 
-            if (cliResult.ExitCode == 0)
+            try
             {
-                // grab output, if required
-                if (output is not null)
+                var cliResult = cmd.ExecuteBufferedAsync(cts.Token).GetAwaiter().GetResult();
+
+                if (cliResult.ExitCode == 0)
                 {
-                    output = cliResult.StandardOutput;
+                    // grab output, if required
+                    if (output is not null)
+                    {
+                        output = cliResult.StandardOutput;
+                    }
+
+                    return true;
                 }
 
-                return true;
+                Console.WriteLine($"ERROR: git CLI exited with code {cliResult.ExitCode}");
+                Console.WriteLine($"{cliResult.StandardError}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: exception on 1st attempt to run nuget CLI {ex}");
+
+                if (retry)
+                {
+                    // lower flag
+                    retry = false;
+
+                    // wait a sec here
+                    Thread.Sleep(1000);
+
+                    // try again
+                    goto execute;
+                }
             }
 
-            Console.WriteLine($"ERROR: git CLI exited with code {cliResult.ExitCode}");
-            Console.WriteLine($"{cliResult.StandardError}");
             return false;
         }
 
