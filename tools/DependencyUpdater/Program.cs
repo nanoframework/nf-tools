@@ -1060,7 +1060,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             return PrCreationOutcome.Success;
         }
 
-        private static bool ShouldAppendDefaultSourcesToNuGetCommand(bool useNuGetConfig, string arguments)
+        private static bool ShouldAppendDefaultSourcesToNuGetCommand(string arguments)
         {
             // If we are using nugetconfig file and the file was found, we do not want to override it
             if (!string.IsNullOrEmpty(_nuGetConfigFile))
@@ -1094,7 +1094,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         {
             bool retry = true;
 
-            if (ShouldAppendDefaultSourcesToNuGetCommand(_nuGetConfigFile is not null, arguments))
+            if (ShouldAppendDefaultSourcesToNuGetCommand(arguments))
             {
                 arguments += " -Source \"https://api.nuget.org/v3/index.json\"";
             }
