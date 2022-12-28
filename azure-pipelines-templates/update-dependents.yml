@@ -5,6 +5,9 @@ parameters:
   - name: repositoriesToUpdate
     type: string
     default: ''
+  - name: waitBeforeUpdate
+    type: boolean
+    default: false
 
 steps:
 - task: PowerShell@2
@@ -22,9 +25,18 @@ steps:
   env:
     REPOS_TO_UPDATE: ${{ parameters.repositoriesToUpdate }}
     GITHUB_TOKEN: $(GitHubToken)
+    WAIT_BEFORE_UPDATE: ${{ parameters.waitBeforeUpdate }}
   inputs:
     targetType: 'inline'
     script: |
+
+      if ($env:WAIT_BEFORE_UPDATE -eq "true")
+      {
+          # wait 15 minutes to allow nuget package to go through validation and indexing
+          'Waiting 15 minutes to allow package indexing...' | Write-Host -ForegroundColor Yellow
+
+          Start-Sleep -Seconds (15 * 60)
+      }
 
       $librariesToUpdate = $env:REPOS_TO_UPDATE.Split([environment]::NewLine)
     
