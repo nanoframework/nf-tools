@@ -47,7 +47,7 @@ steps:
 
           "" | Write-Host
           "*******************************" | Write-Host
-          "Firing update for '$library'" | Write-Host
+          "Updating '$library'" | Write-Host
 
           $requestContent = @{event_type="update-dependencies"} | ConvertTo-Json
           $requestUrl = "https://api.github.com/repos/nanoframework/$library/dispatches"
@@ -64,7 +64,7 @@ steps:
           try 
           {
               $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $requestUrl -Header $headers -ContentType "application/json" -Body $requestContent
-              'Fire GitHub Action to update dependencies...' | Write-Host -NoNewline
+              'Triggering GitHub Action to update dependencies...' | Write-Host -NoNewline
               'OK' | Write-Host -ForegroundColor Green
 
               # give some slack for the next action to start the decrease the likelihood of hitting the GitHub API rate limit
