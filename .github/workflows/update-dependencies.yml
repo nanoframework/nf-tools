@@ -69,4 +69,5 @@ jobs:
           workingDirectory: '${{ github.workspace }}/${{ inputs.workingDirectory }}'
           exclusionList: ${{ inputs.exclusionList }}
           branchToPr: ${{ inputs.branchToPr }}
+          nugetConfig: '${{ inputs.nugetConfig }}'
           githubAuth: ${{ env.GITHUB_AUTH }}
