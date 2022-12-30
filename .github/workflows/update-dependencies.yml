@@ -18,6 +18,9 @@ on:
       branchToPr:
         required: false
         type: string
+      nugetConfig:
+        required: false
+        type: string
       timeout-minutes:
         required: false
         default: 15
