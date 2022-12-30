@@ -412,7 +412,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             if (nugetConfig is not null)
             {
                 // check if file exists
-                if (File.Exists(nugetConfig))
+                if (File.Exists(nugetConfig)
+                    || File.Exists(Path.Combine(workingDirectory, nugetConfig)))
                 {
                     Console.WriteLine();
                     Console.WriteLine($"INFO: working with '{nugetConfig}'");
