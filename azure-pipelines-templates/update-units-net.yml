@@ -50,7 +50,7 @@ steps:
 
       cd CodeGen > $null
 
-      dotnet run --update-nano-framework-dependencies --skip-wrc
+      dotnet run --update-nano-framework-dependencies --verbose
 
       # check if anything was changed
       $repoStatus = "$(git status --short --porcelain)"
