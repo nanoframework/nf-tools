@@ -676,6 +676,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 if (!RunNugetCLI(
                                     "search",
                                     $" {packageName} -Verbosity quiet ",
+                                    false,
                                     ref unitsNetPackageInfo))
                                 {
                                     Environment.Exit(1);
@@ -701,6 +702,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             if (!RunNugetCLI(
                                 "update",
                                 updateParameters,
+                                true,
                                 ref updateResult))
                             {
                                 Environment.Exit(1);
@@ -988,6 +990,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             if (!RunNugetCLI(
                 "update",
                 $"\"{projectToUpdate}\" {repositoryPath} -FileConflictAction Overwrite",
+                true,
                 ref updateResult))
             {
                 Environment.Exit(1);
@@ -1092,12 +1095,14 @@ namespace nanoFramework.Tools.DependencyUpdater
             return RunNugetCLI(
                 command,
                 arguments,
+                true,
                 ref dummy);
         }
 
         private static bool RunNugetCLI(
             string command,
             string arguments,
+            bool useNugetConfig,
             ref string output)
         {
             bool retry = true;
@@ -1108,7 +1113,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             var cmd = Cli.Wrap(Path.Combine(AppContext.BaseDirectory, "NuGet.exe"))
-                .WithArguments($" {command} {arguments} {(_nuGetConfigFile is not null ? _nuGetConfigFile : null)}")
+                .WithArguments($" {command} {arguments} {(useNugetConfig && _nuGetConfigFile is not null ? _nuGetConfigFile : null)}")
                 .WithValidation(CommandResultValidation.None);
 
             // setup cancellation token with a timeout of 2 minutes
