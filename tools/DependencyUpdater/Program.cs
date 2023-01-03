@@ -675,7 +675,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 string unitsNetPackageInfo = "";
                                 if (!RunNugetCLI(
                                     "search",
-                                    $" {packageName} -Verbosity quiet ",
+                                    $" {packageName} -PreRelease -Verbosity quiet ",
                                     false,
                                     ref unitsNetPackageInfo))
                                 {
