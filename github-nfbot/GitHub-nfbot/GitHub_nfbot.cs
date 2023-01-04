@@ -89,6 +89,8 @@ namespace nanoFramework.Tools.GitHub
         private const string _labelInvalidName = "invalid";
         private const string _labelUpForGrabs = "up-for-grabs";
 
+        // this is the TOPIC that has to exist on repositories for nano tools
+        private const string _topicNanoTool = "i-am-a-nano-tool";
 
         private const string _tagVersionUpdate = "[version update]";
 
@@ -634,21 +636,35 @@ namespace nanoFramework.Tools.GitHub
                                             || isVersionUpdate)
                                         {
                                             // this is a dependencies/version update PR
+                                            var repo = await _octokitClient.Repository.Get(matchingPr.Head.Repository.Id);
 
-                                            // get files changed in this PR
-                                            IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
-
-                                            // check if nuspec was changed (reason to publish a new release)
-                                            // otherwise skip as they are either in the Test or Benchmark or development dependencies
-                                            var nuspecWasChanged = prFiles.Any(f => f.FileName.EndsWith(".nuspec"));
-
-                                            if (!nuspecWasChanged)
+                                            if (repo.Topics.Contains(_topicNanoTool))
                                             {
-                                                // DON'T publish a new release
-                                                publishReleaseFlag = false;
+                                                // this PR belongs to a tool repository
+                                                // nothing to do here
+                                                log.LogInformation($"PR belongs to nano tool, no more processing required.");
+                                            }
+                                            else
+                                            {
+                                                // !! for libraries only!!
 
-                                                // skip build
-                                                skipCIBuild = true;
+                                                // get files changed in this PR
+                                                IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
+
+                                                // check if nuspec was changed (reason to publish a new release)
+                                                // otherwise skip as they are either in the Test or Benchmark or development dependencies
+                                                var nuspecWasChanged = prFiles.Any(f => f.FileName.EndsWith(".nuspec"));
+
+                                                if (!nuspecWasChanged)
+                                                {
+                                                    log.LogInformation($"nuspec wasn't changed skipping CI build.");
+
+                                                    // DON'T publish a new release
+                                                    publishReleaseFlag = false;
+
+                                                    // skip build
+                                                    skipCIBuild = true;
+                                                }
                                             }
                                         }
 
