@@ -650,6 +650,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                         Console.WriteLine();
                         Console.WriteLine();
 
+                        // are UnitsNet being referenced?
+                        var unitsNetPresent = packageList.Any(pkg => pkg.PackageIdentity.Id.StartsWith("UnitsNet."));
+
                         // check all packages
                         foreach (PackageReference package in packageList)
                         {
@@ -668,6 +671,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // don't allow prerelease for release, main branches and UnitsNet packages
                                 // go with our Azure feed
                                 updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -FileConflictAction Overwrite";
+
+                                ///////////////////////////////////////////////////////
+                                // REMOVE AFTER UnitsNet are back to stable releases //
+                                // temporary hack to allow updating UnitsNet with preview versions
+                                updateParameters = updateParameters + (unitsNetPresent && !packageName.StartsWith("Nerdbank.GitVersioning") ? " -PreRelease" : "");
+                                ///////////////////////////////////////////////////////
                             }
                             else if (packageName.StartsWith("UnitsNet."))
                             {
@@ -675,7 +684,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 string unitsNetPackageInfo = "";
                                 if (!RunNugetCLI(
                                     "search",
+                                    ///////////////////////////////////////////////////////////////////
+                                    // REMOVE -PreRelease AFTER UnitsNet are back to stable releases //
                                     $" {packageName} -PreRelease -Verbosity quiet ",
+                                    ///////////////////////////////////////////////////////////////////
                                     false,
                                     ref unitsNetPackageInfo))
                                 {
