@@ -21,6 +21,9 @@ on:
       nugetConfig:
         required: false
         type: string
+      repoOwner:
+        required: false
+        type: string
       timeout-minutes:
         required: false
         default: 15
@@ -47,6 +50,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          path: '${{ github.workspace }}/${{ inputs.workingDirectory }}'
+          ref: ${{ inputs.branchToPr }}
 
       - uses: actions/cache@v3
         with:
@@ -71,3 +77,4 @@ jobs:
           branchToPr: ${{ inputs.branchToPr }}
           nugetConfig: '${{ inputs.nugetConfig }}'
           githubAuth: ${{ env.GITHUB_AUTH }}
+          repoOwner: ${{ inputs.repoOwner }}
