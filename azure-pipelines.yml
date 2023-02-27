@@ -107,15 +107,14 @@ jobs:
 
   - template: azure-pipelines-templates/install-nuget.yml
 
-  - task: DotNetCoreCLI@2
+  - task: NuGetCommand@2
     displayName: Restore NuGet packages
     condition: succeeded()
+    retryCountOnTaskFailure: 5
     inputs:
-      command: restore
-      verbosityRestore: minimal
-      projects: $(System.DefaultWorkingDirectory)/tools/VersionCop/nanoFramework.VersionCop.sln
-      feedsToUse: config
-      nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/VersionCop/NuGet.Config
+      restoreSolution: $(System.DefaultWorkingDirectory)/tools/VersionCop/nanoFramework.VersionCop.sln
+      feedsToUse: select
+      includeNuGetOrg: true
 
   - script: dotnet build nanoFramework.VersionCop.sln -c Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
     displayName: Build NuGet package
@@ -184,18 +183,22 @@ jobs:
       ArtifactName: deployables
       ArtifactType: Container
 
-  # push NuGet packages to Azure Artifacts feed
+  # push NuGet packages to NuGet
   - task: NuGetCommand@2
-    displayName: Push NuGet packages to Azure Artifacts
-    condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], '') )
+    displayName: Push NuGet packages to NuGet
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['System.PullRequest.PullRequestId'], '')
+      )
     continueOnError: true
     inputs:
       command: push
-      nuGetFeedType: internal
+      nuGetFeedType: external
       packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-      publishVstsFeed: feed/sandbox
       allowPackageConflicts: true
       includeSymbols: true
+      publishFeedCredentials: 'NuGet-$(System.TeamProject)'
 
 ##############
 - job: Build_DependencyUpdater
@@ -220,15 +223,14 @@ jobs:
 
   - template: azure-pipelines-templates/install-nuget.yml
 
-  - task: DotNetCoreCLI@2
+  - task: NuGetCommand@2
     displayName: Restore NuGet packages
     condition: succeeded()
+    retryCountOnTaskFailure: 5
     inputs:
-      command: restore
-      verbosityRestore: minimal
-      projects: $(System.DefaultWorkingDirectory)/tools/DependencyUpdater/DependencyUpdater.sln
-      feedsToUse: config
-      nugetConfigPath: $(System.DefaultWorkingDirectory)/tools/DependencyUpdater/NuGet.Config
+      restoreSolution: $(System.DefaultWorkingDirectory)/tools/DependencyUpdater/DependencyUpdater.sln
+      feedsToUse: select
+      includeNuGetOrg: true
 
   - script: dotnet build DependencyUpdater.sln -c Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
     displayName: Build NuGet package
@@ -323,18 +325,21 @@ jobs:
       ArtifactName: deployables
       ArtifactType: Container
 
-  # push NuGet packages to Azure Artifacts feed
+  # push NuGet packages to NuGet
   - task: NuGetCommand@2
-    displayName: Push NuGet packages to Azure Artifacts
-    condition: and( succeeded(), eq(variables['System.PullRequest.PullRequestId'], '') )
+    displayName: Push NuGet packages to NuGet
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['System.PullRequest.PullRequestId'], '')
+      )
     continueOnError: true
     inputs:
       command: push
-      nuGetFeedType: internal
+      nuGetFeedType: external
       packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-      publishVstsFeed: feed/sandbox
-      allowPackageConflicts: true
       includeSymbols: true
+      publishFeedCredentials: 'NuGet-$(System.TeamProject)'
 
 ##################################
 # report build failure to Discord
