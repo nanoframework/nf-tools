@@ -6,7 +6,7 @@ steps:
 # get commit message
 - powershell: |
 
-    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
+    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)")))"
 
 
     if($env:System_PullRequest_PullRequestId -ne $null)

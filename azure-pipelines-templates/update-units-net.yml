@@ -37,7 +37,8 @@ steps:
       git config --global user.email "nfbot"
       git config --global user.name "nanoframework@outlook.com"
 
-      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$env:GITHUB_TOKEN"))))"
+      # compute authorization header in format "AUTHORIZATION: Bearer <YOUR-TOKEN>"
+      $auth = "Bearer $(GitHubToken)"
 
       # new branch name
       $newBranch = "nfbot/nano-update/"+[guid]::NewGuid().ToString()

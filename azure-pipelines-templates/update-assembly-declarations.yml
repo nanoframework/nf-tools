@@ -22,7 +22,7 @@ steps:
     $assemblyChecksum  = $assemblyChecksum -replace "," , ""
     $assemblyChecksum  = $assemblyChecksum -replace "    " , ""
 
-    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$(GitHubToken)"))))"
+    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$(GitHubToken)")))"
 
     mkdir nf-interpreter > $null
     cd nf-interpreter > $null
@@ -84,7 +84,7 @@ steps:
       git add "**/$nativeFile"
       git commit -m"$commitMessage ***NO_CI***" -m"[version update]"
 
-      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
+      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)")))"
       
       git -c http.extraheader="AUTHORIZATION: $auth" push --set-upstream origin $env:NEW_BRANCH_NAME
     }
@@ -97,7 +97,7 @@ steps:
 
     $prRequestBody = @{title="$env:COMMIT_MESSAGE";body="$env:COMMIT_MESSAGE`n`nStarted from $env:Build_Repository_Uri/commit/$env:Build_SourceVersion`n`n[version update]";head="$env:NEW_BRANCH_NAME";base="main"} | ConvertTo-Json
 
-    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)"))))"
+    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)")))"
 
     # start PR
     $githubApiEndpoint = "https://api.github.com/repos/nanoframework/nf-interpreter/pulls"
