@@ -572,6 +572,14 @@ namespace nanoFramework.Tools.GitHub
                     p.Head.Sha == prSha);
                 }
 
+                // DEBUG helper
+#if DEBUG
+                matchingPr = await _octokitClient.PullRequest.Get(
+                    _gitOwner,
+                    payload.repository.name.ToString(),
+                    764);
+#endif
+
                 if (matchingPr != null)
                 {
                     // get PR
@@ -593,31 +601,26 @@ namespace nanoFramework.Tools.GitHub
                         // get status checks for PR
                         CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
 
-                        // check if ALL check runs are in place
-                        int requiredStatusChecks = statusChecks.Contexts.Where(c => !c.Contains("license/cla")).Count();
-
-                        if (checkRunStatus.TotalCount >= requiredStatusChecks)
+                        if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion.Value != CheckConclusion.Success))
                         {
-                            int checksCount = 0;
-
-                            foreach (var statusCheck in statusChecks.Contexts)
+                            // all check runs are successful
+                            if (checkRunStatus.TotalCount == statusChecks.Contexts.Count)
                             {
-                                if (checkRunStatus.CheckRuns.Any(c => c.Name == statusCheck))
+                                int checksCount = 0;
+
+                                foreach (var statusCheck in statusChecks.Contexts)
                                 {
-                                    checksCount++;
-                                }
-                                else
-                                {
-                                    if (statusCheck != "license/cla")
+                                    if (checkRunStatus.CheckRuns.Any(c => c.Name == statusCheck))
+                                    {
+                                        checksCount++;
+                                    }
+                                    else
                                     {
                                         log.LogInformation($"Status check {statusCheck} not reported as successful");
                                     }
                                 }
-                            }
 
-                            if (checksCount >= requiredStatusChecks)
-                            {
-                                if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion != CheckConclusion.Success))
+                                if (checksCount >= statusChecks.Contexts.Count)
                                 {
                                     // get labels for this PR
                                     List<Label> prLabels = (List<Label>)pr.Labels;
@@ -690,30 +693,48 @@ namespace nanoFramework.Tools.GitHub
 
                                     // all checks completed successfully
                                     // merge PR, unless labeled with DON'T MERGE
-                                    if (!prLabels.Any(l => l.Name.ToString() == _labelDontMergeName))
+                                    if (prLabels.Any(l => l.Name.ToString() == _labelDontMergeName))
                                     {
-                                        // SQUASH if it's a regular PR
-                                        // MERGE if it's a release candidate merge
-                                        await MergePrWithStrategy(
-                                        pr,
-                                        skipCIBuild,
-                                        log,
-                                        isReleaseCandidate ? PullRequestMergeMethod.Merge : PullRequestMergeMethod.Squash);
+                                        log.LogInformation("NOT merging PR because it's labeled with DON'T MERGE.");
                                     }
+                                    else
+                                    {
+                                        // check if there is information about the mergeability of the PR
+                                        // and, if there is, if it can be merged
+                                        if (pr.Mergeable.HasValue && !pr.Mergeable.Value)
+                                        {
+                                            log.LogInformation($"PR can't be merged: {pr.MergeableState}");
+                                        }
+                                        else
+                                        {
+                                            // SQUASH if it's a regular PR
+                                            // MERGE if it's a release candidate merge
+                                            await MergePrWithStrategy(
+                                                pr,
+                                                skipCIBuild,
+                                                log,
+                                                isReleaseCandidate ? PullRequestMergeMethod.Merge : PullRequestMergeMethod.Squash);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    // not all required status check are missing, quit
+                                    log.LogInformation($"Check runs still missing, no point checking any further...");
                                 }
                             }
                             else
                             {
-                                // not all required status check are missing, quit
+                                // still some missing, quit
                                 log.LogInformation($"Check runs still missing, no point checking any further...");
                             }
                         }
                         else
                         {
-                            // still some missing, quit
-                            log.LogInformation($"Check runs still missing, no point checking any further...");
-                        }
+                            // some are not success, quit
+                            log.LogInformation("Some check runs are NOT success, no point checking any further...");
 
+                        }
                     }
                     else if (pr.Base.Ref.ToString().StartsWith("release-"))
                     {
