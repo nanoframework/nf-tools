@@ -813,7 +813,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     nuspecFile.Load(nuspecFileName);
 
                                     XmlNamespaceManager nsmgr = new XmlNamespaceManager(nuspecFile.NameTable);
-                                    nsmgr.AddNamespace("package", "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
+                                    nsmgr.AddNamespace("package", string.Empty);
 
                                     // update version, if this dependency is listed
                                     var dependency = nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr);
