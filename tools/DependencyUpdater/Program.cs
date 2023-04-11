@@ -851,7 +851,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine();
                 Console.WriteLine("INFO: No packages found to update...");
-                return;
             }
 
             // sanity check for no nuspecs found
@@ -859,6 +858,12 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine();
                 Console.WriteLine($"*** WARNING: No nuspecs files updated... Maybe worth checking ***");
+            }
+
+            if (updateCount == 0
+                && nuspecCounter == 0)
+            {
+                return;
             }
 
             Console.WriteLine();
