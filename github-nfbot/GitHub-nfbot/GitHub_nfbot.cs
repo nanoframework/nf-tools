@@ -604,7 +604,7 @@ namespace nanoFramework.Tools.GitHub
                         if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion.Value != CheckConclusion.Success))
                         {
                             // all check runs are successful
-                            if (checkRunStatus.TotalCount == statusChecks.Contexts.Count)
+                            if (checkRunStatus.TotalCount >= statusChecks.Contexts.Count)
                             {
                                 int checksCount = 0;
 
