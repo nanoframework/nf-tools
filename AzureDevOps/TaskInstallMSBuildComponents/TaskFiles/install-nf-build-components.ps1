@@ -83,6 +83,9 @@ else
    break
 }
 
+# Download VS extension
+DownloadVsixFile $extensionUrl $vsixPath
+
 # Unzip extension
 Write-Debug "Unzip VS extension content"
 Expand-Archive -LiteralPath $vsixPath -DestinationPath $tempDir\nf-extension\
