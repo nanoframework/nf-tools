@@ -65,19 +65,23 @@ Write-Output "Latest VS is: $VsInstance"
 # Get extension details according to VS version, starting from VS2022 down to VS2019
 if($vsInstance.Contains('2022'))
 {
-    $extensionUrl = "https://github.com/nanoframework/nf-Visual-Studio-extension/releases/download/$vs2022Tag/nanoFramework.Tools.VS2022.Extension.vsix"
+    # $extensionUrl = "https://github.com/nanoframework/nf-Visual-Studio-extension/releases/download/$vs2022Tag/nanoFramework.Tools.VS2022.Extension.vsix"
+    $extensionUrl = "https://github.com/nanoframework/nf-Visual-Studio-extension/releases/download/latest/nanoFramework.Tools.VS2022.Extension.vsix"
     $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
     $extensionVersion = $vs2022Tag
 }
 elseif($vsInstance.Contains('2019'))
 {
+    Write-Output "Using deprecated Visual Studio Version."
     $extensionUrl = "https://github.com/nanoframework/nf-Visual-Studio-extension/releases/download/$vs2019Tag/nanoFramework.Tools.VS2019.Extension.vsix"
     $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2019.Extension.zip"
     $extensionVersion = $vs2019Tag
 }
-
-# Download VS extension
-DownloadVsixFile $extensionUrl $vsixPath
+else
+{
+   Write-Output "Unsupported Visual Studio Version."
+   break
+}
 
 # Unzip extension
 Write-Debug "Unzip VS extension content"
