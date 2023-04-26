@@ -453,7 +453,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             // init/reset these
             int updateCount = 0;
-            int nuspecCounter = 0;
+            int nuspecUpdatedCounter = 0;
             StringBuilder commitMessage = new();
             string newBranchName = $"{_gitHubUser}/update-dependencies/{Guid.NewGuid().ToString()}";
 
@@ -830,6 +830,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                                         nuspecFile.Save(nuspecStreamWriter);
                                         nuspecStreamWriter.Flush();
                                         nuspecStreamWriter.Close();
+
+                                        // bump counter
+                                        nuspecUpdatedCounter++;
                                     }
                                     else
                                     {
@@ -837,8 +840,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                                         Console.WriteLine($"INFO: {packageName} not listed in '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
                                     }
 
-                                    // bump counters
-                                    nuspecCounter++;
                                 }
                             }
                         }
@@ -854,14 +855,18 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             // sanity check for no nuspecs found
-            if (nuspecCounter == 0)
+            if (nuspecUpdatedCounter == 0)
             {
                 Console.WriteLine();
-                Console.WriteLine($"*** WARNING: No nuspecs files updated... Maybe worth checking ***");
+
+                if (updateCount != 0)
+                {
+                    Console.WriteLine($"*** WARNING: No nuspecs files updated... Maybe worth checking ***");
+                }
             }
 
             if (updateCount == 0
-                && nuspecCounter == 0)
+                && nuspecUpdatedCounter == 0)
             {
                 return;
             }
