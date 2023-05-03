@@ -812,8 +812,23 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     var nuspecFile = new XmlDocument();
                                     nuspecFile.Load(nuspecFileName);
 
+                                    // Define a regular expression pattern to match the namespace declaration
+                                    string pattern = @"xmlns\s*=\s*""(?<namespace>.*?)""";
+
+                                    // Use Regex.Match to find the first match of the pattern in the nuspec content
+                                    Match namespaceMatch = Regex.Match(nuspecFile.InnerXml, pattern, RegexOptions.Singleline);
+
+                                    // default to empty namespace
+                                    string nuspecNamespace = string.Empty;
+
+                                    // if a match is found, extract the namespace value
+                                    if (namespaceMatch.Success)
+                                    {
+                                        nuspecNamespace = namespaceMatch.Groups["namespace"].Value;
+                                    }
+
                                     XmlNamespaceManager nsmgr = new XmlNamespaceManager(nuspecFile.NameTable);
-                                    nsmgr.AddNamespace("package", string.Empty);
+                                    nsmgr.AddNamespace("package", nuspecNamespace);
 
                                     // update version, if this dependency is listed
                                     var dependency = nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr);
