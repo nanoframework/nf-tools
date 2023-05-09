@@ -834,20 +834,23 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     var dependency = nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr);
                                     if (dependency is not null)
                                     {
-                                        dependency.Attributes["version"].Value = packageTargetVersion;
+                                        if (dependency.Attributes["version"].Value != packageTargetVersion)
+                                        {
+                                            dependency.Attributes["version"].Value = packageTargetVersion;
 
-                                        Console.WriteLine($"Updating nuspec: '{dependency.Attributes["id"].Value}' ---> {packageTargetVersion}");
+                                            Console.WriteLine($"Updating nuspec: '{dependency.Attributes["id"].Value}' ---> {packageTargetVersion}");
 
-                                        // save back changes
-                                        // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
-                                        // not being saved thus causing bogus updates on the nuspec content
-                                        using StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName);
-                                        nuspecFile.Save(nuspecStreamWriter);
-                                        nuspecStreamWriter.Flush();
-                                        nuspecStreamWriter.Close();
+                                            // save back changes
+                                            // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
+                                            // not being saved thus causing bogus updates on the nuspec content
+                                            using StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName);
+                                            nuspecFile.Save(nuspecStreamWriter);
+                                            nuspecStreamWriter.Flush();
+                                            nuspecStreamWriter.Close();
 
-                                        // bump counter
-                                        nuspecUpdatedCounter++;
+                                            // bump counter
+                                            nuspecUpdatedCounter++;
+                                        }
                                     }
                                     else
                                     {
