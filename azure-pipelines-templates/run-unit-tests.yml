@@ -1,0 +1,56 @@
+# Copyright (c) .NET Foundation and Contributors
+# Portions Copyright (c) Sankarsan Kampa (a.k.a. k3rn31p4nic).  All rights reserved.
+# See LICENSE file in the project root for full license information.
+
+parameters:
+  - name: skipInstall
+    type: boolean
+    default: false
+  - name: runUnitTests
+    type: boolean
+    default: true
+  - name: unitTestRunsettings
+    type: string
+    default: '$(System.DefaultWorkingDirectory)\nano.runsettings'
+
+steps:
+
+- task: VisualStudioTestPlatformInstaller@1
+  condition: >-
+    and(
+      not(${{ parameters.skipInstall }}),
+      succeeded(),
+      ${{ parameters.runUnitTests }},
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
+  displayName: 'Visual Studio Test Platform Installer'
+  inputs:
+    versionSelector: latestStable
+
+- task: VSTest@2
+  condition: >-
+    and(
+      succeeded(),
+      ${{ parameters.runUnitTests }},
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
+  displayName: 'Running Unit Tests'
+  continueOnError: false
+  inputs:
+    testSelector: 'testAssemblies'
+    testAssemblyVer2: |
+      **\NFUnitTest.dll
+      **\*Tests*.dll
+      !**\obj\**
+      !**\TestAdapter\**
+      !**\NFUnitTest_DummyAdapter\**
+      !**\nanoFramework.TestFramework\**
+    searchFolder: '$(System.DefaultWorkingDirectory)'
+    platform: '$(BuildPlatform)'
+    configuration: '$(BuildConfiguration)'
+    diagnosticsEnabled: true
+    vsTestVersion: toolsInstaller
+    codeCoverageEnabled: true
+    runSettingsFile: '${{ parameters.unitTestRunsettings }}'

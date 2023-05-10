@@ -117,44 +117,10 @@ steps:
     msbuildArchitecture: 'x64'
     maximumCpuCount: true
 
-- task: VisualStudioTestPlatformInstaller@1
-  condition: >-
-    and(
-      succeeded(),
-      ${{ parameters.runUnitTests }},
-      eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
-    )
-  displayName: 'Visual Studio Test Platform Installer'
-  inputs:
-    versionSelector: latestStable
-
-- task: VSTest@2
-  condition: >-
-    and(
-      succeeded(),
-      ${{ parameters.runUnitTests }},
-      eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
-    )
-  displayName: 'Running Unit Tests'
-  continueOnError: false
-  inputs:
-    testSelector: 'testAssemblies'
-    testAssemblyVer2: |
-      **\NFUnitTest.dll
-      **\*Tests*.dll
-      !**\obj\**
-      !**\TestAdapter\**
-      !**\NFUnitTest_DummyAdapter\**
-      !**\nanoFramework.TestFramework\**
-    searchFolder: '$(System.DefaultWorkingDirectory)'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
-    diagnosticsEnabled: true
-    vsTestVersion: toolsInstaller
-    codeCoverageEnabled: true
-    runSettingsFile: '${{ parameters.unitTestRunsettings }}'
+- template: run-unit-tests.yml
+  parameters:
+    runUnitTests: '${{ parameters.runUnitTests }}'
+    unitTestRunsettings: '${{ parameters.unitTestRunsettings }}'
 
 - task: PowerShell@2
   condition: >-
