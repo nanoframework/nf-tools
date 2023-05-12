@@ -15,6 +15,14 @@ parameters:
 
 steps:
 
+- task: DotNetCoreCLI@2
+  displayName: Update-Install nanoclr CLI
+  condition: succeeded()
+  inputs:
+    command: custom
+    custom: tool
+    arguments: update -g nanoclr
+
 - task: VisualStudioTestPlatformInstaller@1
   condition: >-
     and(
