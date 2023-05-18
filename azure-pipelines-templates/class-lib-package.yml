@@ -9,6 +9,22 @@ parameters:
 
 steps:
 
+- task: PowerShell@2
+  displayName: Check and fix Assembly Checksum
+  inputs:
+    targetType: 'inline'
+    script: |
+
+      if($null -eq $env:NF_NATIVE_ASSEMBLY_CHECKSUM)
+      {
+          Write-Host "No assembly checksum found, faking one..."
+          Write-Host "##vso[task.setvariable variable=NF_NATIVE_ASSEMBLY_CHECKSUM]0x00000000"
+      }
+      else
+      {
+          Write-Host "Assembly checksum found: $assemblyChecksum"
+      }
+
 - task: NuGetCommand@2
   condition: >-
     and(
