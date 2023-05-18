@@ -122,32 +122,7 @@ steps:
     runUnitTests: '${{ parameters.runUnitTests }}'
     unitTestRunsettings: '${{ parameters.unitTestRunsettings }}'
 
-- task: PowerShell@2
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
-    )
-  displayName: Get AssemblyNativeVersion version
-  inputs:
-    targetType: 'inline'
-    script: |
-
-      $assemblyInfoFiles = (Get-ChildItem -Path ".\*" -Include "AssemblyInfo.cs" -Recurse)
-
-      $attributeRegex = [regex]::new('("AssemblyNativeVersion\(")|(\d+\.\d+\.\d+\.\d+)|(""\))')
-
-      # read attribute from file
-      $fileContent = Get-Content($assemblyInfoFiles[0])
-
-      $attrib = $attributeRegex.Match($fileContent) 
-
-      $nativeVersion = $attrib.Groups[2].value
-
-      Write-Host "AssemblyNativeVersion is $nativeVersion"
-
-      Write-Host "$("##vso[task.setvariable variable=NF_ASSEMBLY_NATIVE_VERSION]")$nativeVersion"
+- template: get-assembly-native-version.yml
 
 - powershell: |
     # get subject and commit message for commit
