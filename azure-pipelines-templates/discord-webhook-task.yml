@@ -14,7 +14,7 @@ parameters:
     default: ''
   - name: workingDirectory
     type: string
-    default: ''
+    default: '$(Build.SourcesDirectory)'
 
 steps:
 - task: PowerShell@2
