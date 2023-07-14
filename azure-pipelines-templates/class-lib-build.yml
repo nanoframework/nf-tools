@@ -343,11 +343,11 @@ steps:
     )
 
 # publish artifacts (only possible if this is not a PR originated on a fork)
-- task: PublishBuildArtifacts@1
+- task: PublishPipelineArtifact@1
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: deployables
-    ArtifactType: Container
+    targetPath: '$(Build.ArtifactStagingDirectory)'
+    artifactName: deployables
+    artifactType: pipeline
   condition: >-
     and(
       succeeded(),
