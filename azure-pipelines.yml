@@ -175,13 +175,13 @@ jobs:
     condition: succeeded()
 
   # publish artifacts (only possible if this is not a PR originated on a fork)
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@1
     condition: succeeded()
     displayName: Publish deployables artifacts
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: deployables
-      ArtifactType: Container
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifactName: deployables
+      artifactType: pipeline
 
   # push NuGet packages to NuGet
   - task: NuGetCommand@2
@@ -317,13 +317,13 @@ jobs:
     condition: succeeded()
 
   # publish artifacts (only possible if this is not a PR originated on a fork)
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@1
     condition: succeeded()
     displayName: Publish deployables artifacts
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: deployables
-      ArtifactType: Container
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifactName: deployables
+      artifactType: pipeline
 
   # push NuGet packages to NuGet
   - task: NuGetCommand@2
