@@ -12,6 +12,9 @@ parameters:
   - name: unitTestRunsettings
     type: string
     default: '$(System.DefaultWorkingDirectory)\nano.runsettings'
+  - name: packagesDirectory
+    type: string
+    default: '$(Build.SourcesDirectory)/packages'
 
 steps:
 
@@ -31,7 +34,7 @@ steps:
         cd System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461
 
         Write-Host "$("##vso[task.setvariable variable=NBGV_Version]")0.0.0.$env:System_PullRequest_PullRequestNumber"
-      workingDirectory: '$(Build.SourcesDirectory)/packages'
+      workingDirectory: '${{ parameters.packagesDirectory }}'
   condition: eq(variables['system.pullrequest.isfork'], true)
   displayName: Install System.Runtime.CompilerServices.Unsafe
 
