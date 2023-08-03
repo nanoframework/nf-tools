@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Configuration Condition="'$(FLAVOR_WIN)'!=''">$(FLAVOR_WIN)</Configuration>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Platform>x86</Platform>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Microsoft.NetMicroFramework.Tools.MFProfilerTool</RootNamespace>
+    <ApplicationIcon>MFProfilerIcon.ico</ApplicationIcon>
+    <StartupObject>Microsoft.NetMicroFramework.Tools.MFProfilerTool.Program</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="nanoFramework.Tools.Debugger.Net" Version="2.4.34" />
+    <PackageReference Include="ReportViewerCore.NETCore" Version="15.1.17" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="CLRProfiler\DiffTreeListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="CLRProfiler\PlacedToolTip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="CLRProfiler\TreeListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="MFDeviceSelectorComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="MFTransportTypeComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
+</Project>
