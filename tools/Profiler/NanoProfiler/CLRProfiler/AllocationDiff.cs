@@ -189,8 +189,9 @@ namespace CLRProfiler
 		private GraphBase _currG = null;
 
 		// hold base stacktrace info
-		internal CallTreeForm _prevcallTrace = null;
-		internal CallTreeForm _currcallTrace = null;
+		// TODO
+		//internal CallTreeForm _prevcallTrace = null;
+		//internal CallTreeForm _currcallTrace = null;
 		internal DiffDataNode Root = null;
 		internal DataTable diffTracetbl = null;
 		private static int nodeidx = 0;
@@ -527,8 +528,9 @@ namespace CLRProfiler
 			{
 				GetLogData();
 		
-				BuildBaseData(_prevG, _prevcallTrace, _prevbasedata, this.prevFuncExcl, this.prevTypeExcl);
-				BuildBaseData(_currG, _currcallTrace, _currbasedata, this.currFuncExcl, this.currTypeExcl);
+				// TODO
+				//BuildBaseData(_prevG, _prevcallTrace, _prevbasedata, this.prevFuncExcl, this.prevTypeExcl);
+				//BuildBaseData(_currG, _currcallTrace, _currbasedata, this.currFuncExcl, this.currTypeExcl);
 				BuildBaseDataTable();
 				BuildBaseCallTables();
 				getDetailFilter(ref prevFilter);
@@ -552,6 +554,7 @@ namespace CLRProfiler
 		#endregion
 
 		#region GetLogData
+		
 		private void GetLogData()
 		{
 			// get base data from log files
@@ -590,57 +593,60 @@ namespace CLRProfiler
 				throw new Exception("Bad data structure in log file: " + _currLog.LogFileName +  "\n");
 			}
 
-			// get more detailed allocation info from stack trace 
-			try
-			{
+
+			// TODO
+
+			//// get more detailed allocation info from stack trace 
+			//try
+			//{
 				
-				_prevcallTrace = new CallTreeForm(_prevLog.LogFileName, _prevLog.logResult, true);
-				ReadFile(_prevcallTrace, _prevLog.LogFileName, this.prevFuncExcl, this.prevTypeExcl);
-			}
-			catch
-			{
-				throw new Exception("Bad stacktrace content in log file: " + _prevLog.logResult +  "\n");
-			}
-			try
-			{
-				_currcallTrace = new CallTreeForm(_currLog.LogFileName, _currLog.logResult, true);
-				ReadFile(_currcallTrace, _currLog.LogFileName, this.currFuncExcl, this.currTypeExcl);
-			}
-			catch
-			{
-				throw new Exception("Bad stacktrace content in log file: " + _currLog.logResult +  "\n");
-			}
-			nodeidx = 0;
-			diffTracetbl = new DataTable("diffTrace");
-			summaryTracetbl = new DataTable("summaryTracetbl");
-			MakeDiffTreceTable(diffTracetbl);
-			MakeDiffTreceTable(summaryTracetbl);
+			//	_prevcallTrace = new CallTreeForm(_prevLog.LogFileName, _prevLog.logResult, true);
+			//	ReadFile(_prevcallTrace, _prevLog.LogFileName, this.prevFuncExcl, this.prevTypeExcl);
+			//}
+			//catch
+			//{
+			//	throw new Exception("Bad stacktrace content in log file: " + _prevLog.logResult +  "\n");
+			//}
+			//try
+			//{
+			//	_currcallTrace = new CallTreeForm(_currLog.LogFileName, _currLog.logResult, true);
+			//	ReadFile(_currcallTrace, _currLog.LogFileName, this.currFuncExcl, this.currTypeExcl);
+			//}
+			//catch
+			//{
+			//	throw new Exception("Bad stacktrace content in log file: " + _currLog.logResult +  "\n");
+			//}
+			//nodeidx = 0;
+			//diffTracetbl = new DataTable("diffTrace");
+			//summaryTracetbl = new DataTable("summaryTracetbl");
+			//MakeDiffTreceTable(diffTracetbl);
+			//MakeDiffTreceTable(summaryTracetbl);
 		
 
-			string rname = _currcallTrace.MakeName((TreeNode)_currcallTrace.callTreeView.Root);
-			Root = new DiffDataNode(rname);
-			Root.prevIncl = ((TreeNode)_prevcallTrace.callTreeView.Root).data.bytesAllocated;
-			Root.currIncl = ((TreeNode)_currcallTrace.callTreeView.Root).data.bytesAllocated;
-			Root.diffIncl = Root.currIncl - Root.prevIncl;
-			Root.prevCalls = ((TreeNode)_prevcallTrace.callTreeView.Root).data.numberOfFunctionsCalled;
-			Root.currCalls = ((TreeNode)_currcallTrace.callTreeView.Root).data.numberOfFunctionsCalled;
-			Root.diffCalls = Root.currCalls - Root.prevCalls;
+			//string rname = _currcallTrace.MakeName((TreeNode)_currcallTrace.callTreeView.Root);
+			//Root = new DiffDataNode(rname);
+			//Root.prevIncl = ((TreeNode)_prevcallTrace.callTreeView.Root).data.bytesAllocated;
+			//Root.currIncl = ((TreeNode)_currcallTrace.callTreeView.Root).data.bytesAllocated;
+			//Root.diffIncl = Root.currIncl - Root.prevIncl;
+			//Root.prevCalls = ((TreeNode)_prevcallTrace.callTreeView.Root).data.numberOfFunctionsCalled;
+			//Root.currCalls = ((TreeNode)_currcallTrace.callTreeView.Root).data.numberOfFunctionsCalled;
+			//Root.diffCalls = Root.currCalls - Root.prevCalls;
 			
 
-			Root.nodeId = nodeidx++;
-			Root.parentId = -1;
-			Root.prevFunId = 0;
-			Root.currFunId = 0;
-			AddDiffTraceTableRow(diffTracetbl, Root);
+			//Root.nodeId = nodeidx++;
+			//Root.parentId = -1;
+			//Root.prevFunId = 0;
+			//Root.currFunId = 0;
+			//AddDiffTraceTableRow(diffTracetbl, Root);
 
 			
-			BuildDiffTraceTable(Root, (TreeNode)_currcallTrace.callTreeView.Root, (TreeNode)_prevcallTrace.callTreeView.Root);
-			this.ds.Tables.Add(diffTracetbl);
-			sumnodeidx = 0;
-			depth = -1;
-			BuildSummaryTable(Root, -1, "parentid = -1");
-			Root = (DiffDataNode)Root.allkids[0];
-			this.ds.Tables.Add(summaryTracetbl);
+			//BuildDiffTraceTable(Root, (TreeNode)_currcallTrace.callTreeView.Root, (TreeNode)_prevcallTrace.callTreeView.Root);
+			//this.ds.Tables.Add(diffTracetbl);
+			//sumnodeidx = 0;
+			//depth = -1;
+			//BuildSummaryTable(Root, -1, "parentid = -1");
+			//Root = (DiffDataNode)Root.allkids[0];
+			//this.ds.Tables.Add(summaryTracetbl);
 
 		
 
@@ -648,104 +654,106 @@ namespace CLRProfiler
 		#endregion
 
 		#region build Base table method
-		private void BuildBaseData(GraphBase gb, CallTreeForm tmpcallTree,  Hashtable htbl, Hashtable FuncExcl, Hashtable TypeExcl)
-		{
-			Vertex selectedVertex;
-			int selectedVertexCount = gb.SelectedVertexCount(out selectedVertex);
-			int id = 1;
+
+		// TODO
+		//private void BuildBaseData(GraphBase gb, CallTreeForm tmpcallTree,  Hashtable htbl, Hashtable FuncExcl, Hashtable TypeExcl)
+		//{
+		//	Vertex selectedVertex;
+		//	int selectedVertexCount = gb.SelectedVertexCount(out selectedVertex);
+		//	int id = 1;
 			
-			string nameAndSignature = null;
-			datanode n = new datanode();
+		//	string nameAndSignature = null;
+		//	datanode n = new datanode();
 
 
-			try
-			{
-				foreach (Vertex v in gb.basegraph.vertices.Values)
-				{
-					if( !v.name.StartsWith("????"))
-					{
-						if (v.selected || (selectedVertexCount == 0) )
-						{
-							nameAndSignature  = v.name;
-							if(v.signature != null)
-								nameAndSignature += ' ' + v.signature;
-							n.name = nameAndSignature;
-							n.incl = FormatSize((int)v.weight);
-							n.caller = v.incomingEdges;
-							n.callee = v.outgoingEdges;
-							n.level = v.level;
-							n.excl = 0;
-							n.timesBeenCalled= n.timesMakeCalls = 0;
-							FillCallAlloc(ref n, v);
-							if(tmpcallTree.LogResult.allocatedHistogram.readNewLog.funcSignatureIdHash.ContainsKey(nameAndSignature))
-							{
-								n.category = 1;	// func
-								id = tmpcallTree.LogResult.callstackHistogram.readNewLog.funcSignatureIdHash[nameAndSignature];
-								if(FuncExcl.ContainsKey(nameAndSignature))
-								{
-									n.excl =  FormatSize((int)FuncExcl[nameAndSignature]);
-								}
-								if( id > 0 && id <tmpcallTree.CallStats.Length)
-								{
+		//	try
+		//	{
+		//		foreach (Vertex v in gb.basegraph.vertices.Values)
+		//		{
+		//			if( !v.name.StartsWith("????"))
+		//			{
+		//				if (v.selected || (selectedVertexCount == 0) )
+		//				{
+		//					nameAndSignature  = v.name;
+		//					if(v.signature != null)
+		//						nameAndSignature += ' ' + v.signature;
+		//					n.name = nameAndSignature;
+		//					n.incl = FormatSize((int)v.weight);
+		//					n.caller = v.incomingEdges;
+		//					n.callee = v.outgoingEdges;
+		//					n.level = v.level;
+		//					n.excl = 0;
+		//					n.timesBeenCalled= n.timesMakeCalls = 0;
+		//					FillCallAlloc(ref n, v);
+		//					if(tmpcallTree.LogResult.allocatedHistogram.readNewLog.funcSignatureIdHash.ContainsKey(nameAndSignature))
+		//					{
+		//						n.category = 1;	// func
+		//						id = tmpcallTree.LogResult.callstackHistogram.readNewLog.funcSignatureIdHash[nameAndSignature];
+		//						if(FuncExcl.ContainsKey(nameAndSignature))
+		//						{
+		//							n.excl =  FormatSize((int)FuncExcl[nameAndSignature]);
+		//						}
+		//						if( id > 0 && id <tmpcallTree.CallStats.Length)
+		//						{
 
-									n.timesBeenCalled = (int)tmpcallTree.CallStats[id].timesCalled;
-									n.timesMakeCalls = (int)tmpcallTree.CallStats[id].totalFunctionsCalled;
-								}
-								if( !htbl.ContainsKey(nameAndSignature))
-								{
-									htbl.Add(nameAndSignature, n);
-								}
-							}
-							else if(tmpcallTree.LogResult.allocatedHistogram.readNewLog.typeSignatureIdHash.ContainsKey(nameAndSignature))
-							{
-								n.category = 2;	// type
-								id = tmpcallTree.LogResult.allocatedHistogram.readNewLog.typeSignatureIdHash[nameAndSignature];
-								if(TypeExcl.ContainsKey(nameAndSignature))
-								{
-									n.excl =  FormatSize((int)TypeExcl[nameAndSignature]);
-								}
-								if( id > 0 && id <tmpcallTree.AllocStats.Length)
-								{
-									n.timesBeenCalled = (int)tmpcallTree.AllocStats[id].timesAllocated;
-								}
-								if( !htbl.ContainsKey(nameAndSignature))
-								{
-									typemaxIncl = (typemaxIncl > v.weight) ? typemaxIncl : v.weight;
-									htbl.Add(nameAndSignature, n);
-								}
-							}
-							else
-							{
-								if( !htbl.ContainsKey(nameAndSignature))
-								{
-									maxIncl = v.weight;
-									htbl.Add(nameAndSignature, n);
-								}
-							}
+		//							n.timesBeenCalled = (int)tmpcallTree.CallStats[id].timesCalled;
+		//							n.timesMakeCalls = (int)tmpcallTree.CallStats[id].totalFunctionsCalled;
+		//						}
+		//						if( !htbl.ContainsKey(nameAndSignature))
+		//						{
+		//							htbl.Add(nameAndSignature, n);
+		//						}
+		//					}
+		//					else if(tmpcallTree.LogResult.allocatedHistogram.readNewLog.typeSignatureIdHash.ContainsKey(nameAndSignature))
+		//					{
+		//						n.category = 2;	// type
+		//						id = tmpcallTree.LogResult.allocatedHistogram.readNewLog.typeSignatureIdHash[nameAndSignature];
+		//						if(TypeExcl.ContainsKey(nameAndSignature))
+		//						{
+		//							n.excl =  FormatSize((int)TypeExcl[nameAndSignature]);
+		//						}
+		//						if( id > 0 && id <tmpcallTree.AllocStats.Length)
+		//						{
+		//							n.timesBeenCalled = (int)tmpcallTree.AllocStats[id].timesAllocated;
+		//						}
+		//						if( !htbl.ContainsKey(nameAndSignature))
+		//						{
+		//							typemaxIncl = (typemaxIncl > v.weight) ? typemaxIncl : v.weight;
+		//							htbl.Add(nameAndSignature, n);
+		//						}
+		//					}
+		//					else
+		//					{
+		//						if( !htbl.ContainsKey(nameAndSignature))
+		//						{
+		//							maxIncl = v.weight;
+		//							htbl.Add(nameAndSignature, n);
+		//						}
+		//					}
 
-						}
+		//				}
 			
-					}
-				}
-			}
-			catch
-			{
-				throw new Exception("Faild on build base data structure \n");
-			}
-			// max for caculate function/type 9 details 
-			if( prevFilter.max == 0)
-			{
-				prevFilter.max = maxIncl;
-				prevTypedeFilter.max = typemaxIncl;
-			}
-			else
-			{
-				currFilter.max = maxIncl;
-				currTypedeFilter.max = typemaxIncl;
-			}
-			maxIncl = 0;
-			typemaxIncl = 0;
-		}
+		//			}
+		//		}
+		//	}
+		//	catch
+		//	{
+		//		throw new Exception("Faild on build base data structure \n");
+		//	}
+		//	// max for caculate function/type 9 details 
+		//	if( prevFilter.max == 0)
+		//	{
+		//		prevFilter.max = maxIncl;
+		//		prevTypedeFilter.max = typemaxIncl;
+		//	}
+		//	else
+		//	{
+		//		currFilter.max = maxIncl;
+		//		currTypedeFilter.max = typemaxIncl;
+		//	}
+		//	maxIncl = 0;
+		//	typemaxIncl = 0;
+		//}
 		private void FillCallAlloc(ref datanode n, Vertex v)
 		{
 			n.calleeAlloc = new Hashtable();
@@ -1263,156 +1271,158 @@ namespace CLRProfiler
 		#endregion
 
 		#region CallTrace - MakeDiffTreceTable, BuildDiffTraceTable
-		private void BuildDiffTraceTable(DiffDataNode parent, TreeNode currRoot, TreeNode prevRoot)
-		{
-			ArrayList currKids = new ArrayList();
-			ArrayList prevKids = new ArrayList();
-			ArrayList currDKids = new ArrayList();
-			ArrayList prevDKids = new ArrayList();
 
-			//get kids
-			if(currRoot != null)
-			{
-				currKids = _currcallTrace.FetchKids(null, currRoot);
-				if(currKids.Count >0)
-				{
-					currDKids = TransCurrTree(currKids);
-				}
-			}
-			if(prevRoot != null)
-			{
-				prevKids = _prevcallTrace.FetchKids(null, prevRoot);
-				if(prevKids.Count > 0)
-				{
-					prevDKids = TransPrevTree(prevKids);
-				}
-			}
+		// TODO
+		//private void BuildDiffTraceTable(DiffDataNode parent, TreeNode currRoot, TreeNode prevRoot)
+		//{
+		//	ArrayList currKids = new ArrayList();
+		//	ArrayList prevKids = new ArrayList();
+		//	ArrayList currDKids = new ArrayList();
+		//	ArrayList prevDKids = new ArrayList();
+
+		//	//get kids
+		//	if(currRoot != null)
+		//	{
+		//		currKids = _currcallTrace.FetchKids(null, currRoot);
+		//		if(currKids.Count >0)
+		//		{
+		//			currDKids = TransCurrTree(currKids);
+		//		}
+		//	}
+		//	if(prevRoot != null)
+		//	{
+		//		prevKids = _prevcallTrace.FetchKids(null, prevRoot);
+		//		if(prevKids.Count > 0)
+		//		{
+		//			prevDKids = TransPrevTree(prevKids);
+		//		}
+		//	}
           
-			// get diff node
-			ArrayList diffKids = GetDiffKids(parent, currDKids, prevDKids);
+		//	// get diff node
+		//	ArrayList diffKids = GetDiffKids(parent, currDKids, prevDKids);
 
-			// recursive for each diff node
-			for(int i = 0; i < diffKids.Count; i++)
-			{
-				BuildDiffTraceTable(diffKids[i] as DiffDataNode, ((DiffDataNode)diffKids[i]).currTreenode as TreeNode, ((DiffDataNode)diffKids[i]).prevTreenode as TreeNode);
+		//	// recursive for each diff node
+		//	for(int i = 0; i < diffKids.Count; i++)
+		//	{
+		//		BuildDiffTraceTable(diffKids[i] as DiffDataNode, ((DiffDataNode)diffKids[i]).currTreenode as TreeNode, ((DiffDataNode)diffKids[i]).prevTreenode as TreeNode);
 				
-			}
+		//	}
 			
 
-		}
+		//}
 	
-		private ArrayList TransCurrTree(ArrayList treeNode)
-		{
-			ArrayList diffnodes = new ArrayList();
-			int functionId = 0;
-			int [] kidStacktrace;
+		//private ArrayList TransCurrTree(ArrayList treeNode)
+		//{
+		//	ArrayList diffnodes = new ArrayList();
+		//	int functionId = 0;
+		//	int [] kidStacktrace;
 			
-			for( int i = 0; i < treeNode.Count; i++)
-			{
-				TreeNode kidNode = treeNode[i] as TreeNode;
-				if(kidNode.data.bytesAllocated >0)
-				{
+		//	for( int i = 0; i < treeNode.Count; i++)
+		//	{
+		//		TreeNode kidNode = treeNode[i] as TreeNode;
+		//		if(kidNode.data.bytesAllocated >0)
+		//		{
 					
-					kidStacktrace = _currcallTrace.IndexToStacktrace(kidNode.stackid);
-					if (kidNode.nodetype == TreeNode.NodeType.Call)
-					{
-						functionId = kidStacktrace[ kidStacktrace.Length - 1 ];
-					}
-					else if (kidNode.nodetype == TreeNode.NodeType.Allocation)
-					{
-						functionId = kidStacktrace[ 0 ];
+		//			kidStacktrace = _currcallTrace.IndexToStacktrace(kidNode.stackid);
+		//			if (kidNode.nodetype == TreeNode.NodeType.Call)
+		//			{
+		//				functionId = kidStacktrace[ kidStacktrace.Length - 1 ];
+		//			}
+		//			else if (kidNode.nodetype == TreeNode.NodeType.Allocation)
+		//			{
+		//				functionId = kidStacktrace[ 0 ];
 					
-					}
+		//			}
 				
-					string name = _currcallTrace.MakeName(kidNode);
-					DiffDataNode node = new DiffDataNode(name);
-					node.currIncl = kidNode.data.bytesAllocated;
-					node.currCalls = kidNode.data.numberOfFunctionsCalled;
+		//			string name = _currcallTrace.MakeName(kidNode);
+		//			DiffDataNode node = new DiffDataNode(name);
+		//			node.currIncl = kidNode.data.bytesAllocated;
+		//			node.currCalls = kidNode.data.numberOfFunctionsCalled;
 														
 				
-					node.currTreenode = kidNode;
-					node.nodetype = (DiffDataNode.NodeType)kidNode.nodetype;
+		//			node.currTreenode = kidNode;
+		//			node.nodetype = (DiffDataNode.NodeType)kidNode.nodetype;
 					
-					switch(node.nodetype)
-					{
-						case DiffDataNode.NodeType.Allocation:
-							node.currFunId = functionId;
-							break;
+		//			switch(node.nodetype)
+		//			{
+		//				case DiffDataNode.NodeType.Allocation:
+		//					node.currFunId = functionId;
+		//					break;
 
-						case DiffDataNode.NodeType.Call:
-							node.currFunId = functionId;
-							node.mapname = _currcallTrace.names[functionId];
-							string sig = _currcallTrace.signatures[functionId];
-							if(sig != null)
-							{
-								node.mapname += ' ' + sig;
-							}
-							break;
-					}
+		//				case DiffDataNode.NodeType.Call:
+		//					node.currFunId = functionId;
+		//					node.mapname = _currcallTrace.names[functionId];
+		//					string sig = _currcallTrace.signatures[functionId];
+		//					if(sig != null)
+		//					{
+		//						node.mapname += ' ' + sig;
+		//					}
+		//					break;
+		//			}
 				
-					diffnodes.Add(node);
-				}
+		//			diffnodes.Add(node);
+		//		}
 				
-			}
+		//	}
 
-			return diffnodes;
-		}
+		//	return diffnodes;
+		//}
 
-		private ArrayList TransPrevTree(ArrayList treeNode)
-		{
-			ArrayList diffnodes = new ArrayList();
-			int functionId = 0;
-			int [] kidStacktrace;
+		//private ArrayList TransPrevTree(ArrayList treeNode)
+		//{
+		//	ArrayList diffnodes = new ArrayList();
+		//	int functionId = 0;
+		//	int [] kidStacktrace;
 			
-			for( int i = 0; i < treeNode.Count; i++)
-			{
-				TreeNode kidNode = treeNode[i] as TreeNode;
-				if(kidNode.data.bytesAllocated >0)
-				{
+		//	for( int i = 0; i < treeNode.Count; i++)
+		//	{
+		//		TreeNode kidNode = treeNode[i] as TreeNode;
+		//		if(kidNode.data.bytesAllocated >0)
+		//		{
 					
-					kidStacktrace = _prevcallTrace.IndexToStacktrace(kidNode.stackid);
-					if (kidNode.nodetype == TreeNode.NodeType.Call)
-					{
-						functionId = kidStacktrace[ kidStacktrace.Length - 1 ];
-					}
-					else if (kidNode.nodetype == TreeNode.NodeType.Allocation)
-					{
-						functionId = kidStacktrace[ 0 ];
+		//			kidStacktrace = _prevcallTrace.IndexToStacktrace(kidNode.stackid);
+		//			if (kidNode.nodetype == TreeNode.NodeType.Call)
+		//			{
+		//				functionId = kidStacktrace[ kidStacktrace.Length - 1 ];
+		//			}
+		//			else if (kidNode.nodetype == TreeNode.NodeType.Allocation)
+		//			{
+		//				functionId = kidStacktrace[ 0 ];
 					
-					}
+		//			}
 				
-					string name = _prevcallTrace.MakeName(kidNode);
-					DiffDataNode node = new DiffDataNode(name);
-					node.prevIncl = kidNode.data.bytesAllocated;
-					node.prevCalls = kidNode.data.numberOfFunctionsCalled;
+		//			string name = _prevcallTrace.MakeName(kidNode);
+		//			DiffDataNode node = new DiffDataNode(name);
+		//			node.prevIncl = kidNode.data.bytesAllocated;
+		//			node.prevCalls = kidNode.data.numberOfFunctionsCalled;
 				
 				
-					node.prevTreenode = kidNode;
-					node.nodetype = (DiffDataNode.NodeType)kidNode.nodetype;
+		//			node.prevTreenode = kidNode;
+		//			node.nodetype = (DiffDataNode.NodeType)kidNode.nodetype;
 					
-					switch(node.nodetype)
-					{
-						case DiffDataNode.NodeType.Allocation:
-							node.prevFunId = functionId;
-							break;
+		//			switch(node.nodetype)
+		//			{
+		//				case DiffDataNode.NodeType.Allocation:
+		//					node.prevFunId = functionId;
+		//					break;
 
-						case DiffDataNode.NodeType.Call:
-							node.prevFunId= functionId;
-							node.mapname = _prevcallTrace.names[functionId];
-							string sig = _prevcallTrace.signatures[functionId];
-							if(sig != null)
-							{
-								node.mapname += ' ' + sig;
-							}
-							break;
-					}
-					diffnodes.Add(node);
+		//				case DiffDataNode.NodeType.Call:
+		//					node.prevFunId= functionId;
+		//					node.mapname = _prevcallTrace.names[functionId];
+		//					string sig = _prevcallTrace.signatures[functionId];
+		//					if(sig != null)
+		//					{
+		//						node.mapname += ' ' + sig;
+		//					}
+		//					break;
+		//			}
+		//			diffnodes.Add(node);
 				
-				}
-			}
+		//		}
+		//	}
 
-			return diffnodes;
-		}
+		//	return diffnodes;
+		//}
 		
 		
 		private ArrayList GetDiffKids(DiffDataNode parent, ArrayList currKids, ArrayList prevKids)
@@ -1444,8 +1454,8 @@ namespace CLRProfiler
 						node.nodeId = nodeidx;
 						node.parentId = parent.nodeId;
 						node.parentname = parent.name;
-						node.currTreenode = ((DiffDataNode)currKids[i]).currTreenode;
-						node.prevTreenode = ((DiffDataNode)prevKids[idx]).prevTreenode;
+						//node.currTreenode = ((DiffDataNode)currKids[i]).currTreenode;
+						//node.prevTreenode = ((DiffDataNode)prevKids[idx]).prevTreenode;
 						node.nodetype = ((DiffDataNode)currKids[i]).nodetype;
 
 						((DiffDataNode)currKids[i]).marked = true;
@@ -1488,8 +1498,8 @@ namespace CLRProfiler
 						node.nodeId = nodeidx;
 						node.parentId = parent.nodeId;
 						node.parentname = parent.name;
-						node.currTreenode = ((DiffDataNode)currKids[idx]).currTreenode;
-						node.prevTreenode = ((DiffDataNode)prevKids[i]).prevTreenode;
+						//node.currTreenode = ((DiffDataNode)currKids[idx]).currTreenode;
+						//node.prevTreenode = ((DiffDataNode)prevKids[i]).prevTreenode;
 						node.nodetype = ((DiffDataNode)prevKids[i]).nodetype;
 
 						((DiffDataNode)currKids[idx]).marked = true;
@@ -1534,8 +1544,8 @@ namespace CLRProfiler
 						node.nodeId = nodeidx;
 						node.parentId = parent.nodeId;
 						node.parentname = parent.name;
-						node.currTreenode = ((DiffDataNode)curr[i]).currTreenode;
-						node.prevTreenode = ((DiffDataNode)prevKids[idx]).prevTreenode;
+						//node.currTreenode = ((DiffDataNode)curr[i]).currTreenode;
+						//node.prevTreenode = ((DiffDataNode)prevKids[idx]).prevTreenode;
 						node.nodetype = ((DiffDataNode)curr[i]).nodetype;
 
 						((DiffDataNode)curr[i]).marked = true;
@@ -1562,7 +1572,7 @@ namespace CLRProfiler
 						node.nodeId = nodeidx;
 						node.parentId = parent.nodeId;
 						node.parentname = parent.name;
-						node.currTreenode = ((DiffDataNode)curr[i]).currTreenode;
+						//node.currTreenode = ((DiffDataNode)curr[i]).currTreenode;
 						node.nodetype = ((DiffDataNode)curr[i]).nodetype;
 						((DiffDataNode)curr[i]).marked = true;
 						if(node.diffIncl != 0)
@@ -1595,7 +1605,7 @@ namespace CLRProfiler
 					node.nodeId = nodeidx;
 					node.parentId = parent.nodeId;
 					node.parentname = parent.name;
-					node.prevTreenode = ((DiffDataNode)prev[i]).prevTreenode;
+					//node.prevTreenode = ((DiffDataNode)prev[i]).prevTreenode;
 					node.nodetype = ((DiffDataNode)prev[i]).nodetype;
 
 					((DiffDataNode)prev[i]).marked = true;
@@ -1678,111 +1688,118 @@ namespace CLRProfiler
 		#region Summary table
 		internal void RefreshCallTreeNodes(DiffDataNode node)
 		{
-			node.IsExpanded = false;
-			for(int i = 0; i < node.allkids.Count; i++)
-			{
-				RefreshCallTreeNodes(node.allkids[i] as DiffDataNode);
-			}
+			// TODO
+
+			//node.IsExpanded = false;
+			//for(int i = 0; i < node.allkids.Count; i++)
+			//{
+			//	RefreshCallTreeNodes(node.allkids[i] as DiffDataNode);
+			//}
 
 		}
 		internal void GetAllKids(DiffDataNode root, string filter)
 		{
-			DataRow[] rKids = summaryTracetbl.Select(filter, "name asc");
-			if(rKids.Length > 0)
-			{
-				root.HasKids = true;
-				root.depth = 0;
-			}
-			for(int i = 0; i < rKids.Length; i++)
-			{
-				DiffDataNode kidNode = Row2Node(rKids[i]);
-				root.allkids.Add(kidNode);
+			//  TODO
+
+
+			//DataRow[] rKids = summaryTracetbl.Select(filter, "name asc");
+			//if(rKids.Length > 0)
+			//{
+			//	root.HasKids = true;
+			//	root.depth = 0;
+			//}
+			//for(int i = 0; i < rKids.Length; i++)
+			//{
+			//	DiffDataNode kidNode = Row2Node(rKids[i]);
+			//	root.allkids.Add(kidNode);
 				
-			}
+			//}
 		}
 		private void BuildSummaryTable(DiffDataNode parent, int parentId, string filter)
 		{
-			depth++;
-			parent.depth = depth;
-			parent.allkids.Clear();
-			parent.HasKids = false;
-			Hashtable kidSum = new Hashtable();
-			string name = null;
+			// TODO
+
+			//depth++;
+			//parent.depth = depth;
+			//parent.allkids.Clear();
+			//parent.HasKids = false;
+			//Hashtable kidSum = new Hashtable();
+			//string name = null;
 			
-			DataRow[] kidsRows = diffTracetbl.Select(filter);
-			for(int i = 0; i < kidsRows.Length; i++)
-			{
-				DiffDataNode sumNode = Row2Node(kidsRows[i]);
-				name = sumNode.mapname;
-				if(kidSum.ContainsKey(name))
-				{
-					DiffDataNode updateNode = kidSum[name] as DiffDataNode;
-					updateNode.prevIncl += sumNode.prevIncl;
-					updateNode.currIncl += sumNode.currIncl;
-					updateNode.diffIncl = updateNode.currIncl - updateNode.prevIncl;
-					if(sumNode.prevIncl != 0)
-					{
-						updateNode.prevCalls++;
-					}
-					if(sumNode.currIncl != 0)
-					{
-						updateNode.currCalls++;
-					}
-					updateNode.diffCalls = updateNode.currCalls - updateNode.prevCalls;
-					updateNode.allkids.Add(sumNode.nodeId);
-					updateNode.HasKids = true;
+			//DataRow[] kidsRows = diffTracetbl.Select(filter);
+			//for(int i = 0; i < kidsRows.Length; i++)
+			//{
+			//	DiffDataNode sumNode = Row2Node(kidsRows[i]);
+			//	name = sumNode.mapname;
+			//	if(kidSum.ContainsKey(name))
+			//	{
+			//		DiffDataNode updateNode = kidSum[name] as DiffDataNode;
+			//		updateNode.prevIncl += sumNode.prevIncl;
+			//		updateNode.currIncl += sumNode.currIncl;
+			//		updateNode.diffIncl = updateNode.currIncl - updateNode.prevIncl;
+			//		if(sumNode.prevIncl != 0)
+			//		{
+			//			updateNode.prevCalls++;
+			//		}
+			//		if(sumNode.currIncl != 0)
+			//		{
+			//			updateNode.currCalls++;
+			//		}
+			//		updateNode.diffCalls = updateNode.currCalls - updateNode.prevCalls;
+			//		updateNode.allkids.Add(sumNode.nodeId);
+			//		updateNode.HasKids = true;
 					
-				}
-				else
-				{
-					if(sumNode.prevIncl != 0)
-					{
-						sumNode.prevCalls = 1;
-					}
-					if(sumNode.currIncl != 0)
-					{
-						sumNode.currCalls = 1;
-					}
-					sumNode.parentId = parentId;
-					sumNode.allkids.Add(sumNode.nodeId);
-					sumNode.diffIncl = sumNode.currIncl - sumNode.prevIncl;
-					sumNode.diffCalls = sumNode.currCalls - sumNode.prevCalls;
-					kidSum.Add(name, sumNode);
-					sumNode.HasKids = false;
-					sumNode.depth = depth;
-					sumNode.nodeId = sumnodeidx;
-					sumnodeidx++;
-				}
+			//	}
+			//	else
+			//	{
+			//		if(sumNode.prevIncl != 0)
+			//		{
+			//			sumNode.prevCalls = 1;
+			//		}
+			//		if(sumNode.currIncl != 0)
+			//		{
+			//			sumNode.currCalls = 1;
+			//		}
+			//		sumNode.parentId = parentId;
+			//		sumNode.allkids.Add(sumNode.nodeId);
+			//		sumNode.diffIncl = sumNode.currIncl - sumNode.prevIncl;
+			//		sumNode.diffCalls = sumNode.currCalls - sumNode.prevCalls;
+			//		kidSum.Add(name, sumNode);
+			//		sumNode.HasKids = false;
+			//		sumNode.depth = depth;
+			//		sumNode.nodeId = sumnodeidx;
+			//		sumnodeidx++;
+			//	}
 				
-			}
-			if(kidSum.Count > 0)
-			{
-				if(parent.nodetype == DiffDataNode.NodeType.Call)
-				{
-					parent.HasKids = true;
-				}
-				string diffkey = parent.mapname + parent.prevIncl + parent.currIncl + parent.diffIncl + parent.prevFunId + parent.currFunId;
-				if(!diffCallTreeNodes.ContainsKey(diffkey))
-				{
-					diffCallTreeNodes.Add(diffkey, parent);
-				}
+			//}
+			//if(kidSum.Count > 0)
+			//{
+			//	if(parent.nodetype == DiffDataNode.NodeType.Call)
+			//	{
+			//		parent.HasKids = true;
+			//	}
+			//	string diffkey = parent.mapname + parent.prevIncl + parent.currIncl + parent.diffIncl + parent.prevFunId + parent.currFunId;
+			//	if(!diffCallTreeNodes.ContainsKey(diffkey))
+			//	{
+			//		diffCallTreeNodes.Add(diffkey, parent);
+			//	}
 				
-			}
+			//}
 						
 
-			foreach(string key in kidSum.Keys)
-			{
-				DiffDataNode sumNode = kidSum[key] as DiffDataNode;
-				if(! (sumNode.diffIncl == 0))
-				{
-					parent.allkids.Add(sumNode);
-                    AddDiffTraceTableRow(summaryTracetbl, sumNode);
-				}
-				string kidFilter = getFilter(sumNode.allkids);
-				BuildSummaryTable(sumNode, sumNode.nodeId,kidFilter);
-			}
+			//foreach(string key in kidSum.Keys)
+			//{
+			//	DiffDataNode sumNode = kidSum[key] as DiffDataNode;
+			//	if(! (sumNode.diffIncl == 0))
+			//	{
+			//		parent.allkids.Add(sumNode);
+   //                 AddDiffTraceTableRow(summaryTracetbl, sumNode);
+			//	}
+			//	string kidFilter = getFilter(sumNode.allkids);
+			//	BuildSummaryTable(sumNode, sumNode.nodeId,kidFilter);
+			//}
 			
-			depth--;
+			//depth--;
 			
 		}
 
@@ -1836,7 +1853,7 @@ namespace CLRProfiler
 				
 			node.nodeId = int.Parse(r[idx_id].ToString());
 			node.parentId = int.Parse(r[idx_parentid].ToString());
-			node.depth = int.Parse(r[idx_depth].ToString());
+			//node.depth = int.Parse(r[idx_depth].ToString());
 			return node;
 		}
 
@@ -1909,7 +1926,7 @@ namespace CLRProfiler
 			{
 				tmpRow["nodetype"] = 2;
 			}
-			tmpRow["depth"] = node.depth;
+			//tmpRow["depth"] = node.depth;
 			tmptbl.Rows.Add(tmpRow);
 			
 		}
@@ -1917,227 +1934,229 @@ namespace CLRProfiler
 	
 
 		#region EXCLUSIVE
-		private void ReadFile(CallTreeForm callTrace, string fileName, Hashtable FuncExcl, Hashtable TypeExcl)
-		{
-			Hashtable funcCalled = new Hashtable();
-			Hashtable TypeAlloc = new Hashtable();
-			Stream s = null;
-			ProgressForm progressForm = null;
-			try
-			{
-				s = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-				r = new StreamReader(s);
+		// TODO
 
-				progressForm = new ProgressForm();
-				progressForm.Text = "Preparing call tree view";
-				progressForm.Visible = true;
-				progressForm.setProgress(0);
-				progressForm.TopMost = false;
-				int maxProgress = (int)(r.BaseStream.Length/1024);
-				progressForm.setMaximum(maxProgress);
+		//private void ReadFile(CallTreeForm callTrace, string fileName, Hashtable FuncExcl, Hashtable TypeExcl)
+		//{
+		//	Hashtable funcCalled = new Hashtable();
+		//	Hashtable TypeAlloc = new Hashtable();
+		//	Stream s = null;
+		//	ProgressForm progressForm = null;
+		//	try
+		//	{
+		//		s = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+		//		r = new StreamReader(s);
 
-				buffer = new byte[4096];
-				bufPos = 0;
-				bufLevel = 0;
-				line = 1;
-				StringBuilder sb = new StringBuilder();
-				c = ReadChar();
+		//		progressForm = new ProgressForm();
+		//		progressForm.Text = "Preparing call tree view";
+		//		progressForm.Visible = true;
+		//		progressForm.setProgress(0);
+		//		progressForm.TopMost = false;
+		//		int maxProgress = (int)(r.BaseStream.Length/1024);
+		//		progressForm.setMaximum(maxProgress);
 
-				bool found;
-				string assemblyName = null;
-				int threadid = 0, stackid = 0;
-				TreeNode.NodeType nodetype = TreeNode.NodeType.Call;
+		//		buffer = new byte[4096];
+		//		bufPos = 0;
+		//		bufLevel = 0;
+		//		line = 1;
+		//		StringBuilder sb = new StringBuilder();
+		//		c = ReadChar();
 
-				while (c != -1)
-				{
-					found = false;
-					if ((line % 1024) == 0)
-					{
-						int currentProgress = (int)(pos/1024);
-						if (currentProgress <= maxProgress)
-						{
-							progressForm.setProgress(currentProgress);
-						}
-					}
-					lastLineStartPos = pos-1;
-					switch (c)
-					{
-						case    -1:
-							break;
+		//		bool found;
+		//		string assemblyName = null;
+		//		int threadid = 0, stackid = 0;
+		//		TreeNode.NodeType nodetype = TreeNode.NodeType.Call;
+
+		//		while (c != -1)
+		//		{
+		//			found = false;
+		//			if ((line % 1024) == 0)
+		//			{
+		//				int currentProgress = (int)(pos/1024);
+		//				if (currentProgress <= maxProgress)
+		//				{
+		//					progressForm.setProgress(currentProgress);
+		//				}
+		//			}
+		//			lastLineStartPos = pos-1;
+		//			switch (c)
+		//			{
+		//				case    -1:
+		//					break;
 				
-							// 'A' with thread identifier
-						case    '!':
-						{
-							found = true;
-							c = ReadChar();
-							threadid = ReadInt();
-							ReadInt();
-							stackid = ReadInt();
-							nodetype = TreeNode.NodeType.Allocation;
-							if (c == -1)	{found = false;}
-							break;
+		//					// 'A' with thread identifier
+		//				case    '!':
+		//				{
+		//					found = true;
+		//					c = ReadChar();
+		//					threadid = ReadInt();
+		//					ReadInt();
+		//					stackid = ReadInt();
+		//					nodetype = TreeNode.NodeType.Allocation;
+		//					if (c == -1)	{found = false;}
+		//					break;
 			
-						}
+		//				}
 
-						case    'C':
-						case    'c':
-						{
-							found = true;
-							c = ReadChar();
-							nodetype = TreeNode.NodeType.Call;
-							threadid = ReadInt();
-							stackid = ReadInt();
-							if (c == -1)	{found = false;}
-							break;
-						}
+		//				case    'C':
+		//				case    'c':
+		//				{
+		//					found = true;
+		//					c = ReadChar();
+		//					nodetype = TreeNode.NodeType.Call;
+		//					threadid = ReadInt();
+		//					stackid = ReadInt();
+		//					if (c == -1)	{found = false;}
+		//					break;
+		//				}
 
 						
-						case 'y':
-						case 'Y':
-						{
-							found = true;
-							c = ReadChar();
-							nodetype = TreeNode.NodeType.AssemblyLoad;
-							threadid = ReadInt();
-							ReadInt();
+		//				case 'y':
+		//				case 'Y':
+		//				{
+		//					found = true;
+		//					c = ReadChar();
+		//					nodetype = TreeNode.NodeType.AssemblyLoad;
+		//					threadid = ReadInt();
+		//					ReadInt();
 
-							while (c == ' ' || c == '\t')
-							{
-								c = ReadChar();
-							}
-							sb.Length = 0;
-							while (c > ' ')
-							{
-								sb.Append((char)c);
-								c = ReadChar();
-							}
-							assemblyName = sb.ToString();
-							break;
-						}
+		//					while (c == ' ' || c == '\t')
+		//					{
+		//						c = ReadChar();
+		//					}
+		//					sb.Length = 0;
+		//					while (c > ' ')
+		//					{
+		//						sb.Append((char)c);
+		//						c = ReadChar();
+		//					}
+		//					assemblyName = sb.ToString();
+		//					break;
+		//				}
 
 
-						default:
-						{
-							// just ignore the unknown
-							while(c != '\n' && c != '\r')
-							{
-								c = ReadChar();
-							}
-							break;
-						}
-					}
-					while (c == ' ' || c == '\t')
-						c = ReadChar();
-					if (c == '\r')
-						c = ReadChar();
-					if (c == '\n')
-					{
-						c = ReadChar();
-						line++;
-					}
-					if(!found)
-					{
-						continue;
-					}
+		//				default:
+		//				{
+		//					// just ignore the unknown
+		//					while(c != '\n' && c != '\r')
+		//					{
+		//						c = ReadChar();
+		//					}
+		//					break;
+		//				}
+		//			}
+		//			while (c == ' ' || c == '\t')
+		//				c = ReadChar();
+		//			if (c == '\r')
+		//				c = ReadChar();
+		//			if (c == '\n')
+		//			{
+		//				c = ReadChar();
+		//				line++;
+		//			}
+		//			if(!found)
+		//			{
+		//				continue;
+		//			}
 				
-					string name = null;
-					string typename = null;
+		//			string name = null;
+		//			string typename = null;
 
-					int[] stacktrace = callTrace.IndexToStacktrace(stackid);
-					int functionId = (nodetype != TreeNode.NodeType.AssemblyLoad ? stacktrace[stacktrace.Length - 1] : 0);
-					switch(nodetype)
-					{
-						case TreeNode.NodeType.Allocation:
-							string key = null;
-							if( (functionId < callTrace.LogResult.callstackHistogram.readNewLog.funcName.Length )&& 
-								((name = callTrace.LogResult.callstackHistogram.readNewLog.funcName[functionId]) != null))
-							{
-								if( callTrace.LogResult.callstackHistogram.readNewLog.funcSignature[functionId] != null)
-								{
-									name += ' ' + callTrace.LogResult.callstackHistogram.readNewLog.funcSignature[functionId];
-								}
-							}
-							else
-							{
-								name = "NATIVE FUNCTION ( UNKNOWN ARGUMENTS )";
-							}
+		//			int[] stacktrace = callTrace.IndexToStacktrace(stackid);
+		//			int functionId = (nodetype != TreeNode.NodeType.AssemblyLoad ? stacktrace[stacktrace.Length - 1] : 0);
+		//			switch(nodetype)
+		//			{
+		//				case TreeNode.NodeType.Allocation:
+		//					string key = null;
+		//					if( (functionId < callTrace.LogResult.callstackHistogram.readNewLog.funcName.Length )&& 
+		//						((name = callTrace.LogResult.callstackHistogram.readNewLog.funcName[functionId]) != null))
+		//					{
+		//						if( callTrace.LogResult.callstackHistogram.readNewLog.funcSignature[functionId] != null)
+		//						{
+		//							name += ' ' + callTrace.LogResult.callstackHistogram.readNewLog.funcSignature[functionId];
+		//						}
+		//					}
+		//					else
+		//					{
+		//						name = "NATIVE FUNCTION ( UNKNOWN ARGUMENTS )";
+		//					}
 														
-							// function Excl							
-							if(FuncExcl.ContainsKey(name))
-							{
-								int alloc = (int)FuncExcl[(string)name];
-								alloc += stacktrace[1];
-								FuncExcl[name] = alloc;
-							}
-							else
-							{
-								FuncExcl.Add(name, stacktrace[1]);
-							}
+		//					// function Excl							
+		//					if(FuncExcl.ContainsKey(name))
+		//					{
+		//						int alloc = (int)FuncExcl[(string)name];
+		//						alloc += stacktrace[1];
+		//						FuncExcl[name] = alloc;
+		//					}
+		//					else
+		//					{
+		//						FuncExcl.Add(name, stacktrace[1]);
+		//					}
 							
-							// Type Excl
-							if( stacktrace[0]>=0 && stacktrace[0] < callTrace.LogResult.callstackHistogram.readNewLog.typeName.Length)
-							{
-								typename = callTrace.LogResult.callstackHistogram.readNewLog.typeName[stacktrace[0]];
-							}
-							if(typename == null)
-								typename = "NATIVE FUNCTION ( UNKNOWN ARGUMENTS )";
+		//					// Type Excl
+		//					if( stacktrace[0]>=0 && stacktrace[0] < callTrace.LogResult.callstackHistogram.readNewLog.typeName.Length)
+		//					{
+		//						typename = callTrace.LogResult.callstackHistogram.readNewLog.typeName[stacktrace[0]];
+		//					}
+		//					if(typename == null)
+		//						typename = "NATIVE FUNCTION ( UNKNOWN ARGUMENTS )";
 																											
-							if(TypeExcl.ContainsKey(typename))
-							{
-								int alloc = (int)TypeExcl[(string)typename];
-								alloc += stacktrace[1];
-								TypeExcl[typename] = alloc;
-							}
-							else
-							{
-								TypeExcl.Add(typename, stacktrace[1]);
-							}
+		//					if(TypeExcl.ContainsKey(typename))
+		//					{
+		//						int alloc = (int)TypeExcl[(string)typename];
+		//						alloc += stacktrace[1];
+		//						TypeExcl[typename] = alloc;
+		//					}
+		//					else
+		//					{
+		//						TypeExcl.Add(typename, stacktrace[1]);
+		//					}
 							
-							// Type Allocated by Excl
-							if(name != "NATIVE FUNCTION ( UNKNOWN ARGUMENTS )")
-								key = typename + '|' + functionId;
-							else
-								key = typename + '|' + 0;
-							if( TypeAlloc.ContainsKey(key))
-							{
-								int alloc = (int)TypeAlloc[key];
-								alloc += stacktrace[1];
-								TypeAlloc[key] = alloc;
-							}
-							else
-							{
-								TypeAlloc.Add(key, stacktrace[1]);
-							}
+		//					// Type Allocated by Excl
+		//					if(name != "NATIVE FUNCTION ( UNKNOWN ARGUMENTS )")
+		//						key = typename + '|' + functionId;
+		//					else
+		//						key = typename + '|' + 0;
+		//					if( TypeAlloc.ContainsKey(key))
+		//					{
+		//						int alloc = (int)TypeAlloc[key];
+		//						alloc += stacktrace[1];
+		//						TypeAlloc[key] = alloc;
+		//					}
+		//					else
+		//					{
+		//						TypeAlloc.Add(key, stacktrace[1]);
+		//					}
 									
-							break;
-						case TreeNode.NodeType.Call:
-							if(funcCalled.ContainsKey(functionId))
-							{
-								int calls = (int)funcCalled[functionId] + 1;;
-								funcCalled[functionId]= calls;
-							}
-							else
-							{
-								funcCalled.Add(functionId,1);
-							}
-							break;
-					}
-				}
+		//					break;
+		//				case TreeNode.NodeType.Call:
+		//					if(funcCalled.ContainsKey(functionId))
+		//					{
+		//						int calls = (int)funcCalled[functionId] + 1;;
+		//						funcCalled[functionId]= calls;
+		//					}
+		//					else
+		//					{
+		//						funcCalled.Add(functionId,1);
+		//					}
+		//					break;
+		//			}
+		//		}
 
-			}
-			catch (Exception)
-			{
-				throw new Exception(string.Format("Bad format in log file {0} line {1}", fileName, line));
-			}
+		//	}
+		//	catch (Exception)
+		//	{
+		//		throw new Exception(string.Format("Bad format in log file {0} line {1}", fileName, line));
+		//	}
 
-			finally
-			{
-				progressForm.Visible = false;
-				progressForm.Dispose();
-				if (r != null)
-					r.Close();
-			}
-		}
+		//	finally
+		//	{
+		//		progressForm.Visible = false;
+		//		progressForm.Dispose();
+		//		if (r != null)
+		//			r.Close();
+		//	}
+		//}
 		internal int ReadChar()
 		{
 			pos++;

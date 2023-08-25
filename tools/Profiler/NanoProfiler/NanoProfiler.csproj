@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>nanoFramework.Tools.NanoProfiler</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+    <PackageReference Include="devexpress.wpf.controls" Version="21.2.6" />
+    <PackageReference Include="nanoFramework.Tools.Debugger.Net" Version="2.4.34" />
+  </ItemGroup>
+
+</Project>

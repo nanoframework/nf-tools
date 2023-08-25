@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 
 namespace CLRProfiler
 {
@@ -2278,9 +2279,13 @@ namespace CLRProfiler
         internal void ReadFile(long startFileOffset, long endFileOffset, ReadLogResult readLogResult, int requestedIndex)
         {
             ProgressForm progressForm = new ProgressForm();
-            progressForm.Text = string.Format("Progress loading {0}", fileName);
-            progressForm.Visible = progressFormVisible;
-            progressForm.setProgress(0);
+            progressForm.Title = string.Format("Progress loading {0}", fileName);
+            
+            // TODO
+            //progressForm.Visible = progressFormVisible;
+            
+            progressForm.SetProgress(0);
+
             if (stacktraceTable == null)
                 stacktraceTable = new StacktraceTable();
             if (timePos == null)
@@ -2316,7 +2321,7 @@ namespace CLRProfiler
                 bufPos = 0;
                 bufLevel = 0;
                 int maxProgress = (int)(r.BaseStream.Length/1024);
-                progressForm.setMaximum(maxProgress);
+                progressForm.SetMaximum(maxProgress);
                 line = 1;
                 StringBuilder sb = new StringBuilder();
                 ulong[] ulongStack = new ulong[1000];
@@ -2337,10 +2342,12 @@ namespace CLRProfiler
                         int currentProgress = (int)(pos/1024);
                         if (currentProgress <= maxProgress)
                         {
-                            progressForm.setProgress(currentProgress);
+                            progressForm.SetProgress(currentProgress);
                             Application.DoEvents();
-                            if (progressForm.DialogResult == DialogResult.Cancel)
-                                break;
+
+                            // TODO
+                            //if (progressForm.DialogResult == DialogResult.Cancel)
+                            //    break;
                         }
                     }
                     lastLineStartPos = pos-1;
@@ -3039,8 +3046,10 @@ namespace CLRProfiler
             }
             finally
             {
-                progressForm.Visible = false;
-                progressForm.Dispose();
+                // TODO
+
+                //progressForm.Visible = false;
+                //progressForm.Dispose();
                 if (r != null)
                     r.Close();
             }

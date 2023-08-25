@@ -1,3 +1,4 @@
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using System;
 using System.Collections;
 

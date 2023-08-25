@@ -1,13 +1,13 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+﻿using DevExpress.Text.Interop;
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Drawing;
-using System.Collections;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace CLRProfiler
+namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 {
     public class PlacedToolTip : Control
     {
@@ -65,14 +65,14 @@ namespace CLRProfiler
         protected void timerEventHandler(object s, System.Timers.ElapsedEventArgs e)
         {
             TimeSpan sinceCreated = e.SignalTime.Subtract(created);
-            if(!timer.Enabled || sinceCreated.Milliseconds < 500)
+            if (!timer.Enabled || sinceCreated.Milliseconds < 500)
             {
                 return;
             }
 
             timer.Stop();
             Point pt = PointToClient(Cursor.Position);
-            if(new Rectangle(0, 0, Width, Height).Contains(pt))
+            if (new Rectangle(0, 0, Width, Height).Contains(pt))
             {
                 BringToFront();
                 Show();
@@ -97,4 +97,5 @@ namespace CLRProfiler
             Hide();
         }
     }
+
 }

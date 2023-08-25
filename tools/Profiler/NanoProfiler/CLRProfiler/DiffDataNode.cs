@@ -1,6 +1,8 @@
 using System;
 using System.Data;
 using System.Collections;
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
+
 namespace CLRProfiler
 {
 	/// <summary>
@@ -23,8 +25,9 @@ namespace CLRProfiler
 		internal long currCalls = 0;
 		internal long diffCalls = 0;
 			
-		internal TreeNode currTreenode = null;
-		internal TreeNode prevTreenode = null;
+		// TODO
+		//internal TreeNode currTreenode = null;
+		//internal TreeNode prevTreenode = null;
 		internal bool marked = false;
 
 		internal NodeType nodetype = 0;
