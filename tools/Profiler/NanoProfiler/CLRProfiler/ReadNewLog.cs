@@ -2781,7 +2781,7 @@ namespace CLRProfiler
                             while (c >= ' ')
                             {
                                 ulong rangeStart = ReadULong();
-                                ulong rangeLength = ReadULong();
+                                ulong rangeEnd = ReadULong();
                                 ulong rangeLengthReserved = ReadULong();
                                 int rangeGeneration = ReadInt();
                                 if (c == -1 || rangeGeneration < 0)
@@ -2791,14 +2791,14 @@ namespace CLRProfiler
                                     if (startGC != 0)
                                     {
                                         if (rangeGeneration > condemnedGeneration && condemnedGeneration != 2)
-                                            readLogResult.liveObjectTable.Preserve(rangeStart, rangeLength, lastTickIndex);
+                                            readLogResult.liveObjectTable.Preserve(rangeStart, rangeEnd, lastTickIndex);
                                     }
                                     else
                                     {
-                                        readLogResult.liveObjectTable.GenerationInterval(rangeStart, rangeLength, rangeGeneration, lastTickIndex);
+                                        readLogResult.liveObjectTable.GenerationInterval(rangeStart, rangeEnd, rangeGeneration, lastTickIndex);
                                     }
                                 }
-                                generationSize[rangeGeneration] += rangeLength;
+                                generationSize[rangeGeneration] += rangeEnd - rangeStart;
                             }
                             if (startGC == 0 && readLogResult.liveObjectTable != null)
                             {

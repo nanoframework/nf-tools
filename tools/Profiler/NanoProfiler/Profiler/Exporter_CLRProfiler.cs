@@ -175,7 +175,7 @@ namespace nanoFramework.Tools.NanoProfiler
                         _PRF.GarbageCollectionBegin gc = (_PRF.GarbageCollectionBegin)pe;
 
                         uint lastObjAddress = ps._liveObjectTable[ps._liveObjectTable.Count - 1] + 1;
-                        _sw.WriteLine($"b 1 0 0 0x{ps.HeapStart:x} {lastObjAddress} {ps.HeapBytesReserved} 0");
+                        _sw.WriteLine($"b 1 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
                         
                         break;
                     }
@@ -191,7 +191,7 @@ namespace nanoFramework.Tools.NanoProfiler
                         }
 
                         uint lastObjAddress = ps._liveObjectTable[ps._liveObjectTable.Count - 1] + 1;
-                        _sw.WriteLine($"b 0 0 0 0x{ps.HeapStart:x} {lastObjAddress} {ps.HeapBytesReserved} 0");
+                        _sw.WriteLine($"b 0 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
 
                         break;
                     }
@@ -200,7 +200,7 @@ namespace nanoFramework.Tools.NanoProfiler
                         _PRF.HeapCompactionBegin gc = (_PRF.HeapCompactionBegin)pe;
 
                         uint lastObjAddress = ps._liveObjectTable[ps._liveObjectTable.Count - 1] + 1;
-                        _sw.WriteLine($"b 1 0 0 0x{ps.HeapStart:x} {lastObjAddress} {ps.HeapBytesReserved} 0");
+                        _sw.WriteLine($"b 1 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
 
                         break;
                     }
@@ -210,7 +210,7 @@ namespace nanoFramework.Tools.NanoProfiler
                         _PRF.HeapCompactionEnd gc = (_PRF.HeapCompactionEnd)pe;
 
                         uint lastObjAddress = ps._liveObjectTable[ps._liveObjectTable.Count - 1] + 1;
-                        _sw.WriteLine($"b 0 0 0 0x{ps.HeapStart:x} {lastObjAddress} {ps.HeapBytesReserved} 0");
+                        _sw.WriteLine($"b 0 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
 
                         break;
                     }

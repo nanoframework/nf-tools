@@ -30,15 +30,24 @@ namespace nanoFramework.Tools.NanoProfiler
         private _DBG.BitStream _incomingStream;
 
         internal _DBG.Engine _engine;
+        private bool _heapAddressIsAbsolute;
+        private uint _heapStart;
 
         public delegate void OnProfilerEventAddHandler(ProfilerSession ps, ProfilerEvent pe);
         public event OnProfilerEventAddHandler OnEventAdd;
         public event EventHandler OnDisconnect;
 
-        public ProfilerSession(_DBG.Engine engine)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="engine">Debugger engine for <see cref="ProfilerSession"/>.</param>
+        /// <param name="heapAbsoluteAddress">Use absolute memory address for Heap.</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public ProfilerSession(_DBG.Engine engine, bool heapAbsoluteAddress = false)
         {
             _connected = true;
             _engine = engine ?? throw new ArgumentNullException();
+            _heapAddressIsAbsolute = heapAbsoluteAddress;
             _engine.OnCommand += new _DBG.CommandEventHandler(OnDeviceCommand);
             _incomingStream = new _DBG.BitStream(true);
 
@@ -192,7 +201,15 @@ namespace nanoFramework.Tools.NanoProfiler
 
         public ulong LastKnownTime { get; internal set; }
 
-        public uint HeapStart { get; internal set; }
+        public uint HeapStart
+        {
+            get => _heapStart;
+
+            internal set
+            {
+                _heapStart = HeapAddressIsAbsolute ? value : 0;
+            }
+        }
 
         public uint HeapBytesUsed { get; internal set; }
 
@@ -210,6 +227,8 @@ namespace nanoFramework.Tools.NanoProfiler
                 }
             }
         }
+
+        public bool HeapAddressIsAbsolute => _heapAddressIsAbsolute;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnDeviceCommand(

@@ -120,8 +120,7 @@ namespace nanoFramework.Tools.NanoProfiler
 
             if (!_closing && oldstate == ProfilingState.Connected && _exporter is _PRF.Exporter_CLRProfiler)
             {
-                // TODO
-                //clrProfiler.LoadLogFile(_exporter.FileName);
+                _clrProfiler.LoadLogFile(_exporter.FileName);
 
                 EnableDisableViewMenuItems();
             }
@@ -344,7 +343,7 @@ namespace nanoFramework.Tools.NanoProfiler
                             if (currentExecutionMode.IsDeviceInInitializeState())
                             {
                                 _engine.ThrowOnCommunicationFailure = true;
-                                _session = new _PRF.ProfilerSession(_engine);
+                                _session = new _PRF.ProfilerSession(_engine, HeapAbsoluteAddress.IsChecked.Value);
 
                                 if (_exporter != null)
                                 {

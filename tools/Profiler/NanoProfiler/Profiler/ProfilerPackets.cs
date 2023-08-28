@@ -491,26 +491,34 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
         internal override void Process(ProfilerSession sess)
         {
-            Tracing.PacketTrace("ALLOC: Object allocated at address {0}", m_address);
+            var address = sess.HeapAddressIsAbsolute ? sess.HeapStart + m_address : m_address;
+
+            Tracing.PacketTrace($"ALLOC: Object allocated at address {(sess.HeapAddressIsAbsolute ? "0x{0:X8}" : "{0}")}", address);
+            
             ObjectAllocation alloc = new ObjectAllocation();
             alloc._thread = sess._currentThreadPID;
-            alloc._address = m_address;
+            alloc._address = address;
             alloc._size = m_size;
+            
             if (!sess._threadCallStacks.ContainsKey(sess._currentThreadPID))
             {
                 sess._threadCallStacks.Add(sess._currentThreadPID, new Stack<uint>());
             }
+            
             alloc._callStack = sess._threadCallStacks[sess._currentThreadPID].ToArray();
+            
             Array.Reverse(alloc._callStack);
+            
             sess.ResolveTypeName(m_type);   //Cache type name.
 
-            if (sess._liveObjectTable.BinarySearch(m_address) < 0)
+            if (sess._liveObjectTable.BinarySearch(address) < 0)
             {
-                sess._liveObjectTable.Add(m_address);
+                sess._liveObjectTable.Add(address);
                 sess._liveObjectTable.Sort();
             }
 
             alloc._objectType = new ObjectType(m_type, m_rank);
+
             sess.AddEvent(alloc);
         }
     }
@@ -579,15 +587,17 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
         internal override void Process(ProfilerSession sess)
         {
-            Tracing.PacketTrace("ALLOC: Object freed from address {0}", m_address);
+            var address = sess.HeapAddressIsAbsolute ? sess.HeapStart + m_address : m_address;
 
-            int objIndex = sess._liveObjectTable.BinarySearch(m_address);
+            Tracing.PacketTrace($"ALLOC: Object freed from address {(sess.HeapAddressIsAbsolute ? "0x{0:X8}" : "{0}")}", address);
+
+            int objIndex = sess._liveObjectTable.BinarySearch(address);
             if (objIndex > -1)
             {
                 sess._liveObjectTable.RemoveAt(objIndex);
 
                 ObjectDeletion delete = new ObjectDeletion();
-                delete.address = m_address;
+                delete.address = address;
                 sess.AddEvent(delete);
             }
         }

@@ -13,12 +13,19 @@
         
         <GroupBox Header="Profiling Options" Margin="224,19,295,273">
             <Grid Height="107" Margin="0,0,47,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="284*"/>
                 </Grid.ColumnDefinitions>
-                <CheckBox Grid.Column="0" Content="Force Reboot on Connect" HorizontalAlignment="Left" Margin="10,10,0,74" Name="checkReboot" IsChecked="True" Height="23"/>
-                <CheckBox Grid.Column="0" Content="Profile Function Calls" HorizontalAlignment="Left" Margin="10,38,0,46" Name="checkCalls" IsChecked="False" Height="23"/>
-                <CheckBox Grid.Column="0" Content="Profile Object Allocations" HorizontalAlignment="Left" Margin="10,66,0,21" Name="checkAllocations" IsChecked="True" Height="23"/>
+                <CheckBox Grid.Column="0" Grid.Row="0" Content="Force Reboot on Connect" HorizontalAlignment="Left" Margin="10,10,0,0" Name="checkReboot" IsChecked="True" Height="23"/>
+                <CheckBox Grid.Column="0" Grid.Row="1" Content="Profile Function Calls" HorizontalAlignment="Left" Margin="10,0,0,0" Name="checkCalls" IsChecked="False" Height="23"/>
+                <CheckBox Grid.Column="0" Grid.Row="2" Content="Profile Object Allocations" HorizontalAlignment="Left" Margin="10,0,0,0" Name="checkAllocations" IsChecked="True" Height="23"/>
+                <CheckBox Grid.Column="0" Grid.Row="3" Content="User Heap Absolute Address" HorizontalAlignment="Left" Margin="10,0,0,0" Name="HeapAbsoluteAddress" Height="23"/>
             </Grid>
         </GroupBox>
         <TextBox x:Name="textLog" HorizontalAlignment="Left" Margin="22,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="574" Height="152"/>
