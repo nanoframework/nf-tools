@@ -108,7 +108,7 @@ namespace nanoFramework.Tools.NanoProfiler
                 LogText($"Max Profiler packet length: {_session.MaxProfilePayloadLength}");
 #endif 
 
-                LogText("Disconnected from TinyCLR.");
+                LogText("Disconnected from nanoCLR.");
             }
 
             KillEmulator();
