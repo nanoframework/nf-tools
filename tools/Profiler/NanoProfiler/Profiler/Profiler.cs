@@ -276,7 +276,16 @@ namespace nanoFramework.Tools.NanoProfiler
             }
             else
             {
-                return _engine.ResolveType(type).m_name;
+                var resolvedType = _engine.ResolveType(type);
+
+                if (resolvedType == null)
+                {
+                    return "*** UNKNOWN TYPE ***";
+                }
+                else
+                {
+                    return resolvedType.m_name;
+                }
             }
         }
     }
