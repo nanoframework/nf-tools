@@ -5,8 +5,191 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.CLRProfiler"
         mc:Ignorable="d"
-        Title="SummaryForm" Height="450" Width="800">
+        Title="SummaryForm" Height="500" Width="800">
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <GroupBox Header="Heap Statistics" Margin="10,10,10,0" Grid.Row="0" Grid.ColumnSpan="2">
+            <Grid VerticalAlignment="Top">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!--Row 0 elements-->
+                <Label Grid.Column="0" Grid.Row="0" Name="AllocatedBytesLabel" Content="Allocated bytes:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="0" Name="AllocatedBytesValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="0" Name="AllocatedHistogramButton" Content="Histogram" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center" Click="AllocatedHistogramButton_Click"/>
+                <Button Grid.Column="3" Grid.Row="0" Name="AllocationGraphButton" Content="Allocation Graph" HorizontalAlignment="Center" Margin="0,0,0,0" VerticalAlignment="Center" Width="109"/>
+
+                <!--Row 1 elements-->
+                <Label Grid.Column="0" Grid.Row="1" Name="RelocatedBytesLabel" Content="Relocated bytes:" Margin="0,0,0,0" />
+                <Label Grid.Column="1" Grid.Row="1" Name="RelocatedBytesValueLabel"  Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="1" Name="RelocatedHistogramButton" Content="Histogram" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center"/>
+
+                <!--Row 2 elements-->
+                <Label Grid.Column="0" Grid.Row="2" Name="FinalHeapBytesLabel"  Content="Final Heap bytes:" Margin="0,0,0,0"/>
+                <Label Grid.Column="1" Grid.Row="2" Name="FinalHeapBytesValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="2" Name="FinalHeapHistogramButton" Content="Histogram" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center"/>
+                <Button Grid.Column="3" Grid.Row="2" Name="FinalHeapHistogramByAgeButton" Content="Allocation Graph" HorizontalAlignment="Center" Margin="0,0,0,0" VerticalAlignment="Center" Width="110"/>
+                <Button Grid.Column="4" Grid.Row="2" Name="FinalHeapObjectsByAddressButton" Content="Objects by Address" HorizontalAlignment="Center" Margin="-10,0,0,0" VerticalAlignment="Center" Width="120"/>
+
+                <!--Row 3 elements-->
+                <Label Grid.Column="0" Grid.Row="3" Name="ObjectsFinalizedLabel" Content="Objects finalized:" Margin="0,0,0,0" />
+                <Label Grid.Column="1" Grid.Row="3" Name="ObjectsFinalizedValueLabel"  Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="3" Name="FinalizedHistogramButton" Content="Histogram" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center"/>
+
+                <!--Row 4 elements-->
+                <Label Grid.Column="0" Grid.Row="4" Name="CriticalObjectsFinalizedLabel" Content="Critical objects finalized:" Margin="0,0,0,0" />
+                <Label Grid.Column="1" Grid.Row="4" Name="CriticalObjectsFinalizedValueLabel"  Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="4" Name="CriticalFinalizedHistogramButton" Content="Histogram" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center"/>
+
+                <Grid Margin="0,0,0,0" VerticalAlignment="Center"/>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Header="Garbage Collection Statistics" Margin="10,10,10,0" Grid.Row="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="120"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!--Gen 0 collections elements-->
+                <Label Grid.Column="0" Grid.Row="0" Name="Gen0CollectionsLabel" Content="Gen 0 collections:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="0" Name="Gen0CollectionsValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="0" Name="TimeLineButton" Content="Time Line" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center"/>
+
+                <!--"Gen 1 collections elements-->
+                <Label Grid.Column="0" Grid.Row="1" Name="Gen1CollectionsLabel" Content="Gen 1 collections:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="1" Name="Gen1CollectionsValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+
+                <!--Gen 2 collections elements-->
+                <Label Grid.Column="0" Grid.Row="2"  Name="Gen2CollectionsLabel" Content="Gen 2 collections:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="2" Name="Gen2CollectionsValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+
+                <!--Induced collections: elements-->
+                <Label Grid.Column="0" Grid.Row="3" Name="InducedCollectionsLabel" Content="Induced collections:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="3" Name="InducedCollectionsValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Header="Garbage Collector Generation Sizes" Margin="10,10,10,0" Grid.Row="1" Grid.Column="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!--Gen 0 Heap elements-->
+                <Label Grid.Column="0" Grid.Row="0" Name="Gen0HeapBytesLabel" Content="Gen 0 Heap bytes:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="0" Name="Gen0HeapBytesValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+
+                <!--"Gen 1 Heap elements-->
+                <Label Grid.Column="0" Grid.Row="1" Name="Gen1HeapBytesLabel" Content="Gen 1 Heap bytes:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="1" Name="Gen1HeapBytesValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+
+                <!--Gen 2 Heap elements-->
+                <Label Grid.Column="0" Grid.Row="2" Name="Gen2HeapBytesLabel" Content="Gen 1 Heap bytes:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="2" Name="Gen2HeapBytesValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+
+                <!--Large Object Heap  elements-->
+                <Label Grid.Column="0" Grid.Row="3" Name="LargeObjectHeapBytesLabel"  Content="Large Object Heap bytes:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="3" Name="LargeObjectHeapBytesValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Header="GC Handle Statistics" Margin="10,10,10,0" Grid.Row="2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="120"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!--Handles created elements-->
+                <Label Grid.Column="0" Grid.Row="0" Name="HandlesCreatedLabel" Content="Handles created:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="0" Name="HandlesCreatedValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="0" Name="HandleAllocationGraphButton" Content="Allocation Graph" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center"/>
+
+                <!--"Handles destroyed elements-->
+                <Label Grid.Column="0" Grid.Row="1" Name="HandlesDestroyedLabel" Content="Handles destroyed:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="1" Name="HandlesDestroyedValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+
+                <!--Handles surviving elements-->
+                <Label Grid.Column="0" Grid.Row="2" Name="HandlesSurvivingLabel" Content="Handles surviving:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="2" Name="HandlesSurvivingValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="0" Name="SurvingHandlesAllocationGraphButton" Content="Allocation Graph" HorizontalAlignment="Center" Margin="0,0,0,0" Width="110" VerticalAlignment="Center"/>
+
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Header="Profiling Statistics" Margin="10,10,10,0" Grid.Row="2" Grid.Column="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="120"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!--Heap Dumps elements-->
+                <Label Grid.Column="0" Grid.Row="0" Name="HeapDumpsLabel" Content="Heap Dumps:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="0" Name="HeapDumpsValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="0" Name="HeapGraphButton" Content="Heap Graph" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center"/>
+
+                <!--"Comments elements-->
+                <Label Grid.Column="0" Grid.Row="1" Name="CommentsLabel"  Content="Comments:" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Label Grid.Column="1" Grid.Row="1" Name="CommentsValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                <Button Grid.Column="2" Grid.Row="1" Name="CommentsButton" Content="Comments" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center"/>
+
+            </Grid>
+        </GroupBox>
+        <Button Grid.Column="1" Content="Copy" Name="CopyButton" HorizontalAlignment="Right"  Grid.Row="3" Margin="0,20,10,0" VerticalAlignment="Top" Width="40" Click="CopyButton_Click"/>
+
     </Grid>
 </Window>
