@@ -182,6 +182,10 @@ namespace nanoFramework.Tools.NanoProfiler
             }
         }
 
+#if DEBUG
+        public ulong MaxProfilePayloadLength { get; private set; } = 0;
+#endif
+
         public ulong BitsReceived { get; private set; }
 
         public ulong StartTime { get; internal set; }
@@ -237,6 +241,13 @@ namespace nanoFramework.Tools.NanoProfiler
                                 _lastSeenStreamPacketID = pay.seqId;
                             }
                         }
+
+#if DEBUG
+                        // update stats on the stream
+                        // usefull for debugging purposes only
+                        MaxProfilePayloadLength = Math.Max(MaxProfilePayloadLength, pay.bitLen);
+#endif
+
                         BitsReceived += pay.bitLen;
                         _incomingStream.AppendChunk(pay.payload, 0, pay.bitLen);
                         break;

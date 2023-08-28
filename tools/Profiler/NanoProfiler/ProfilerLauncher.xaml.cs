@@ -104,6 +104,10 @@ namespace nanoFramework.Tools.NanoProfiler
 
             if (_state == ProfilingState.Connected)
             {
+#if DEBUG
+                LogText($"Max Profiler packet length: {_session.MaxProfilePayloadLength}");
+#endif 
+
                 LogText("Disconnected from TinyCLR.");
             }
 
