@@ -9,7 +9,7 @@ namespace nanoFramework.Tools.NanoProfiler
     {
         public App()
         {
-            this.InitializeComponent();
+            this.InitializeComponent(); 
         }
     }
 }
