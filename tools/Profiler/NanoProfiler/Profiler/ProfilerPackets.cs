@@ -19,6 +19,12 @@ namespace nanoFramework.Tools.NanoProfiler
         {
             System.Diagnostics.Debug.Print(format, args);
         }
+        
+        [Conditional("PACKET_TRACE")]
+        internal static void PacketTrace(string ouptut)
+        {
+            System.Diagnostics.Debug.Print(ouptut);
+        }
     }
 
     internal class ProfilerPacketFactory
