@@ -627,7 +627,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
         internal override void Process(ProfilerSession sess)
         {
-            Tracing.PacketTrace("GARBAGE COLLECTION BEGIN >>>");
+            Tracing.PacketTrace("GC BEGIN >>>");
 
             sess.HeapBytesFree = m_freeBytes;
 
@@ -648,7 +648,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
         internal override void Process(ProfilerSession sess)
         {
-            Tracing.PacketTrace("<<< GARBAGE COLLECTION BEGIN");
+            Tracing.PacketTrace("<<< GC END");
 
             sess.HeapBytesFree = m_freeBytes;
 
@@ -670,7 +670,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
         internal override void Process(ProfilerSession sess)
         {
-            Tracing.PacketTrace("HEAP COMPACTION BEGIN >>>");
+            Tracing.PacketTrace("Heap Compaction BEGIN >>>");
 
             sess.HeapBytesFree = m_freeBytes;
 
@@ -691,7 +691,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
         internal override void Process(ProfilerSession sess)
         {
-            Tracing.PacketTrace("<<< HEAP COMPACTION END");
+            Tracing.PacketTrace("<<< Heap Compaction END");
 
             // on CLR Profiler side: Need to preserve objects not relocated.
 
