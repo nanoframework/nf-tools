@@ -8,6 +8,7 @@ using System.Threading;
 using _DBG = nanoFramework.Tools.Debugger;
 using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 using _PRF = nanoFramework.Tools.NanoProfiler;
+using nanoFramework.Tools.NanoProfiler.Extensions;
 
 namespace nanoFramework.Tools.NanoProfiler
 {
@@ -25,7 +26,9 @@ namespace nanoFramework.Tools.NanoProfiler
         internal static Packets.ProfilerPacket Decode(_DBG.BitStream stream)
         {
             uint type = stream.ReadBits(Packets.Commands.Bits.CommandHeader);
-            Tracing.PacketTrace("New Packet {0}", type);
+            
+            Tracing.PacketTrace("New Packet: {0}", type.ToCommandName());
+            
             switch(type)
             {
                 case Packets.Commands.c_Profiling_Timestamp:
