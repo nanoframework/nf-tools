@@ -14,4 +14,10 @@
     <PackageReference Include="nanoFramework.Tools.Debugger.Net" Version="2.4.34" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Page Update="CLRProfiler\GraphViewForm.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+  </ItemGroup>
+
 </Project>
