@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using _PRF = nanoFramework.Tools.NanoProfiler;
 
@@ -174,7 +175,7 @@ namespace nanoFramework.Tools.NanoProfiler
                     {
                         _PRF.GarbageCollectionBegin gc = (_PRF.GarbageCollectionBegin)pe;
 
-                        uint lastObjAddress = ps._liveObjectTable[ps._liveObjectTable.Count - 1] + 1;
+                        uint lastObjAddress = ps._liveObjectTable.Last().Key + 1;
                         _sw.WriteLine($"b 1 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
                         
                         break;
@@ -184,13 +185,13 @@ namespace nanoFramework.Tools.NanoProfiler
                     {
                         _PRF.GarbageCollectionEnd gc = (_PRF.GarbageCollectionEnd)pe;
 
-                        for (int i = 0; i < gc.liveObjects.Count; i++)
+                        foreach (var liveObject in gc.liveObjects)
                         {
                             //Send length of 1 for single object, regardless of true object length.
-                            _sw.WriteLine($"v 0x{gc.liveObjects[i]:x} 1");
+                            _sw.WriteLine($"v 0x{liveObject.Key:x} 1");
                         }
 
-                        uint lastObjAddress = ps._liveObjectTable[ps._liveObjectTable.Count - 1] + 1;
+                        uint lastObjAddress = ps._liveObjectTable.Last().Key + 1;
                         _sw.WriteLine($"b 0 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
 
                         break;
@@ -199,7 +200,7 @@ namespace nanoFramework.Tools.NanoProfiler
                     {
                         _PRF.HeapCompactionBegin gc = (_PRF.HeapCompactionBegin)pe;
 
-                        uint lastObjAddress = ps._liveObjectTable[ps._liveObjectTable.Count - 1] + 1;
+                        uint lastObjAddress = ps._liveObjectTable.Last().Key + 1;
                         _sw.WriteLine($"b 1 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
 
                         break;
@@ -209,7 +210,7 @@ namespace nanoFramework.Tools.NanoProfiler
                     {
                         _PRF.HeapCompactionEnd gc = (_PRF.HeapCompactionEnd)pe;
 
-                        uint lastObjAddress = ps._liveObjectTable[ps._liveObjectTable.Count - 1] + 1;
+                        uint lastObjAddress = ps._liveObjectTable.Last().Key + 1;
                         _sw.WriteLine($"b 0 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
 
                         break;

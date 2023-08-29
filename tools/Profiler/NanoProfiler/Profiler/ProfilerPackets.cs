@@ -483,10 +483,13 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             m_address = ReadAndUnpackBits(stream);
             m_size = ReadAndUnpackBits(stream) * ProfilerSession.HeapBlockSize;
             m_dt = (_DBG.nanoClrDataType)stream.ReadBits(Commands.Bits.DataType);
-            if (m_dt == _DBG.nanoClrDataType.DATATYPE_CLASS || m_dt == _DBG.nanoClrDataType.DATATYPE_VALUETYPE ||
-                m_dt == _DBG.nanoClrDataType.DATATYPE_SZARRAY)
+
+            if (m_dt == _DBG.nanoClrDataType.DATATYPE_CLASS
+                || m_dt == _DBG.nanoClrDataType.DATATYPE_VALUETYPE
+                || m_dt == _DBG.nanoClrDataType.DATATYPE_SZARRAY)
             {
                 m_type = ReadTypeDefIndex(stream);
+
                 if (m_dt == _DBG.nanoClrDataType.DATATYPE_SZARRAY)
                 {
                     m_rank = (ushort)ReadAndUnpackBits(stream);
@@ -502,7 +505,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             var address = sess.HeapAddressIsAbsolute ? sess.HeapStart + m_address : m_address;
 
-            Tracing.PacketTrace($"ALLOC: Object allocated {{{sess.ResolveTypeName(m_type)}}} at address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : "{address:0}")}");
+            Tracing.PacketTrace($"ALLOC: Object allocated {{{sess.ResolveTypeName(m_type)}{(m_rank > 0 ? "[]" : "")}}} ({m_size} bytes) @ address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : "{address:0}")}");
 
             ObjectAllocation alloc = new()
             {
@@ -523,10 +526,9 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             // cache the type name
             sess.ResolveTypeName(m_type);
 
-            if (sess._liveObjectTable.BinarySearch(address) < 0)
+            if (!sess._liveObjectTable.ContainsKey(address))
             {
-                sess._liveObjectTable.Add(address);
-                sess._liveObjectTable.Sort();
+                sess._liveObjectTable.Add(address, $"{sess.ResolveTypeName(m_type)}{(m_rank > 0 ? "[]" : "")}");
             }
 
             alloc._objectType = new ObjectType(m_type, m_rank);
@@ -559,30 +561,34 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             Tracing.PacketTrace("ALLOC: Objects relocated");
 
-            List<uint> newTable = new List<uint>();
-            for (int i = 0; i < sess._liveObjectTable.Count; i++ )
+            SortedDictionary<uint, string> newTable = new SortedDictionary<uint, string>();
+
+            foreach(var liveObject in sess._liveObjectTable)
             {
-                uint ptr = sess._liveObjectTable[i];
+                uint ptr = liveObject.Key;
                 uint j;
+
                 for (j = 0; j < reloc.Length; j++)
                 {
                     if (ptr >= reloc[j]._start && ptr <= reloc[j]._end)
                     {
-                        newTable.Add(ptr + reloc[j]._offset);
+                        newTable.Add(ptr + reloc[j]._offset, liveObject.Value);
                         break;
                     }
                 }
+
                 if (j == reloc.Length)
                 {
                     //No relocation for this object.
-                    newTable.Add(ptr);
+                    newTable.Add(ptr, liveObject.Value);
                 }
             }
-            newTable.Sort();
+            
             sess._liveObjectTable = newTable;
 
             ObjectRelocation or = new ObjectRelocation();
             or._relocationRegions = reloc;
+
             sess.AddEvent(or);
         }
     }
@@ -601,17 +607,15 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             var address = sess.HeapAddressIsAbsolute ? sess.HeapStart + m_address : m_address;
 
-            Tracing.PacketTrace($"ALLOC: Object freed from address {(sess.HeapAddressIsAbsolute ? "0x{0:X8}" : "{0}")}", address);
+            System.Diagnostics.Debug.Assert(sess._liveObjectTable.ContainsKey(address));
 
-            int objIndex = sess._liveObjectTable.BinarySearch(address);
-            if (objIndex > -1)
-            {
-                sess._liveObjectTable.RemoveAt(objIndex);
+            Tracing.PacketTrace($"ALLOC: Object {sess._liveObjectTable[address]} freed from address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : $"{address}")}");
+            
+            sess._liveObjectTable.Remove(address);
 
-                ObjectDeletion delete = new ObjectDeletion();
-                delete.address = address;
-                sess.AddEvent(delete);
-            }
+            ObjectDeletion delete = new ObjectDeletion();
+            delete.address = address;
+            sess.AddEvent(delete);
         }
     }
 
@@ -653,7 +657,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             sess.HeapBytesFree = m_freeBytes;
 
             GarbageCollectionEnd gc = new GarbageCollectionEnd();
-            gc.liveObjects = new List<uint>(sess._liveObjectTable);
+            gc.liveObjects = new SortedDictionary<uint, string>(sess._liveObjectTable);
+
             sess.AddEvent(gc);
         }
     }

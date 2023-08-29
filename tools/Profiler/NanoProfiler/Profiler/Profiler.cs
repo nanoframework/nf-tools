@@ -24,7 +24,7 @@ namespace nanoFramework.Tools.NanoProfiler
         internal uint _currentThreadPID;
         internal uint _currentAssembly;
 
-        internal List<uint> _liveObjectTable;
+        internal SortedDictionary<uint, string> _liveObjectTable;
 
         private Thread _receiverThread;
         private _DBG.BitStream _incomingStream;
@@ -56,7 +56,7 @@ namespace nanoFramework.Tools.NanoProfiler
             _currentHeapDump = null;
             _threadCallStacks = new Dictionary<uint, Stack<uint>>();
 
-            _liveObjectTable = new List<uint>();
+            _liveObjectTable = new SortedDictionary<uint, string>();
 
             _firstPacket = true;
 
@@ -531,7 +531,7 @@ namespace nanoFramework.Tools.NanoProfiler
 
     public class GarbageCollectionEnd : ProfilerEvent
     {
-        public List<uint> liveObjects;
+        public SortedDictionary<uint, string> liveObjects;
 
         public GarbageCollectionEnd()
         {
