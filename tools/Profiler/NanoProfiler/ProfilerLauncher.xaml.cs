@@ -105,10 +105,10 @@ namespace nanoFramework.Tools.NanoProfiler
             if (_state == ProfilingState.Connected)
             {
 #if DEBUG
-                LogText($"Max Profiler packet length: {_session.MaxProfilePayloadLength}");
+                LogText($"INFO: Max Profiler packet length: {_session.MaxProfilePayloadLength}");
 #endif 
 
-                LogText("Disconnected from nanoCLR.");
+                LogText("INFO: Disconnected from nanoCLR.");
             }
 
             KillEmulator();
@@ -152,7 +152,7 @@ namespace nanoFramework.Tools.NanoProfiler
             }
             else
             {
-                LogText(string.Concat("Received message from device: ", text));
+                LogText(text);
             }
         }
 
@@ -186,7 +186,7 @@ namespace nanoFramework.Tools.NanoProfiler
         private void SoftDisconnectDone(object sender, EventArgs args)
         {
 #if DEBUG
-            LogText($"Profiling Session Length: {((_session != null) ? _session.BitsReceived : 0)} bits.");
+            LogText($"INFO: Profiling Session Length: {((_session != null) ? _session.BitsReceived : 0)} bits.");
 #endif
             Dispatcher.Invoke(() =>
             {
@@ -225,8 +225,8 @@ namespace nanoFramework.Tools.NanoProfiler
                         _session.SetProfilingOptions(checkCalls.IsChecked.Value, checkAllocations.IsChecked.Value);
                         _engine.ResumeExecution();
 
-                        LogText("Successfully connected to nanoCLR.");
-                        LogText("Using file: " + _exporter.FileName);
+                        LogText("INFO: Successfully connected to nanoCLR.");
+                        LogText("INFO: Using file: " + _exporter.FileName);
 
                         ConnectComplete();
                     //}
@@ -240,7 +240,7 @@ namespace nanoFramework.Tools.NanoProfiler
                 {
                     //Exception ex = (Exception)e.Error;
                     
-                    LogText(string.Format("Error connecting to device:\r\n{0}", "???"));
+                    LogText(string.Format("INFO: Error connecting to device:\r\n{0}", "???"));
                     
                     Disconnect();
                 }
