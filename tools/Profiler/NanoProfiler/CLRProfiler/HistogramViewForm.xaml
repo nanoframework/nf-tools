@@ -1,56 +1,100 @@
-﻿<Window x:Class="nanoFramework.Tools.NanoProfiler.CLRProfiler.HistogramViewForm"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.CLRProfiler"
-        mc:Ignorable="d"
-        Title="HistogramViewForm" Height="644" Width="1016">
+﻿<Window
+    x:Class="nanoFramework.Tools.NanoProfiler.CLRProfiler.HistogramViewForm"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="HistogramViewForm"
+    Width="1016"
+    Height="644"
+    mc:Ignorable="d">
+
+    <Window.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="Show Who Allocated" />
+            <MenuItem Header="Export Data to File.." />
+        </ContextMenu>
+    </Window.ContextMenu>
+
     <Grid>
+
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
+
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height=".25*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Label Content="Vertical Scale (kB/px):" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="163" Height="30" FontSize="16" />
-        <ComboBox Name="VerticalScaleOption" HorizontalAlignment="Left" Margin="173,14,0,0" VerticalAlignment="Top" Width="120" SelectedItem="1">
-            <ComboBoxItem Content="1" />
-            <ComboBoxItem Content="2" />
-            <ComboBoxItem Content="5" />
-            <ComboBoxItem Content="10" />
-            <ComboBoxItem Content="20" />
-            <ComboBoxItem Content="50" />
-            <ComboBoxItem Content="100" />
-            <ComboBoxItem Content="200" />
-            <ComboBoxItem Content="500" />
-            <ComboBoxItem Content="1000" />
-            <ComboBoxItem Content="2000" />
-            <ComboBoxItem Content="5000" />
-            <ComboBoxItem Content="10000" />
-            <ComboBoxItem Content="20000" />
-        </ComboBox>
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="0"
+            Margin="10,0,0,0"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <Label
+                Width="163"
+                Height="30"
+                HorizontalAlignment="Left"
+                Content="Vertical Scale (kB/px):"
+                FontSize="16" />
+            <ComboBox
+                Name="VerticalScaleOption"
+                Width="120"
+                Margin="20,0,0,0"
+                SelectedItem="1">
+                <ComboBoxItem Content="1" />
+                <ComboBoxItem Content="2" />
+                <ComboBoxItem Content="5" />
+                <ComboBoxItem Content="10" />
+                <ComboBoxItem Content="20" />
+                <ComboBoxItem Content="50" />
+                <ComboBoxItem Content="100" />
+                <ComboBoxItem Content="200" />
+                <ComboBoxItem Content="500" />
+                <ComboBoxItem Content="1000" />
+                <ComboBoxItem Content="2000" />
+                <ComboBoxItem Content="5000" />
+                <ComboBoxItem Content="10000" />
+                <ComboBoxItem Content="20000" />
+            </ComboBox>
+        </StackPanel>
 
-        <Label Content="Horiziontal Scale:" HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top" Width="163" Height="30" FontSize="16" />
-        <ComboBox Name="HorizontalScaleOption" HorizontalAlignment="Left" Margin="173,57,0,0" VerticalAlignment="Top" Width="120" SelectedItem="1">
-            <ComboBoxItem Content="Coarse" IsSelected="True" />
-            <ComboBoxItem Content="Medium" />
-            <ComboBoxItem Content="Fine" />
-            <ComboBoxItem Content="Very Fine" />
-        </ComboBox>
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="1"
+            Margin="10,0,0,0"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <Label
+                Width="163"
+                Height="30"
+                HorizontalAlignment="Left"
+                Content="Horiziontal Scale:"
+                FontSize="16" />
+            <ComboBox
+                Name="HorizontalScaleOption"
+                Width="120"
+                Margin="20,0,0,0"
+                HorizontalAlignment="Left"
+                SelectedItem="1">
+                <ComboBoxItem Content="Coarse" IsSelected="True" />
+                <ComboBoxItem Content="Medium" />
+                <ComboBoxItem Content="Fine" />
+                <ComboBoxItem Content="Very Fine" />
+            </ComboBox>
+        </StackPanel>
 
         <Canvas x:Name="graphPanel" Grid.Row="1">
-            <Canvas Height="209" Width="508"/>
+            <Canvas Width="508" Height="209" />
         </Canvas>
-        
-        <Canvas x:Name="typeLegendPanel" Grid.Column="1" Grid.Row="1"/>
 
-
-
-
+        <Canvas
+            x:Name="typeLegendPanel"
+            Grid.Row="1"
+            Grid.Column="1" />
     </Grid>
 </Window>

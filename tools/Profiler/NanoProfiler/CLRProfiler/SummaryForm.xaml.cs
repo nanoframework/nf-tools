@@ -1,5 +1,4 @@
 ﻿using CLRProfiler;
-using DevExpress.Xpf.WindowsUI.Navigation;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;

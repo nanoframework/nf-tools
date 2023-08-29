@@ -1,9 +1,8 @@
-﻿<Application x:Class="nanoFramework.Tools.NanoProfiler.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler"
-             StartupUri="ProfilerLauncher.xaml">
-    <Application.Resources>
-         
-    </Application.Resources>
+﻿<Application
+    x:Class="nanoFramework.Tools.NanoProfiler.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler"
+    StartupUri="CLRProfiler\HistogramViewForm.xaml">
+    <Application.Resources />
 </Application>
