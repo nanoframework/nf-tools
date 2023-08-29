@@ -11,7 +11,7 @@ namespace CLRProfiler
     /// <summary>
     ///    Summary description for Graph.
     /// </summary>
-    internal class Graph
+    public class Graph
     {
         internal object graphSource;
         internal Dictionary<string, Vertex> vertices;
