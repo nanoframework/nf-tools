@@ -502,13 +502,15 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             var address = sess.HeapAddressIsAbsolute ? sess.HeapStart + m_address : m_address;
 
-            Tracing.PacketTrace($"ALLOC: Object allocated at address {(sess.HeapAddressIsAbsolute ? "0x{0:X8}" : "{0}")}", address);
-            
-            ObjectAllocation alloc = new ObjectAllocation();
-            alloc._thread = sess._currentThreadPID;
-            alloc._address = address;
-            alloc._size = m_size;
-            
+            Tracing.PacketTrace($"ALLOC: Object allocated {{{sess.ResolveTypeName(m_type)}}} at address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : "{address:0}")}");
+
+            ObjectAllocation alloc = new()
+            {
+                _thread = sess._currentThreadPID,
+                _address = address,
+                _size = m_size
+            };
+
             if (!sess._threadCallStacks.ContainsKey(sess._currentThreadPID))
             {
                 sess._threadCallStacks.Add(sess._currentThreadPID, new Stack<uint>());
@@ -517,8 +519,9 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             alloc._callStack = sess._threadCallStacks[sess._currentThreadPID].ToArray();
             
             Array.Reverse(alloc._callStack);
-            
-            sess.ResolveTypeName(m_type);   //Cache type name.
+
+            // cache the type name
+            sess.ResolveTypeName(m_type);
 
             if (sess._liveObjectTable.BinarySearch(address) < 0)
             {
