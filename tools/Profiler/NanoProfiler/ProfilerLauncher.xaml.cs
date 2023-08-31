@@ -1,27 +1,14 @@
 ﻿using nanoFramework.Tools.Debugger;
+using nanoFramework.Tools.Debugger.Extensions;
+using nanoFramework.Tools.Debugger.WireProtocol;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-
-using _PRF = nanoFramework.Tools.NanoProfiler;
-using _DBG = nanoFramework.Tools.Debugger;
-using _WP = nanoFramework.Tools.Debugger.WireProtocol;
-using nanoFramework.Tools.Debugger.WireProtocol;
 using System.Windows.Forms;
-using static System.Resources.ResXFileRef;
-using nanoFramework.Tools.Debugger.Extensions;
+using _DBG = nanoFramework.Tools.Debugger;
+using _PRF = nanoFramework.Tools.NanoProfiler;
+using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 
 namespace nanoFramework.Tools.NanoProfiler
 {

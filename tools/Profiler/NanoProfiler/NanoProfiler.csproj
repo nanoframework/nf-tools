@@ -5,12 +5,16 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>nanoFramework.Tools.NanoProfiler</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);PACKET_TRACE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
-    <PackageReference Include="devexpress.wpf.controls" Version="21.2.6" />
     <PackageReference Include="nanoFramework.Tools.Debugger.Net" Version="2.4.34" />
   </ItemGroup>
 

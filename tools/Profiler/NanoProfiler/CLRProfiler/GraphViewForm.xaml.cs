@@ -1,6 +1,4 @@
 ﻿using CLRProfiler;
-using DevExpress.Xpf.Core;
-using DevExpress.Xpf.Core.ReflectionExtensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,7 +8,6 @@ using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Text;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Forms;
 using Clipboard = System.Windows.Forms.Clipboard;
 using Control = System.Windows.Forms.Control;
