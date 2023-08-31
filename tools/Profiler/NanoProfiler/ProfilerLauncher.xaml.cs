@@ -12,6 +12,7 @@ using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 
 namespace nanoFramework.Tools.NanoProfiler
 {
+    //Test
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
