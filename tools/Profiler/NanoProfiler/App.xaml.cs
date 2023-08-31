@@ -1,5 +1,6 @@
 ﻿using nanoFramework.Tools.NanoProfiler.Views;
 using System.Windows;
+using nanoFramework.Tools.NanoProfiler;
 
 namespace nanoFramework.Tools.NanoProfiler
 {
@@ -10,8 +11,10 @@ namespace nanoFramework.Tools.NanoProfiler
     {
         public App()
         {
-            ProfileLauncherView mw = new ProfileLauncherView();
-            mw.Show();
+            //this.InitializeComponent();
+            //MainWindow = new ProfilerLauncher();
+            MainWindow = new ProfilerLauncherView();
+            MainWindow.Show();
         }
     }
 }

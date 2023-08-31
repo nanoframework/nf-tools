@@ -4,6 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler"
     xmlns:views="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
+    
     >
+    <!--StartupUri="ProfilerLauncher.xaml"-->
     <Application.Resources />
 </Application>
