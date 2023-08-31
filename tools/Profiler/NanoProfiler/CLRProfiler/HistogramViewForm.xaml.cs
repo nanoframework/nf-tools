@@ -228,7 +228,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 
         void BuildSizeRangesAndTypeTable(int[] typeSizeStacktraceToCount)
         {
-            BuildBuckets();
+            //BuildBuckets();
 
             totalSize = 0;
             totalCount = 0;
@@ -273,7 +273,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 totalSize += (ulong)size * (ulong)count;
                 totalCount += count;
 
-                AddToBuckets(t, size, count);
+                //AddToBuckets(t, size, count);
             }
 
             if (totalSize == 0)
@@ -286,7 +286,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 totalCount = 1;
             }
 
-            TrimEmptyBuckets();
+            //TrimEmptyBuckets();
 
             sortedTypeTable = new ArrayList();
             foreach (TypeDesc t in typeIndexToTypeDesc)
@@ -603,22 +603,22 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 return;
             }
             
-            Graphics g =  e.Graphics;
+            //Graphics g =  e.Graphics;
 
-            bucketWidth = BucketWidth(g);
-            bottomMargin = BottomMargin();
+            //bucketWidth = BucketWidth(g);
+            //bottomMargin = BottomMargin();
 
             BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
             ColorTypes();
 
             ulong maxTotalSize = 0;
-            foreach (Bucket b in buckets)
-            {
-                if (maxTotalSize < b.totalSize)
-                {
-                    maxTotalSize = b.totalSize;
-                }
-            }
+            //foreach (Bucket b in buckets)
+            //{
+            //    if (maxTotalSize < b.totalSize)
+            //    {
+            //        maxTotalSize = b.totalSize;
+            //    }
+            //}
 
             verticalScale = VerticalScale((int)graphPanel.Height - topMargin - bottomMargin, maxTotalSize, verticalScale == 0);
 
@@ -631,10 +631,10 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 
             graphPanel.Height = height;
 
-            int width = leftMargin + buckets.Length * bucketWidth + (buckets.Length - 1) * gap + rightMargin;
-            graphPanel.Width = width;
+            //int width = leftMargin + buckets.Length * bucketWidth + (buckets.Length - 1) * gap + rightMargin;
+            //graphPanel.Width = width;
 
-            DrawBuckets(g);
+            //DrawBuckets(g);
 
             initialized = true;
         }
