@@ -35,7 +35,10 @@ namespace CLRProfiler
         internal void AddObject(int typeSizeStacktraceIndex, int count)
         {
             while (typeSizeStacktraceIndex >= typeSizeStacktraceToCount.Length)
+            {
                 typeSizeStacktraceToCount = ReadNewLog.GrowIntVector(typeSizeStacktraceToCount);
+            }
+
             typeSizeStacktraceToCount[typeSizeStacktraceIndex] += count;
         }
 
@@ -44,8 +47,13 @@ namespace CLRProfiler
             get
             {
                 foreach (int count in typeSizeStacktraceToCount)
+                {
                     if (count != 0)
+                    {
                         return false;
+                    }
+                }
+
                 return true;
             }
         }
@@ -53,15 +61,15 @@ namespace CLRProfiler
         internal int BuildVertexStack(int stackTraceIndex, Vertex[] funcVertex, ref Vertex[] vertexStack, int skipCount)
         {
             int[] stackTrace = readNewLog.stacktraceTable.IndexToStacktrace(stackTraceIndex);
-                
+
             while (vertexStack.Length < stackTrace.Length + 3)
             {
-                vertexStack = new Vertex[vertexStack.Length*2];
+                vertexStack = new Vertex[vertexStack.Length * 2];
             }
 
             for (int i = skipCount; i < stackTrace.Length; i++)
             {
-                vertexStack[i-skipCount] = funcVertex[stackTrace[i]];
+                vertexStack[i - skipCount] = funcVertex[stackTrace[i]];
             }
 
             return stackTrace.Length - skipCount;
@@ -103,7 +111,7 @@ namespace CLRProfiler
             Vertex fromVertex;
             Edge edge;
 
-            if(typeVertex != null)
+            if (typeVertex != null)
             {
                 vertexStack[stackPtr++] = typeVertex;
             }
@@ -181,7 +189,10 @@ namespace CLRProfiler
             {
                 string typeName = readNewLog.typeName[i];
                 if (typeName == null)
+                {
                     typeName = string.Format("???? type {0}", i);
+                }
+
                 readNewLog.AddTypeVertex(i, typeName, graph, ref typeVertex, filterForm);
             }
         }
@@ -189,7 +200,7 @@ namespace CLRProfiler
         internal int BuildAssemblyVertices(Graph graph, ref Vertex[] typeVertex, FilterForm filterForm)
         {
             int count = 0;
-            foreach(string c in readNewLog.assemblies.Keys)
+            foreach (string c in readNewLog.assemblies.Keys)
             {
                 readNewLog.AddTypeVertex(count++, c, graph, ref typeVertex, filterForm);
             }
@@ -203,9 +214,15 @@ namespace CLRProfiler
                 string name = readNewLog.funcName[i];
                 string signature = readNewLog.funcSignature[i];
                 if (name == null)
+                {
                     name = string.Format("???? function {0}", i);
+                }
+
                 if (signature == null)
+                {
                     signature = "( ???????? )";
+                }
+
                 readNewLog.AddFunctionVertex(i, name, signature, graph, ref funcVertex, filterForm);
             }
         }
@@ -236,7 +253,10 @@ namespace CLRProfiler
             }
 
             foreach (Vertex v in graph.vertices.Values)
+            {
                 v.active = true;
+            }
+
             graph.BottomVertex.active = false;
 
             return graph;
@@ -256,13 +276,13 @@ namespace CLRProfiler
             BuildTypeVertices(graph, ref typeVertex, filterForm);
             BuildFuncVertices(graph, ref funcVertex, filterForm);
 
-            for(int i = 0; i < count; i++)
+            for (int i = 0; i < count; i++)
             {
                 Vertex v = (Vertex)assemblyVertex[i], tv = null;
 
                 string c = v.name;
                 int stackid = readNewLog.assemblies[c];
-                if(stackid < 0)
+                if (stackid < 0)
                 {
                     int[] stacktrace = readNewLog.stacktraceTable.IndexToStacktrace(-stackid);
                     tv = typeVertex[stacktrace[0]];
@@ -299,7 +319,10 @@ namespace CLRProfiler
             }
 
             foreach (Vertex v in graph.vertices.Values)
+            {
                 v.active = true;
+            }
+
             graph.BottomVertex.active = false;
 
             return graph;
@@ -313,7 +336,7 @@ namespace CLRProfiler
                 {
                     int[] stacktrace = readNewLog.stacktraceTable.IndexToStacktrace(i);
 
-                    callCount[stacktrace[stacktrace.Length-1]] += (uint)typeSizeStacktraceToCount[i];
+                    callCount[stacktrace[stacktrace.Length - 1]] += (uint)typeSizeStacktraceToCount[i];
                 }
             }
         }
@@ -341,7 +364,10 @@ namespace CLRProfiler
             }
 
             foreach (Vertex v in graph.vertices.Values)
+            {
                 v.active = true;
+            }
+
             graph.BottomVertex.active = false;
 
             return graph;
@@ -371,10 +397,10 @@ namespace CLRProfiler
         internal ReadNewLog readNewLog;
 
         internal const int firstLevelShift = 25;
-        internal const int initialFirstLevelLength = 1<<(31-firstLevelShift); // covering 2 GB of address space
+        internal const int initialFirstLevelLength = 1 << (31 - firstLevelShift); // covering 2 GB of address space
         internal const int secondLevelShift = 10;
-        internal const int secondLevelLength = 1<<(firstLevelShift-secondLevelShift);
-        internal const int sampleGrain = 1<<secondLevelShift;
+        internal const int secondLevelLength = 1 << (firstLevelShift - secondLevelShift);
+        internal const int sampleGrain = 1 << secondLevelShift;
         internal int lastTickIndex;
         internal SampleObject gcTickList;
 
@@ -382,7 +408,10 @@ namespace CLRProfiler
         {
             SampleObject[][] newMasterTable = new SampleObject[masterTable.Length * 2][];
             for (int i = 0; i < masterTable.Length; i++)
+            {
                 newMasterTable[i] = masterTable[i];
+            }
+
             masterTable = newMasterTable;
         }
 
@@ -407,14 +436,17 @@ namespace CLRProfiler
             {
                 uint index = (uint)(id >> firstLevelShift);
                 while (masterTable.Length <= index)
+                {
                     GrowMasterTable();
+                }
+
                 SampleObject[] so = masterTable[index];
                 if (so == null)
                 {
                     so = new SampleObject[secondLevelLength];
                     masterTable[index] = so;
                 }
-                index = (uint)((id >> secondLevelShift) & (secondLevelLength-1));
+                index = (uint)((id >> secondLevelShift) & (secondLevelLength - 1));
                 Debug.Assert(so[index] == null || so[index].changeTickIndex <= changeTickIndex);
                 SampleObject prev = so[index];
                 if (prev != null && prev.typeIndex == typeIndex && prev.origAllocTickIndex == origAllocTickIndex)
@@ -432,13 +464,17 @@ namespace CLRProfiler
         internal void Insert(ulong start, ulong end, int changeTickIndex, int origAllocTickIndex, int typeIndex)
         {
             if (IsGoodSample(start, end))
+            {
                 RecordChange(start, end, changeTickIndex, origAllocTickIndex, typeIndex);
+            }
         }
 
         internal void Delete(ulong start, ulong end, int changeTickIndex)
         {
             if (IsGoodSample(start, end))
+            {
                 RecordChange(start, end, changeTickIndex, 0, 0);
+            }
         }
 
         internal void AddGcTick(int tickIndex, int gen)
@@ -485,7 +521,7 @@ namespace CLRProfiler
                 }
             }
 
-            const int allowableGap = 1024*1024;
+            const int allowableGap = 1024 * 1024;
 
             Interval liveRoot;
             Interval newLiveRoot;
@@ -507,23 +543,30 @@ namespace CLRProfiler
                     if (ii != i)
                     {
                         if (ii.hiAddr > i.loAddr && ii.loAddr < i.hiAddr)
+                        {
                             return ii;
+                        }
                     }
                 }
                 return null;
             }
 
             private void DeleteInterval(Interval i)
-            {   
+            {
                 Interval prevInterval = null;
                 for (Interval ii = liveRoot; ii != null; ii = ii.next)
                 {
                     if (ii == i)
                     {
                         if (prevInterval != null)
+                        {
                             prevInterval.next = ii.next;
+                        }
                         else
+                        {
                             liveRoot = ii.next;
+                        }
+
                         break;
                     }
                     prevInterval = ii;
@@ -578,7 +621,7 @@ namespace CLRProfiler
                     {
                         bestInterval.hiAddr = id + size;
                         emptySpace = true;
-                    }                   
+                    }
                     if (prevInterval != null)
                     {
                         // Move to front to speed up future searches.
@@ -587,7 +630,10 @@ namespace CLRProfiler
                         liveRoot = bestInterval;
                     }
                     if (OverlappingInterval(bestInterval) != null)
+                    {
                         MergeInterval(bestInterval);
+                    }
+
                     return emptySpace;
                 }
                 liveRoot = new Interval(id, id + size, -1, liveRoot);
@@ -624,25 +670,37 @@ namespace CLRProfiler
             internal void Preserve(ulong id, ulong length)
             {
                 if (updateRoot != null && updateRoot.hiAddr == id)
+                {
                     updateRoot.hiAddr = id + length;
+                }
                 else
+                {
                     updateRoot = new Interval(id, id + length, -1, updateRoot);
+                }
             }
 
             internal void Relocate(ulong oldId, ulong newId, uint length)
             {
                 if (oldId == newId)
+                {
                     nullRelocationsSeen = true;
+                }
 
                 if (updateRoot != null && updateRoot.hiAddr == newId)
+                {
                     updateRoot.hiAddr = newId + length;
+                }
                 else
+                {
                     updateRoot = new Interval(newId, newId + length, -1, updateRoot);
+                }
 
                 for (Interval i = liveRoot; i != null; i = i.next)
                 {
                     if (i.loAddr <= oldId && oldId < i.hiAddr)
+                    {
                         i.hadRelocations = true;
+                    }
                 }
                 Interval bestInterval = null;
                 for (Interval i = liveRoot; i != null; i = i.next)
@@ -650,17 +708,27 @@ namespace CLRProfiler
                     if (i.loAddr <= newId + length && newId <= i.hiAddr + allowableGap)
                     {
                         if (bestInterval == null || bestInterval.loAddr < i.loAddr)
+                        {
                             bestInterval = i;
+                        }
                     }
                 }
                 if (bestInterval != null)
                 {
                     if (bestInterval.hiAddr < newId + length)
+                    {
                         bestInterval.hiAddr = newId + length;
+                    }
+
                     if (bestInterval.loAddr > newId)
+                    {
                         bestInterval.loAddr = newId;
+                    }
+
                     if (OverlappingInterval(bestInterval) != null)
+                    {
                         MergeInterval(bestInterval);
+                    }
                 }
                 else
                 {
@@ -682,7 +750,10 @@ namespace CLRProfiler
                     for (ii = newRoot; ii != null; ii = ii.next)
                     {
                         if (i.loAddr < ii.loAddr)
+                        {
                             break;
+                        }
+
                         prev = ii;
                     }
                     if (prev == null)
@@ -708,14 +779,21 @@ namespace CLRProfiler
                     ulong lo = Math.Max(loAddr, i.loAddr);
                     ulong hi = Math.Min(hiAddr, i.hiAddr);
                     if (lo >= hi)
+                    {
                         continue;
+                    }
+
                     liveObjectTable.RemoveObjectRange(lo, hi - lo, tickIndex, sampleObjectTable);
                     if (i.hiAddr == hi)
                     {
                         if (i.loAddr == lo)
+                        {
                             DeleteInterval(i);
+                        }
                         else
+                        {
                             i.hiAddr = lo;
+                        }
                     }
                 }
             }
@@ -734,7 +812,9 @@ namespace CLRProfiler
                             RemoveRange(prevHiAddr, i.loAddr, tickIndex, sampleObjectTable);
                         }
                         if (prevHiAddr < i.hiAddr)
+                        {
                             prevHiAddr = i.hiAddr;
+                        }
                     }
                     RemoveRange(prevHiAddr, ulong.MaxValue, tickIndex, sampleObjectTable);
                     updateRoot = null;
@@ -747,7 +827,9 @@ namespace CLRProfiler
                 else
                 {
                     for (Interval i = liveRoot; i != null; i = i.next)
+                    {
                         i.justHadGc = true;
+                    }
                 }
                 nullRelocationsSeen = false;
             }
@@ -761,16 +843,19 @@ namespace CLRProfiler
         const int alignShift = 2;
         const int firstLevelShift = 20;
         const int initialFirstLevelLength = 1 << (31 - alignShift - firstLevelShift);  // covering 2 GB of address space
-        const int secondLevelLength = 1<<firstLevelShift;
-        const int secondLevelMask = secondLevelLength-1;
+        const int secondLevelLength = 1 << firstLevelShift;
+        const int secondLevelMask = secondLevelLength - 1;
 
         ushort[][] firstLevelTable;
 
         void GrowFirstLevelTable()
         {
-            ushort[][] newFirstLevelTable = new ushort[firstLevelTable.Length*2][];
+            ushort[][] newFirstLevelTable = new ushort[firstLevelTable.Length * 2][];
             for (int i = 0; i < firstLevelTable.Length; i++)
+            {
                 newFirstLevelTable[i] = firstLevelTable[i];
+            }
+
             firstLevelTable = newFirstLevelTable;
         }
 
@@ -804,19 +889,28 @@ namespace CLRProfiler
                     while (j != uint.MaxValue)
                     {
                         if ((secondLevelTable[j] & 0x8000) != 0)
+                        {
                             break;
+                        }
+
                         j--;
                     }
                     if (j != uint.MaxValue)
+                    {
                         break;
+                    }
                 }
                 j = secondLevelLength - 1;
                 i--;
             }
             if (i == uint.MaxValue)
+            {
                 return 0;
+            }
             else
-                return (((ulong)i<<firstLevelShift) + j) << alignShift;
+            {
+                return (((ulong)i << firstLevelShift) + j) << alignShift;
+            }
         }
 
         ulong FindObjectForward(ulong startId, ulong endId)
@@ -840,19 +934,28 @@ namespace CLRProfiler
                     while (j < secondLevelLength && (j <= jEnd || i < iEnd))
                     {
                         if ((secondLevelTable[j] & 0x8000) != 0)
+                        {
                             break;
+                        }
+
                         j++;
                     }
                     if (j < secondLevelLength)
+                    {
                         break;
+                    }
                 }
                 j = 0;
                 i++;
             }
             if (i > iEnd || (i == iEnd && j > jEnd))
+            {
                 return ulong.MaxValue;
+            }
             else
-                return (((ulong)i<<firstLevelShift) + j) << alignShift;
+            {
+                return (((ulong)i << firstLevelShift) + j) << alignShift;
+            }
         }
 
         internal void GetNextObject(ulong startId, ulong endId, out LiveObject o)
@@ -864,7 +967,10 @@ namespace CLRProfiler
             uint j = (uint)(id & secondLevelMask);
             ushort[] secondLevelTable = null;
             if (i < firstLevelTable.Length)
+            {
                 secondLevelTable = firstLevelTable[i];
+            }
+
             if (secondLevelTable != null)
             {
                 ushort u1 = secondLevelTable[j];
@@ -908,8 +1014,11 @@ namespace CLRProfiler
             id >>= alignShift;
             uint i = (uint)(id >> firstLevelShift);
             uint j = (uint)(id & secondLevelMask);
-            while (firstLevelTable.Length <= i+1)
+            while (firstLevelTable.Length <= i + 1)
+            {
                 GrowFirstLevelTable();
+            }
+
             ushort[] secondLevelTable = firstLevelTable[i];
             if (secondLevelTable == null)
             {
@@ -947,13 +1056,16 @@ namespace CLRProfiler
 
         internal void Zero(ulong id, uint size)
         {
-            uint count = ((size + 3) & (uint.MaxValue - 3))/4;
+            uint count = ((size + 3) & (uint.MaxValue - 3)) / 4;
             id >>= alignShift;
             uint i = (uint)(id >> firstLevelShift);
             uint j = (uint)(id & secondLevelMask);
             ushort[] secondLevelTable = null;
             if (i < firstLevelTable.Length)
+            {
                 secondLevelTable = firstLevelTable[i];
+            }
+
             while (count > 0)
             {
                 // Does the piece to clear fit within the secondLevelTable?
@@ -961,7 +1073,10 @@ namespace CLRProfiler
                 {
                     // yes - if there is no secondLevelTable, there is nothing left to do
                     if (secondLevelTable == null)
+                    {
                         break;
+                    }
+
                     while (count > 0)
                     {
                         secondLevelTable[j] = 0;
@@ -989,7 +1104,9 @@ namespace CLRProfiler
                     i++;
                     secondLevelTable = null;
                     if (i < firstLevelTable.Length)
+                    {
                         secondLevelTable = firstLevelTable[i];
+                    }
                 }
             }
         }
@@ -1015,7 +1132,10 @@ namespace CLRProfiler
         internal void InsertObject(ulong id, int typeSizeStacktraceIndex, int allocTickIndex, int nowTickIndex, bool newAlloc, SampleObjectTable sampleObjectTable)
         {
             if (lastPos >= readNewLog.pos && newAlloc)
+            {
                 return;
+            }
+
             lastPos = readNewLog.pos;
 
             lastTickIndex = nowTickIndex;
@@ -1037,7 +1157,7 @@ namespace CLRProfiler
                     Zero(o.id, id - o.id);
                 }
             }
-            Debug.Assert(FindObjectBackward(id-4)+12 <= id);
+            Debug.Assert(FindObjectBackward(id - 4) + 12 <= id);
             if (size >= 12)
             {
                 ushort u1 = (ushort)(typeSizeStacktraceIndex | 0x8000);
@@ -1045,11 +1165,16 @@ namespace CLRProfiler
                 ushort u3 = (ushort)(allocTickIndex >> 8);
                 Write3WordsAt(id, u1, u2, u3);
                 if (!emptySpace)
+                {
                     Zero(id + 12, size - 12);
+                }
+
                 Debug.Assert(CanReadObjectBackCorrectly(id, size, typeSizeStacktraceIndex, allocTickIndex));
             }
             if (sampleObjectTable != null)
+            {
                 sampleObjectTable.Insert(id, id + size, nowTickIndex, allocTickIndex, typeIndex);
+            }
         }
 
         void RemoveObjectRange(ulong firstId, ulong length, int tickIndex, SampleObjectTable sampleObjectTable)
@@ -1057,7 +1182,9 @@ namespace CLRProfiler
             ulong lastId = firstId + length;
 
             if (sampleObjectTable != null)
+            {
                 sampleObjectTable.Delete(firstId, lastId, tickIndex);
+            }
 
             Zero(firstId, length);
         }
@@ -1067,7 +1194,7 @@ namespace CLRProfiler
             lastPos = readNewLog.pos;
 
             lastTickIndex = tickIndex;
-            intervalTable.GenerationInterval(rangeStart, rangeLength, generation);            
+            intervalTable.GenerationInterval(rangeStart, rangeLength, generation);
         }
 
         internal int GenerationOfObject(ref LiveObject o)
@@ -1077,9 +1204,13 @@ namespace CLRProfiler
             {
                 generation = 0;
                 if (o.allocTickIndex <= gen2LimitTickIndex)
+                {
                     generation = 2;
+                }
                 else if (o.allocTickIndex <= gen1LimitTickIndex)
+                {
                     generation = 1;
+                }
             }
             return generation;
         }
@@ -1087,24 +1218,32 @@ namespace CLRProfiler
         internal void Preserve(ulong id, ulong length, int tickIndex)
         {
             if (lastPos >= readNewLog.pos)
+            {
                 return;
+            }
+
             lastPos = readNewLog.pos;
 
             lastTickIndex = tickIndex;
-            intervalTable.Preserve(id, length);            
+            intervalTable.Preserve(id, length);
         }
 
         internal void UpdateObjects(Histogram relocatedHistogram, ulong oldId, ulong newId, uint length, int tickIndex, SampleObjectTable sampleObjectTable)
         {
             if (lastPos >= readNewLog.pos)
+            {
                 return;
+            }
+
             lastPos = readNewLog.pos;
 
             lastTickIndex = tickIndex;
             intervalTable.Relocate(oldId, newId, length);
 
             if (oldId == newId)
+            {
                 return;
+            }
 
             ulong nextId;
             ulong lastId = oldId + length;
@@ -1114,11 +1253,16 @@ namespace CLRProfiler
                 nextId = o.id + o.size;
                 ulong offset = o.id - oldId;
                 if (sampleObjectTable != null)
+                {
                     sampleObjectTable.Delete(o.id, o.id + o.size, tickIndex);
+                }
+
                 Zero(o.id, o.size);
                 InsertObject(newId + offset, o.typeSizeStacktraceIndex, o.allocTickIndex, tickIndex, false, sampleObjectTable);
                 if (relocatedHistogram != null)
+                {
                     relocatedHistogram.AddObject(o.typeSizeStacktraceIndex, 1);
+                }
             }
         }
 
@@ -1134,12 +1278,17 @@ namespace CLRProfiler
             lastTickIndex = tickIndex;
 
             if (sampleObjectTable != null)
+            {
                 sampleObjectTable.AddGcTick(tickIndex, gen);
-    
+            }
+
             intervalTable.RecordGc(tickIndex, sampleObjectTable, simpleForm);
 
             if (gen >= 1)
+            {
                 gen2LimitTickIndex = gen1LimitTickIndex;
+            }
+
             gen1LimitTickIndex = tickIndex;
 
             lastGcGen0Count++;
@@ -1147,7 +1296,9 @@ namespace CLRProfiler
             {
                 lastGcGen1Count++;
                 if (gen > 1)
+                {
                     lastGcGen2Count++;
+                }
             }
         }
 
@@ -1155,9 +1306,13 @@ namespace CLRProfiler
         {
             int gen = 0;
             if (gcGen2Count != lastGcGen2Count)
+            {
                 gen = 2;
+            }
             else if (gcGen1Count != lastGcGen1Count)
+            {
                 gen = 1;
+            }
 
             RecordGc(tickIndex, gen, sampleObjectTable, false);
 
@@ -1196,7 +1351,10 @@ namespace CLRProfiler
         internal int MapTypeSizeStacktraceId(int id)
         {
             if (mappingTable != null)
+            {
                 return mappingTable[id];
+            }
+
             return id;
         }
 
@@ -1208,21 +1366,26 @@ namespace CLRProfiler
 
         internal void Add(int id, int[] stack, int length, bool isAllocStack)
         {
-            Add( id, stack, 0, length, isAllocStack );
+            Add(id, stack, 0, length, isAllocStack);
         }
 
         void CreateMappingTable()
         {
             mappingTable = new int[stacktraceTable.Length];
             for (int i = 0; i < mappingTable.Length; i++)
+            {
                 mappingTable[i] = i;
+            }
         }
 
         void GrowMappingTable()
         {
-            int[] newMappingTable = new int[mappingTable.Length*2];
+            int[] newMappingTable = new int[mappingTable.Length * 2];
             for (int i = 0; i < mappingTable.Length; i++)
+            {
                 newMappingTable[i] = mappingTable[i];
+            }
+
             mappingTable = newMappingTable;
         }
 
@@ -1230,27 +1393,40 @@ namespace CLRProfiler
         {
             int oldId = -1;
             if (isAllocStack && length == 2)
-                oldId = LookupAlloc(stack[start], stack[start+1]);
+            {
+                oldId = LookupAlloc(stack[start], stack[start + 1]);
+            }
 
             if (oldId >= 0)
             {
                 if (mappingTable == null)
+                {
                     CreateMappingTable();
+                }
+
                 while (mappingTable.Length <= id)
+                {
                     GrowMappingTable();
+                }
+
                 mappingTable[id] = oldId;
             }
             else
             {
                 int[] stacktrace = new int[length];
                 for (int i = 0; i < stacktrace.Length; i++)
+                {
                     stacktrace[i] = stack[start++];
+                }
 
                 if (mappingTable != null)
                 {
                     int newId = maxID + 1;
                     while (mappingTable.Length <= id)
+                    {
                         GrowMappingTable();
+                    }
+
                     mappingTable[id] = newId;
                     id = newId;
                 }
@@ -1262,9 +1438,12 @@ namespace CLRProfiler
 
                 while (stacktraceTable.Length <= id)
                 {
-                    int[][] newStacktraceTable = new int[stacktraceTable.Length*2][];
+                    int[][] newStacktraceTable = new int[stacktraceTable.Length * 2][];
                     for (int i = 0; i < stacktraceTable.Length; i++)
+                    {
                         newStacktraceTable[i] = stacktraceTable[i];
+                    }
+
                     stacktraceTable = newStacktraceTable;
                 }
 
@@ -1281,9 +1460,15 @@ namespace CLRProfiler
         {
             int id = LookupAlloc(typeId, size);
             if (id > 0)
+            {
                 return id;
+            }
+
             if (mappingTable == null)
+            {
                 CreateMappingTable();
+            }
+
             id = ++maxID;
 
             EnterAlloc(id, typeId, size);
@@ -1292,7 +1477,10 @@ namespace CLRProfiler
             {
                 int[][] newStacktraceTable = new int[stacktraceTable.Length * 2][];
                 for (int i = 0; i < stacktraceTable.Length; i++)
+                {
                     newStacktraceTable[i] = stacktraceTable[i];
+                }
+
                 stacktraceTable = newStacktraceTable;
             }
 
@@ -1307,19 +1495,22 @@ namespace CLRProfiler
         internal int[] IndexToStacktrace(int index)
         {
             if (index < 0 || index >= stacktraceTable.Length || stacktraceTable[index] == null)
+            {
                 Console.WriteLine("bad index {0}", index);
+            }
+
             return stacktraceTable[index];
         }
 
-        internal void FreeEntries( int firstIndex )
+        internal void FreeEntries(int firstIndex)
         {
             maxID = firstIndex;
         }
 
-        internal int Length 
+        internal int Length
         {
-            get 
-            { 
+            get
+            {
                 return maxID + 1;
             }
         }
@@ -1354,7 +1545,7 @@ namespace CLRProfiler
             internal uint funcSize;
             internal int funcModule;
         }
-    
+
         ReadNewLog readNewLog;
         ArrayList functionList;
 
@@ -1384,19 +1575,25 @@ namespace CLRProfiler
                 string name = readNewLog.funcName[i];
                 string signature = readNewLog.funcSignature[i];
                 if (name != null && signature != null)
+                {
                     readNewLog.AddFunctionVertex(i, name, signature, graph, ref funcVertex, filterForm);
+                }
             }
         }
 
         int BuildVertexStack(int stackTraceIndex, Vertex[] funcVertex, ref Vertex[] vertexStack, int skipCount)
         {
             int[] stackTrace = readNewLog.stacktraceTable.IndexToStacktrace(stackTraceIndex);
-                
-            while (vertexStack.Length < stackTrace.Length+1)
-                vertexStack = new Vertex[vertexStack.Length*2];
+
+            while (vertexStack.Length < stackTrace.Length + 1)
+            {
+                vertexStack = new Vertex[vertexStack.Length * 2];
+            }
 
             for (int i = skipCount; i < stackTrace.Length; i++)
-                vertexStack[i-skipCount] = funcVertex[stackTrace[i]];
+            {
+                vertexStack[i - skipCount] = funcVertex[stackTrace[i]];
+            }
 
             return stackTrace.Length - skipCount;
         }
@@ -1445,7 +1642,10 @@ namespace CLRProfiler
             }
 
             foreach (Vertex v in graph.vertices.Values)
+            {
                 v.active = true;
+            }
+
             graph.BottomVertex.active = false;
 
             return graph;
@@ -1474,9 +1674,13 @@ namespace CLRProfiler
             {
                 int funcIndex = stackTrace[i];
                 if (readNewLog.funcModule[funcIndex] == modIndex)
+                {
                     result++;
+                }
                 else
+                {
                     break;
+                }
             }
             return result;
         }
@@ -1527,7 +1731,10 @@ namespace CLRProfiler
             }
 
             foreach (Vertex v in graph.vertices.Values)
+            {
                 v.active = true;
+            }
+
             graph.BottomVertex.active = false;
 
             return graph;
@@ -1538,9 +1745,13 @@ namespace CLRProfiler
             string funcName = readNewLog.funcName[funcIndex];
             int colonColonIndex = funcName.IndexOf("::");
             if (colonColonIndex > 0)
+            {
                 return funcName.Substring(0, colonColonIndex);
+            }
             else
+            {
                 return funcName;
+            }
         }
 
         int FunctionsInSameClass(string className, int stackTraceIndex)
@@ -1551,9 +1762,13 @@ namespace CLRProfiler
             {
                 int funcIndex = stackTrace[i];
                 if (ClassNameOfFunc(funcIndex) == className)
+                {
                     result++;
+                }
                 else
+                {
                     break;
+                }
             }
             return result;
         }
@@ -1607,7 +1822,10 @@ namespace CLRProfiler
             }
 
             foreach (Vertex v in graph.vertices.Values)
+            {
                 v.active = true;
+            }
+
             graph.BottomVertex.active = false;
 
             return graph;
@@ -1679,8 +1897,11 @@ namespace CLRProfiler
 
             internal bool AddEvent(int newTickIndex, string newString)
             {
-                if (count > 0 && newTickIndex <= eventTickIndex[count-1])
+                if (count > 0 && newTickIndex <= eventTickIndex[count - 1])
+                {
                     return false;
+                }
+
                 EnsureIntCapacity(count, ref eventTickIndex);
                 EnsureStringCapacity(count, ref eventString);
                 eventTickIndex[count] = newTickIndex;
@@ -1707,7 +1928,7 @@ namespace CLRProfiler
             commentEventList = new EventList();
             gcEventList = new EventList();
             heapDumpEventList = new EventList();
-            finalizableTypes = new Dictionary<int/*type id*/,bool>();
+            finalizableTypes = new Dictionary<int/*type id*/, bool>();
             gcCount = new int[4];
             inducedGcCount = new int[3];
             generationSize = new ulong[4];
@@ -1762,10 +1983,16 @@ namespace CLRProfiler
         {
             Debug.Assert(id >= 0);
             if (id < vertexArray.Length)
+            {
                 return;
-            int newLength = vertexArray.Length*2;
+            }
+
+            int newLength = vertexArray.Length * 2;
             if (newLength <= id)
+            {
                 newLength = id + 1;
+            }
+
             Vertex[] newVertexArray = new Vertex[newLength];
             Array.Copy(vertexArray, 0, newVertexArray, 0, vertexArray.Length);
             vertexArray = newVertexArray;
@@ -1775,10 +2002,16 @@ namespace CLRProfiler
         {
             Debug.Assert(id >= 0);
             if (id < stringArray.Length)
+            {
                 return;
-            int newLength = stringArray.Length*2;
+            }
+
+            int newLength = stringArray.Length * 2;
             if (newLength <= id)
+            {
                 newLength = id + 1;
+            }
+
             string[] newStringArray = new string[newLength];
             Array.Copy(stringArray, 0, newStringArray, 0, stringArray.Length);
             stringArray = newStringArray;
@@ -1788,10 +2021,16 @@ namespace CLRProfiler
         {
             Debug.Assert(id >= 0);
             if (id < intArray.Length)
+            {
                 return;
-            int newLength = intArray.Length*2;
+            }
+
+            int newLength = intArray.Length * 2;
             if (newLength <= id)
+            {
                 newLength = id + 1;
+            }
+
             int[] newIntArray = new int[newLength];
             Array.Copy(intArray, 0, newIntArray, 0, intArray.Length);
             intArray = newIntArray;
@@ -1810,7 +2049,10 @@ namespace CLRProfiler
             int moduleId = funcModule[funcId];
             string moduleName = null;
             if (moduleId >= 0)
+            {
                 moduleName = modBasicName[moduleId];
+            }
+
             funcVertex[funcId] = graph.FindOrCreateVertex(functionName, signature, moduleName);
             funcVertex[funcId].interestLevel = filterForm.InterestLevelOfMethodName(functionName, signature);
         }
@@ -1827,18 +2069,26 @@ namespace CLRProfiler
             bufPos = 0;
             bufLevel = r.BaseStream.Read(buffer, 0, buffer.Length);
             if (bufPos < bufLevel)
+            {
                 return buffer[bufPos++];
+            }
             else
+            {
                 return -1;
+            }
         }
 
         internal int ReadChar()
         {
             pos++;
             if (bufPos < bufLevel)
+            {
                 return buffer[bufPos++];
+            }
             else
+            {
                 return FillBuffer();
+            }
         }
 
         int ReadHex()
@@ -1849,13 +2099,22 @@ namespace CLRProfiler
                 c = ReadChar();
                 int digit = c;
                 if (digit >= '0' && digit <= '9')
+                {
                     digit -= '0';
+                }
                 else if (digit >= 'a' && digit <= 'f')
+                {
                     digit -= 'a' - 10;
+                }
                 else if (digit >= 'A' && digit <= 'F')
+                {
                     digit -= 'A' - 10;
+                }
                 else
+                {
                     return value;
+                }
+
                 value = value * 16 + digit;
             }
         }
@@ -1863,7 +2122,10 @@ namespace CLRProfiler
         int ReadInt()
         {
             while (c == ' ' || c == '\t')
+            {
                 c = ReadChar();
+            }
+
             bool negative = false;
             if (c == '-')
             {
@@ -1877,7 +2139,9 @@ namespace CLRProfiler
                 {
                     c = ReadChar();
                     if (c == 'x' || c == 'X')
+                    {
                         value = ReadHex();
+                    }
                 }
                 while (c >= '0' && c <= '9')
                 {
@@ -1886,7 +2150,10 @@ namespace CLRProfiler
                 }
 
                 if (negative)
+                {
                     value = -value;
+                }
+
                 return value;
             }
             else
@@ -1908,13 +2175,22 @@ namespace CLRProfiler
                 c = ReadChar();
                 int digit = c;
                 if (digit >= '0' && digit <= '9')
+                {
                     digit -= '0';
+                }
                 else if (digit >= 'a' && digit <= 'f')
+                {
                     digit -= 'a' - 10;
+                }
                 else if (digit >= 'A' && digit <= 'F')
+                {
                     digit -= 'A' - 10;
+                }
                 else
+                {
                     return value;
+                }
+
                 value = value * 16 + digit;
             }
         }
@@ -1922,7 +2198,10 @@ namespace CLRProfiler
         long ReadLong()
         {
             while (c == ' ' || c == '\t')
+            {
                 c = ReadChar();
+            }
+
             bool negative = false;
             if (c == '-')
             {
@@ -1936,7 +2215,9 @@ namespace CLRProfiler
                 {
                     c = ReadChar();
                     if (c == 'x' || c == 'X')
+                    {
                         value = ReadLongHex();
+                    }
                 }
                 while (c >= '0' && c <= '9')
                 {
@@ -1945,7 +2226,10 @@ namespace CLRProfiler
                 }
 
                 if (negative)
+                {
                     value = -value;
+                }
+
                 return value;
             }
             else
@@ -1999,9 +2283,13 @@ namespace CLRProfiler
                 sb.Append((char)c);
 
                 if (c == '<')
+                {
                     angleBracketsScope++;
+                }
                 else if (c == '>' && angleBracketsScope > 0)
+                {
                     angleBracketsScope--;
+                }
                 else if (stopAfterRightParen && c == ')')
                 {
                     // we have already appened it above - now read the character after it.
@@ -2018,41 +2306,57 @@ namespace CLRProfiler
         {
             int value = ReadInt();
             if (value >= 0)
+            {
                 return value;
+            }
             else
+            {
                 throw new Exception(string.Format("Bad format in log file {0} line {1}", fileName, line));
+            }
         }
 
         internal static int[] GrowIntVector(int[] vector)
         {
-            int[] newVector = new int[vector.Length*2];
+            int[] newVector = new int[vector.Length * 2];
             for (int i = 0; i < vector.Length; i++)
+            {
                 newVector[i] = vector[i];
+            }
+
             return newVector;
         }
 
         internal static ulong[] GrowULongVector(ulong[] vector)
         {
-            ulong[] newVector = new ulong[vector.Length*2];
+            ulong[] newVector = new ulong[vector.Length * 2];
             for (int i = 0; i < vector.Length; i++)
+            {
                 newVector[i] = vector[i];
+            }
+
             return newVector;
         }
 
         internal static bool InterestingCallStack(Vertex[] vertexStack, int stackPtr, FilterForm filterForm)
         {
             if (stackPtr == 0)
+            {
                 return filterForm.methodFilters.Length == 0;
-            if ((vertexStack[stackPtr-1].interestLevel & InterestLevel.Interesting) == InterestLevel.Interesting)
+            }
+
+            if ((vertexStack[stackPtr - 1].interestLevel & InterestLevel.Interesting) == InterestLevel.Interesting)
+            {
                 return true;
-            for (int i = stackPtr-2; i >= 0; i--)
+            }
+
+            for (int i = stackPtr - 2; i >= 0; i--)
             {
                 switch (vertexStack[i].interestLevel & InterestLevel.InterestingChildren)
                 {
-                    case    InterestLevel.Ignore:
+                    case InterestLevel.Ignore:
                         break;
 
-                    case    InterestLevel.InterestingChildren:
+                    case InterestLevel.InterestingChildren:
                         return true;
 
                     default:
@@ -2070,12 +2374,15 @@ namespace CLRProfiler
                 Vertex vertex = vertexStack[i];
                 switch (vertex.interestLevel & InterestLevel.InterestingChildren)
                 {
-                    case    InterestLevel.Ignore:
+                    case InterestLevel.Ignore:
                         if (display)
+                        {
                             vertex.interestLevel |= InterestLevel.Display;
+                        }
+
                         break;
 
-                    case    InterestLevel.InterestingChildren:
+                    case InterestLevel.InterestingChildren:
                         display = true;
                         break;
 
@@ -2085,17 +2392,20 @@ namespace CLRProfiler
                 }
             }
             display = false;
-            for (int i = stackPtr-1; i >= 0; i--)
+            for (int i = stackPtr - 1; i >= 0; i--)
             {
                 Vertex vertex = vertexStack[i];
                 switch (vertex.interestLevel & InterestLevel.InterestingParents)
                 {
-                    case    InterestLevel.Ignore:
+                    case InterestLevel.Ignore:
                         if (display)
+                        {
                             vertex.interestLevel |= InterestLevel.Display;
+                        }
+
                         break;
 
-                    case    InterestLevel.InterestingParents:
+                    case InterestLevel.InterestingParents:
                         display = true;
                         break;
 
@@ -2108,7 +2418,7 @@ namespace CLRProfiler
             for (int i = 0; i < stackPtr; i++)
             {
                 Vertex vertex = vertexStack[i];
-                if ((vertex.interestLevel & (InterestLevel.Display|InterestLevel.Interesting)) != InterestLevel.Ignore)
+                if ((vertex.interestLevel & (InterestLevel.Display | InterestLevel.Interesting)) != InterestLevel.Ignore)
                 {
                     vertexStack[newStackPtr++] = vertex;
                     vertex.interestLevel &= ~InterestLevel.Display;
@@ -2119,20 +2429,23 @@ namespace CLRProfiler
 
         TimePos[] timePos;
         int timePosCount, timePosIndex;
-        const int maxTimePosCount = (1<<23)-1; // ~8,000,000 entries
+        const int maxTimePosCount = (1 << 23) - 1; // ~8,000,000 entries
 
         void GrowTimePos()
         {
-            TimePos[] newTimePos = new TimePos[2*timePos.Length];
+            TimePos[] newTimePos = new TimePos[2 * timePos.Length];
             for (int i = 0; i < timePos.Length; i++)
+            {
                 newTimePos[i] = timePos[i];
+            }
+
             timePos = newTimePos;
         }
 
         int AddTimePos(int tick, long pos)
         {
-            double time = tick*0.001;
-            
+            double time = tick * 0.001;
+
             // The time stamps can not always be taken at face value.
             // The two problems we try to fix here are:
             // - the time may wrap around (after about 50 days).
@@ -2143,17 +2456,25 @@ namespace CLRProfiler
             // that still jump backward in time.
             double lastTime = 0.0;
             if (timePosIndex > 0)
-                lastTime = timePos[timePosIndex-1].time;
+            {
+                lastTime = timePos[timePosIndex - 1].time;
+            }
             // correct possible wraparound
-            while (time + (1L<<31)*0.001 < lastTime)
-                time += (1L<<32)*0.001;
+            while (time + (1L << 31) * 0.001 < lastTime)
+            {
+                time += (1L << 32) * 0.001;
+            }
 
             // ignore times that jump backwards
             if (time < lastTime)
+            {
                 return timePosIndex - 1;
+            }
 
             while (timePosCount >= timePos.Length)
+            {
                 GrowTimePos();
+            }
 
             // we have only 23 bits to encode allocation time.
             // to avoid running out for long running measurements, we decrease time resolution
@@ -2161,7 +2482,7 @@ namespace CLRProfiler
             // million slots, 2 milliseconds for the second million etc. this gives about
             // 2 million seconds time range or 23 days. This is if we really have a time stamp
             // every millisecond - if not, the range is much larger...
-            double minimumTimeInc = 0.000999*(1<<timePosIndex/(maxTimePosCount/8));
+            double minimumTimeInc = 0.000999 * (1 << timePosIndex / (maxTimePosCount / 8));
             if (timePosCount < maxTimePosCount && (time - lastTime >= minimumTimeInc))
             {
                 if (timePosIndex < timePosCount)
@@ -2178,7 +2499,9 @@ namespace CLRProfiler
                 }
             }
             else
+            {
                 return timePosIndex - 1;
+            }
         }
 
         // variant of above to give comments their own tick index
@@ -2186,14 +2509,18 @@ namespace CLRProfiler
         {
             double lastTime = 0.0;
             if (timePosIndex > 0)
-                lastTime = timePos[timePosIndex-1].time;
+            {
+                lastTime = timePos[timePosIndex - 1].time;
+            }
 
             while (timePosCount >= timePos.Length)
+            {
                 GrowTimePos();
+            }
 
             // stop giving comments their own tick index if we have already
             // burned half the available slots
-            if (timePosCount < maxTimePosCount/2)
+            if (timePosCount < maxTimePosCount / 2)
             {
                 if (timePosIndex < timePosCount)
                 {
@@ -2209,7 +2536,9 @@ namespace CLRProfiler
                 }
             }
             else
+            {
                 return timePosIndex - 1;
+            }
         }
 
         internal double TickIndexToTime(int tickIndex)
@@ -2225,11 +2554,16 @@ namespace CLRProfiler
         internal int TimeToTickIndex(double time)
         {
             int l = 0;
-            int r = timePosCount-1;
+            int r = timePosCount - 1;
             if (time < timePos[l].time)
+            {
                 return l;
+            }
+
             if (timePos[r].time <= time)
+            {
                 return r;
+            }
 
             // binary search - loop invariant is timePos[l].time <= time && time < timePos[r].time
             // loop terminates because loop condition implies l < m < r and so the interval
@@ -2250,9 +2584,13 @@ namespace CLRProfiler
             // we still have the loop invariant timePos[l].time <= time && time < timePos[r].time
             // now we just return the index that gives the closer match.
             if (time - timePos[l].time < timePos[r].time - time)
+            {
                 return l;
+            }
             else
+            {
                 return r;
+            }
         }
 
         enum GcRootKind
@@ -2280,24 +2618,34 @@ namespace CLRProfiler
         {
             ProgressForm progressForm = new ProgressForm();
             progressForm.Title = string.Format("Progress loading {0}", fileName);
-            
+
             // TODO
             //progressForm.Visible = progressFormVisible;
-            
+
             progressForm.SetProgress(0);
 
             if (stacktraceTable == null)
+            {
                 stacktraceTable = new StacktraceTable();
+            }
+
             if (timePos == null)
+            {
                 timePos = new TimePos[1000];
+            }
+
             AddTypeName(0, "Free Space");
             try
             {
                 Stream s = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 r = new StreamReader(s);
                 for (timePosIndex = timePosCount; timePosIndex > 0; timePosIndex--)
-                    if (timePos[timePosIndex-1].pos <= startFileOffset)
+                {
+                    if (timePos[timePosIndex - 1].pos <= startFileOffset)
+                    {
                         break;
+                    }
+                }
                 // start at the beginning if no later start point available or asked for info that can only
                 // be constructed by reading the whole file.
                 if (timePosIndex <= 1 || readLogResult.relocatedHistogram != null || readLogResult.finalizerHistogram != null
@@ -2320,7 +2668,7 @@ namespace CLRProfiler
                 buffer = new byte[4096];
                 bufPos = 0;
                 bufLevel = 0;
-                int maxProgress = (int)(r.BaseStream.Length/1024);
+                int maxProgress = (int)(r.BaseStream.Length / 1024);
                 progressForm.SetMaximum(maxProgress);
                 line = 1;
                 StringBuilder sb = new StringBuilder();
@@ -2336,10 +2684,13 @@ namespace CLRProfiler
                 while (c != -1)
                 {
                     if (pos > endFileOffset)
+                    {
                         break;
+                    }
+
                     if ((line % 1024) == 0)
                     {
-                        int currentProgress = (int)(pos/1024);
+                        int currentProgress = (int)(pos / 1024);
                         if (currentProgress <= maxProgress)
                         {
                             progressForm.SetProgress(currentProgress);
@@ -2350,408 +2701,498 @@ namespace CLRProfiler
                             //    break;
                         }
                     }
-                    lastLineStartPos = pos-1;
+                    lastLineStartPos = pos - 1;
                     previousWasR = thisIsR;
                     thisIsR = false;
                     switch (c)
                     {
-                        case    -1:
+                        case -1:
                             break;
 
-                        case    'F':
-                        case    'f':
-                        {
-                            c = ReadChar();
-                            int funcIndex = ReadInt();
-                            while (c == ' ' || c == '\t')
-                                c = ReadChar();
-                            string name = ReadString(sb, ' ', false, 255);
-                            while (c == ' ' || c == '\t')
-                                c = ReadChar();
-                            string signature = ReadString(sb, '\r', true, 1023);
-
-                            ulong addr = ReadULong();
-                            uint size = ReadUInt();
-                            int modIndex = ReadInt();
-                            int stackIndex = ReadInt();
-
-                            if (c != -1)
+                        case 'F':
+                        case 'f':
                             {
-                                EnsureStringCapacity(funcIndex, ref funcName);
-                                funcName[funcIndex] = name;
-                                EnsureStringCapacity(funcIndex, ref funcSignature);
-                                funcSignature[funcIndex] = signature;
-                                EnsureIntCapacity(funcIndex, ref funcModule);
-                                funcModule[funcIndex] = modIndex;
+                                c = ReadChar();
+                                int funcIndex = ReadInt();
 
-                                string nameAndSignature = name;
-                                if (signature != null)
-                                    nameAndSignature = name + ' '+signature;
-
-                                if (stackIndex >= 0 && readLogResult.functionList != null)
+                                while (c == ' ' || c == '\t')
                                 {
-                                    funcSignatureIdHash[nameAndSignature] = funcIndex;
-                                    readLogResult.functionList.Add(funcIndex, stackIndex, size, modIndex);
+                                    c = ReadChar();
                                 }
-                            }
-                            break;
-                        }
 
-                        case    'T':
-                        case    't':
-                        {
-                            c = ReadChar();
-                            int typeIndex = ReadInt();
-                            while (c == ' ' || c == '\t')
-                                c = ReadChar();
-                            if (c != -1 && Char.IsDigit((char)c))
-                            {
-                                if (ReadInt() != 0)
+                                string name = ReadString(sb, ' ', false, 255);
+                                while (c == ' ' || c == '\t')
                                 {
-                                    finalizableTypes[typeIndex] = true;
+                                    c = ReadChar();
                                 }
+
+                                string signature = ReadString(sb, '\r', true, 1023);
+
+                                ulong addr = ReadULong();
+                                uint size = ReadUInt();
+                                int modIndex = ReadInt();
+                                int stackIndex = ReadInt();
+
+                                if (c != -1)
+                                {
+                                    EnsureStringCapacity(funcIndex, ref funcName);
+                                    funcName[funcIndex] = name;
+                                    EnsureStringCapacity(funcIndex, ref funcSignature);
+                                    funcSignature[funcIndex] = signature;
+                                    EnsureIntCapacity(funcIndex, ref funcModule);
+                                    funcModule[funcIndex] = modIndex;
+
+                                    string nameAndSignature = name;
+                                    if (signature != null)
+                                    {
+                                        nameAndSignature = name + ' ' + signature;
+                                    }
+
+                                    if (stackIndex >= 0 && readLogResult.functionList != null)
+                                    {
+                                        funcSignatureIdHash[nameAndSignature] = funcIndex;
+                                        readLogResult.functionList.Add(funcIndex, stackIndex, size, modIndex);
+                                    }
+                                }
+                                break;
                             }
-                            while (c == ' ' || c == '\t')
-                                c = ReadChar();
-                            string typeName = ReadString(sb, '\r', false, 1023);
-                            if (c != -1)
+
+                        case 'T':
+                        case 't':
                             {
-                                AddTypeName(typeIndex, typeName);
+                                c = ReadChar();
+                                int typeIndex = ReadInt();
+                                while (c == ' ' || c == '\t')
+                                {
+                                    c = ReadChar();
+                                }
+
+                                if (c != -1 && Char.IsDigit((char)c))
+                                {
+                                    if (ReadInt() != 0)
+                                    {
+                                        finalizableTypes[typeIndex] = true;
+                                    }
+                                }
+                                while (c == ' ' || c == '\t')
+                                {
+                                    c = ReadChar();
+                                }
+
+                                string typeName = ReadString(sb, '\r', false, 1023);
+                                if (c != -1)
+                                {
+                                    AddTypeName(typeIndex, typeName);
+                                }
+                                break;
                             }
-                            break;
-                        }
 
                         // 'A' with thread identifier
-                        case    '!':
-                        {
-                            c = ReadChar();
-                            int threadId = ReadInt();
-                            ulong id = ReadULong();
-                            int typeSizeStackTraceIndex = ReadInt();
-                            typeSizeStackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(typeSizeStackTraceIndex);
-                            if (c != -1)
+                        case '!':
                             {
-                                if (readLogResult.liveObjectTable != null)
-                                    readLogResult.liveObjectTable.InsertObject(id, typeSizeStackTraceIndex, lastTickIndex, lastTickIndex, true, readLogResult.sampleObjectTable);
-                                if (pos >= startFileOffset && pos < endFileOffset && readLogResult.allocatedHistogram != null)
-                                {
-                                    readLogResult.allocatedHistogram.AddObject(typeSizeStackTraceIndex, 1);
-                                }
-                                List<string> prev;
-                                if (assembliesJustLoaded.TryGetValue(threadId, out prev) && prev.Count != 0)
-                                {
-                                    foreach(string assemblyName in prev)
-                                    {
-                                        assemblies[assemblyName] = -typeSizeStackTraceIndex;
-                                    }
-                                    prev.Clear();
-                                }
-                            }
-                            readLogResult.hadAllocInfo = true;
-                            readLogResult.hadCallInfo = true;
-                            break;
-                        }
-
-                        case    'A':
-                        case    'a':
-                        {
-                            c = ReadChar();
-                            ulong id = ReadULong();
-                            int typeSizeStackTraceIndex = ReadInt();
-                            typeSizeStackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(typeSizeStackTraceIndex);
-                            if (c != -1)
-                            {
-                                if (readLogResult.liveObjectTable != null)
-                                    readLogResult.liveObjectTable.InsertObject(id, typeSizeStackTraceIndex, lastTickIndex, lastTickIndex, true, readLogResult.sampleObjectTable);
-                                if (pos >= startFileOffset && pos < endFileOffset && readLogResult.allocatedHistogram != null)
-                                {
-                                    readLogResult.allocatedHistogram.AddObject(typeSizeStackTraceIndex, 1);
-                                }
-                            }
-                            readLogResult.hadAllocInfo = true;
-                            readLogResult.hadCallInfo = true;
-                            break;
-                        }
-
-                        case    'C':
-                        case    'c':
-                        {
-                            c = ReadChar();
-                            if (pos <  startFileOffset || pos >= endFileOffset)
-                            {
-                                while (c >= ' ')
-                                    c = ReadChar();
-                                break;
-                            }
-                            int threadIndex = ReadInt();
-                            int stackTraceIndex = ReadInt();
-                            stackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(stackTraceIndex);
-                            if (c != -1)
-                            {
-                                if (readLogResult.callstackHistogram != null)
-                                {
-                                    readLogResult.callstackHistogram.AddObject(stackTraceIndex, 1);
-                                }
-                                List<string> prev;
-                                if (assembliesJustLoaded.TryGetValue(threadIndex, out prev) && prev.Count != 0)
-                                {
-                                    foreach(string assemblyName in prev)
-                                    {
-                                        assemblies[assemblyName] = stackTraceIndex;
-                                    }
-                                    prev.Clear();
-                                }
-                            }
-                            readLogResult.hadCallInfo = true;
-                            break;
-                        }
-
-                        case    'E':
-                        case    'e':
-                        {
-                            c = ReadChar();
-                            extendedRootInfoSeen = true;
-                            thisIsR = true;
-                            if (pos <  startFileOffset || pos >= endFileOffset)
-                            {
-                                while (c >= ' ')
-                                    c = ReadChar();
-                                break;
-                            }
-                            if (!previousWasR)
-                            {
-                                heapDumpEventList.AddEvent(lastTickIndex, null);
-                                if (readLogResult.objectGraph != null && !readLogResult.objectGraph.empty)
-                                {
-                                    readLogResult.objectGraph.BuildTypeGraph(new FilterForm());
-                                    readLogResult.objectGraph.Neuter();
-                                }
-                                Histogram[] h = readLogResult.heapDumpHistograms;
-                                if (h != null)
-                                {
-                                    if (h.Length == requestedIndex)
-                                        readLogResult.requestedObjectGraph = readLogResult.objectGraph;
-                                    readLogResult.heapDumpHistograms = new Histogram[h.Length + 1];
-                                    for (int i = 0; i < h.Length; i++)
-                                        readLogResult.heapDumpHistograms[i] = h[i];
-                                    readLogResult.heapDumpHistograms[h.Length] = new Histogram(this, lastTickIndex);
-                                }
-                                readLogResult.objectGraph = new ObjectGraph(this, lastTickIndex);
-                            }
-                            ulong objectID = ReadULong();
-                            GcRootKind rootKind = (GcRootKind)ReadInt();
-                            GcRootFlags rootFlags = (GcRootFlags)ReadInt();
-                            ulong rootID = ReadULong();
-                            ObjectGraph objectGraph = readLogResult.objectGraph;
-                            if (c != -1 && objectID > 0 && objectGraph != null && (rootFlags & GcRootFlags.WeakRef) == 0)
-                            {
-                                string rootName;
-                                switch (rootKind)
-                                {
-                                case    GcRootKind.Stack:      rootName = "Stack";        break;
-                                case    GcRootKind.Finalizer:  rootName = "Finalizer";    break;
-                                case    GcRootKind.Handle:     rootName = "Handle";       break;
-                                default:                       rootName = "Other";        break;                      
-                                }
-
-                                if ((rootFlags & GcRootFlags.Pinning) != 0)
-                                    rootName += ", Pinning";
-                                if ((rootFlags & GcRootFlags.WeakRef) != 0)
-                                    rootName += ", WeakRef";
-                                if ((rootFlags & GcRootFlags.Interior) != 0)
-                                    rootName += ", Interior";
-                                if ((rootFlags & GcRootFlags.Refcounted) != 0)
-                                    rootName += ", RefCounted";
-
-                                int rootTypeId = objectGraph.GetOrCreateGcType(rootName);
-                                ulongStack[0] = objectID;
-                                ObjectGraph.GcObject rootObject = objectGraph.CreateObject(rootTypeId, 1, ulongStack);
-
-                                objectGraph.AddRootObject(rootObject, rootID);
-                            }
-                            break;
-                        }
-                            
-                        case    'R':
-                        case    'r':
-                        {
-                            c = ReadChar();
-                            thisIsR = true;
-                            if (extendedRootInfoSeen || pos <  startFileOffset || pos >= endFileOffset)
-                            {
-                                while (c >= ' ')
-                                    c = ReadChar();
-                                Histogram[] h = readLogResult.heapDumpHistograms;
-                                if (h != null)
-                                {
-                                    if (h.Length == requestedIndex)
-                                        readLogResult.requestedObjectGraph = readLogResult.objectGraph;
-                                }
-                                break;
-                            }
-                            if (!previousWasR)
-                            {
-                                heapDumpEventList.AddEvent(lastTickIndex, null);
-                                if (readLogResult.objectGraph != null && !readLogResult.objectGraph.empty)
-                                {
-                                    readLogResult.objectGraph.BuildTypeGraph(new FilterForm());
-                                    readLogResult.objectGraph.Neuter();
-                                }
-                                Histogram[] h = readLogResult.heapDumpHistograms;
-                                if (h != null)
-                                {
-                                    if (h.Length == requestedIndex)
-                                        readLogResult.requestedObjectGraph = readLogResult.objectGraph;
-                                    readLogResult.heapDumpHistograms = new Histogram[h.Length + 1];
-                                    for (int i = 0; i < h.Length; i++)
-                                        readLogResult.heapDumpHistograms[i] = h[i];
-                                    readLogResult.heapDumpHistograms[h.Length] = new Histogram(this, lastTickIndex);
-                                }
-                                readLogResult.objectGraph = new ObjectGraph(this, lastTickIndex);
-                            }
-                            stackPtr = 0;
-                            ulong objectID;
-                            while ((objectID = ReadULong()) != ulong.MaxValue)
-                            {
-                                if (objectID > 0)
-                                {
-                                    ulongStack[stackPtr] = objectID;
-                                    stackPtr++;
-                                    if (stackPtr >= ulongStack.Length)
-                                        ulongStack = GrowULongVector(ulongStack);
-                                }
-                            }
-                            if (c != -1)
-                            {
-                                if (readLogResult.objectGraph != null)
-                                    readLogResult.objectGraph.AddRoots(stackPtr, ulongStack);
-                            }
-                            break;
-                        }
-
-                        case    'O':
-                        case    'o':
-                        {
-                            c = ReadChar();
-                            if (pos <  startFileOffset || pos >= endFileOffset || readLogResult.objectGraph == null)
-                            {
-                                while (c >= ' ')
-                                    c = ReadChar();
-                                break;
-                            }
-                            ulong objectId = ReadULong();
-                            int typeIndex = ReadInt();
-                            uint size = ReadUInt();
-                            stackPtr = 0;
-                            ulong objectID;
-                            while ((objectID = ReadULong()) != ulong.MaxValue)
-                            {
-                                if (objectID > 0)
-                                {
-                                    ulongStack[stackPtr] = objectID;
-                                    stackPtr++;
-                                    if (stackPtr >= ulongStack.Length)
-                                        ulongStack = GrowULongVector(ulongStack);
-                                }
-                            }
-                            if (c != -1)
-                            {
-                                ObjectGraph objectGraph = readLogResult.objectGraph;
-                                objectGraph.GetOrCreateGcType(typeIndex);
-
-                                int typeSizeStackTraceId = -1;
-                                int allocTickIndex = 0;
-                                // try to find the allocation stack trace and allocation time
-                                // from the live object table
-                                if (readLogResult.liveObjectTable != null)
-                                {
-                                    LiveObjectTable.LiveObject liveObject;
-                                    readLogResult.liveObjectTable.GetNextObject(objectId, objectId, out liveObject);
-                                    if (liveObject.id == objectId)
-                                    {
-                                        typeSizeStackTraceId = liveObject.typeSizeStacktraceIndex;
-                                        allocTickIndex = liveObject.allocTickIndex;
-                                        Histogram[] h = readLogResult.heapDumpHistograms;
-                                        if (h != null)
-                                            h[h.Length-1].AddObject(liveObject.typeSizeStacktraceIndex, 1);
-                                    }
-                                }
-                                if (typeSizeStackTraceId == -1)
-                                    typeSizeStackTraceId = stacktraceTable.GetOrCreateTypeSizeId(typeIndex, (int)size);
-                                ObjectGraph.GcObject gcObject = objectGraph.CreateAndEnterObject(objectId, typeSizeStackTraceId, stackPtr, ulongStack);
-                                gcObject.AllocTickIndex = allocTickIndex;
-                            }
-                            break;
-                        }
-
-                        case    'M':
-                        case    'm':
-                        {
-                            c = ReadChar();
-                            int modIndex = ReadInt();
-                            sb.Length = 0;
-                            while (c > '\r')
-                            {
-                                sb.Append((char)c);
                                 c = ReadChar();
+                                int threadId = ReadInt();
+                                ulong id = ReadULong();
+                                int typeSizeStackTraceIndex = ReadInt();
+                                typeSizeStackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(typeSizeStackTraceIndex);
+                                if (c != -1)
+                                {
+                                    if (readLogResult.liveObjectTable != null)
+                                    {
+                                        readLogResult.liveObjectTable.InsertObject(id, typeSizeStackTraceIndex, lastTickIndex, lastTickIndex, true, readLogResult.sampleObjectTable);
+                                    }
+
+                                    if (pos >= startFileOffset && pos < endFileOffset && readLogResult.allocatedHistogram != null)
+                                    {
+                                        readLogResult.allocatedHistogram.AddObject(typeSizeStackTraceIndex, 1);
+                                    }
+                                    List<string> prev;
+                                    if (assembliesJustLoaded.TryGetValue(threadId, out prev) && prev.Count != 0)
+                                    {
+                                        foreach (string assemblyName in prev)
+                                        {
+                                            assemblies[assemblyName] = -typeSizeStackTraceIndex;
+                                        }
+                                        prev.Clear();
+                                    }
+                                }
+                                readLogResult.hadAllocInfo = true;
+                                readLogResult.hadCallInfo = true;
+                                break;
                             }
-                            if (c != -1)
+
+                        case 'A':
+                        case 'a':
                             {
-                                string lineString = sb.ToString();
-                                int addrPos = lineString.LastIndexOf(" 0x");
-                                if (addrPos <= 0)
-                                    addrPos = lineString.Length;
-                                int backSlashPos = lineString.LastIndexOf(@"\");
-                                if (backSlashPos <= 0)
-                                    backSlashPos = -1;
-                                string basicName = lineString.Substring(backSlashPos + 1, addrPos - backSlashPos - 1);
-                                string fullName = lineString.Substring(0, addrPos);
+                                c = ReadChar();
+                                ulong id = ReadULong();
+                                int typeSizeStackTraceIndex = ReadInt();
+                                typeSizeStackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(typeSizeStackTraceIndex);
+                                if (c != -1)
+                                {
+                                    if (readLogResult.liveObjectTable != null)
+                                    {
+                                        readLogResult.liveObjectTable.InsertObject(id, typeSizeStackTraceIndex, lastTickIndex, lastTickIndex, true, readLogResult.sampleObjectTable);
+                                    }
 
-                                EnsureStringCapacity(modIndex, ref modBasicName);
-                                modBasicName[modIndex] = basicName;
-                                EnsureStringCapacity(modIndex, ref modFullName);
-                                modFullName[modIndex] = fullName;
+                                    if (pos >= startFileOffset && pos < endFileOffset && readLogResult.allocatedHistogram != null)
+                                    {
+                                        readLogResult.allocatedHistogram.AddObject(typeSizeStackTraceIndex, 1);
+                                    }
+                                }
+                                readLogResult.hadAllocInfo = true;
+                                readLogResult.hadCallInfo = true;
+                                break;
                             }
-                            break;
-                        }
 
-                        case    'U':
-                        case    'u':
-                        {
-                            c = ReadChar();
-                            ulong oldId = ReadULong();
-                            ulong newId = ReadULong();
-                            uint length = ReadUInt();
-                            Histogram reloHist = null;
-                            if (pos >= startFileOffset && pos < endFileOffset)
-                                reloHist = readLogResult.relocatedHistogram;
-                            if (readLogResult.liveObjectTable != null)
-                                readLogResult.liveObjectTable.UpdateObjects(reloHist, oldId, newId, length, lastTickIndex, readLogResult.sampleObjectTable);
-                            break;
-                        }
+                        case 'C':
+                        case 'c':
+                            {
+                                c = ReadChar();
+                                if (pos < startFileOffset || pos >= endFileOffset)
+                                {
+                                    while (c >= ' ')
+                                    {
+                                        c = ReadChar();
+                                    }
 
-                        case    'V':
-                        case    'v':
-                        {
-                            c = ReadChar();
-                            ulong startId = ReadULong();
-                            uint length = ReadUInt();
-                            Histogram reloHist = null;
-                            if (pos >= startFileOffset && pos < endFileOffset)
-                                reloHist = readLogResult.relocatedHistogram;
-                            if (readLogResult.liveObjectTable != null)
-                                readLogResult.liveObjectTable.UpdateObjects(reloHist, startId, startId, length, lastTickIndex, readLogResult.sampleObjectTable);
-                            break;
-                        }
+                                    break;
+                                }
+                                int threadIndex = ReadInt();
+                                int stackTraceIndex = ReadInt();
+                                stackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(stackTraceIndex);
+                                if (c != -1)
+                                {
+                                    if (readLogResult.callstackHistogram != null)
+                                    {
+                                        readLogResult.callstackHistogram.AddObject(stackTraceIndex, 1);
+                                    }
+                                    List<string> prev;
+                                    if (assembliesJustLoaded.TryGetValue(threadIndex, out prev) && prev.Count != 0)
+                                    {
+                                        foreach (string assemblyName in prev)
+                                        {
+                                            assemblies[assemblyName] = stackTraceIndex;
+                                        }
+                                        prev.Clear();
+                                    }
+                                }
+                                readLogResult.hadCallInfo = true;
+                                break;
+                            }
 
-                        case    'B':
-                        case    'b':
+                        case 'E':
+                        case 'e':
+                            {
+                                c = ReadChar();
+                                extendedRootInfoSeen = true;
+                                thisIsR = true;
+                                if (pos < startFileOffset || pos >= endFileOffset)
+                                {
+                                    while (c >= ' ')
+                                    {
+                                        c = ReadChar();
+                                    }
+
+                                    break;
+                                }
+                                if (!previousWasR)
+                                {
+                                    heapDumpEventList.AddEvent(lastTickIndex, null);
+                                    if (readLogResult.objectGraph != null && !readLogResult.objectGraph.empty)
+                                    {
+                                        readLogResult.objectGraph.BuildTypeGraph(new FilterForm());
+                                        readLogResult.objectGraph.Neuter();
+                                    }
+                                    Histogram[] h = readLogResult.heapDumpHistograms;
+                                    if (h != null)
+                                    {
+                                        if (h.Length == requestedIndex)
+                                        {
+                                            readLogResult.requestedObjectGraph = readLogResult.objectGraph;
+                                        }
+
+                                        readLogResult.heapDumpHistograms = new Histogram[h.Length + 1];
+                                        for (int i = 0; i < h.Length; i++)
+                                        {
+                                            readLogResult.heapDumpHistograms[i] = h[i];
+                                        }
+
+                                        readLogResult.heapDumpHistograms[h.Length] = new Histogram(this, lastTickIndex);
+                                    }
+                                    readLogResult.objectGraph = new ObjectGraph(this, lastTickIndex);
+                                }
+                                ulong objectID = ReadULong();
+                                GcRootKind rootKind = (GcRootKind)ReadInt();
+                                GcRootFlags rootFlags = (GcRootFlags)ReadInt();
+                                ulong rootID = ReadULong();
+                                ObjectGraph objectGraph = readLogResult.objectGraph;
+                                if (c != -1 && objectID > 0 && objectGraph != null && (rootFlags & GcRootFlags.WeakRef) == 0)
+                                {
+                                    string rootName;
+                                    switch (rootKind)
+                                    {
+                                        case GcRootKind.Stack: rootName = "Stack"; break;
+                                        case GcRootKind.Finalizer: rootName = "Finalizer"; break;
+                                        case GcRootKind.Handle: rootName = "Handle"; break;
+                                        default: rootName = "Other"; break;
+                                    }
+
+                                    if ((rootFlags & GcRootFlags.Pinning) != 0)
+                                    {
+                                        rootName += ", Pinning";
+                                    }
+
+                                    if ((rootFlags & GcRootFlags.WeakRef) != 0)
+                                    {
+                                        rootName += ", WeakRef";
+                                    }
+
+                                    if ((rootFlags & GcRootFlags.Interior) != 0)
+                                    {
+                                        rootName += ", Interior";
+                                    }
+
+                                    if ((rootFlags & GcRootFlags.Refcounted) != 0)
+                                    {
+                                        rootName += ", RefCounted";
+                                    }
+
+                                    int rootTypeId = objectGraph.GetOrCreateGcType(rootName);
+                                    ulongStack[0] = objectID;
+                                    ObjectGraph.GcObject rootObject = objectGraph.CreateObject(rootTypeId, 1, ulongStack);
+
+                                    objectGraph.AddRootObject(rootObject, rootID);
+                                }
+                                break;
+                            }
+
+                        case 'R':
+                        case 'r':
+                            {
+                                c = ReadChar();
+                                thisIsR = true;
+                                if (extendedRootInfoSeen || pos < startFileOffset || pos >= endFileOffset)
+                                {
+                                    while (c >= ' ')
+                                    {
+                                        c = ReadChar();
+                                    }
+
+                                    Histogram[] h = readLogResult.heapDumpHistograms;
+                                    if (h != null)
+                                    {
+                                        if (h.Length == requestedIndex)
+                                        {
+                                            readLogResult.requestedObjectGraph = readLogResult.objectGraph;
+                                        }
+                                    }
+                                    break;
+                                }
+                                if (!previousWasR)
+                                {
+                                    heapDumpEventList.AddEvent(lastTickIndex, null);
+                                    if (readLogResult.objectGraph != null && !readLogResult.objectGraph.empty)
+                                    {
+                                        readLogResult.objectGraph.BuildTypeGraph(new FilterForm());
+                                        readLogResult.objectGraph.Neuter();
+                                    }
+                                    Histogram[] h = readLogResult.heapDumpHistograms;
+                                    if (h != null)
+                                    {
+                                        if (h.Length == requestedIndex)
+                                        {
+                                            readLogResult.requestedObjectGraph = readLogResult.objectGraph;
+                                        }
+
+                                        readLogResult.heapDumpHistograms = new Histogram[h.Length + 1];
+                                        for (int i = 0; i < h.Length; i++)
+                                        {
+                                            readLogResult.heapDumpHistograms[i] = h[i];
+                                        }
+
+                                        readLogResult.heapDumpHistograms[h.Length] = new Histogram(this, lastTickIndex);
+                                    }
+                                    readLogResult.objectGraph = new ObjectGraph(this, lastTickIndex);
+                                }
+                                stackPtr = 0;
+                                ulong objectID;
+                                while ((objectID = ReadULong()) != ulong.MaxValue)
+                                {
+                                    if (objectID > 0)
+                                    {
+                                        ulongStack[stackPtr] = objectID;
+                                        stackPtr++;
+                                        if (stackPtr >= ulongStack.Length)
+                                        {
+                                            ulongStack = GrowULongVector(ulongStack);
+                                        }
+                                    }
+                                }
+                                if (c != -1)
+                                {
+                                    if (readLogResult.objectGraph != null)
+                                    {
+                                        readLogResult.objectGraph.AddRoots(stackPtr, ulongStack);
+                                    }
+                                }
+                                break;
+                            }
+
+                        case 'O':
+                        case 'o':
+                            {
+                                c = ReadChar();
+                                if (pos < startFileOffset || pos >= endFileOffset || readLogResult.objectGraph == null)
+                                {
+                                    while (c >= ' ')
+                                    {
+                                        c = ReadChar();
+                                    }
+
+                                    break;
+                                }
+                                ulong objectId = ReadULong();
+                                int typeIndex = ReadInt();
+                                uint size = ReadUInt();
+                                stackPtr = 0;
+                                ulong objectID;
+                                while ((objectID = ReadULong()) != ulong.MaxValue)
+                                {
+                                    if (objectID > 0)
+                                    {
+                                        ulongStack[stackPtr] = objectID;
+                                        stackPtr++;
+                                        if (stackPtr >= ulongStack.Length)
+                                        {
+                                            ulongStack = GrowULongVector(ulongStack);
+                                        }
+                                    }
+                                }
+                                if (c != -1)
+                                {
+                                    ObjectGraph objectGraph = readLogResult.objectGraph;
+                                    objectGraph.GetOrCreateGcType(typeIndex);
+
+                                    int typeSizeStackTraceId = -1;
+                                    int allocTickIndex = 0;
+                                    // try to find the allocation stack trace and allocation time
+                                    // from the live object table
+                                    if (readLogResult.liveObjectTable != null)
+                                    {
+                                        LiveObjectTable.LiveObject liveObject;
+                                        readLogResult.liveObjectTable.GetNextObject(objectId, objectId, out liveObject);
+                                        if (liveObject.id == objectId)
+                                        {
+                                            typeSizeStackTraceId = liveObject.typeSizeStacktraceIndex;
+                                            allocTickIndex = liveObject.allocTickIndex;
+                                            Histogram[] h = readLogResult.heapDumpHistograms;
+                                            if (h != null)
+                                            {
+                                                h[h.Length - 1].AddObject(liveObject.typeSizeStacktraceIndex, 1);
+                                            }
+                                        }
+                                    }
+                                    if (typeSizeStackTraceId == -1)
+                                    {
+                                        typeSizeStackTraceId = stacktraceTable.GetOrCreateTypeSizeId(typeIndex, (int)size);
+                                    }
+
+                                    ObjectGraph.GcObject gcObject = objectGraph.CreateAndEnterObject(objectId, typeSizeStackTraceId, stackPtr, ulongStack);
+                                    gcObject.AllocTickIndex = allocTickIndex;
+                                }
+                                break;
+                            }
+
+                        case 'M':
+                        case 'm':
+                            {
+                                c = ReadChar();
+                                int modIndex = ReadInt();
+                                sb.Length = 0;
+                                while (c > '\r')
+                                {
+                                    sb.Append((char)c);
+                                    c = ReadChar();
+                                }
+                                if (c != -1)
+                                {
+                                    string lineString = sb.ToString();
+                                    int addrPos = lineString.LastIndexOf(" 0x");
+                                    if (addrPos <= 0)
+                                    {
+                                        addrPos = lineString.Length;
+                                    }
+
+                                    int backSlashPos = lineString.LastIndexOf(@"\");
+                                    if (backSlashPos <= 0)
+                                    {
+                                        backSlashPos = -1;
+                                    }
+
+                                    string basicName = lineString.Substring(backSlashPos + 1, addrPos - backSlashPos - 1);
+                                    string fullName = lineString.Substring(0, addrPos);
+
+                                    EnsureStringCapacity(modIndex, ref modBasicName);
+                                    modBasicName[modIndex] = basicName;
+                                    EnsureStringCapacity(modIndex, ref modFullName);
+                                    modFullName[modIndex] = fullName;
+                                }
+                                break;
+                            }
+
+                        case 'U':
+                        case 'u':
+                            {
+                                c = ReadChar();
+                                ulong oldId = ReadULong();
+                                ulong newId = ReadULong();
+                                uint length = ReadUInt();
+                                Histogram reloHist = null;
+                                if (pos >= startFileOffset && pos < endFileOffset)
+                                {
+                                    reloHist = readLogResult.relocatedHistogram;
+                                }
+
+                                if (readLogResult.liveObjectTable != null)
+                                {
+                                    readLogResult.liveObjectTable.UpdateObjects(reloHist, oldId, newId, length, lastTickIndex, readLogResult.sampleObjectTable);
+                                }
+
+                                break;
+                            }
+
+                        case 'V':
+                        case 'v':
+                            {
+                                c = ReadChar();
+                                ulong startId = ReadULong();
+                                uint length = ReadUInt();
+                                Histogram reloHist = null;
+                                if (pos >= startFileOffset && pos < endFileOffset)
+                                {
+                                    reloHist = readLogResult.relocatedHistogram;
+                                }
+
+                                if (readLogResult.liveObjectTable != null)
+                                {
+                                    readLogResult.liveObjectTable.UpdateObjects(reloHist, startId, startId, length, lastTickIndex, readLogResult.sampleObjectTable);
+                                }
+
+                                break;
+                            }
+
+                        case 'B':
+                        case 'b':
                             c = ReadChar();
                             int startGC = ReadInt();
                             int induced = ReadInt();
                             int condemnedGeneration = ReadInt();
                             if (startGC != 0)
+                            {
                                 newGcEvent = gcEventList.AddEvent(lastTickIndex, null);
+                            }
+
                             if (newGcEvent)
                             {
                                 if (startGC != 0)
@@ -2759,14 +3200,19 @@ namespace CLRProfiler
                                     if (induced != 0)
                                     {
                                         for (int gen = 0; gen <= condemnedGeneration; gen++)
+                                        {
                                             inducedGcCount[gen]++;
+                                        }
                                     }
                                 }
                                 else
                                 {
                                     int condemnedLimit = condemnedGeneration;
                                     if (condemnedLimit == 2)
+                                    {
                                         condemnedLimit = 3;
+                                    }
+
                                     for (int gen = 0; gen <= condemnedLimit; gen++)
                                     {
                                         cumulativeGenerationSize[gen] += generationSize[gen];
@@ -2776,7 +3222,9 @@ namespace CLRProfiler
                             }
 
                             for (int gen = 0; gen <= 3; gen++)
+                            {
                                 generationSize[gen] = 0;
+                            }
 
                             while (c >= ' ')
                             {
@@ -2785,13 +3233,18 @@ namespace CLRProfiler
                                 ulong rangeLengthReserved = ReadULong();
                                 int rangeGeneration = ReadInt();
                                 if (c == -1 || rangeGeneration < 0)
+                                {
                                     break;
+                                }
+
                                 if (readLogResult.liveObjectTable != null)
                                 {
                                     if (startGC != 0)
                                     {
                                         if (rangeGeneration > condemnedGeneration && condemnedGeneration != 2)
+                                        {
                                             readLogResult.liveObjectTable.Preserve(rangeStart, rangeEnd, lastTickIndex);
+                                        }
                                     }
                                     else
                                     {
@@ -2806,43 +3259,50 @@ namespace CLRProfiler
                             }
                             break;
 
-                        case    'L':
-                        case    'l':
-                        {
-                            c = ReadChar();
-                            int isCritical = ReadInt();
-                            ulong objectId = ReadULong();
-                            if (pos >= startFileOffset && pos < endFileOffset && readLogResult.liveObjectTable != null)
+                        case 'L':
+                        case 'l':
                             {
-                                // try to find the allocation stack trace and allocation time
-                                // from the live object table
-                                LiveObjectTable.LiveObject liveObject;
-                                readLogResult.liveObjectTable.GetNextObject(objectId, objectId, out liveObject);
-                                if (liveObject.id == objectId)
+                                c = ReadChar();
+                                int isCritical = ReadInt();
+                                ulong objectId = ReadULong();
+                                if (pos >= startFileOffset && pos < endFileOffset && readLogResult.liveObjectTable != null)
                                 {
-                                    if (isCritical != 0 && readLogResult.criticalFinalizerHistogram != null)
-                                        readLogResult.criticalFinalizerHistogram.AddObject(liveObject.typeSizeStacktraceIndex, 1);
-                                    if (readLogResult.finalizerHistogram != null)
-                                        readLogResult.finalizerHistogram.AddObject(liveObject.typeSizeStacktraceIndex, 1);
-                                }
-                            }
-                            break;
-                        }
+                                    // try to find the allocation stack trace and allocation time
+                                    // from the live object table
+                                    LiveObjectTable.LiveObject liveObject;
+                                    readLogResult.liveObjectTable.GetNextObject(objectId, objectId, out liveObject);
+                                    if (liveObject.id == objectId)
+                                    {
+                                        if (isCritical != 0 && readLogResult.criticalFinalizerHistogram != null)
+                                        {
+                                            readLogResult.criticalFinalizerHistogram.AddObject(liveObject.typeSizeStacktraceIndex, 1);
+                                        }
 
-                        case    'I':
-                        case    'i':
+                                        if (readLogResult.finalizerHistogram != null)
+                                        {
+                                            readLogResult.finalizerHistogram.AddObject(liveObject.typeSizeStacktraceIndex, 1);
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+
+                        case 'I':
+                        case 'i':
                             c = ReadChar();
                             int tickCount = ReadInt();
                             if (c != -1)
                             {
                                 lastTickIndex = AddTimePos(tickCount, lastLineStartPos);
                                 if (maxTickIndex < lastTickIndex)
+                                {
                                     maxTickIndex = lastTickIndex;
+                                }
                             }
                             break;
 
-                        case    'G':
-                        case    'g':
+                        case 'G':
+                        case 'g':
                             c = ReadChar();
                             int gcGen0Count = ReadInt();
                             int gcGen1Count = ReadInt();
@@ -2851,192 +3311,227 @@ namespace CLRProfiler
                             if (gcCount[0] == 0 && readLogResult.liveObjectTable != null)
                             {
                                 if (c == -1 || gcGen0Count < 0)
+                                {
                                     readLogResult.liveObjectTable.RecordGc(lastTickIndex, 0, readLogResult.sampleObjectTable, gcGen0Count < 0);
+                                }
                                 else
+                                {
                                     readLogResult.liveObjectTable.RecordGc(lastTickIndex, gcGen0Count, gcGen1Count, gcGen2Count, readLogResult.sampleObjectTable);
+                                }
                             }
                             break;
 
-                        case    'N':
-                        case    'n':
-                        {
-                            c = ReadChar();
-                            int funcIndex;
-                            int stackTraceIndex = ReadInt();
-                            stackPtr = 0;
-
-                            int flag = ReadInt();
-                            int matched = flag / 4;
-                            int hadTypeId = (flag & 2);
-                            bool hasTypeId = (flag & 1) == 1;
-
-                            if (hasTypeId)
+                        case 'N':
+                        case 'n':
                             {
-                                intStack[stackPtr++] = ReadInt();
-                                intStack[stackPtr++] = ReadInt();
-                            }
+                                c = ReadChar();
+                                int funcIndex;
+                                int stackTraceIndex = ReadInt();
+                                stackPtr = 0;
 
-                            if (matched > 0 && c != -1)
-                            {
-                                /* use some other stack trace as a reference */
-                                int otherStackTraceId = ReadInt();
-                                otherStackTraceId = stacktraceTable.MapTypeSizeStacktraceId(otherStackTraceId);
-                                int[] stacktrace = stacktraceTable.IndexToStacktrace(otherStackTraceId);
-                                if (matched > stacktrace.Length - hadTypeId)
-                                    matched = stacktrace.Length - hadTypeId;
-                                for(int i = 0; i < matched; i++)
+                                int flag = ReadInt();
+                                int matched = flag / 4;
+                                int hadTypeId = (flag & 2);
+                                bool hasTypeId = (flag & 1) == 1;
+
+                                if (hasTypeId)
                                 {
-                                    int funcId = stacktrace[i + hadTypeId];
-                                    Debug.Assert(funcId < funcName.Length);
-                                    if (funcName[funcId] == null)
-                                        funcName[funcId] = String.Empty;
-                                    intStack[stackPtr++] = funcId;
+                                    intStack[stackPtr++] = ReadInt();
+                                    intStack[stackPtr++] = ReadInt();
+                                }
+
+                                if (matched > 0 && c != -1)
+                                {
+                                    /* use some other stack trace as a reference */
+                                    int otherStackTraceId = ReadInt();
+                                    otherStackTraceId = stacktraceTable.MapTypeSizeStacktraceId(otherStackTraceId);
+                                    int[] stacktrace = stacktraceTable.IndexToStacktrace(otherStackTraceId);
+                                    if (matched > stacktrace.Length - hadTypeId)
+                                    {
+                                        matched = stacktrace.Length - hadTypeId;
+                                    }
+
+                                    for (int i = 0; i < matched; i++)
+                                    {
+                                        int funcId = stacktrace[i + hadTypeId];
+                                        Debug.Assert(funcId < funcName.Length);
+                                        if (funcName[funcId] == null)
+                                        {
+                                            funcName[funcId] = String.Empty;
+                                        }
+
+                                        intStack[stackPtr++] = funcId;
+                                        if (stackPtr >= intStack.Length)
+                                        {
+                                            intStack = GrowIntVector(intStack);
+                                        }
+                                    }
+                                }
+
+                                while ((funcIndex = ReadInt()) >= 0)
+                                {
+                                    intStack[stackPtr] = funcIndex;
+                                    stackPtr++;
                                     if (stackPtr >= intStack.Length)
                                     {
                                         intStack = GrowIntVector(intStack);
                                     }
                                 }
-                            }
 
-                            while ((funcIndex = ReadInt()) >= 0)
-                            {
-                                intStack[stackPtr] = funcIndex;
-                                stackPtr++;
-                                if (stackPtr >= intStack.Length)
-                                    intStack = GrowIntVector(intStack);
+                                if (c != -1)
+                                {
+                                    stacktraceTable.Add(stackTraceIndex, intStack, stackPtr, hasTypeId);
+                                }
+                                break;
                             }
-
-                            if (c != -1)
-                            {
-                                stacktraceTable.Add(stackTraceIndex, intStack, stackPtr, hasTypeId);
-                            }
-                            break;
-                        }
 
                         case 'y':
                         case 'Y':
-                        {
-                            c = ReadChar();
-                            int threadid = ReadInt();
-                            if(!assembliesJustLoaded.ContainsKey(threadid))
                             {
-                                assembliesJustLoaded[threadid] = new List<string>();
-                            }
-                            ReadInt();
+                                c = ReadChar();
+                                int threadid = ReadInt();
+                                if (!assembliesJustLoaded.ContainsKey(threadid))
+                                {
+                                    assembliesJustLoaded[threadid] = new List<string>();
+                                }
+                                ReadInt();
 
-                            while (c == ' ' || c == '\t')
-                            {
-                                c = ReadChar();
+                                while (c == ' ' || c == '\t')
+                                {
+                                    c = ReadChar();
+                                }
+                                sb.Length = 0;
+                                while (c > '\r')
+                                {
+                                    sb.Append((char)c);
+                                    c = ReadChar();
+                                }
+                                string assemblyName = sb.ToString();
+                                assembliesJustLoaded[threadid].Add(assemblyName);
+                                break;
                             }
-                            sb.Length = 0;
-                            while (c > '\r')
-                            {
-                                sb.Append((char)c);
-                                c = ReadChar();
-                            }
-                            string assemblyName = sb.ToString();
-                            assembliesJustLoaded[threadid].Add(assemblyName);
-                            break;
-                        }
 
                         case 'S':
                         case 's':
-                        {
-                            c = ReadChar();
-                            int stackTraceIndex = ReadInt();
-                            int funcIndex;
-                            stackPtr = 0;
-                            while ((funcIndex = ReadInt()) >= 0)
                             {
-                                intStack[stackPtr] = funcIndex;
-                                stackPtr++;
-                                if (stackPtr >= intStack.Length)
-                                    intStack = GrowIntVector(intStack);
-                            }
-                            if (c != -1)
-                            {
-                                stacktraceTable.Add(stackTraceIndex, intStack, stackPtr, false);
-                            }
-                            break;
-                        }
-
-                        case    'Z':
-                        case    'z':
-                        {
-                            sb.Length = 0;
-                            c = ReadChar();
-                            while (c == ' ' || c == '\t')
                                 c = ReadChar();
-                            while (c > '\r')
-                            {
-                                sb.Append((char)c);
-                                c = ReadChar();
-                            }
-                            if (c != -1)
-                            {
-                                lastTickIndex = AddTimePos(lastLineStartPos);
-                                if (maxTickIndex < lastTickIndex)
-                                    maxTickIndex = lastTickIndex;
-                                commentEventList.AddEvent(lastTickIndex, sb.ToString());
-                            }
-                            break;
-                        }
-
-                        case    'H':
-                        case    'h':
-                        {
-                            c = ReadChar();
-                            int threadId = ReadInt();
-                            ulong handleId = ReadULong();
-                            ulong initialObjectId = ReadULong();
-                            int stacktraceId = ReadInt();
-                            if (c != -1)
-                            {
-                                if (readLogResult.handleHash != null)
-                                    readLogResult.handleHash[handleId] = new HandleInfo(threadId, handleId, initialObjectId, lastTickIndex, stacktraceId);
-                                if (readLogResult.createdHandlesHistogram != null)
-                                    readLogResult.createdHandlesHistogram.AddObject(stacktraceId, 1);
-                            }
-                            break;
-                        }
-
-                        case    'J':
-                        case    'j':
-                        {
-                            c = ReadChar();
-                            int threadId = ReadInt();
-                            ulong handleId = ReadULong();
-                            int stacktraceId = ReadInt();
-                            if (c != -1)
-                            {
-                                if (readLogResult.handleHash != null)         
+                                int stackTraceIndex = ReadInt();
+                                int funcIndex;
+                                stackPtr = 0;
+                                while ((funcIndex = ReadInt()) >= 0)
                                 {
-                                    if (readLogResult.handleHash.ContainsKey(handleId))
-                                        readLogResult.handleHash.Remove(handleId);
-                                    else
+                                    intStack[stackPtr] = funcIndex;
+                                    stackPtr++;
+                                    if (stackPtr >= intStack.Length)
                                     {
+                                        intStack = GrowIntVector(intStack);
                                     }
                                 }
-                                if (readLogResult.destroyedHandlesHistogram != null)
-                                    readLogResult.destroyedHandlesHistogram.AddObject(stacktraceId, 1);
+                                if (c != -1)
+                                {
+                                    stacktraceTable.Add(stackTraceIndex, intStack, stackPtr, false);
+                                }
+                                break;
                             }
-                            break;
-                        }
-                        
-                        default:
-                        {
-                            // just ignore the unknown
-                            while(c != '\n' && c != '\r')
+
+                        case 'Z':
+                        case 'z':
+                            {
+                                sb.Length = 0;
+                                c = ReadChar();
+                                while (c == ' ' || c == '\t')
+                                {
+                                    c = ReadChar();
+                                }
+
+                                while (c > '\r')
+                                {
+                                    sb.Append((char)c);
+                                    c = ReadChar();
+                                }
+                                if (c != -1)
+                                {
+                                    lastTickIndex = AddTimePos(lastLineStartPos);
+                                    if (maxTickIndex < lastTickIndex)
+                                    {
+                                        maxTickIndex = lastTickIndex;
+                                    }
+
+                                    commentEventList.AddEvent(lastTickIndex, sb.ToString());
+                                }
+                                break;
+                            }
+
+                        case 'H':
+                        case 'h':
                             {
                                 c = ReadChar();
+                                int threadId = ReadInt();
+                                ulong handleId = ReadULong();
+                                ulong initialObjectId = ReadULong();
+                                int stacktraceId = ReadInt();
+                                if (c != -1)
+                                {
+                                    if (readLogResult.handleHash != null)
+                                    {
+                                        readLogResult.handleHash[handleId] = new HandleInfo(threadId, handleId, initialObjectId, lastTickIndex, stacktraceId);
+                                    }
+
+                                    if (readLogResult.createdHandlesHistogram != null)
+                                    {
+                                        readLogResult.createdHandlesHistogram.AddObject(stacktraceId, 1);
+                                    }
+                                }
+                                break;
                             }
-                            break;
-                        }
+
+                        case 'J':
+                        case 'j':
+                            {
+                                c = ReadChar();
+                                int threadId = ReadInt();
+                                ulong handleId = ReadULong();
+                                int stacktraceId = ReadInt();
+                                if (c != -1)
+                                {
+                                    if (readLogResult.handleHash != null)
+                                    {
+                                        if (readLogResult.handleHash.ContainsKey(handleId))
+                                        {
+                                            readLogResult.handleHash.Remove(handleId);
+                                        }
+                                        else
+                                        {
+                                        }
+                                    }
+                                    if (readLogResult.destroyedHandlesHistogram != null)
+                                    {
+                                        readLogResult.destroyedHandlesHistogram.AddObject(stacktraceId, 1);
+                                    }
+                                }
+                                break;
+                            }
+
+                        default:
+                            {
+                                // just ignore the unknown
+                                while (c != '\n' && c != '\r')
+                                {
+                                    c = ReadChar();
+                                }
+                                break;
+                            }
                     }
                     while (c == ' ' || c == '\t')
+                    {
                         c = ReadChar();
+                    }
+
                     if (c == '\r')
+                    {
                         c = ReadChar();
+                    }
+
                     if (c == '\n')
                     {
                         c = ReadChar();
@@ -3051,7 +3546,9 @@ namespace CLRProfiler
                 //progressForm.Visible = false;
                 //progressForm.Dispose();
                 if (r != null)
+                {
                     r.Close();
+                }
             }
         }
     }
