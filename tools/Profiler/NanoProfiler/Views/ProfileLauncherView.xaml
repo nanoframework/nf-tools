@@ -11,7 +11,8 @@
         <viewModel:ProfileLauncherViewModel/>
     </Window.DataContext>
     <Grid Background="Red">
-        <Label Content="{Binding Testname}"
+        <Label Content="{Binding Testname}" Foreground="White"
+               HorizontalAlignment="Center" VerticalAlignment="Center"
                
                />
 
