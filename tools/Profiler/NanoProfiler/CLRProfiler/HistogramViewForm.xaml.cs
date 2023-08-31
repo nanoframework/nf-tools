@@ -16,6 +16,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
     public partial class HistogramViewForm : Window
     {
         private System.Windows.Controls.ToolTip toolTip;
+        private System.Windows.Forms.Panel graphPanel;
         private Font font;
         ReadLogResult lastLogResult;
         private bool autoUpdate;
@@ -32,7 +33,11 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             //toolTip.ShowAlways = true;
             //toolTip.AutomaticDelay = 70;
             //toolTip.ReshowDelay = 1;
-
+            graphPanel = new System.Windows.Forms.Panel();
+            graphPanel.Width = 508;
+            graphPanel.Height = 209;
+            graphPanel.Paint += graphPanel_Paint;
+            windowsFormsHost.Child = graphPanel;
             autoUpdate = true;
             lastLogResult = MainForm.instance.lastLogResult;
 
@@ -114,7 +119,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         {
             double scaleFactor = 2.0;
 
-            switch(VerticalScaleOption.SelectedValue.ToString())
+            switch(VerticalScaleOption.SelectedValue?.ToString())
             {
                 case "Coarse":
                     scaleFactor = 2.0;
@@ -228,7 +233,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 
         void BuildSizeRangesAndTypeTable(int[] typeSizeStacktraceToCount)
         {
-            //BuildBuckets();
+            BuildBuckets();
 
             totalSize = 0;
             totalCount = 0;
@@ -273,7 +278,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 totalSize += (ulong)size * (ulong)count;
                 totalCount += count;
 
-                //AddToBuckets(t, size, count);
+                AddToBuckets(t, size, count);
             }
 
             if (totalSize == 0)
@@ -286,7 +291,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 totalCount = 1;
             }
 
-            //TrimEmptyBuckets();
+            TrimEmptyBuckets();
 
             sortedTypeTable = new ArrayList();
             foreach (TypeDesc t in typeIndexToTypeDesc)
@@ -426,11 +431,15 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 minHighScaleRB.IsSelected = true;
                 return int.Parse(minHighScaleRB.Content.ToString());
             }
-
             else
             {
-                maxLowScaleRB.IsSelected = true;
-                return int.Parse(maxLowScaleRB.Content.ToString());
+                if(maxLowScaleRB != null)
+                {
+                    maxLowScaleRB.IsSelected = true;
+                    return int.Parse(maxLowScaleRB.Content.ToString());
+                }
+
+                return 1;
             }
         }
 
@@ -602,41 +611,46 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             {
                 return;
             }
-            
-            //Graphics g =  e.Graphics;
 
-            //bucketWidth = BucketWidth(g);
-            //bottomMargin = BottomMargin();
-
-            BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
-            ColorTypes();
-
-            ulong maxTotalSize = 0;
-            //foreach (Bucket b in buckets)
-            //{
-            //    if (maxTotalSize < b.totalSize)
-            //    {
-            //        maxTotalSize = b.totalSize;
-            //    }
-            //}
-
-            verticalScale = VerticalScale((int)graphPanel.Height - topMargin - bottomMargin, maxTotalSize, verticalScale == 0);
-
-            int maxBucketHeight = (int)(maxTotalSize / (ulong)verticalScale);
-            int height = topMargin + maxBucketHeight + bottomMargin;
-            if (height < minHeight)
+            if(e != null)
             {
-                height = minHeight;
+                Graphics g = e.Graphics;
+
+                bucketWidth = BucketWidth(g);
+                bottomMargin = BottomMargin();
+
+                BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
+                ColorTypes();
+
+                ulong maxTotalSize = 0;
+                foreach (Bucket b in buckets)
+                {
+                    if (maxTotalSize < b.totalSize)
+                    {
+                        maxTotalSize = b.totalSize;
+                    }
+                }
+
+                verticalScale = VerticalScale((int)graphPanel.Height - topMargin - bottomMargin, maxTotalSize, verticalScale == 0);
+
+                int maxBucketHeight = (int)(maxTotalSize / (ulong)verticalScale);
+                int height = topMargin + maxBucketHeight + bottomMargin;
+                if (height < minHeight)
+                {
+                    height = minHeight;
+                }
+
+                graphPanel.Height = height;
+
+                int width = leftMargin + buckets.Length * bucketWidth + (buckets.Length - 1) * gap + rightMargin;
+                graphPanel.Width = width;
+
+                DrawBuckets(g);
+
+                initialized = true;
             }
 
-            graphPanel.Height = height;
-
-            //int width = leftMargin + buckets.Length * bucketWidth + (buckets.Length - 1) * gap + rightMargin;
-            //graphPanel.Width = width;
-
-            //DrawBuckets(g);
-
-            initialized = true;
+           
         }
 
         private void typeLegendPanel_Paint(object sender, System.Windows.Forms.PaintEventArgs e)

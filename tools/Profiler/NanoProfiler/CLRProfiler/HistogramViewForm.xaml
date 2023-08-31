@@ -17,7 +17,6 @@
     </Window.ContextMenu>
 
     <Grid>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
@@ -45,7 +44,7 @@
                 Name="VerticalScaleOption"
                 Width="120"
                 Margin="20,0,0,0"
-                SelectedItem="1">
+                SelectedValue="1">
                 <ComboBoxItem Content="1" />
                 <ComboBoxItem Content="2" />
                 <ComboBoxItem Content="5" />
@@ -73,14 +72,14 @@
                 Width="163"
                 Height="30"
                 HorizontalAlignment="Left"
-                Content="Horiziontal Scale:"
+                Content="Horizontal Scale:"
                 FontSize="16" />
             <ComboBox
                 Name="HorizontalScaleOption"
                 Width="120"
                 Margin="20,0,0,0"
                 HorizontalAlignment="Left"
-                SelectedItem="1">
+                SelectedValue="1">
                 <ComboBoxItem Content="Coarse" IsSelected="True" />
                 <ComboBoxItem Content="Medium" />
                 <ComboBoxItem Content="Fine" />
@@ -88,13 +87,19 @@
             </ComboBox>
         </StackPanel>
 
-        <Canvas x:Name="graphPanel" Grid.Row="1">
+        <!--<Canvas x:Name="graphPanel" >
             <Canvas Width="508" Height="209" />
-        </Canvas>
+        </Canvas>-->
+
+        <WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible" Grid.Row="1">
+           
+        </WindowsFormsHost>
 
         <Canvas
             x:Name="typeLegendPanel"
             Grid.Row="1"
-            Grid.Column="1" />
+            Grid.Column="1">
+         
+        </Canvas>
     </Grid>
 </Window>
