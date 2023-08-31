@@ -10,11 +10,31 @@
     <Window.DataContext>
         <viewModel:ProfileLauncherViewModel/>
     </Window.DataContext>
-    <Grid Background="Red">
-        <Label Content="{Binding Testname}" Foreground="White"
-               HorizontalAlignment="Center" VerticalAlignment="Center"
-               
-               />
+    <Grid Background="{Binding BackgroundProfileLauncher}">
+        <Label Content="nanoDevice to connect to:" HorizontalAlignment="Left" Margin="22,19,0,0" VerticalAlignment="Top"/>
+        <TextBox HorizontalAlignment="Left" Margin="22,50,0,0" TextWrapping="Wrap" Text="COM1" VerticalAlignment="Top" Width="120"/>
+        <Button x:Name="ConnectButton" Content="Connect" HorizontalAlignment="Left" Margin="22,84,0,0" VerticalAlignment="Top" Width="120" Click="ConnectButton_Click"/>
+
+        <GroupBox Header="Profiling Options" Margin="224,19,295,273">
+            <Grid Height="107" Margin="0,0,47,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="284*"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Grid.Column="0" Grid.Row="0" Content="Force Reboot on Connect" HorizontalAlignment="Left" Margin="10,10,0,0" Name="checkReboot" IsChecked="True" Height="23"/>
+                <CheckBox Grid.Column="0" Grid.Row="1" Content="Profile Function Calls" HorizontalAlignment="Left" Margin="10,0,0,0" Name="checkCalls" IsChecked="False" Height="23"/>
+                <CheckBox Grid.Column="0" Grid.Row="2" Content="Profile Object Allocations" HorizontalAlignment="Left" Margin="10,0,0,0" Name="checkAllocations" IsChecked="True" Height="23"/>
+                <CheckBox Grid.Column="0" Grid.Row="3" Content="User Heap Absolute Address" HorizontalAlignment="Left" Margin="10,0,0,0" Name="HeapAbsoluteAddress" Height="23"/>
+            </Grid>
+        </GroupBox>
+        <TextBox x:Name="textLog" HorizontalAlignment="Left" Margin="22,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="574" Height="152"/>
+        <Button Content="Clear" HorizontalAlignment="Left" Margin="22,366,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click"/>
+        <Button x:Name="OpenLogFile" Content="Open Log File" HorizontalAlignment="Left" Margin="638,35,0,0" VerticalAlignment="Top" Width="103" Click="OpenLogFile_Click"/>
 
     </Grid>
 </Window>
