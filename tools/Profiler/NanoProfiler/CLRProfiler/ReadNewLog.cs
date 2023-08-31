@@ -58,7 +58,11 @@ namespace CLRProfiler
             }
         }
 
-        internal int BuildVertexStack(int stackTraceIndex, Vertex[] funcVertex, ref Vertex[] vertexStack, int skipCount)
+        internal int BuildVertexStack(
+            int stackTraceIndex,
+            Vertex[] funcVertex,
+            ref Vertex[] vertexStack,
+            int skipCount)
         {
             int[] stackTrace = readNewLog.stacktraceTable.IndexToStacktrace(stackTraceIndex);
 
@@ -75,13 +79,26 @@ namespace CLRProfiler
             return stackTrace.Length - skipCount;
         }
 
-        internal void BuildAllocationTrace(Graph graph, int stackTraceIndex, int typeIndex, ulong size, Vertex[] typeVertex, Vertex[] funcVertex, ref Vertex[] vertexStack, FilterForm filterForm)
+        internal void BuildAllocationTrace(
+            Graph graph,
+            int stackTraceIndex,
+            int typeIndex,
+            ulong size,
+            Vertex[] typeVertex,
+            Vertex[] funcVertex,
+            ref Vertex[] vertexStack,
+            FilterForm filterForm)
         {
-            int stackPtr = BuildVertexStack(stackTraceIndex, funcVertex, ref vertexStack, 2);
+            int stackPtr = BuildVertexStack(
+                stackTraceIndex,
+                funcVertex,
+                ref vertexStack,
+                2);
 
             Vertex toVertex = graph.TopVertex;
             Vertex fromVertex;
             Edge edge;
+
             if ((typeVertex[typeIndex].interestLevel & InterestLevel.Interesting) == InterestLevel.Interesting
                 && ReadNewLog.InterestingCallStack(vertexStack, stackPtr, filterForm))
             {
@@ -89,6 +106,7 @@ namespace CLRProfiler
                 stackPtr++;
                 stackPtr = ReadNewLog.FilterVertices(vertexStack, stackPtr);
                 stackPtr = Vertex.SqueezeOutRepetitions(vertexStack, stackPtr);
+
                 for (int i = 0; i < stackPtr; i++)
                 {
                     fromVertex = toVertex;
@@ -96,6 +114,7 @@ namespace CLRProfiler
                     edge = graph.FindOrCreateEdge(fromVertex, toVertex);
                     edge.AddWeight(size);
                 }
+
                 fromVertex = toVertex;
                 toVertex = graph.BottomVertex;
                 edge = graph.FindOrCreateEdge(fromVertex, toVertex);
@@ -103,9 +122,19 @@ namespace CLRProfiler
             }
         }
 
-        internal void BuildAssemblyTrace(Graph graph, int stackTraceIndex, Vertex assembly, Vertex typeVertex, Vertex[] funcVertex, ref Vertex[] vertexStack)
+        internal void BuildAssemblyTrace(
+            Graph graph,
+            int stackTraceIndex,
+            Vertex assembly,
+            Vertex typeVertex,
+            Vertex[] funcVertex,
+            ref Vertex[] vertexStack)
         {
-            int stackPtr = BuildVertexStack(Math.Abs(stackTraceIndex), funcVertex, ref vertexStack, stackTraceIndex < 0 ? 2 : 0);
+            int stackPtr = BuildVertexStack(
+                Math.Abs(stackTraceIndex),
+                funcVertex,
+                ref vertexStack,
+                stackTraceIndex < 0 ? 2 : 0);
 
             Vertex toVertex = graph.TopVertex;
             Vertex fromVertex;
@@ -115,10 +144,12 @@ namespace CLRProfiler
             {
                 vertexStack[stackPtr++] = typeVertex;
             }
+
             vertexStack[stackPtr++] = assembly;
 
             stackPtr = ReadNewLog.FilterVertices(vertexStack, stackPtr);
             stackPtr = Vertex.SqueezeOutRepetitions(vertexStack, stackPtr);
+
             for (int i = 0; i < stackPtr; i++)
             {
                 fromVertex = toVertex;
@@ -126,19 +157,31 @@ namespace CLRProfiler
                 edge = graph.FindOrCreateEdge(fromVertex, toVertex);
                 edge.AddWeight(1);
             }
+
             fromVertex = toVertex;
             toVertex = graph.BottomVertex;
             edge = graph.FindOrCreateEdge(fromVertex, toVertex);
             edge.AddWeight(1);
         }
 
-        internal void BuildCallTrace(Graph graph, int stackTraceIndex, Vertex[] funcVertex, ref Vertex[] vertexStack, int count, FilterForm filterForm)
+        internal void BuildCallTrace(
+            Graph graph,
+            int stackTraceIndex,
+            Vertex[] funcVertex,
+            ref Vertex[] vertexStack,
+            int count,
+            FilterForm filterForm)
         {
-            int stackPtr = BuildVertexStack(stackTraceIndex, funcVertex, ref vertexStack, 0);
+            int stackPtr = BuildVertexStack(
+                stackTraceIndex,
+                funcVertex,
+                ref vertexStack,
+                0);
 
             Vertex toVertex = graph.TopVertex;
             Vertex fromVertex;
             Edge edge;
+
             if (ReadNewLog.InterestingCallStack(vertexStack, stackPtr, filterForm))
             {
                 stackPtr = ReadNewLog.FilterVertices(vertexStack, stackPtr);
@@ -153,9 +196,19 @@ namespace CLRProfiler
             }
         }
 
-        internal void BuildHandleAllocationTrace(Graph graph, int stackTraceIndex, uint count, Vertex[] funcVertex, ref Vertex[] vertexStack, FilterForm filterForm)
+        internal void BuildHandleAllocationTrace(
+            Graph graph,
+            int stackTraceIndex,
+            uint count,
+            Vertex[] funcVertex,
+            ref Vertex[] vertexStack,
+            FilterForm filterForm)
         {
-            int stackPtr = BuildVertexStack(stackTraceIndex, funcVertex, ref vertexStack, 0);
+            int stackPtr = BuildVertexStack(
+                stackTraceIndex,
+                funcVertex,
+                ref vertexStack,
+                0);
 
             Vertex handleVertex = graph.FindOrCreateVertex("Handle", null, null);
             handleVertex.interestLevel = InterestLevel.Interesting;
@@ -163,12 +216,14 @@ namespace CLRProfiler
             Vertex toVertex = graph.TopVertex;
             Vertex fromVertex;
             Edge edge;
+
             if (ReadNewLog.InterestingCallStack(vertexStack, stackPtr, filterForm))
             {
                 vertexStack[stackPtr] = handleVertex;
                 stackPtr++;
                 stackPtr = ReadNewLog.FilterVertices(vertexStack, stackPtr);
                 stackPtr = Vertex.SqueezeOutRepetitions(vertexStack, stackPtr);
+
                 for (int i = 0; i < stackPtr; i++)
                 {
                     fromVertex = toVertex;
@@ -176,6 +231,7 @@ namespace CLRProfiler
                     edge = graph.FindOrCreateEdge(fromVertex, toVertex);
                     edge.AddWeight(count);
                 }
+
                 fromVertex = toVertex;
                 toVertex = graph.BottomVertex;
                 edge = graph.FindOrCreateEdge(fromVertex, toVertex);
@@ -183,11 +239,15 @@ namespace CLRProfiler
             }
         }
 
-        internal void BuildTypeVertices(Graph graph, ref Vertex[] typeVertex, FilterForm filterForm)
+        internal void BuildTypeVertices(
+            Graph graph,
+            ref Vertex[] typeVertex,
+            FilterForm filterForm)
         {
             for (int i = 0; i < readNewLog.typeName.Length; i++)
             {
                 string typeName = readNewLog.typeName[i];
+
                 if (typeName == null)
                 {
                     typeName = string.Format("???? type {0}", i);
@@ -197,13 +257,18 @@ namespace CLRProfiler
             }
         }
 
-        internal int BuildAssemblyVertices(Graph graph, ref Vertex[] typeVertex, FilterForm filterForm)
+        internal int BuildAssemblyVertices(
+            Graph graph,
+            ref Vertex[] typeVertex,
+            FilterForm filterForm)
         {
             int count = 0;
+
             foreach (string c in readNewLog.assemblies.Keys)
             {
                 readNewLog.AddTypeVertex(count++, c, graph, ref typeVertex, filterForm);
             }
+
             return count;
         }
 
@@ -223,7 +288,13 @@ namespace CLRProfiler
                     signature = "( ???????? )";
                 }
 
-                readNewLog.AddFunctionVertex(i, name, signature, graph, ref funcVertex, filterForm);
+                readNewLog.AddFunctionVertex(
+                    i,
+                    name,
+                    signature,
+                    graph,
+                    ref funcVertex,
+                    filterForm);
             }
         }
 
@@ -248,7 +319,15 @@ namespace CLRProfiler
                     int typeIndex = stacktrace[0];
                     ulong size = (ulong)stacktrace[1] * (ulong)typeSizeStacktraceToCount[i];
 
-                    BuildAllocationTrace(graph, i, typeIndex, size, typeVertex, funcVertex, ref vertexStack, filterForm);
+                    BuildAllocationTrace(
+                        graph,
+                        i,
+                        typeIndex,
+                        size,
+                        typeVertex,
+                        funcVertex,
+                        ref vertexStack,
+                        filterForm);
                 }
             }
 
@@ -407,6 +486,7 @@ namespace CLRProfiler
         void GrowMasterTable()
         {
             SampleObject[][] newMasterTable = new SampleObject[masterTable.Length * 2][];
+
             for (int i = 0; i < masterTable.Length; i++)
             {
                 newMasterTable[i] = masterTable[i];
@@ -429,26 +509,36 @@ namespace CLRProfiler
             return (start >> secondLevelShift) != (end >> secondLevelShift);
         }
 
-        internal void RecordChange(ulong start, ulong end, int changeTickIndex, int origAllocTickIndex, int typeIndex)
+        internal void RecordChange(
+            ulong start,
+            ulong end,
+            int changeTickIndex,
+            int origAllocTickIndex,
+            int typeIndex)
         {
             lastTickIndex = changeTickIndex;
+
             for (ulong id = start; id < end; id += sampleGrain)
             {
                 uint index = (uint)(id >> firstLevelShift);
+
                 while (masterTable.Length <= index)
                 {
                     GrowMasterTable();
                 }
 
                 SampleObject[] so = masterTable[index];
+
                 if (so == null)
                 {
                     so = new SampleObject[secondLevelLength];
                     masterTable[index] = so;
                 }
+
                 index = (uint)((id >> secondLevelShift) & (secondLevelLength - 1));
                 Debug.Assert(so[index] == null || so[index].changeTickIndex <= changeTickIndex);
                 SampleObject prev = so[index];
+
                 if (prev != null && prev.typeIndex == typeIndex && prev.origAllocTickIndex == origAllocTickIndex)
                 {
                     // no real change - can happen when loading files where allocation profiling was off
@@ -548,12 +638,14 @@ namespace CLRProfiler
                         }
                     }
                 }
+
                 return null;
             }
 
             private void DeleteInterval(Interval i)
             {
                 Interval prevInterval = null;
+
                 for (Interval ii = liveRoot; ii != null; ii = ii.next)
                 {
                     if (ii == i)
@@ -569,6 +661,7 @@ namespace CLRProfiler
 
                         break;
                     }
+
                     prevInterval = ii;
                 }
             }
@@ -581,13 +674,18 @@ namespace CLRProfiler
                 DeleteInterval(overlappingInterval);
             }
 
-            internal bool AddObject(ulong id, uint size, int allocTickIndex, SampleObjectTable sampleObjectTable)
+            internal bool AddObject(
+                ulong id,
+                uint size,
+                int allocTickIndex,
+                SampleObjectTable sampleObjectTable)
             {
                 size = (size + 3) & (uint.MaxValue - 3);
                 Interval prevInterval = null;
                 Interval bestInterval = null;
                 Interval prevI = null;
                 bool emptySpace = false;
+
                 // look for the best interval to put this object in.
                 for (Interval i = liveRoot; i != null; i = i.next)
                 {
@@ -599,14 +697,17 @@ namespace CLRProfiler
                             prevInterval = prevI;
                         }
                     }
+
                     prevI = i;
                 }
+
                 if (bestInterval != null)
                 {
                     if (bestInterval.loAddr > id)
                     {
                         bestInterval.loAddr = id;
                     }
+
                     if (id < bestInterval.hiAddr)
                     {
                         if (bestInterval.hadRelocations && bestInterval.justHadGc)
@@ -622,6 +723,7 @@ namespace CLRProfiler
                         bestInterval.hiAddr = id + size;
                         emptySpace = true;
                     }
+
                     if (prevInterval != null)
                     {
                         // Move to front to speed up future searches.
@@ -629,6 +731,7 @@ namespace CLRProfiler
                         bestInterval.next = liveRoot;
                         liveRoot = bestInterval;
                     }
+
                     if (OverlappingInterval(bestInterval) != null)
                     {
                         MergeInterval(bestInterval);
@@ -636,14 +739,23 @@ namespace CLRProfiler
 
                     return emptySpace;
                 }
+
                 liveRoot = new Interval(id, id + size, -1, liveRoot);
                 Debug.Assert(OverlappingInterval(liveRoot) == null);
+
                 return emptySpace;
             }
 
-            internal void GenerationInterval(ulong rangeStart, ulong rangeLength, int generation)
+            internal void GenerationInterval(
+                ulong rangeStart,
+                ulong rangeLength,
+                int generation)
             {
-                newLiveRoot = new Interval(rangeStart, rangeStart + rangeLength, generation, newLiveRoot);
+                newLiveRoot = new Interval(
+                    rangeStart,
+                    rangeStart + rangeLength,
+                    generation,
+                    newLiveRoot);
             }
 
             internal int GenerationOfObject(ulong id)
@@ -660,10 +772,13 @@ namespace CLRProfiler
                             i.next = liveRoot;
                             liveRoot = i;
                         }
+
                         return i.generation;
                     }
+
                     prev = i;
                 }
+
                 return -1;
             }
 
@@ -702,7 +817,9 @@ namespace CLRProfiler
                         i.hadRelocations = true;
                     }
                 }
+
                 Interval bestInterval = null;
+
                 for (Interval i = liveRoot; i != null; i = i.next)
                 {
                     if (i.loAddr <= newId + length && newId <= i.hiAddr + allowableGap)
@@ -742,11 +859,13 @@ namespace CLRProfiler
                 // using insertion sort for now...
                 Interval next;
                 Interval newRoot = null;
+
                 for (Interval i = root; i != null; i = next)
                 {
                     next = i.next;
                     Interval prev = null;
                     Interval ii;
+
                     for (ii = newRoot; ii != null; ii = ii.next)
                     {
                         if (i.loAddr < ii.loAddr)
@@ -756,6 +875,7 @@ namespace CLRProfiler
 
                         prev = ii;
                     }
+
                     if (prev == null)
                     {
                         i.next = newRoot;
@@ -767,23 +887,31 @@ namespace CLRProfiler
                         prev.next = i;
                     }
                 }
+
                 return newRoot;
             }
 
-            private void RemoveRange(ulong loAddr, ulong hiAddr, int tickIndex, SampleObjectTable sampleObjectTable)
+            private void RemoveRange(
+                ulong loAddr,
+                ulong hiAddr,
+                int tickIndex,
+                SampleObjectTable sampleObjectTable)
             {
                 Interval next;
+
                 for (Interval i = liveRoot; i != null; i = next)
                 {
                     next = i.next;
                     ulong lo = Math.Max(loAddr, i.loAddr);
                     ulong hi = Math.Min(hiAddr, i.hiAddr);
+
                     if (lo >= hi)
                     {
                         continue;
                     }
 
                     liveObjectTable.RemoveObjectRange(lo, hi - lo, tickIndex, sampleObjectTable);
+
                     if (i.hiAddr == hi)
                     {
                         if (i.loAddr == lo)
@@ -798,26 +926,33 @@ namespace CLRProfiler
                 }
             }
 
-            internal void RecordGc(int tickIndex, SampleObjectTable sampleObjectTable, bool simpleForm)
+            internal void RecordGc(
+                int tickIndex,
+                SampleObjectTable sampleObjectTable,
+                bool simpleForm)
             {
                 if (simpleForm && nullRelocationsSeen || newLiveRoot != null)
                 {
                     // in this case assume anything not reported is dead
                     updateRoot = SortIntervals(updateRoot);
                     ulong prevHiAddr = 0;
+
                     for (Interval i = updateRoot; i != null; i = i.next)
                     {
                         if (prevHiAddr < i.loAddr)
                         {
                             RemoveRange(prevHiAddr, i.loAddr, tickIndex, sampleObjectTable);
                         }
+
                         if (prevHiAddr < i.hiAddr)
                         {
                             prevHiAddr = i.hiAddr;
                         }
                     }
+
                     RemoveRange(prevHiAddr, ulong.MaxValue, tickIndex, sampleObjectTable);
                     updateRoot = null;
+
                     if (newLiveRoot != null)
                     {
                         liveRoot = newLiveRoot;
@@ -831,6 +966,7 @@ namespace CLRProfiler
                         i.justHadGc = true;
                     }
                 }
+
                 nullRelocationsSeen = false;
             }
         }
@@ -851,6 +987,7 @@ namespace CLRProfiler
         void GrowFirstLevelTable()
         {
             ushort[][] newFirstLevelTable = new ushort[firstLevelTable.Length * 2][];
+
             for (int i = 0; i < firstLevelTable.Length; i++)
             {
                 newFirstLevelTable[i] = firstLevelTable[i];
@@ -876,11 +1013,13 @@ namespace CLRProfiler
             id >>= alignShift;
             uint i = (uint)(id >> firstLevelShift);
             uint j = (uint)(id & secondLevelMask);
+
             if (i >= firstLevelTable.Length)
             {
                 i = (uint)(firstLevelTable.Length - 1);
                 j = (uint)(secondLevelLength - 1);
             }
+
             while (i != uint.MaxValue)
             {
                 ushort[] secondLevelTable = firstLevelTable[i];
@@ -895,14 +1034,17 @@ namespace CLRProfiler
 
                         j--;
                     }
+
                     if (j != uint.MaxValue)
                     {
                         break;
                     }
                 }
+
                 j = secondLevelLength - 1;
                 i--;
             }
+
             if (i == uint.MaxValue)
             {
                 return 0;
@@ -921,11 +1063,13 @@ namespace CLRProfiler
             uint iEnd = (uint)(endId >> firstLevelShift);
             uint j = (uint)(startId & secondLevelMask);
             uint jEnd = (uint)(endId & secondLevelMask);
+
             if (iEnd >= firstLevelTable.Length)
             {
                 iEnd = (uint)(firstLevelTable.Length - 1);
                 jEnd = (uint)(secondLevelLength - 1);
             }
+
             while (i <= iEnd)
             {
                 ushort[] secondLevelTable = firstLevelTable[i];
@@ -940,14 +1084,17 @@ namespace CLRProfiler
 
                         j++;
                     }
+
                     if (j < secondLevelLength)
                     {
                         break;
                     }
                 }
+
                 j = 0;
                 i++;
             }
+
             if (i > iEnd || (i == iEnd && j > jEnd))
             {
                 return ulong.MaxValue;
@@ -958,14 +1105,19 @@ namespace CLRProfiler
             }
         }
 
-        internal void GetNextObject(ulong startId, ulong endId, out LiveObject o)
+        internal void GetNextObject(
+            ulong startId,
+            ulong endId,
+            out LiveObject o)
         {
             ulong id = FindObjectForward(startId, endId);
+
             o.id = id;
             id >>= alignShift;
             uint i = (uint)(id >> firstLevelShift);
             uint j = (uint)(id & secondLevelMask);
             ushort[] secondLevelTable = null;
+
             if (i < firstLevelTable.Length)
             {
                 secondLevelTable = firstLevelTable[i];
@@ -974,17 +1126,21 @@ namespace CLRProfiler
             if (secondLevelTable != null)
             {
                 ushort u1 = secondLevelTable[j];
+
                 if ((u1 & 0x8000) != 0)
                 {
                     j++;
+
                     if (j >= secondLevelLength)
                     {
                         j = 0;
                         i++;
                         secondLevelTable = firstLevelTable[i];
                     }
+
                     ushort u2 = secondLevelTable[j];
                     j++;
+
                     if (j >= secondLevelLength)
                     {
                         j = 0;
@@ -1005,52 +1161,66 @@ namespace CLRProfiler
                     return;
                 }
             }
+
             o.size = 0;
             o.allocTickIndex = o.typeIndex = o.typeSizeStacktraceIndex = 0;
         }
 
-        void Write3WordsAt(ulong id, ushort u1, ushort u2, ushort u3)
+        void Write3WordsAt(
+            ulong id,
+            ushort u1,
+            ushort u2,
+            ushort u3)
         {
             id >>= alignShift;
             uint i = (uint)(id >> firstLevelShift);
             uint j = (uint)(id & secondLevelMask);
+
             while (firstLevelTable.Length <= i + 1)
             {
                 GrowFirstLevelTable();
             }
 
             ushort[] secondLevelTable = firstLevelTable[i];
+
             if (secondLevelTable == null)
             {
                 secondLevelTable = new ushort[secondLevelLength];
                 firstLevelTable[i] = secondLevelTable;
             }
+
             secondLevelTable[j] = u1;
             j++;
+
             if (j >= secondLevelLength)
             {
                 j = 0;
                 i++;
                 secondLevelTable = firstLevelTable[i];
+
                 if (secondLevelTable == null)
                 {
                     secondLevelTable = new ushort[secondLevelLength];
                     firstLevelTable[i] = secondLevelTable;
                 }
             }
+
             secondLevelTable[j] = u2;
             j++;
+
             if (j >= secondLevelLength)
             {
                 j = 0;
                 i++;
                 secondLevelTable = firstLevelTable[i];
+
                 if (secondLevelTable == null)
                 {
                     secondLevelTable = new ushort[secondLevelLength];
                     firstLevelTable[i] = secondLevelTable;
                 }
             }
+
             secondLevelTable[j] = u3;
         }
 
@@ -1061,6 +1231,7 @@ namespace CLRProfiler
             uint i = (uint)(id >> firstLevelShift);
             uint j = (uint)(id & secondLevelMask);
             ushort[] secondLevelTable = null;
+
             if (i < firstLevelTable.Length)
             {
                 secondLevelTable = firstLevelTable[i];
@@ -1100,9 +1271,11 @@ namespace CLRProfiler
                             j++;
                         }
                     }
+
                     j = 0;
                     i++;
                     secondLevelTable = null;
+
                     if (i < firstLevelTable.Length)
                     {
                         secondLevelTable = firstLevelTable[i];
@@ -1119,17 +1292,30 @@ namespace CLRProfiler
                 id += uint.MaxValue;
                 size -= uint.MaxValue;
             }
+
             Zero(id, (uint)size);
         }
 
-        internal bool CanReadObjectBackCorrectly(ulong id, uint size, int typeSizeStacktraceIndex, int allocTickIndex)
+        internal bool CanReadObjectBackCorrectly(
+            ulong id,
+            uint size,
+            int typeSizeStacktraceIndex,
+            int allocTickIndex)
         {
             LiveObject o;
+
             GetNextObject(id, id + size, out o);
+
             return o.id == id && o.typeSizeStacktraceIndex == typeSizeStacktraceIndex && o.allocTickIndex == allocTickIndex;
         }
 
-        internal void InsertObject(ulong id, int typeSizeStacktraceIndex, int allocTickIndex, int nowTickIndex, bool newAlloc, SampleObjectTable sampleObjectTable)
+        internal void InsertObject(
+            ulong id,
+            int typeSizeStacktraceIndex,
+            int allocTickIndex,
+            int nowTickIndex,
+            bool newAlloc,
+            SampleObjectTable sampleObjectTable)
         {
             if (lastPos >= readNewLog.pos && newAlloc)
             {
@@ -1143,27 +1329,35 @@ namespace CLRProfiler
             int typeIndex = stacktrace[0];
             uint size = (uint)stacktrace[1];
             bool emptySpace = false;
+
             if (newAlloc)
             {
                 emptySpace = intervalTable.AddObject(id, size, allocTickIndex, sampleObjectTable);
             }
+
             if (!emptySpace)
             {
                 ulong prevId = FindObjectBackward(id - 4);
                 LiveObject o;
+
                 GetNextObject(prevId, id, out o);
+
                 if (o.id < id && (o.id + o.size > id || o.id + 12 > id))
                 {
                     Zero(o.id, id - o.id);
                 }
             }
+
             Debug.Assert(FindObjectBackward(id - 4) + 12 <= id);
+
             if (size >= 12)
             {
                 ushort u1 = (ushort)(typeSizeStacktraceIndex | 0x8000);
                 ushort u2 = (ushort)((typeSizeStacktraceIndex >> 15) | ((allocTickIndex & 0xff) << 7));
                 ushort u3 = (ushort)(allocTickIndex >> 8);
+
                 Write3WordsAt(id, u1, u2, u3);
+
                 if (!emptySpace)
                 {
                     Zero(id + 12, size - 12);
@@ -1171,13 +1365,18 @@ namespace CLRProfiler
 
                 Debug.Assert(CanReadObjectBackCorrectly(id, size, typeSizeStacktraceIndex, allocTickIndex));
             }
+
             if (sampleObjectTable != null)
             {
                 sampleObjectTable.Insert(id, id + size, nowTickIndex, allocTickIndex, typeIndex);
             }
         }
 
-        void RemoveObjectRange(ulong firstId, ulong length, int tickIndex, SampleObjectTable sampleObjectTable)
+        void RemoveObjectRange(
+            ulong firstId,
+            ulong length,
+            int tickIndex,
+            SampleObjectTable sampleObjectTable)
         {
             ulong lastId = firstId + length;
 
@@ -1189,7 +1388,11 @@ namespace CLRProfiler
             Zero(firstId, length);
         }
 
-        internal void GenerationInterval(ulong rangeStart, ulong rangeLength, int generation, int tickIndex)
+        internal void GenerationInterval(
+            ulong rangeStart,
+            ulong rangeLength,
+            int generation,
+            int tickIndex)
         {
             lastPos = readNewLog.pos;
 
@@ -1200,22 +1403,29 @@ namespace CLRProfiler
         internal int GenerationOfObject(ref LiveObject o)
         {
             int generation = intervalTable.GenerationOfObject(o.id);
+
             if (generation < 0)
             {
                 generation = 0;
+
                 if (o.allocTickIndex <= gen2LimitTickIndex)
                 {
                     generation = 2;
                 }
+
                 else if (o.allocTickIndex <= gen1LimitTickIndex)
                 {
                     generation = 1;
                 }
             }
+
             return generation;
         }
 
-        internal void Preserve(ulong id, ulong length, int tickIndex)
+        internal void Preserve(
+            ulong id,
+            ulong length,
+            int tickIndex)
         {
             if (lastPos >= readNewLog.pos)
             {
@@ -1228,7 +1438,13 @@ namespace CLRProfiler
             intervalTable.Preserve(id, length);
         }
 
-        internal void UpdateObjects(Histogram relocatedHistogram, ulong oldId, ulong newId, uint length, int tickIndex, SampleObjectTable sampleObjectTable)
+        internal void UpdateObjects(
+            Histogram relocatedHistogram,
+            ulong oldId,
+            ulong newId,
+            uint length,
+            int tickIndex,
+            SampleObjectTable sampleObjectTable)
         {
             if (lastPos >= readNewLog.pos)
             {
@@ -1248,17 +1464,26 @@ namespace CLRProfiler
             ulong nextId;
             ulong lastId = oldId + length;
             LiveObject o;
+
             for (GetNextObject(oldId, lastId, out o); o.id < lastId; GetNextObject(nextId, lastId, out o))
             {
                 nextId = o.id + o.size;
                 ulong offset = o.id - oldId;
+
                 if (sampleObjectTable != null)
                 {
                     sampleObjectTable.Delete(o.id, o.id + o.size, tickIndex);
                 }
 
                 Zero(o.id, o.size);
-                InsertObject(newId + offset, o.typeSizeStacktraceIndex, o.allocTickIndex, tickIndex, false, sampleObjectTable);
+                InsertObject(
+                    newId + offset,
+                    o.typeSizeStacktraceIndex,
+                    o.allocTickIndex,
+                    tickIndex,
+                    false,
+                    sampleObjectTable);
+
                 if (relocatedHistogram != null)
                 {
                     relocatedHistogram.AddObject(o.typeSizeStacktraceIndex, 1);
@@ -1273,7 +1498,11 @@ namespace CLRProfiler
         internal int gen1LimitTickIndex;
         internal int gen2LimitTickIndex;
 
-        internal void RecordGc(int tickIndex, int gen, SampleObjectTable sampleObjectTable, bool simpleForm)
+        internal void RecordGc(
+            int tickIndex,
+            int gen,
+            SampleObjectTable sampleObjectTable,
+            bool simpleForm)
         {
             lastTickIndex = tickIndex;
 
@@ -1292,6 +1521,7 @@ namespace CLRProfiler
             gen1LimitTickIndex = tickIndex;
 
             lastGcGen0Count++;
+
             if (gen > 0)
             {
                 lastGcGen1Count++;
@@ -1302,9 +1532,15 @@ namespace CLRProfiler
             }
         }
 
-        internal void RecordGc(int tickIndex, int gcGen0Count, int gcGen1Count, int gcGen2Count, SampleObjectTable sampleObjectTable)
+        internal void RecordGc(
+            int tickIndex,
+            int gcGen0Count,
+            int gcGen1Count,
+            int gcGen2Count,
+            SampleObjectTable sampleObjectTable)
         {
             int gen = 0;
+
             if (gcGen2Count != lastGcGen2Count)
             {
                 gen = 2;
@@ -2639,6 +2875,7 @@ namespace CLRProfiler
             {
                 Stream s = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 r = new StreamReader(s);
+
                 for (timePosIndex = timePosCount; timePosIndex > 0; timePosIndex--)
                 {
                     if (timePos[timePosIndex - 1].pos <= startFileOffset)
@@ -2646,6 +2883,7 @@ namespace CLRProfiler
                         break;
                     }
                 }
+
                 // start at the beginning if no later start point available or asked for info that can only
                 // be constructed by reading the whole file.
                 if (timePosIndex <= 1 || readLogResult.relocatedHistogram != null || readLogResult.finalizerHistogram != null
@@ -2659,23 +2897,29 @@ namespace CLRProfiler
                     timePosIndex--;
                     pos = timePos[timePosIndex].pos;
                 }
+
                 if (timePosCount == 0)
                 {
                     timePos[0] = new TimePos(0.0, 0);
                     timePosCount = timePosIndex = 1;
                 }
+
                 s.Position = pos;
                 buffer = new byte[4096];
                 bufPos = 0;
                 bufLevel = 0;
+
                 int maxProgress = (int)(r.BaseStream.Length / 1024);
                 progressForm.SetMaximum(maxProgress);
+
                 line = 1;
                 StringBuilder sb = new StringBuilder();
                 ulong[] ulongStack = new ulong[1000];
                 int[] intStack = new int[1000];
                 int stackPtr = 0;
+
                 c = ReadChar();
+
                 bool thisIsR = false, previousWasR;
                 bool extendedRootInfoSeen = false;
                 int lastTickIndex = 0;
@@ -2762,28 +3006,32 @@ namespace CLRProfiler
                             {
                                 c = ReadChar();
                                 int typeIndex = ReadInt();
+
                                 while (c == ' ' || c == '\t')
                                 {
                                     c = ReadChar();
                                 }
 
-                                if (c != -1 && Char.IsDigit((char)c))
+                                if (c != -1 && char.IsDigit((char)c))
                                 {
                                     if (ReadInt() != 0)
                                     {
                                         finalizableTypes[typeIndex] = true;
                                     }
                                 }
+
                                 while (c == ' ' || c == '\t')
                                 {
                                     c = ReadChar();
                                 }
 
                                 string typeName = ReadString(sb, '\r', false, 1023);
+
                                 if (c != -1)
                                 {
                                     AddTypeName(typeIndex, typeName);
                                 }
+
                                 break;
                             }
 
@@ -2791,33 +3039,46 @@ namespace CLRProfiler
                         case '!':
                             {
                                 c = ReadChar();
+
                                 int threadId = ReadInt();
                                 ulong id = ReadULong();
                                 int typeSizeStackTraceIndex = ReadInt();
                                 typeSizeStackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(typeSizeStackTraceIndex);
+
                                 if (c != -1)
                                 {
                                     if (readLogResult.liveObjectTable != null)
                                     {
-                                        readLogResult.liveObjectTable.InsertObject(id, typeSizeStackTraceIndex, lastTickIndex, lastTickIndex, true, readLogResult.sampleObjectTable);
+                                        readLogResult.liveObjectTable.InsertObject(
+                                            id,
+                                            typeSizeStackTraceIndex,
+                                            lastTickIndex,
+                                            lastTickIndex,
+                                            true,
+                                            readLogResult.sampleObjectTable);
                                     }
 
                                     if (pos >= startFileOffset && pos < endFileOffset && readLogResult.allocatedHistogram != null)
                                     {
                                         readLogResult.allocatedHistogram.AddObject(typeSizeStackTraceIndex, 1);
                                     }
+
                                     List<string> prev;
+
                                     if (assembliesJustLoaded.TryGetValue(threadId, out prev) && prev.Count != 0)
                                     {
                                         foreach (string assemblyName in prev)
                                         {
                                             assemblies[assemblyName] = -typeSizeStackTraceIndex;
                                         }
+
                                         prev.Clear();
                                     }
                                 }
+
                                 readLogResult.hadAllocInfo = true;
                                 readLogResult.hadCallInfo = true;
+
                                 break;
                             }
 
@@ -2825,14 +3086,22 @@ namespace CLRProfiler
                         case 'a':
                             {
                                 c = ReadChar();
+
                                 ulong id = ReadULong();
                                 int typeSizeStackTraceIndex = ReadInt();
                                 typeSizeStackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(typeSizeStackTraceIndex);
+
                                 if (c != -1)
                                 {
                                     if (readLogResult.liveObjectTable != null)
                                     {
-                                        readLogResult.liveObjectTable.InsertObject(id, typeSizeStackTraceIndex, lastTickIndex, lastTickIndex, true, readLogResult.sampleObjectTable);
+                                        readLogResult.liveObjectTable.InsertObject(
+                                            id,
+                                            typeSizeStackTraceIndex,
+                                            lastTickIndex,
+                                            lastTickIndex,
+                                            true,
+                                            readLogResult.sampleObjectTable);
                                     }
 
                                     if (pos >= startFileOffset && pos < endFileOffset && readLogResult.allocatedHistogram != null)
@@ -2840,8 +3109,10 @@ namespace CLRProfiler
                                         readLogResult.allocatedHistogram.AddObject(typeSizeStackTraceIndex, 1);
                                     }
                                 }
+
                                 readLogResult.hadAllocInfo = true;
                                 readLogResult.hadCallInfo = true;
+
                                 break;
                             }
 
@@ -2849,6 +3120,7 @@ namespace CLRProfiler
                         case 'c':
                             {
                                 c = ReadChar();
+
                                 if (pos < startFileOffset || pos >= endFileOffset)
                                 {
                                     while (c >= ' ')
@@ -2858,26 +3130,33 @@ namespace CLRProfiler
 
                                     break;
                                 }
+
                                 int threadIndex = ReadInt();
                                 int stackTraceIndex = ReadInt();
                                 stackTraceIndex = stacktraceTable.MapTypeSizeStacktraceId(stackTraceIndex);
+
                                 if (c != -1)
                                 {
                                     if (readLogResult.callstackHistogram != null)
                                     {
                                         readLogResult.callstackHistogram.AddObject(stackTraceIndex, 1);
                                     }
+
                                     List<string> prev;
+
                                     if (assembliesJustLoaded.TryGetValue(threadIndex, out prev) && prev.Count != 0)
                                     {
                                         foreach (string assemblyName in prev)
                                         {
                                             assemblies[assemblyName] = stackTraceIndex;
                                         }
+
                                         prev.Clear();
                                     }
                                 }
+
                                 readLogResult.hadCallInfo = true;
+
                                 break;
                             }
 
@@ -2885,8 +3164,10 @@ namespace CLRProfiler
                         case 'e':
                             {
                                 c = ReadChar();
+
                                 extendedRootInfoSeen = true;
                                 thisIsR = true;
+
                                 if (pos < startFileOffset || pos >= endFileOffset)
                                 {
                                     while (c >= ' ')
@@ -2896,15 +3177,19 @@ namespace CLRProfiler
 
                                     break;
                                 }
+
                                 if (!previousWasR)
                                 {
                                     heapDumpEventList.AddEvent(lastTickIndex, null);
+
                                     if (readLogResult.objectGraph != null && !readLogResult.objectGraph.empty)
                                     {
                                         readLogResult.objectGraph.BuildTypeGraph(new FilterForm());
                                         readLogResult.objectGraph.Neuter();
                                     }
+
                                     Histogram[] h = readLogResult.heapDumpHistograms;
+
                                     if (h != null)
                                     {
                                         if (h.Length == requestedIndex)
@@ -2913,6 +3198,7 @@ namespace CLRProfiler
                                         }
 
                                         readLogResult.heapDumpHistograms = new Histogram[h.Length + 1];
+
                                         for (int i = 0; i < h.Length; i++)
                                         {
                                             readLogResult.heapDumpHistograms[i] = h[i];
@@ -2920,16 +3206,20 @@ namespace CLRProfiler
 
                                         readLogResult.heapDumpHistograms[h.Length] = new Histogram(this, lastTickIndex);
                                     }
+
                                     readLogResult.objectGraph = new ObjectGraph(this, lastTickIndex);
                                 }
+
                                 ulong objectID = ReadULong();
                                 GcRootKind rootKind = (GcRootKind)ReadInt();
                                 GcRootFlags rootFlags = (GcRootFlags)ReadInt();
                                 ulong rootID = ReadULong();
                                 ObjectGraph objectGraph = readLogResult.objectGraph;
+
                                 if (c != -1 && objectID > 0 && objectGraph != null && (rootFlags & GcRootFlags.WeakRef) == 0)
                                 {
                                     string rootName;
+
                                     switch (rootKind)
                                     {
                                         case GcRootKind.Stack: rootName = "Stack"; break;
@@ -2971,7 +3261,9 @@ namespace CLRProfiler
                         case 'r':
                             {
                                 c = ReadChar();
+
                                 thisIsR = true;
+
                                 if (extendedRootInfoSeen || pos < startFileOffset || pos >= endFileOffset)
                                 {
                                     while (c >= ' ')
@@ -2980,6 +3272,7 @@ namespace CLRProfiler
                                     }
 
                                     Histogram[] h = readLogResult.heapDumpHistograms;
+
                                     if (h != null)
                                     {
                                         if (h.Length == requestedIndex)
@@ -2987,17 +3280,22 @@ namespace CLRProfiler
                                             readLogResult.requestedObjectGraph = readLogResult.objectGraph;
                                         }
                                     }
+
                                     break;
                                 }
+
                                 if (!previousWasR)
                                 {
                                     heapDumpEventList.AddEvent(lastTickIndex, null);
+
                                     if (readLogResult.objectGraph != null && !readLogResult.objectGraph.empty)
                                     {
                                         readLogResult.objectGraph.BuildTypeGraph(new FilterForm());
                                         readLogResult.objectGraph.Neuter();
                                     }
+
                                     Histogram[] h = readLogResult.heapDumpHistograms;
+
                                     if (h != null)
                                     {
                                         if (h.Length == requestedIndex)
@@ -3006,6 +3304,7 @@ namespace CLRProfiler
                                         }
 
                                         readLogResult.heapDumpHistograms = new Histogram[h.Length + 1];
+
                                         for (int i = 0; i < h.Length; i++)
                                         {
                                             readLogResult.heapDumpHistograms[i] = h[i];
@@ -3013,22 +3312,27 @@ namespace CLRProfiler
 
                                         readLogResult.heapDumpHistograms[h.Length] = new Histogram(this, lastTickIndex);
                                     }
+
                                     readLogResult.objectGraph = new ObjectGraph(this, lastTickIndex);
                                 }
+
                                 stackPtr = 0;
                                 ulong objectID;
+
                                 while ((objectID = ReadULong()) != ulong.MaxValue)
                                 {
                                     if (objectID > 0)
                                     {
                                         ulongStack[stackPtr] = objectID;
                                         stackPtr++;
+
                                         if (stackPtr >= ulongStack.Length)
                                         {
                                             ulongStack = GrowULongVector(ulongStack);
                                         }
                                     }
                                 }
+
                                 if (c != -1)
                                 {
                                     if (readLogResult.objectGraph != null)
@@ -3036,6 +3340,7 @@ namespace CLRProfiler
                                         readLogResult.objectGraph.AddRoots(stackPtr, ulongStack);
                                     }
                                 }
+
                                 break;
                             }
 
@@ -3043,6 +3348,7 @@ namespace CLRProfiler
                         case 'o':
                             {
                                 c = ReadChar();
+
                                 if (pos < startFileOffset || pos >= endFileOffset || readLogResult.objectGraph == null)
                                 {
                                     while (c >= ' ')
@@ -3052,23 +3358,27 @@ namespace CLRProfiler
 
                                     break;
                                 }
+
                                 ulong objectId = ReadULong();
                                 int typeIndex = ReadInt();
                                 uint size = ReadUInt();
                                 stackPtr = 0;
                                 ulong objectID;
+
                                 while ((objectID = ReadULong()) != ulong.MaxValue)
                                 {
                                     if (objectID > 0)
                                     {
                                         ulongStack[stackPtr] = objectID;
                                         stackPtr++;
+
                                         if (stackPtr >= ulongStack.Length)
                                         {
                                             ulongStack = GrowULongVector(ulongStack);
                                         }
                                     }
                                 }
+
                                 if (c != -1)
                                 {
                                     ObjectGraph objectGraph = readLogResult.objectGraph;
@@ -3076,31 +3386,45 @@ namespace CLRProfiler
 
                                     int typeSizeStackTraceId = -1;
                                     int allocTickIndex = 0;
+
                                     // try to find the allocation stack trace and allocation time
                                     // from the live object table
                                     if (readLogResult.liveObjectTable != null)
                                     {
                                         LiveObjectTable.LiveObject liveObject;
-                                        readLogResult.liveObjectTable.GetNextObject(objectId, objectId, out liveObject);
+                                        readLogResult.liveObjectTable.GetNextObject(
+                                            objectId,
+                                            objectId,
+                                            out liveObject);
+
                                         if (liveObject.id == objectId)
                                         {
                                             typeSizeStackTraceId = liveObject.typeSizeStacktraceIndex;
                                             allocTickIndex = liveObject.allocTickIndex;
+
                                             Histogram[] h = readLogResult.heapDumpHistograms;
+
                                             if (h != null)
                                             {
                                                 h[h.Length - 1].AddObject(liveObject.typeSizeStacktraceIndex, 1);
                                             }
                                         }
                                     }
+
                                     if (typeSizeStackTraceId == -1)
                                     {
                                         typeSizeStackTraceId = stacktraceTable.GetOrCreateTypeSizeId(typeIndex, (int)size);
                                     }
 
-                                    ObjectGraph.GcObject gcObject = objectGraph.CreateAndEnterObject(objectId, typeSizeStackTraceId, stackPtr, ulongStack);
+                                    ObjectGraph.GcObject gcObject = objectGraph.CreateAndEnterObject(
+                                        objectId,
+                                        typeSizeStackTraceId,
+                                        stackPtr,
+                                        ulongStack);
+
                                     gcObject.AllocTickIndex = allocTickIndex;
                                 }
+
                                 break;
                             }
 
@@ -3108,23 +3432,28 @@ namespace CLRProfiler
                         case 'm':
                             {
                                 c = ReadChar();
+
                                 int modIndex = ReadInt();
                                 sb.Length = 0;
+
                                 while (c > '\r')
                                 {
                                     sb.Append((char)c);
                                     c = ReadChar();
                                 }
+
                                 if (c != -1)
                                 {
                                     string lineString = sb.ToString();
                                     int addrPos = lineString.LastIndexOf(" 0x");
+
                                     if (addrPos <= 0)
                                     {
                                         addrPos = lineString.Length;
                                     }
 
                                     int backSlashPos = lineString.LastIndexOf(@"\");
+
                                     if (backSlashPos <= 0)
                                     {
                                         backSlashPos = -1;
@@ -3135,9 +3464,11 @@ namespace CLRProfiler
 
                                     EnsureStringCapacity(modIndex, ref modBasicName);
                                     modBasicName[modIndex] = basicName;
+
                                     EnsureStringCapacity(modIndex, ref modFullName);
                                     modFullName[modIndex] = fullName;
                                 }
+
                                 break;
                             }
 
@@ -3145,10 +3476,13 @@ namespace CLRProfiler
                         case 'u':
                             {
                                 c = ReadChar();
+
                                 ulong oldId = ReadULong();
                                 ulong newId = ReadULong();
                                 uint length = ReadUInt();
+
                                 Histogram reloHist = null;
+
                                 if (pos >= startFileOffset && pos < endFileOffset)
                                 {
                                     reloHist = readLogResult.relocatedHistogram;
@@ -3156,7 +3490,13 @@ namespace CLRProfiler
 
                                 if (readLogResult.liveObjectTable != null)
                                 {
-                                    readLogResult.liveObjectTable.UpdateObjects(reloHist, oldId, newId, length, lastTickIndex, readLogResult.sampleObjectTable);
+                                    readLogResult.liveObjectTable.UpdateObjects(
+                                        reloHist,
+                                        oldId,
+                                        newId,
+                                        length,
+                                        lastTickIndex,
+                                        readLogResult.sampleObjectTable);
                                 }
 
                                 break;
@@ -3176,7 +3516,13 @@ namespace CLRProfiler
 
                                 if (readLogResult.liveObjectTable != null)
                                 {
-                                    readLogResult.liveObjectTable.UpdateObjects(reloHist, startId, startId, length, lastTickIndex, readLogResult.sampleObjectTable);
+                                    readLogResult.liveObjectTable.UpdateObjects(
+                                        reloHist,
+                                        startId,
+                                        startId,
+                                        length,
+                                        lastTickIndex,
+                                        readLogResult.sampleObjectTable);
                                 }
 
                                 break;
@@ -3185,9 +3531,11 @@ namespace CLRProfiler
                         case 'B':
                         case 'b':
                             c = ReadChar();
+
                             int startGC = ReadInt();
                             int induced = ReadInt();
                             int condemnedGeneration = ReadInt();
+
                             if (startGC != 0)
                             {
                                 newGcEvent = gcEventList.AddEvent(lastTickIndex, null);
@@ -3208,6 +3556,7 @@ namespace CLRProfiler
                                 else
                                 {
                                     int condemnedLimit = condemnedGeneration;
+
                                     if (condemnedLimit == 2)
                                     {
                                         condemnedLimit = 3;
@@ -3232,6 +3581,7 @@ namespace CLRProfiler
                                 ulong rangeEnd = ReadULong();
                                 ulong rangeLengthReserved = ReadULong();
                                 int rangeGeneration = ReadInt();
+
                                 if (c == -1 || rangeGeneration < 0)
                                 {
                                     break;
@@ -3243,34 +3593,52 @@ namespace CLRProfiler
                                     {
                                         if (rangeGeneration > condemnedGeneration && condemnedGeneration != 2)
                                         {
-                                            readLogResult.liveObjectTable.Preserve(rangeStart, rangeEnd, lastTickIndex);
+                                            readLogResult.liveObjectTable.Preserve(
+                                                rangeStart,
+                                                rangeEnd,
+                                                lastTickIndex);
                                         }
                                     }
                                     else
                                     {
-                                        readLogResult.liveObjectTable.GenerationInterval(rangeStart, rangeEnd, rangeGeneration, lastTickIndex);
+                                        readLogResult.liveObjectTable.GenerationInterval(
+                                            rangeStart,
+                                            rangeEnd,
+                                            rangeGeneration,
+                                            lastTickIndex);
                                     }
                                 }
+
                                 generationSize[rangeGeneration] += rangeEnd - rangeStart;
                             }
+
                             if (startGC == 0 && readLogResult.liveObjectTable != null)
                             {
-                                readLogResult.liveObjectTable.RecordGc(lastTickIndex, condemnedGeneration, readLogResult.sampleObjectTable, false);
+                                readLogResult.liveObjectTable.RecordGc(
+                                    lastTickIndex,
+                                    condemnedGeneration,
+                                    readLogResult.sampleObjectTable,
+                                    false);
                             }
+
                             break;
 
                         case 'L':
                         case 'l':
                             {
                                 c = ReadChar();
+
                                 int isCritical = ReadInt();
                                 ulong objectId = ReadULong();
+
                                 if (pos >= startFileOffset && pos < endFileOffset && readLogResult.liveObjectTable != null)
                                 {
                                     // try to find the allocation stack trace and allocation time
                                     // from the live object table
                                     LiveObjectTable.LiveObject liveObject;
+
                                     readLogResult.liveObjectTable.GetNextObject(objectId, objectId, out liveObject);
+
                                     if (liveObject.id == objectId)
                                     {
                                         if (isCritical != 0 && readLogResult.criticalFinalizerHistogram != null)
@@ -3284,47 +3652,65 @@ namespace CLRProfiler
                                         }
                                     }
                                 }
+
                                 break;
                             }
 
                         case 'I':
                         case 'i':
                             c = ReadChar();
+
                             int tickCount = ReadInt();
+
                             if (c != -1)
                             {
                                 lastTickIndex = AddTimePos(tickCount, lastLineStartPos);
+
                                 if (maxTickIndex < lastTickIndex)
                                 {
                                     maxTickIndex = lastTickIndex;
                                 }
                             }
+
                             break;
 
                         case 'G':
                         case 'g':
                             c = ReadChar();
+
                             int gcGen0Count = ReadInt();
                             int gcGen1Count = ReadInt();
                             int gcGen2Count = ReadInt();
+
                             // if the newer 'b' lines occur, disregard the 'g' lines.
                             if (gcCount[0] == 0 && readLogResult.liveObjectTable != null)
                             {
                                 if (c == -1 || gcGen0Count < 0)
                                 {
-                                    readLogResult.liveObjectTable.RecordGc(lastTickIndex, 0, readLogResult.sampleObjectTable, gcGen0Count < 0);
+                                    readLogResult.liveObjectTable.RecordGc(
+                                        lastTickIndex,
+                                        0,
+                                        readLogResult.sampleObjectTable,
+                                        gcGen0Count < 0);
                                 }
                                 else
                                 {
-                                    readLogResult.liveObjectTable.RecordGc(lastTickIndex, gcGen0Count, gcGen1Count, gcGen2Count, readLogResult.sampleObjectTable);
+                                    readLogResult.liveObjectTable.RecordGc(
+                                        lastTickIndex,
+                                        gcGen0Count,
+                                        gcGen1Count,
+                                        gcGen2Count,
+                                        readLogResult.sampleObjectTable);
                                 }
                             }
+
                             break;
 
                         case 'N':
                         case 'n':
                             {
                                 c = ReadChar();
+
                                 int funcIndex;
                                 int stackTraceIndex = ReadInt();
                                 stackPtr = 0;
@@ -3346,6 +3732,7 @@ namespace CLRProfiler
                                     int otherStackTraceId = ReadInt();
                                     otherStackTraceId = stacktraceTable.MapTypeSizeStacktraceId(otherStackTraceId);
                                     int[] stacktrace = stacktraceTable.IndexToStacktrace(otherStackTraceId);
+
                                     if (matched > stacktrace.Length - hadTypeId)
                                     {
                                         matched = stacktrace.Length - hadTypeId;
@@ -3355,12 +3742,14 @@ namespace CLRProfiler
                                     {
                                         int funcId = stacktrace[i + hadTypeId];
                                         Debug.Assert(funcId < funcName.Length);
+
                                         if (funcName[funcId] == null)
                                         {
-                                            funcName[funcId] = String.Empty;
+                                            funcName[funcId] = string.Empty;
                                         }
 
                                         intStack[stackPtr++] = funcId;
+
                                         if (stackPtr >= intStack.Length)
                                         {
                                             intStack = GrowIntVector(intStack);
@@ -3372,6 +3761,7 @@ namespace CLRProfiler
                                 {
                                     intStack[stackPtr] = funcIndex;
                                     stackPtr++;
+
                                     if (stackPtr >= intStack.Length)
                                     {
                                         intStack = GrowIntVector(intStack);
@@ -3380,8 +3770,13 @@ namespace CLRProfiler
 
                                 if (c != -1)
                                 {
-                                    stacktraceTable.Add(stackTraceIndex, intStack, stackPtr, hasTypeId);
+                                    stacktraceTable.Add(
+                                        stackTraceIndex,
+                                        intStack,
+                                        stackPtr,
+                                        hasTypeId);
                                 }
+
                                 break;
                             }
 
@@ -3389,25 +3784,32 @@ namespace CLRProfiler
                         case 'Y':
                             {
                                 c = ReadChar();
+
                                 int threadid = ReadInt();
+
                                 if (!assembliesJustLoaded.ContainsKey(threadid))
                                 {
                                     assembliesJustLoaded[threadid] = new List<string>();
                                 }
+
                                 ReadInt();
 
                                 while (c == ' ' || c == '\t')
                                 {
                                     c = ReadChar();
                                 }
+
                                 sb.Length = 0;
+
                                 while (c > '\r')
                                 {
                                     sb.Append((char)c);
                                     c = ReadChar();
                                 }
+
                                 string assemblyName = sb.ToString();
                                 assembliesJustLoaded[threadid].Add(assemblyName);
+
                                 break;
                             }
 
@@ -3415,22 +3817,31 @@ namespace CLRProfiler
                         case 's':
                             {
                                 c = ReadChar();
+
                                 int stackTraceIndex = ReadInt();
                                 int funcIndex;
                                 stackPtr = 0;
+
                                 while ((funcIndex = ReadInt()) >= 0)
                                 {
                                     intStack[stackPtr] = funcIndex;
                                     stackPtr++;
+
                                     if (stackPtr >= intStack.Length)
                                     {
                                         intStack = GrowIntVector(intStack);
                                     }
                                 }
+
                                 if (c != -1)
                                 {
-                                    stacktraceTable.Add(stackTraceIndex, intStack, stackPtr, false);
+                                    stacktraceTable.Add(
+                                        stackTraceIndex,
+                                        intStack,
+                                        stackPtr,
+                                        false);
                                 }
+
                                 break;
                             }
 
@@ -3439,6 +3850,7 @@ namespace CLRProfiler
                             {
                                 sb.Length = 0;
                                 c = ReadChar();
+
                                 while (c == ' ' || c == '\t')
                                 {
                                     c = ReadChar();
@@ -3449,9 +3861,11 @@ namespace CLRProfiler
                                     sb.Append((char)c);
                                     c = ReadChar();
                                 }
+
                                 if (c != -1)
                                 {
                                     lastTickIndex = AddTimePos(lastLineStartPos);
+
                                     if (maxTickIndex < lastTickIndex)
                                     {
                                         maxTickIndex = lastTickIndex;
@@ -3466,15 +3880,22 @@ namespace CLRProfiler
                         case 'h':
                             {
                                 c = ReadChar();
+
                                 int threadId = ReadInt();
                                 ulong handleId = ReadULong();
                                 ulong initialObjectId = ReadULong();
                                 int stacktraceId = ReadInt();
+
                                 if (c != -1)
                                 {
                                     if (readLogResult.handleHash != null)
                                     {
-                                        readLogResult.handleHash[handleId] = new HandleInfo(threadId, handleId, initialObjectId, lastTickIndex, stacktraceId);
+                                        readLogResult.handleHash[handleId] = new HandleInfo(
+                                            threadId,
+                                            handleId,
+                                            initialObjectId,
+                                            lastTickIndex,
+                                            stacktraceId);
                                     }
 
                                     if (readLogResult.createdHandlesHistogram != null)
@@ -3489,9 +3910,11 @@ namespace CLRProfiler
                         case 'j':
                             {
                                 c = ReadChar();
+
                                 int threadId = ReadInt();
                                 ulong handleId = ReadULong();
                                 int stacktraceId = ReadInt();
+
                                 if (c != -1)
                                 {
                                     if (readLogResult.handleHash != null)
@@ -3504,11 +3927,13 @@ namespace CLRProfiler
                                         {
                                         }
                                     }
+
                                     if (readLogResult.destroyedHandlesHistogram != null)
                                     {
                                         readLogResult.destroyedHandlesHistogram.AddObject(stacktraceId, 1);
                                     }
                                 }
+
                                 break;
                             }
 
@@ -3519,9 +3944,11 @@ namespace CLRProfiler
                                 {
                                     c = ReadChar();
                                 }
+
                                 break;
                             }
                     }
+
                     while (c == ' ' || c == '\t')
                     {
                         c = ReadChar();
