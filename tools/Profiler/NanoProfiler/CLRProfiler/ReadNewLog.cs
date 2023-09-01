@@ -12,7 +12,7 @@ using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 
 namespace CLRProfiler
 {
-    internal class Histogram
+    public class Histogram
     {
         internal int[] typeSizeStacktraceToCount;
         internal ReadNewLog readNewLog;

@@ -1,4 +1,6 @@
 ﻿using CLRProfiler;
+using nanoFramework.Tools.NanoProfiler.ViewModels;
+using nanoFramework.Tools.NanoProfiler.Views;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -202,13 +204,22 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             Clipboard.SetDataObject(sb.ToString());
         }
 
+
+        //  Here start histogram
         private void AllocatedHistogramButton_Click(object sender, RoutedEventArgs e)
         {
             string title = "Histogram by Size for Allocated Objects for: " + _scenario;
 
-            HistogramViewForm histogramViewForm = new HistogramViewForm(_logResult.allocatedHistogram, title);
-            
-            histogramViewForm.Show();
+            //HistogramViewForm histogramViewForm = new HistogramViewForm(_logResult.allocatedHistogram, title);
+            //histogramViewForm.Show();
+
+
+
+            HistogramViewModel viewModel = new HistogramViewModel(_logResult.allocatedHistogram, title);
+            HistogramView histogramView = new HistogramView();
+            histogramView.DataContext = viewModel;
+            histogramView.Show();
+
         }
     }
 }

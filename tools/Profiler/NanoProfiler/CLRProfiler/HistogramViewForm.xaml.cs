@@ -34,8 +34,8 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             //toolTip.AutomaticDelay = 70;
             //toolTip.ReshowDelay = 1;
             graphPanel = new System.Windows.Forms.Panel();
-            graphPanel.Width = 508;
-            graphPanel.Height = 209;
+            //graphPanel.Width = 508;
+            //graphPanel.Height = 209;
             graphPanel.Paint += graphPanel_Paint;
             windowsFormsHost.Child = graphPanel;
             autoUpdate = true;
@@ -595,6 +595,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             int width1 = (int)g.MeasureString("< 999.9 sec", font).Width;
             int width2 = (int)g.MeasureString("999 MB", font).Width;
             width1 = Math.Max(width1, width2);
+            var res = Math.Max(width1, bucketWidth);
             return Math.Max(width1, bucketWidth);
         }
 

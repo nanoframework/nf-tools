@@ -5,8 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="HistogramViewForm"
-    Width="1016"
-    Height="644"
+
     mc:Ignorable="d">
 
     <Window.ContextMenu>
@@ -17,20 +16,20 @@
     </Window.ContextMenu>
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+
 
         <Grid.RowDefinitions>
             <RowDefinition Height=".25*" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="2*" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel
-            Grid.Row="0"
-            Grid.Column="0"
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
             Margin="10,0,0,0"
             VerticalAlignment="Center"
             Orientation="Horizontal">
@@ -62,8 +61,7 @@
             </ComboBox>
         </StackPanel>
 
-        <StackPanel
-            Grid.Row="0"
+            <StackPanel
             Grid.Column="1"
             Margin="10,0,0,0"
             VerticalAlignment="Center"
@@ -86,20 +84,26 @@
                 <ComboBoxItem Content="Very Fine" />
             </ComboBox>
         </StackPanel>
+        </Grid>
 
         <!--<Canvas x:Name="graphPanel" >
             <Canvas Width="508" Height="209" />
         </Canvas>-->
+        <Grid Grid.Row="1" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+                <WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible"  >
 
-        <WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible" Grid.Row="1">
-           
-        </WindowsFormsHost>
+                </WindowsFormsHost>                
 
-        <Canvas
-            x:Name="typeLegendPanel"
-            Grid.Row="1"
-            Grid.Column="1">
-         
-        </Canvas>
+            <Canvas
+                x:Name="typeLegendPanel" Visibility="Collapsed"
+                Grid.Column="1">
+
+            </Canvas>
+        </Grid>
+        
     </Grid>
 </Window>
