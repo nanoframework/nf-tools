@@ -28,23 +28,19 @@ using Brushes = System.Windows.Media.Brushes;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
-    
     public partial class HistogramViewModel: ObservableObject
     {
-        public LineSeries LineSeries { get; set; }
-        public SeriesCollection SeriesCollection { get; set; }
-
         #region Observable Properties
 
 
         [ObservableProperty]
-        private ChartValues<int> _bucketsValues = new ChartValues<int>();
+        private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
 
         [ObservableProperty]
         private ObservableCollection<string> _bucketsLabels = new ObservableCollection<string>();
 
         [ObservableProperty]
-        private CartesianMapper<int> _bucketsConfiguration;
+        private CartesianMapper<BucketDataModel> _bucketsConfiguration;
 
         #endregion
 
@@ -53,7 +49,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         Bucket[] buckets;
         double currentScaleFactor;
-        public Histogram _histogram { get; set; }
+        public Histogram histogram { get; set; }
         private string[] typeName;
         public string _title { get; set; }
 
@@ -69,35 +65,41 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         public HistogramViewModel(Histogram histogram, string title)
         {
-            _histogram = histogram;
+            this.histogram = histogram;
             _title = title;
-            typeName = _histogram.readNewLog.typeName;
+            typeName = this.histogram.readNewLog.typeName;
             SetHistogram();
         }
-
-
-
-
-
-
 
         public void SetHistogram()
         {
             //  This will create buckets
             graphPanel_Paint();
 
-            for (int i = 0; i < BucketsLabels.Count; i++)
-            {
-                BucketsValues.Add(i + 1);
-            }
+            BucketsConfiguration = new CartesianMapper<BucketDataModel>()
+                .X((value, index) => index)
+                .Y((value, index) => value.BucketValue)
+                .Fill(SetColumnFill())
+                .Stroke(value => value.BucketValue > 0.0 ? Brushes.Black : Brushes.Transparent);
 
-            BucketsConfiguration = new CartesianMapper<int>()
-                .Fill(SetColumnColor());
-            
         }
-        private Func<int, object> SetColumnColor()
+        private Func<BucketDataModel, object> SetColumnFill()
         {
-            return (value => value > 3.0 ? Brushes.Red : Brushes.Green);
+            return (value =>
+            {
+                if (value.BucketValue > 0 && value.BucketValue < 3)
+                {
+                    return Brushes.Green;
+                }
+                else if (value.BucketValue > 3 && value.BucketValue < 50)
+                {
+                    return Brushes.Yellow;
+                }
+                else
+                {
+                    return Brushes.Red;
+                }
+            });
         }
 
 
@@ -108,7 +110,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             initialized = false;
 
-            if (_histogram == null || typeName == null)
+            if (histogram == null || typeName == null)
             {
                 return;
             }
@@ -120,7 +122,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 //bucketWidth = BucketWidth(g);
                 //bottomMargin = BottomMargin();
 
-                BuildSizeRangesAndTypeTable(_histogram.typeSizeStacktraceToCount);
+                BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
                 ColorTypes();
 
                 ulong maxTotalSize = 0;
@@ -132,21 +134,19 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     }
                 }
 
-            //verticalScale = VerticalScale((int)graphPanel.Height - topMargin - bottomMargin, maxTotalSize, verticalScale == 0);
+                //verticalScale = VerticalScale((int)graphPanel.Height - topMargin - bottomMargin, maxTotalSize, verticalScale == 0);
 
-            //int maxBucketHeight = (int)(maxTotalSize / (ulong)verticalScale);
-            //int height = topMargin + maxBucketHeight + bottomMargin;
-            //if (height < minHeight)
-            //{
-            //    height = minHeight;
-            //}
+                //int maxBucketHeight = (int)(maxTotalSize / (ulong)verticalScale);
+                //int height = topMargin + maxBucketHeight + bottomMargin;
+                //if (height < minHeight)
+                //{
+                //    height = minHeight;
+                //}
 
-            //graphPanel.Height = height;
+                //graphPanel.Height = height;
 
-            //int width = leftMargin + buckets.Length * bucketWidth + (buckets.Length - 1) * gap + rightMargin;
-            //graphPanel.Width = width;
-
-            SetBucketsLabels();
+                //int width = leftMargin + buckets.Length * bucketWidth + (buckets.Length - 1) * gap + rightMargin;
+                //graphPanel.Width = width;
 
                 DrawBuckets();
                 
@@ -156,20 +156,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         }
 
-        private void SetBucketsLabels()
-        {
-            for (int i = 0; i < buckets.Length; i++)
-            {
-                string s = "< " + FormatSize((ulong)buckets[i].maxSize + 1) + $"{Environment.NewLine}";
-                s += FormatSize(buckets[i].totalSize) + $"{Environment.NewLine}";
-                s += string.Format("({0:f2}%)", 100.0 * buckets[i].totalSize / totalSize);
 
-                buckets[i].label = s;
-                BucketsLabels.Add(buckets[i].label);
-            }
-
-
-        }
 
         string FormatSize(ulong size)
         {
@@ -202,51 +189,56 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private void DrawBuckets()
         {
             //Debug.Assert(verticalScale != 0);
-            //bool noBucketSelected = true;
-            //foreach (Bucket b in buckets)
-            //{
-            //    if (b.selected)
-            //    {
-            //        noBucketSelected = false;
-            //        break;
-            //    }
-            //}
+            bool noBucketSelected = true;
+            foreach (Bucket b in buckets)
+            {
+                if (b.selected)
+                {
+                    noBucketSelected = false;
+                    break;
+                }
+            }
 
             //using (System.Drawing.Brush blackBrush = new SolidBrush(System.Drawing.Color.Black))
-            //{
-            //    int x = leftMargin;
-            //    foreach (Bucket b in buckets)
-            //    {
-            //        string s = "< " + FormatSize((ulong)b.maxSize + 1);
+            {
+                //int x = leftMargin;
+                foreach (Bucket b in buckets)
+                {
+                    string s = "< " + FormatSize((ulong)b.maxSize + 1) + $"{Environment.NewLine}";
 
-            //        int y = (int)(graphPanel.Height - bottomMargin);
+                    //int y = (int)(graphPanel.Height - bottomMargin);
 
-            //        g.DrawString(s, font, blackBrush, x, y + 3);
-            //        s = FormatSize(b.totalSize);
-            //        g.DrawString(s, font, blackBrush, x, y + 3 + font.Height);
-            //        s = string.Format("({0:f2}%)", 100.0 * b.totalSize / totalSize);
-            //        g.DrawString(s, font, blackBrush, x, y + 3 + font.Height * 2);
-            //        foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
-            //        {
-            //            TypeDesc t = d.Key;
-            //            SizeCount sizeCount = d.Value;
-            //            ulong size = sizeCount.size;
-            //            int height = (int)(size / (ulong)verticalScale);
+                    //g.DrawString(s, font, blackBrush, x, y + 3);
+                    s += FormatSize(b.totalSize) + $"{Environment.NewLine}";
+                    //g.DrawString(s, font, blackBrush, x, y + 3 + font.Height);
+                    s += string.Format("({0:f2}%)", 100.0 * b.totalSize / totalSize);
 
-            //            y -= height;
+                    BucketsLabels.Add(s);
+                    BucketsValues.Add(new BucketDataModel() { BucketValue = Math.Round((100.0 * b.totalSize / totalSize), 2) });
 
-            //            System.Drawing.Brush brush = t.brush;
-            //            if (t.selected && (b.selected || noBucketSelected))
-            //            {
-            //                brush = blackBrush;
-            //            }
 
-            //            g.FillRectangle(brush, x, y, bucketWidth, height);
-            //        }
+                    //g.DrawString(s, font, blackBrush, x, y + 3 + font.Height * 2);
+                    //foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
+                    //{
+                    //    TypeDesc t = d.Key;
+                    //    SizeCount sizeCount = d.Value;
+                    //    ulong size = sizeCount.size;
+                    //    int height = (int)(size / (ulong)verticalScale);
 
-            //        x += bucketWidth + gap;
-            //    }
-            //}
+                    //    y -= height;
+
+                    //    System.Drawing.Brush brush = t.brush;
+                    //    if (t.selected && (b.selected || noBucketSelected))
+                    //    {
+                    //        brush = blackBrush;
+                    //    }
+
+                    //    g.FillRectangle(brush, x, y, bucketWidth, height);
+                    //}
+
+                    //x += bucketWidth + gap;
+                }
+            }
         }
 
 
@@ -339,7 +331,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             if (typeIndexToTypeDesc == null)
             {
-                typeIndexToTypeDesc = new TypeDesc[_histogram.readNewLog.typeName.Length];
+                typeIndexToTypeDesc = new TypeDesc[histogram.readNewLog.typeName.Length];
             }
             else
             {
@@ -361,7 +353,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     continue;
                 }
 
-                int[] stacktrace = _histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
+                int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
                 int typeIndex = stacktrace[0];
                 int size = stacktrace[1];
 
