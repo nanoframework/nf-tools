@@ -12,7 +12,7 @@ namespace nanoFramework.Tools.NanoProfiler.Services.API
 {
     public class CoronavirusCountryService : ICoronavirusCountryService
     {
-        public async Task<IEnumerable<CoronavirusCountry>> GetTopCases(int amountOfCountries)
+        public async Task<IEnumerable<CoronavirusCountry>> GetTopCasesAsync(int amountOfCountries)
         {
             using(HttpClient client = new HttpClient())
             {

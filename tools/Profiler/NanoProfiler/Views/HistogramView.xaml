@@ -96,21 +96,96 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid>
-                <lvc:CartesianChart>
+                <!--Series="{Binding SeriesCollection}"-->
+                <lvc:CartesianChart Series="{Binding ChartDataSets}" Grid.Row="2">
+                    <lvc:CartesianChart.AxisX>
+                        <lvc:Axis Labels="{Binding ColumnLabels}" />
+                    </lvc:CartesianChart.AxisX>
+                    <!--<lvc:CartesianChart.AxisX>
+                        <lvc:Axis  Foreground="Red">
+                            <lvc:Axis.Separator>
+                                <lvc:Separator Step="1"/>
+                            </lvc:Axis.Separator>
+                        </lvc:Axis>
+                    </lvc:CartesianChart.AxisX>-->
+                    <lvc:CartesianChart.AxisY>
+                        <lvc:Axis Foreground="Red"/>
+                    </lvc:CartesianChart.AxisY>
+                </lvc:CartesianChart>
+                <!--<lvc:CartesianChart Name="Chart" Grid.Row="2" >
+                    
                     <lvc:CartesianChart.Series>
-                        <lvc:ColumnSeries Title="Country Cases" Values="{Binding CoronavirusCountryCaseCounts}"/>
+                        --><!--<lvc:LineSeries Title="Sine Graph"
+                            Values="{Binding SineGraphValues}"
+                            Configuration="{Binding DataMapper}"/>--><!--
+                        <lvc:ColumnSeries Title="Sine Graph"
+                            Values="{Binding CoronavirusCountryCaseCounts}"
+                            Configuration="{Binding DataMapper}" />
                     </lvc:CartesianChart.Series>
                     <lvc:CartesianChart.AxisX>
-                        <lvc:Axis Title="Countries" Labels="{Binding BucketLabels}">
+                        <lvc:Axis  Foreground="Red">
                             <lvc:Axis.Separator>
                                 <lvc:Separator Step="1"/>
                             </lvc:Axis.Separator>
                         </lvc:Axis>
                     </lvc:CartesianChart.AxisX>
                     <lvc:CartesianChart.AxisY>
-                        <lvc:Axis Title="Case Count"/>
+                        <lvc:Axis Foreground="Red"/>
                     </lvc:CartesianChart.AxisY>
-                </lvc:CartesianChart>
+                    --><!--<lvc:CartesianChart.AxisY>
+                        <lvc:Axis Name="Axis">
+                            <lvc:Axis.Sections>
+                                <lvc:AxisSection Value="8.5" StrokeThickness="3" Stroke="Red">
+                                    <lvc:AxisSection.Fill>
+                                        <SolidColorBrush Color="Red" Opacity="1"></SolidColorBrush>
+                                    </lvc:AxisSection.Fill>
+                                </lvc:AxisSection>
+                                <lvc:AxisSection Value="4" SectionWidth="8" >
+                                    <lvc:AxisSection.Fill>
+                                        <SolidColorBrush Color="Red" Opacity="1"></SolidColorBrush>
+                                    </lvc:AxisSection.Fill>
+                                </lvc:AxisSection>
+                                <lvc:AxisSection Value="0" SectionWidth="4" >
+                                    <lvc:AxisSection.Fill>
+                                        <SolidColorBrush Color="Red" Opacity="1"></SolidColorBrush>
+                                    </lvc:AxisSection.Fill>
+                                </lvc:AxisSection>
+                            </lvc:Axis.Sections>
+                        </lvc:Axis>
+                    </lvc:CartesianChart.AxisY>--><!--
+                </lvc:CartesianChart>-->
+                <!--x:Name="cartesianChart"-->
+                <!--<lvc:CartesianChart LegendLocation="Right" Series="{Binding SeriesCollection}">
+                    
+                </lvc:CartesianChart>-->
+                    <!--<lvc:CartesianChart.SeriesColors>
+                        <lvc:ColorsCollection>
+                            <Color>Red</Color>
+                            <Color>Orange</Color>
+                            <Color>LightSlateGray</Color>
+                        </lvc:ColorsCollection>
+                    </lvc:CartesianChart.SeriesColors>-->
+                    <!--<lvc:CartesianChart.Series >
+                        --><!--<lvc:LineSeries Title="Sine Graph"
+                            Values="{Binding SineGraphValues}"
+                            Configuration="{Binding DataMapper}"/>--><!--
+                        <lvc:ColumnSeries Title="Sine Graph"
+                            Values="{Binding SeriesCollection}" Fill="Blue"
+                                          
+                            />
+                        --><!--<lvc:ColumnSeries Title="Country Cases" Values="{Binding CoronavirusCountryCaseCounts}"  Fill="Blue"/>--><!--
+                    </lvc:CartesianChart.Series>-->
+                    <!--<lvc:CartesianChart.AxisX>
+                        <lvc:Axis Labels="{Binding BucketLabels}" Foreground="Black">
+                            <lvc:Axis.Separator>
+                                <lvc:Separator Step="1"/>
+                            </lvc:Axis.Separator>
+                        </lvc:Axis>
+                    </lvc:CartesianChart.AxisX>
+                    <lvc:CartesianChart.AxisY>
+                        <lvc:Axis Foreground="Red"/>
+                    </lvc:CartesianChart.AxisY>--><!--
+                </lvc:CartesianChart>-->
             </Grid>
             <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible"  >
 

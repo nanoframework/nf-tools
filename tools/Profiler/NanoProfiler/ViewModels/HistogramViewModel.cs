@@ -18,11 +18,71 @@ using System.Diagnostics;
 using System.Windows.Automation.Peers;
 using System.Windows;
 using Polly.Bulkhead;
+using LiveCharts.Wpf;
+using LiveCharts.Defaults;
+using LiveCharts.Configurations;
+using System.Windows.Markup;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Brushes = System.Windows.Media.Brushes;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
+
+    class DataModel : INotifyPropertyChanged
+    {
+        private double value;
+        public double Value
+        {
+            get => this.value;
+            set
+            {
+                this.value = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string label;
+        public string Label
+        {
+            get => this.label;
+            set
+            {
+                this.label = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
     public partial class HistogramViewModel: ObservableObject
     {
+        public LineSeries LineSeries { get; set; }
+        public SeriesCollection SeriesCollection { get; set; }
+        private ChartValues<double> _ys { get; set; }
+
+        private ColumnSeries BlueSeries { get; set; }
+
+        public ChartValues<ObservablePoint> SineGraphValues { get; set; }
+
+
+        private object dataMapper;
+        public object DataMapper
+        {
+            get => this.dataMapper;
+            set
+            {
+                this.dataMapper = value;
+                OnPropertyChanged();
+            }
+        }
+
+
+
         #region Observable Properties
         [ObservableProperty]
         private SolidColorBrush _histogramBackground = System.Windows.Media.Brushes.Green;
@@ -55,31 +115,209 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             _title = title;
             typeName = _histogram.readNewLog.typeName;
             _coronavirusCountryService = new CoronavirusCountryService();
-            Task.Run(() => Load());
+            TestLoad();
+            //Task.Run(() => Load());
         }
+        public SeriesCollection ChartDataSets { get; set; }
+        public ObservableCollection<string> ColumnLabels { get; set; }
+
+        public void TestLoad()
+        {
+            var values = new ChartValues<DataModel>();
+            for (double value = 0; value < 10; value++)
+            {
+                values.Add(new DataModel() { Label = $"Column {value + 1}", Value = value + 10 });
+            }
+
+            // Create a labels collection from the DataModel items
+            this.ColumnLabels = new ObservableCollection<string>(values.Select(dataModel => dataModel.Label));
+
+            // Define a data mapper, which tells the Chart how to extract data from the model
+            // and how to map it to the corresponding axis. The mapper also allows 
+            // to define a predicate which will be applied to color each data item (Fill, Stroke)
+            var dataMapper = new CartesianMapper<DataModel>()
+              .Y(dataModel => dataModel.Value)
+              .Fill(dataModel => dataModel.Value > 15.0 ? Brushes.Red : Brushes.Green);
+
+            this.ChartDataSets = new SeriesCollection
+    {
+      new ColumnSeries
+      {
+        Values = values,
+        Configuration = dataMapper
+      }
+    };
 
 
+
+
+            //SineGraphValues = new ChartValues<ObservablePoint>();
+
+            //// Plot a sine graph
+            //for (double x = 0; x <= 360; x++)
+            //{
+            //    var point = new ObservablePoint()
+            //    {
+            //        X = x,
+            //        Y = Math.Sin(x * Math.PI / 180)
+            //    };
+
+            //    SineGraphValues.Add(point);
+            //}
+
+
+            //DataMapper = new CartesianMapper<ObservablePoint>()
+            //  .X(point => point.X)
+            //  .Y(point => point.Y)
+            //  .Stroke(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen)
+            //  .Fill(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen);
+
+
+            //CoronavirusCountryCaseCounts = new ChartValues<int>()
+            //{
+            //    500,1000,1500,2000
+            //};
+
+            //SeriesCollection = new SeriesCollection()
+            //    {
+            //        new LineSeries() {  Values = CoronavirusCountryCaseCounts }
+            //    };
+
+
+
+            //_random = new Random();
+            //_ys = new ChartValues<double>();
+
+
+            ////for (int i = 0; i < 100; ++i)
+            ////{
+            ////    _ys.Add(_random.NextDouble() * 100);
+            ////}
+
+            ////SeriesCollection = new SeriesCollection()
+            ////    {
+            ////        new LineSeries() {  Values = _ys }
+            ////    };
+            //Console.WriteLine(  );
+
+
+
+            // Initialize the binding source
+            //this.SineGraphValues = new ChartValues<ObservablePoint>();
+
+            //// Plot a sine graph
+            //for (double x = 0; x <= 360; x++)
+            //{
+            //    var point = new ObservablePoint()
+            //    {
+            //        X = x,
+            //        Y = Math.Sin(x * Math.PI / 180)
+            //    };
+
+            //    this.SineGraphValues.Add(point);
+            //}
+
+            //// Setup the data mapper
+            //this.DataMapper = new CartesianMapper<ObservablePoint>()
+            //  .X(point => point.X)
+            //  .Y(point => point.Y)
+            //  .Stroke(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen)
+            //  .Fill(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen);
+
+            //
+            //this.BlueSeries = new ColumnSeries()
+            //{
+            //    Title = "Population of Bodrum",
+            //    Values = new ChartValues<double> { 1500, 2500, 3700, 2000, 1000 },
+            //    Fill = System.Windows.Media.Brushes.Blue
+            //};
+            //this.SeriesCollection = new SeriesCollection() { this.BlueSeries };
+        }
+        private static Random _random;
         IEnumerable<CoronavirusCountry> countries;
         public async Task Load()
         {
-            graphPanel_Paint();
+            DataMapper = new CartesianMapper<DataModel>()
+                .Y(dataModel => dataModel.Value)
+                .Y(dataModel => dataModel.Value)
+                .Fill(dataModel => dataModel.Value > 15.0 ? Brushes.Red : Brushes.Green);
 
-
-            BucketLabels.Clear();
-
-            countries = await _coronavirusCountryService.GetTopCases(_numberOfBuckets);
+            countries = await _coronavirusCountryService.GetTopCasesAsync(_numberOfBuckets);
 
             CoronavirusCountryCaseCounts = new ChartValues<int>(countries.Select(c => c.Cases));
+
+            SeriesCollection = new SeriesCollection()
+                {
+                    new LineSeries() {  Values = CoronavirusCountryCaseCounts }
+                };
+
+            // Initialize the binding source
+
+
+
+              //.X(point => point.X)
+              //.Y(point => point.Y)
+              //.Stroke(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen)
+              //.Fill(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen);
+
+            //SeriesCollection = new LiveCharts.SeriesCollection();
+
+            //List<ChartValues<int>> seriesList = new List<ChartValues<int>>();
+            //CoronavirusCountryCaseCounts = new ChartValues<int>(countries.Select(c => c.Cases));
+
+
+
+
+            //for (int i = 0; i < countries.Count(); ++i)
+            //{
+            //    SeriesCollection.Add(new ColumnSeries
+            //    {
+            //        Values = countries[i],
+            //        Name = CoronavirusCountryCaseCounts[i].ToString(),
+            //        Fill = System.Windows.Media.Brushes.Transparent,
+            //        StrokeThickness = 1,
+            //        PointGeometry = null,
+            //    });
+            //}
+
+            //this.BlueSeries = new ColumnSeries()
+            //{
+            //    Title = "Population of Bodrum",
+            //    Values = new ChartValues<double> { 1500, 2500, 3700, 2000, 1000 },
+            //    Fill = System.Windows.Media.Brushes.Blue
+            //};
+            //this.SeriesCollection = new SeriesCollection() { this.BlueSeries };
+
+
+
+            ////graphPanel_Paint();
+
+
+            //BucketLabels.Clear();
+
+
             //foreach (string countryName in countries.Select(c => c.Country))
             //{
             //    BucketLabels.Add(countryName);
             //}
 
-            foreach (var bucket in buckets)
-            {
-                BucketLabels.Add(bucket.label);
-            }
 
+            //foreach (var bucket in buckets)
+            //{
+            //    BucketLabels.Add(bucket.label);
+            //}
+            //ChangeThirdChartPointColorToRed();
+        }
+
+        private void ChangeThirdChartPointColorToRed()
+        {
+            CartesianMapper<double> mapper = Mappers.Xy<double>()
+              .X((value, index) => index)
+              .Y(value => value)
+              .Fill((value, index) => index == 2 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.Blue);
+
+            // Dynamically set the third chart point color to red
+            this.BlueSeries.Configuration = mapper;
         }
 
         ulong totalSize;

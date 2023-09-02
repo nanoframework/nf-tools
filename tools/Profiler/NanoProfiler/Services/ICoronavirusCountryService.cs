@@ -9,6 +9,6 @@ namespace nanoFramework.Tools.NanoProfiler.Services
 {
     public interface ICoronavirusCountryService
     {
-        Task<IEnumerable<CoronavirusCountry>> GetTopCases(int amountOfCountries);
+        Task<IEnumerable<CoronavirusCountry>> GetTopCasesAsync(int amountOfCountries);
     }
 }
