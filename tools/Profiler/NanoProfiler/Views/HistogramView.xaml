@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModels="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"             
-        mc:Ignorable="d"
-        Title="HistogramView" WindowState="Maximized">
+        mc:Ignorable="d" MinWidth="1000" MinHeight="700"
+        Title="HistogramView" >
 
     <Window.ContextMenu>
         <ContextMenu>
@@ -21,7 +21,7 @@
 
         <Grid.RowDefinitions>
             <RowDefinition Height="100" />
-            <RowDefinition Height="2*" />
+            <RowDefinition Height="4*" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -30,35 +30,12 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <StackPanel
-            Margin="10,0,0,0"
-            VerticalAlignment="Center"
-            Orientation="Horizontal">
-                <Label
-                Width="163"
-                Height="30"
-                HorizontalAlignment="Left"
-                Content="Vertical Scale (kB/px):"
-                FontSize="16" />
-                <ComboBox
-                Name="VerticalScaleOption"
-                Width="120"
-                Margin="20,0,0,0"
-                SelectedValue="1">
-                    <ComboBoxItem Content="1" />
-                    <ComboBoxItem Content="2" />
-                    <ComboBoxItem Content="5" />
-                    <ComboBoxItem Content="10" />
-                    <ComboBoxItem Content="20" />
-                    <ComboBoxItem Content="50" />
-                    <ComboBoxItem Content="100" />
-                    <ComboBoxItem Content="200" />
-                    <ComboBoxItem Content="500" />
-                    <ComboBoxItem Content="1000" />
-                    <ComboBoxItem Content="2000" />
-                    <ComboBoxItem Content="5000" />
-                    <ComboBoxItem Content="10000" />
-                    <ComboBoxItem Content="20000" />
+            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
+                <Label Width="163" Height="30" HorizontalAlignment="Left"
+                       Content="Vertical Scale (kB/px):" FontSize="16" />
+                <ComboBox   Name="VerticalScaleOption" Width="120" Margin="20,0,0,0"
+                            SelectedItem="{Binding VerticalScaleSelectedValue, Mode=TwoWay}" ItemsSource="{Binding VerticalScaleList}">
+
                 </ComboBox>
             </StackPanel>
 
@@ -73,16 +50,9 @@
                 HorizontalAlignment="Left"
                 Content="Horizontal Scale:"
                 FontSize="16" />
-                <ComboBox
-                Name="HorizontalScaleOption"
-                Width="120"
-                Margin="20,0,0,0"
-                HorizontalAlignment="Left"
-                SelectedValue="1">
-                    <ComboBoxItem Content="Coarse" IsSelected="True" />
-                    <ComboBoxItem Content="Medium" />
-                    <ComboBoxItem Content="Fine" />
-                    <ComboBoxItem Content="Very Fine" />
+                <ComboBox   Name="HorizontalScaleOption" Width="120" Margin="20,0,0,0" HorizontalAlignment="Left"
+                            SelectedValue="{Binding HorizontalScaleSelectedValue, Mode=TwoWay}" ItemsSource="{Binding HorizontalScaleList}">
+
                 </ComboBox>
             </StackPanel>
         </Grid>
@@ -92,10 +62,10 @@
         </Canvas>-->
         <Grid Grid.Row="1" >
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="4*" MinWidth="600" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Grid Grid.Row="1" Grid.Column="0">
+            <Grid Grid.Row="1" Grid.Column="0" >
                 <lvc:CartesianChart Margin="20" >
                     <lvc:CartesianChart.Series >
                         <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValues}" DataLabels="True"

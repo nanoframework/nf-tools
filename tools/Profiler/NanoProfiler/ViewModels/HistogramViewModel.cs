@@ -42,12 +42,24 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         [ObservableProperty]
         private CartesianMapper<BucketDataModel> _bucketsConfiguration;
 
+        [ObservableProperty]
+        private ObservableCollection<double> _verticalScaleList;
+
+        [ObservableProperty]
+        private double _verticalScaleSelectedValue;
+
+        [ObservableProperty]
+        private ObservableCollection<string> _horizontalScaleList;
+
+        [ObservableProperty]
+        private string _horizontalScaleSelectedValue;
+
         #endregion
 
 
         #region Properties
 
-        Bucket[] buckets;
+        Bucket[] buckets = new Bucket[] {};
         double currentScaleFactor;
         public Histogram histogram { get; set; }
         private string[] typeName;
@@ -68,42 +80,78 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             this.histogram = histogram;
             _title = title;
             typeName = this.histogram.readNewLog.typeName;
-            SetHistogram();
+            SetComboValues();
+
+
+            //SetHistogram();
         }
 
+        private void SetComboValues()
+        {
+            VerticalScaleList = new ObservableCollection<double>() { 1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000 };
+            VerticalScaleSelectedValue = 10;
+
+            HorizontalScaleList = new ObservableCollection<string>() { "Coarse", "Medium", "Fine", "Very Fine" };
+            HorizontalScaleSelectedValue = "Coarse";
+        }
+              
         public void SetHistogram()
         {
+
             //  This will create buckets
             graphPanel_Paint();
 
             BucketsConfiguration = new CartesianMapper<BucketDataModel>()
                 .X((value, index) => index)
                 .Y((value, index) => value.BucketValue)
-                .Fill(SetColumnFill())
+                .Fill(value => value.BucketColor)
                 .Stroke(value => value.BucketValue > 0.0 ? Brushes.Black : Brushes.Transparent);
 
         }
-        private Func<BucketDataModel, object> SetColumnFill()
+        //private Func<BucketDataModel, object> SetColumnFill()
+        //{
+        //    return (value =>
+        //    {
+        //        if (value.BucketValue > 0 && value.BucketValue < 3)
+        //        {
+        //            return value.BucketColor;
+        //        }
+        //        else if (value.BucketValue > 3 && value.BucketValue < 50)
+        //        {
+        //            return value.BucketColor;
+        //        }
+        //        else
+        //        {
+        //            var res = value.BucketColor;
+        //            return Brushes.Green;
+        //        }
+        //    });
+        //}
+
+        partial void OnVerticalScaleSelectedValueChanged(double value)
         {
-            return (value =>
-            {
-                if (value.BucketValue > 0 && value.BucketValue < 3)
-                {
-                    return Brushes.Green;
-                }
-                else if (value.BucketValue > 3 && value.BucketValue < 50)
-                {
-                    return Brushes.Yellow;
-                }
-                else
-                {
-                    return Brushes.Red;
-                }
-            });
+            //scaleFactor = VerticalScaleSelectedValue;
+            //SetHistogram();
         }
-
-
-
+        partial void OnHorizontalScaleSelectedValueChanged(string value)
+        {
+            switch (HorizontalScaleSelectedValue)
+            {
+                case "Coarse":
+                    scaleFactor = 2.0;
+                    break;
+                case "Medium":
+                    scaleFactor = Math.Sqrt(2.0);
+                    break;
+                case "Fine":
+                    scaleFactor = Math.Pow(2.0, 0.25);
+                    break;
+                case "Very Fine":
+                    scaleFactor = Math.Pow(2.0, 0.125);
+                    break;
+            }
+            SetHistogram();
+        }
 
 
         private void graphPanel_Paint()
@@ -123,17 +171,19 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 //bottomMargin = BottomMargin();
 
                 BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
+                
                 ColorTypes();
 
-                ulong maxTotalSize = 0;
-                foreach (Bucket b in buckets)
-                {
-                    if (maxTotalSize < b.totalSize)
-                    {
-                        maxTotalSize = b.totalSize;
-                    }
-                }
+                //ulong maxTotalSize = 0;
+                //foreach (Bucket b in buckets)
+                //{
+                //    if (maxTotalSize < b.totalSize)
+                //    {
+                //        maxTotalSize = b.totalSize;
+                //    }
+                //}
 
+                //Here some vetical changes should take effect
                 //verticalScale = VerticalScale((int)graphPanel.Height - topMargin - bottomMargin, maxTotalSize, verticalScale == 0);
 
                 //int maxBucketHeight = (int)(maxTotalSize / (ulong)verticalScale);
@@ -156,7 +206,59 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         }
 
+        int verticalScale = 0;
 
+        //int VerticalScale(int pixelsAvailable, ulong rangeNeeded, bool firstTime)
+        //{
+        //    return Scale(pixelsAvailable, (int)(rangeNeeded / 1024), firstTime) * 1024;
+        //}
+
+        //int Scale(int pixelsAvailable, int rangeNeeded, bool firstTime)
+        //{
+        //    if (!firstTime)
+        //    {
+        //        foreach (RadioButton rb in groupBox.Controls)
+        //        {
+        //            if (rb.Checked)
+        //                return Int32.Parse(rb.Text);
+        //        }
+        //    }
+        //    // No radio button was checked - let's come up with a suitable default
+        //    RadioButton maxLowScaleRB = null;
+        //    int maxLowRange = 0;
+        //    RadioButton minHighScaleRB = null;
+        //    int minHighRange = Int32.MaxValue;
+        //    foreach (RadioButton rb in groupBox.Controls)
+        //    {
+        //        int range = pixelsAvailable * Int32.Parse(rb.Text);
+        //        if (range < rangeNeeded)
+        //        {
+        //            if (maxLowRange < range)
+        //            {
+        //                maxLowRange = range;
+        //                maxLowScaleRB = rb;
+        //            }
+        //        }
+        //        else
+        //        {
+        //            if (minHighRange > range)
+        //            {
+        //                minHighRange = range;
+        //                minHighScaleRB = rb;
+        //            }
+        //        }
+        //    }
+        //    if (minHighScaleRB != null)
+        //    {
+        //        minHighScaleRB.Checked = true;
+        //        return Int32.Parse(minHighScaleRB.Text);
+        //    }
+        //    else
+        //    {
+        //        maxLowScaleRB.Checked = true;
+        //        return Int32.Parse(maxLowScaleRB.Text);
+        //    }
+        //}
 
         string FormatSize(ulong size)
         {
@@ -188,6 +290,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private void DrawBuckets()
         {
+            //Clear all data
+            BucketsValues = new ChartValues<BucketDataModel> { };
+            BucketsLabels = new ObservableCollection<string>();
+
+
             //Debug.Assert(verticalScale != 0);
             bool noBucketSelected = true;
             foreach (Bucket b in buckets)
@@ -199,7 +306,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 }
             }
 
-            //using (System.Drawing.Brush blackBrush = new SolidBrush(System.Drawing.Color.Black))
+            using (System.Drawing.Brush blackBrush = new SolidBrush(System.Drawing.Color.Black))
             {
                 //int x = leftMargin;
                 foreach (Bucket b in buckets)
@@ -213,28 +320,36 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     //g.DrawString(s, font, blackBrush, x, y + 3 + font.Height);
                     s += string.Format("({0:f2}%)", 100.0 * b.totalSize / totalSize);
 
-                    BucketsLabels.Add(s);
-                    BucketsValues.Add(new BucketDataModel() { BucketValue = Math.Round((100.0 * b.totalSize / totalSize), 2) });
 
-
+                    System.Drawing.Brush brush = new SolidBrush(System.Drawing.Color.Transparent);
                     //g.DrawString(s, font, blackBrush, x, y + 3 + font.Height * 2);
-                    //foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
-                    //{
-                    //    TypeDesc t = d.Key;
-                    //    SizeCount sizeCount = d.Value;
-                    //    ulong size = sizeCount.size;
-                    //    int height = (int)(size / (ulong)verticalScale);
+                    foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
+                    {
+                        TypeDesc t = d.Key;
+                        //SizeCount sizeCount = d.Value;
+                        //ulong size = sizeCount.size;
+                        //int height = (int)(size / (ulong)verticalScale);
 
-                    //    y -= height;
+                        //y -= height;
 
-                    //    System.Drawing.Brush brush = t.brush;
-                    //    if (t.selected && (b.selected || noBucketSelected))
-                    //    {
-                    //        brush = blackBrush;
-                    //    }
+                        brush = t.brush;
+                        if (t.selected && (b.selected || noBucketSelected))
+                        {
+                            brush = blackBrush;
+                        }
+                        //g.FillRectangle(brush, x, y, bucketWidth, height);
+                    }
 
-                    //    g.FillRectangle(brush, x, y, bucketWidth, height);
-                    //}
+                    System.Drawing.Color drawingColor = ((SolidBrush)brush).Color;
+                    System.Windows.Media.Color wpfColor = System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B);
+
+                    BucketsLabels.Add(s);
+                    BucketsValues.Add(new BucketDataModel()
+                    {
+                        BucketValue = Math.Round((100.0 * b.totalSize / totalSize), 2),
+                        BucketColor = new SolidColorBrush(wpfColor)
+                    });
+
 
                     //x += bucketWidth + gap;
                 }
@@ -258,7 +373,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private void ColorTypes()
         {
             int count = 0;
-
+            var res = buckets;
             bool anyTypeSelected = FindSelectedType() != null;
 
             foreach (TypeDesc t in sortedTypeTable)
@@ -395,27 +510,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             sortedTypeTable.Sort();
         }
-
+        private double scaleFactor;
         void BuildBuckets()
         {
-            double scaleFactor = 2.0;
 
-            //TO DO: Combo
-            //switch (VerticalScaleOption.SelectedValue?.ToString())
-            //{
-            //    case "Coarse":
-            //        scaleFactor = 2.0;
-            //        break;
-            //    case "Medium":
-            //        scaleFactor = Math.Sqrt(2.0);
-            //        break;
-            //    case "Fine":
-            //        scaleFactor = Math.Pow(2.0, 0.25);
-            //        break;
-            //    case "Very Fine":
-            //        scaleFactor = Math.Pow(2.0, 0.125);
-            //        break;
-            //}
 
             if (currentScaleFactor == scaleFactor)
             {
