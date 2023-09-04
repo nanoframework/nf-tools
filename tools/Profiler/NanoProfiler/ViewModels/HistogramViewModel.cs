@@ -27,6 +27,7 @@ using System.Runtime.CompilerServices;
 using Brushes = System.Windows.Media.Brushes;
 using CommunityToolkit.Mvvm.Input;
 using nanoFramework.Tools.NanoProfiler.CLRProfiler;
+using nanoFramework.Tools.NanoProfiler.Views;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
@@ -159,7 +160,14 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         [RelayCommand]
         private void ShowWhoAllocated()
         {
-            showWhoAllocatedMenuItem_Click(null, null);
+            //showWhoAllocatedMenuItem_Click(null, null);
+
+            GraphViewModel viewModel = new GraphViewModel();
+            GraphView histogramView = new GraphView();
+            histogramView.DataContext = viewModel;
+            histogramView.Show();
+
+
         }
 
         #endregion
