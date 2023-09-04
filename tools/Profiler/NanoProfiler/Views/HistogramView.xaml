@@ -11,7 +11,8 @@
 
     <Window.ContextMenu>
         <ContextMenu>
-            <MenuItem Header="Show Who Allocated" />
+            <MenuItem Header="Show Who Allocated" 
+Command="{Binding ShowWhoAllocatedCommand}"/>
             <MenuItem Header="Export Data to File.." />
         </ContextMenu>
     </Window.ContextMenu>

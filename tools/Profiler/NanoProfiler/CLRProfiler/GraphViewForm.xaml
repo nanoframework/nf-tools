@@ -32,7 +32,7 @@
         </ContextMenu>
     </Window.ContextMenu>
 
-    <Grid>
+    <Grid > 
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />

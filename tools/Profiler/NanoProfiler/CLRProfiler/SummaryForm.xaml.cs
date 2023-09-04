@@ -204,9 +204,23 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             Clipboard.SetDataObject(sb.ToString());
         }
 
+        private void allocationGraphButton_Click(object sender, System.EventArgs e)
+        {
+            Graph graph = _logResult.allocatedHistogram.BuildAllocationGraph(new FilterForm());
 
-        //  Here start histogram
-        private void AllocatedHistogramButton_Click(object sender, RoutedEventArgs e)
+            WinForms.CLRProfiler.GraphViewForm graphViewForm = new WinForms.CLRProfiler.GraphViewForm(graph, "Some title");
+            graphViewForm.Show();
+ 
+
+            //Graph graph = _logResult.allocatedHistogram.BuildAllocationGraph(new FilterForm());
+            //graph.graphType = Graph.GraphType.AllocationGraph;
+            //string title = "Allocation Graph for: " + _scenario;
+            //GraphViewForm graphViewForm = new GraphViewForm(graph, title);
+            //graphViewForm.Show();
+
+        }
+            //  Here start histogram
+            private void AllocatedHistogramButton_Click(object sender, RoutedEventArgs e)
         {
             string title = "Histogram by Size for Allocated Objects for: " + _scenario;
 

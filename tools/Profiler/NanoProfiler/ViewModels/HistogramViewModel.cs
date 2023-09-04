@@ -25,13 +25,14 @@ using System.Windows.Markup;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Brushes = System.Windows.Media.Brushes;
+using CommunityToolkit.Mvvm.Input;
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
     public partial class HistogramViewModel: ObservableObject
     {
         #region Observable Properties
-
 
         [ObservableProperty]
         private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
@@ -153,6 +154,76 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             SetHistogram();
         }
 
+
+        #region Commands
+        [RelayCommand]
+        private void ShowWhoAllocated()
+        {
+            showWhoAllocatedMenuItem_Click(null, null);
+        }
+
+        #endregion
+
+
+        private void showWhoAllocatedMenuItem_Click(object sender, System.EventArgs e)
+        {
+            Console.WriteLine();
+            Histogram selectedHistogram;
+            string title;
+            TypeDesc selectedType = FindSelectedType();
+            if (selectedType == null)
+            {
+                title = "Allocation Graph";
+                selectedHistogram = histogram;
+            }
+            else
+            {
+                int minSize = 0;
+                int maxSize = int.MaxValue;
+                foreach (Bucket b in buckets)
+                {
+                    if (b.selected)
+                    {
+                        minSize = b.minSize;
+                        maxSize = b.maxSize;
+                    }
+                }
+                title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
+                if (minSize > 0)
+                {
+                    title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
+                }
+
+                selectedHistogram = new Histogram(histogram.readNewLog);
+                for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
+                {
+                    int count = histogram.typeSizeStacktraceToCount[i];
+                    if (count > 0)
+                    {
+                        int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
+                        int typeIndex = stacktrace[0];
+                        int size = stacktrace[1];
+
+                        if (minSize <= size && size <= maxSize)
+                        {
+                            TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
+
+                            if (t == selectedType)
+                            {
+                                selectedHistogram.AddObject(i, count);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
+            Graph graph = selectedHistogram.BuildAllocationGraph(new FilterForm());
+
+            WinForms.CLRProfiler.GraphViewForm graphViewForm = new WinForms.CLRProfiler.GraphViewForm(graph, title);
+            graphViewForm.Show();
+        }
 
         private void graphPanel_Paint()
         {

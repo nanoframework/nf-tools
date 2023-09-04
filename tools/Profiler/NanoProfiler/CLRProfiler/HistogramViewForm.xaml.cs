@@ -37,6 +37,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             //graphPanel.Width = 508;
             //graphPanel.Height = 209;
             graphPanel.Paint += graphPanel_Paint;
+            graphPanel.MouseDown += graphPanel_MouseDown;
             windowsFormsHost.Child = graphPanel;
             autoUpdate = true;
             lastLogResult = MainForm.instance.lastLogResult;
@@ -277,7 +278,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 
                 totalSize += (ulong)size * (ulong)count;
                 totalCount += count;
-
+                var buck = buckets;
                 AddToBuckets(t, size, count);
             }
 
@@ -290,9 +291,10 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             {
                 totalCount = 1;
             }
-
+            var res = buckets;
             TrimEmptyBuckets();
 
+            var res1 = buckets;
             sortedTypeTable = new ArrayList();
             foreach (TypeDesc t in typeIndexToTypeDesc)
             {
@@ -619,6 +621,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 
                 bucketWidth = BucketWidth(g);
                 bottomMargin = BottomMargin();
+                var res = buckets;
 
                 BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
                 ColorTypes();
@@ -719,6 +722,10 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 
         private void graphPanel_MouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
         {
+            var res1 = sortedTypeTable;     //12
+            var res2 = buckets;             //13
+
+
             if (!initialized || verticalScale == 0)
             {
                 return;
@@ -914,6 +921,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 
         private void showWhoAllocatedMenuItem_Click(object sender, System.EventArgs e)
         {
+            Console.WriteLine(  );
             //Histogram selectedHistogram;
             //string title;
             //TypeDesc selectedType = FindSelectedType();
