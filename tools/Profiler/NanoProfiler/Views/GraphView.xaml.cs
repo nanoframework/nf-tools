@@ -22,6 +22,11 @@ using System.Collections;
 using Size = System.Windows.Size;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
+using static System.Net.Mime.MediaTypeNames;
+using System.Globalization;
+using nanoFramework.Tools.NanoProfiler.Models;
+using LiveCharts.Configurations;
 
 namespace nanoFramework.Tools.NanoProfiler.Views
 {
@@ -31,18 +36,9 @@ namespace nanoFramework.Tools.NanoProfiler.Views
     public partial class GraphView : Window, INotifyPropertyChanged
     {
         #region Observable Properties
-        private string _test = "Test1233";
-        public string Test
-        {
-            get { return _test; }
-            set
-            {
-                _test = value;
-                OnPropertyChanged(nameof(Test));
-            }
-        }
-        private List<int> _scaleList;
-        public List<int> ScaleList
+
+        private ObservableCollection<int> _scaleList;
+        public ObservableCollection<int> ScaleList
         {
             get { return _scaleList; }
             set
@@ -51,8 +47,8 @@ namespace nanoFramework.Tools.NanoProfiler.Views
                 OnPropertyChanged(nameof(ScaleList));
             }
         }
-        private List<double> _detailsList;
-        public List<double> DetailsList
+        private ObservableCollection<double> _detailsList;
+        public ObservableCollection<double> DetailsList
         {
             get { return _detailsList; }
             set
@@ -69,6 +65,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             {
                 _detailsSelectedValue = value;
                 OnPropertyChanged(nameof(DetailsSelectedValue));
+                DetailsSelectiedValueChanged();
             }
         }
         private int _scaleSelectedValue;
@@ -79,34 +76,125 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             {
                 _scaleSelectedValue = value;
                 OnPropertyChanged(nameof(ScaleSelectedValue));
+                ScaleSelectiedValueChanged();
             }
         }
+        //private int _chartValuesR;
+        //public int ChartValuesR
+        //{
+        //    get { return _chartValuesR; }
+        //    set
+        //    {
+        //        _chartValuesR = value;
+        //        OnPropertyChanged(nameof(ChartValuesR));
+        //        ScaleSelectiedValueChanged();
+        //    }
+        //}
+
 
         #endregion
 
-
+        private System.Windows.Forms.ToolTip toolTip;
+        private FilterForm filterForm;
+        private FindRoutineForm findForm;
 
         private System.Windows.Forms.Panel outerPanel = new System.Windows.Forms.Panel();
         private Graph _graph;
         private System.Windows.Forms.Panel graphPanel = new System.Windows.Forms.Panel();
+        
+        public Func<ChartPoint, string> PointLabel { get; set; }
+        private CartesianMapper<GraphDataModel> GraphConfiguration;
+        #region Constructor
         public GraphView(Graph graph)
         {
             InitializeComponent();
-            SetComboBoxes();
-            DataContext = this;
-            font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(204))); ;
-            _graph = graph;
-            this.graphPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.graphPanel_Paint);
-            windowsFormsHost.Child = graphPanel;
+            //GraphConfiguration = new CartesianMapper<GraphDataModel>()
+            //   .X((value, index) => index)
+            //   .Y((value, index) => value.GraphValue)
+            //   .Fill(value => value.GraphColor)
+            //   .Stroke(value => value.GraphColor);
+            //ChartValues<GraphDataModel> values = new ChartValues<GraphDataModel>();
+
+            //for (int i = 0; i < 10; i++)
+            //{
+            //    values.Add(new GraphDataModel()
+            //    {
+            //        GraphValue = 10 + i,
+            //        GraphColor = i < 5 ? System.Windows.Media.Brushes.Green : System.Windows.Media.Brushes.Red,
+            //    });
+
+            //}
+            //LiveCharts.SeriesCollection psc = new LiveCharts.SeriesCollection();
+            //foreach (var item in values)
+            //{
+            //    psc.Add(new LiveCharts.Wpf.PieSeries { Values = new LiveCharts.ChartValues<GraphDataModel> {item}, Configuration= GraphConfiguration });
+            //}
+
+            //foreach (LiveCharts.Wpf.PieSeries ps in psc)
+            //{
+            //    myPieChart.Series.Add(ps);
+            //}
+
+
+
+
+            //PointLabel = chartPoint =>
+            //    string.Format("{0} ({1:P})", chartPoint.Y, chartPoint.Participation);
+
+            //DataContext = this;
+
+
+            //SetComboBoxes();
+            //DataContext = this;
+            //_graph = graph;
+            //toolTip = new System.Windows.Forms.ToolTip();
+            //toolTip.Active = false;
+            //toolTip.ShowAlways = true;
+            //toolTip.AutomaticDelay = 70;
+            //toolTip.ReshowDelay = 1;
+
+
+            //font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(204)));
+            ////font = MainForm.instance.font;
+            ////fontHeight = font.Height;
+            //fontHeight = 12;
+            ////Text = title;
+
+            //EnableDisableMenuItems();
+
+            //filterForm = new FilterForm();
+            //findForm = new FindRoutineForm();
+
+
+            //this.graphPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.graphPanel_Paint);
+            //windowsFormsHost.Child = graphPanel;
         }
+        #endregion
+
+
+        #region Funcs
 
         private void SetComboBoxes()
         {
-            ScaleList = new List<int>() { 10, 20, 50, 100, 200, 500, 1000 };
-            ScaleSelectedValue = 10;
+            ScaleList = new ObservableCollection<int>() { 10, 20, 50, 100, 200, 500, 1000 };
+            ScaleSelectedValue = 100;
 
-            DetailsList = new List<double>() { 0.1, 0.2, 0.5, 1, 2,5,10,20 };
+            DetailsList = new ObservableCollection<double>() { 0.1, 0.2, 0.5, 1, 2,5,10,20 };
             DetailsSelectedValue = 1;
+        }
+
+        private void ScaleSelectiedValueChanged()
+        {
+            minWidth = minHeight = Convert.ToSingle(ScaleSelectedValue);
+            placeVertices = placeEdges = true;
+            graphPanel.Invalidate();
+        }
+
+        private void DetailsSelectiedValueChanged()
+        {
+            totalHeight = gapWidth = Convert.ToInt32(DetailsSelectedValue);
+            placeVertices = placeEdges = true;
+            graphPanel.Invalidate();
         }
 
         private bool placeVertices = true;
@@ -121,6 +209,8 @@ namespace nanoFramework.Tools.NanoProfiler.Views
         private ArrayList levelList;
         private Font font;
         private int fontHeight;
+
+
         private void graphPanel_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
         {
             EnableDisableMenuItems();
@@ -582,7 +672,132 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             //}
 
         }
+        private void FilterToSelectedVertex(bool ancestors, bool descendants)
+        {
+            StringBuilder types = new StringBuilder();
+            StringBuilder methods = new StringBuilder();
+            StringBuilder signatures = new StringBuilder();
+            StringBuilder addresses = new StringBuilder();
 
+            ArrayList selectedVertices = new ArrayList();
+            foreach (Vertex v in _graph.vertices.Values)
+            {
+                if (v.selected)
+                {
+                    selectedVertices.Add(v);
+                    if (v.signature == null || _graph.graphType == Graph.GraphType.HeapGraph)
+                    {
+                        if (types.Length != 0)
+                            types.Append(';');
+                        types.Append(v.name);
+                    }
+                    else
+                    {
+                        if (methods.Length != 0)
+                            methods.Append(';');
+                        methods.Append(Vertex.RemoveRecursionCount(v.name));
+                    }
+                    if (v.signature != null)
+                    {
+                        if (_graph.graphType == Graph.GraphType.HeapGraph &&
+                            _graph.typeGraphOptions == ObjectGraph.BuildTypeGraphOptions.IndividualObjects)
+                        {
+                            if (addresses.Length != 0)
+                                addresses.Append(';');
+                            string[] pieces = v.signature.Split('=', ',');
+                            Debug.Assert(pieces.Length == 4 && pieces[0] == "Address ");
+                            addresses.Append(pieces[1].Trim());
+                        }
+                        else
+                        {
+                            if (signatures.Length != 0)
+                                signatures.Append(';');
+                            signatures.Append(v.signature);
+                        }
+                    }
+                }
+            }
+
+            string typeFilter = types.ToString();
+            string methodFilter = methods.ToString();
+            string signatureFilter = signatures.ToString();
+            string addressFilter = addresses.ToString();
+
+            filterForm.SetFilterForm(typeFilter, methodFilter, signatureFilter, addressFilter,
+                ancestors, descendants, false, false);
+
+            RefreshGraph();
+
+            foreach (Vertex v in selectedVertices)
+            {
+                Vertex newV = _graph.FindOrCreateVertex(v.name, v.signature, v.moduleName);
+                selectVertex(newV, true);
+            }
+            selectEdges();
+        }
+
+        private void selectVertex(Vertex v, bool nowSelected)
+        {
+            v.selected = nowSelected;
+            graphPanel.Invalidate();
+        }
+
+        private void selectEdges()
+        {
+            foreach (Vertex v in _graph.vertices.Values)
+                foreach (Edge e in v.outgoingEdges.Values)
+                    e.selected = false;
+
+            foreach (Vertex v in _graph.vertices.Values)
+            {
+                if (v.selected)
+                {
+                    foreach (Edge e in v.outgoingEdges.Values)
+                        e.selected = true;
+                    foreach (Edge e in v.incomingEdges.Values)
+                        e.selected = true;
+                }
+            }
+        }
+        private void RefreshGraph()
+        {
+            Graph orgGraph = _graph;
+            if (orgGraph.graphSource is Graph)
+            {
+                orgGraph = (Graph)orgGraph.graphSource;
+            }
+
+            switch (orgGraph.graphType)
+            {
+                case Graph.GraphType.CallGraph:
+                    _graph = ((Histogram)orgGraph.graphSource).BuildCallGraph(filterForm);
+                    _graph.graphType = Graph.GraphType.CallGraph;
+                    break;
+
+                case Graph.GraphType.AllocationGraph:
+                    _graph = ((Histogram)orgGraph.graphSource).BuildAllocationGraph(filterForm);
+                    _graph.graphType = Graph.GraphType.AllocationGraph;
+                    break;
+
+                case Graph.GraphType.AssemblyGraph:
+                    _graph = ((Histogram)orgGraph.graphSource).BuildAssemblyGraph(filterForm);
+                    _graph.graphType = Graph.GraphType.AssemblyGraph;
+                    break;
+
+                case Graph.GraphType.HeapGraph:
+                    _graph = ((ObjectGraph)orgGraph.graphSource).BuildTypeGraph(orgGraph.allocatedAfterTickIndex, orgGraph.allocatedBeforeTickIndex, orgGraph.typeGraphOptions, filterForm);
+                    _graph.graphType = Graph.GraphType.HeapGraph;
+                    break;
+
+                case Graph.GraphType.HandleAllocationGraph:
+                    _graph = ((Histogram)orgGraph.graphSource).BuildHandleAllocationGraph(filterForm);
+                    _graph.graphType = Graph.GraphType.HandleAllocationGraph;
+                    break;
+            }
+            placeVertices = placeEdges = true;
+            graphPanel.Invalidate();
+        }
+        #endregion
 
 
         #region INotify
@@ -593,5 +808,10 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Console.WriteLine(  );
+        }
     }
 }

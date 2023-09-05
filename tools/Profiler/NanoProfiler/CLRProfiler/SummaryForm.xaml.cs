@@ -209,12 +209,12 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             Graph graph = _logResult.allocatedHistogram.BuildAllocationGraph(new FilterForm());
 
             WinForms.CLRProfiler.GraphViewForm graphViewForm = new WinForms.CLRProfiler.GraphViewForm(graph, "Some title");
-            //graphViewForm.Show();
+            graphViewForm.Show();
 
 
-            //GraphViewModel viewModel = new GraphViewModel();
+            GraphViewModel viewModel = new GraphViewModel();
             GraphView graphView = new GraphView(graph);
-            //graphView.DataContext = viewModel;
+            graphView.DataContext = viewModel;
             graphView.Show();
 
 
