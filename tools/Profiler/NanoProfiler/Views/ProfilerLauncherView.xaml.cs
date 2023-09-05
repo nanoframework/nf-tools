@@ -1,4 +1,5 @@
-﻿using nanoFramework.Tools.Debugger;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using nanoFramework.Tools.Debugger;
 using nanoFramework.Tools.Debugger.Extensions;
 using nanoFramework.Tools.Debugger.WireProtocol;
 using nanoFramework.Tools.NanoProfiler.Helpers;
@@ -26,6 +27,16 @@ namespace nanoFramework.Tools.NanoProfiler.Views
         public ProfilerLauncherView()
         {
             InitializeComponent();
+
+            // register message to update log text
+            WeakReferenceMessenger.Default.Register<UpdateLogTextMessage>(this, (r, m) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    textLog.AppendText(m.Value + "\r\n");
+                    textLog.ScrollToEnd();
+                });
+            });
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

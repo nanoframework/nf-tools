@@ -303,12 +303,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         public void LogText(string text)
         {
-            //Dispatcher.Invoke(() =>
-            //{
-            TextBlockContent = text + "\r\n";
-            //TextBlockContent.SelectionStart = textLog.Text.Length;
-            //TextBlockContent.ScrollToEnd();
-            //});
+            // update log text
+            WeakReferenceMessenger.Default.Send(new UpdateLogTextMessage(text));
         }
 
         private void ConnectComplete()

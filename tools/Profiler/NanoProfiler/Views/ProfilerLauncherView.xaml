@@ -39,7 +39,7 @@
                           Name="HeapAbsoluteAddress" Height="23" IsChecked="{Binding AbsoluteAddressChecked}"/>
             </Grid>
         </GroupBox>
-        <TextBox x:Name="textLog" Text="{Binding TextBlockContent}" 
+        <TextBox x:Name="textLog" 
                  HorizontalAlignment="Left" Margin="22,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="574" Height="152"/>
         <Button Content="Clear" HorizontalAlignment="Left" Margin="22,366,0,0" VerticalAlignment="Top" Width="91" 
                 Command="{Binding ClearClickedCommand}"/>
