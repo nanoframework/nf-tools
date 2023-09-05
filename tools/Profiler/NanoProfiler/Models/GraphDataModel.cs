@@ -11,10 +11,16 @@ namespace nanoFramework.Tools.NanoProfiler.Models
     public partial class GraphDataModel: ObservableObject
     {
         [ObservableProperty]
+        private string _name = string.Empty;
+
+        [ObservableProperty]
         private double _graphValue;
 
         [ObservableProperty]
-        private SolidColorBrush _graphColor = Brushes.Green;
+        private SolidColorBrush _graphColor = Brushes.Transparent;
+
+        [ObservableProperty]
+        private string _title = string.Empty;
 
 
     }

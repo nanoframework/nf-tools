@@ -208,14 +208,18 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         {
             Graph graph = _logResult.allocatedHistogram.BuildAllocationGraph(new FilterForm());
 
-            WinForms.CLRProfiler.GraphViewForm graphViewForm = new WinForms.CLRProfiler.GraphViewForm(graph, "Some title");
-            graphViewForm.Show();
+            //WinForms.CLRProfiler.GraphViewForm graphViewForm = new WinForms.CLRProfiler.GraphViewForm(graph, "Some title");
+            //graphViewForm.Show();
 
 
-            GraphViewModel viewModel = new GraphViewModel();
-            GraphView graphView = new GraphView(graph);
+            GraphViewModel viewModel = new GraphViewModel(graph);
+            GraphView graphView = new GraphView();
             graphView.DataContext = viewModel;
             graphView.Show();
+
+
+            //GraphViewWinForm graphViewWinForm = new GraphViewWinForm(graph);
+            //graphViewWinForm.Show();
 
 
             //Graph graph = _logResult.allocatedHistogram.BuildAllocationGraph(new FilterForm());

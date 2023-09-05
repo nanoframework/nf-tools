@@ -13,7 +13,7 @@
     <Window.ContextMenu>
         <ContextMenu>
             <MenuItem Header="Show Who Allocated" 
-               Click="MenuItem_Click"/>
+              Command="{Binding ShowWhoAllocatedCommand}"/>
             <MenuItem Header="Export Data to File.." />
         </ContextMenu>
     </Window.ContextMenu>
@@ -63,73 +63,15 @@
         </Canvas>-->
         <Grid Grid.Row="1">
 
-                <WindowsFormsHost x:Name="windowsFormsHost" Visibility="Collapsed" 
-                                   >
+            <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Collapsed" />-->
 
-                </WindowsFormsHost>
-
-                <!--<WindowsFormsHost x:Name="windowsFormsHost" Grid.Column="0">
-                    <StaticResourceExtension ResourceKey="gridViewerInstance" />
-                </WindowsFormsHost>-->
-
-                <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible"   >
-                    -->
-                <!--<clrprofiler:GraphViewForm />-->
-                <!--
-                </WindowsFormsHost>-->
-
-
-
-                <!--Live CHarts / Pie Chart-->
-            <!--<lvc:CartesianChart Margin="20" >
-                <lvc:CartesianChart.Series >
-                    <lvc:ColumnSeries Title="Value"  Values="{Binding GraphValues}" DataLabels="True"
-                                          Configuration="{Binding GraphConfiguration}" StrokeThickness="1"/>
-                </lvc:CartesianChart.Series>
-                <lvc:CartesianChart.AxisX  >
-                    <lvc:Axis Foreground="Black" >
-                        <lvc:Axis.Separator>
-                            <lvc:Separator Step="1" />
-                        </lvc:Axis.Separator>
-                    </lvc:Axis>
-                </lvc:CartesianChart.AxisX>
-                <lvc:CartesianChart.AxisY  >
-                    <lvc:Axis Foreground="Black" MaxValue="100" MinValue="0" >
-                        <lvc:Axis.Separator>
-                            <lvc:Separator Step="10" />
-                        </lvc:Axis.Separator>
-                    </lvc:Axis>
-                </lvc:CartesianChart.AxisY>
-            </lvc:CartesianChart>-->
-
-            <!--<lvc:PieChart LegendLocation="Bottom" Hoverable="False" DataTooltip="{x:Null}">
-                <lvc:PieChart.Series>
-                    
-                    <lvc:PieSeries Title="1" Values="{Binding GraphValues}"
-                                   
-                                   Configuration="{Binding GraphConfiguration}"
-                                   DataLabels="True"
-                               LabelPoint="{Binding PointLabel}"/>
-                    --><!--<lvc:PieSeries Title="2" Values="4" DataLabels="True" 
-                               LabelPoint="{Binding PointLabel}"/>
-                    <lvc:PieSeries Title="3" Values="6" DataLabels="True" 
-                               LabelPoint="{Binding PointLabel}"/>
-                    <lvc:PieSeries Title="4" Values="2" DataLabels="True" 
-                               LabelPoint="{Binding PointLabel}"/>--><!--
-                </lvc:PieChart.Series>
-            </lvc:PieChart>-->
-
-
-            <!--<Grid>
-                <lvc:PieChart x:Name="myPieChart" />
-            </Grid>-->
             <Grid>
-                <lvc:PieChart Series="{Binding PieSeriesCollection}"/>
+                <lvc:PieChart Series="{Binding PieSeriesCollection}" 
+                               Hoverable="True"        LegendLocation="Bottom"                       
+                              
+                              />
             </Grid>
-            <!--<lvc:PieSeries Title="Apples" 
-               Values="{Binding FruitPieChartModel.AppleDataSeries}" 
-               DataLabels="True"
-               LabelPoint="{Binding PointLabel}"/>-->
+
 
 
         </Grid>

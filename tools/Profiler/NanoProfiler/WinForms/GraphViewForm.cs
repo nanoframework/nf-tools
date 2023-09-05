@@ -1090,6 +1090,9 @@ namespace WinForms.CLRProfiler
         {
             RadioButton clickedRadioButton = (RadioButton)sender;
             string detailString = clickedRadioButton.Text.Split(' ')[0];
+            var res = minWidth;
+            var res1 = minHeight;
+            var res3 = Convert.ToSingle(detailString, CultureInfo.InvariantCulture);
             minWidth = minHeight = Convert.ToSingle(detailString, CultureInfo.InvariantCulture);
             placeVertices = placeEdges = true;
             graphPanel.Invalidate();
