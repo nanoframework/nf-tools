@@ -20,7 +20,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             // register message to update log text
             WeakReferenceMessenger.Default.Register<UpdateLogTextMessage>(this, (r, m) =>
             {
-                Dispatcher.Invoke(() =>
+                Dispatcher.BeginInvoke(() =>
                 {
                     textLog.AppendText(m.Value + "\r\n");
                     textLog.ScrollToEnd();
