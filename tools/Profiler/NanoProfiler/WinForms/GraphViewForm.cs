@@ -20,7 +20,7 @@ namespace WinForms.CLRProfiler
     /// <summary>
     /// Summary description for GraphViewForm.
     /// </summary>
-    internal class GraphViewForm : System.Windows.Forms.Form
+    public class GraphViewForm : System.Windows.Forms.Form
     {
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel graphPanel;
@@ -1042,10 +1042,10 @@ namespace WinForms.CLRProfiler
                             maxY = y;
                     }
                 }
-                if (x < Size.Width)
-                    x = Size.Width;
-                if (maxY < Size.Height)
-                    maxY = Size.Height;
+                //if (x < Size.Width)
+                //    x = Size.Width;
+                //if (maxY < Size.Height)
+                //    maxY = Size.Height;
                 graphPanel.Size = new System.Drawing.Size (x, maxY);
             }
             if (placeEdges)

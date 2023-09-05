@@ -162,10 +162,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             //showWhoAllocatedMenuItem_Click(null, null);
 
-            GraphViewModel viewModel = new GraphViewModel();
-            GraphView histogramView = new GraphView();
-            histogramView.DataContext = viewModel;
-            histogramView.Show();
+            //GraphViewModel viewModel = new GraphViewModel();
+            //GraphView histogramView = new GraphView();
+            //histogramView.DataContext = viewModel;
+            //histogramView.Show();
 
 
         }

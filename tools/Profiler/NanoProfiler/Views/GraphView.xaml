@@ -3,13 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:gridViewer="clr-namespace:WinForms.CLRProfiler"
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
-        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"             
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf" 
+        xmlns:clrprofiler="clr-namespace:WinForms.CLRProfiler"
         mc:Ignorable="d"
         Title="GraphView" Height="450" Width="800">
+
+     
+    
     <Grid>
-
-
         <Grid.RowDefinitions>
             <RowDefinition Height="100" />
             <RowDefinition Height="4*" />
@@ -23,9 +26,10 @@
             </Grid.ColumnDefinitions>
             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
                 <Label Width="163" Height="30" HorizontalAlignment="Left"
-                       Content="Vertical Scale (kB/px):" FontSize="16" />
+                       Content="Scale:" FontSize="16" />
                 <ComboBox   Name="VerticalScaleOption" Width="120" Margin="20,0,0,0"
-                            SelectedItem="{Binding VerticalScaleSelectedValue, Mode=TwoWay}" ItemsSource="{Binding VerticalScaleList}">
+                            SelectedItem="{Binding ScaleSelectedValue, Mode=TwoWay}" 
+                            ItemsSource="{Binding ScaleList}">
 
                 </ComboBox>
             </StackPanel>
@@ -39,10 +43,11 @@
                 Width="163"
                 Height="30"
                 HorizontalAlignment="Left"
-                Content="Horizontal Scale:"
+                Content="Detail:"
                 FontSize="16" />
                 <ComboBox   Name="HorizontalScaleOption" Width="120" Margin="20,0,0,0" HorizontalAlignment="Left"
-                            SelectedValue="{Binding HorizontalScaleSelectedValue, Mode=TwoWay}" ItemsSource="{Binding HorizontalScaleList}">
+                            SelectedValue="{Binding DetailsSelectedValue, Mode=TwoWay}" 
+                            ItemsSource="{Binding DetailsList}">
 
                 </ComboBox>
             </StackPanel>
@@ -57,7 +62,24 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid Grid.Row="1" Grid.Column="0" >
-                <lvc:PieChart LegendLocation="Bottom" Hoverable="False" DataTooltip="{x:Null}">
+
+                <WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible"   >
+                                    
+                </WindowsFormsHost>
+
+                <!--<WindowsFormsHost x:Name="windowsFormsHost" Grid.Column="0">
+                    <StaticResourceExtension ResourceKey="gridViewerInstance" />
+                </WindowsFormsHost>-->
+
+                <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible"   >
+                    --><!--<clrprofiler:GraphViewForm />--><!--
+                </WindowsFormsHost>-->
+
+
+
+                <!--Live CHarts / Pie Chart-->
+                   
+                <!--<lvc:PieChart LegendLocation="Bottom" Hoverable="False" DataTooltip="{x:Null}">
                     <lvc:PieChart.Series>
                         <lvc:PieSeries Title="One" Values="3" DataLabels="True"
                                LabelPoint="{Binding PointLabel}"/>
@@ -68,7 +90,7 @@
                         <lvc:PieSeries Title="Four" Values="2" DataLabels="True" 
                                LabelPoint="{Binding PointLabel}"/>
                     </lvc:PieChart.Series>
-                </lvc:PieChart>
+                </lvc:PieChart>-->
                 
 
             </Grid>

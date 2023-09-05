@@ -37,7 +37,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             //graphPanel.Width = 508;
             //graphPanel.Height = 209;
             graphPanel.Paint += graphPanel_Paint;
-            graphPanel.MouseDown += graphPanel_MouseDown;
+            //graphPanel.MouseDown += graphPanel_MouseDown;
             windowsFormsHost.Child = graphPanel;
             autoUpdate = true;
             lastLogResult = MainForm.instance.lastLogResult;
