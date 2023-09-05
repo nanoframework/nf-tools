@@ -36,7 +36,7 @@
                 <CheckBox Grid.Column="0" Grid.Row="2" Content="Profile Object Allocations" HorizontalAlignment="Left" Margin="10,0,0,0" 
                           Name="checkAllocations" IsChecked="{Binding AllocationsChecked}" Height="23"/>
                 <CheckBox Grid.Column="0" Grid.Row="3" Content="User Heap Absolute Address" HorizontalAlignment="Left" Margin="10,0,0,0" 
-                          Name="HeapAbsoluteAddress" Height="23" IsChecked="{Binding AbsoluteAddressChecked}"/>
+                          Name="HeapAbsoluteAddress" Height="23" IsChecked="{Binding HeapAbsoluteAddressChecked}"/>
             </Grid>
         </GroupBox>
         <TextBox x:Name="textLog" 

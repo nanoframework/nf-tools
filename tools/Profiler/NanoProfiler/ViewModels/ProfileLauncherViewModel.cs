@@ -131,7 +131,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private bool _allocationsChecked;
 
         [ObservableProperty]
-        private bool _absoluteAddressChecked = true;
+        private bool _heapAbsoluteAddressChecked = true;
 
         [ObservableProperty]
         private bool _connectButtonEnabled = true;
@@ -402,7 +402,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                             if (currentExecutionMode.IsDeviceInInitializeState())
                             {
                                 _engine.ThrowOnCommunicationFailure = true;
-                                //_session = new _PRF.ProfilerSession(_engine, HeapAbsoluteAddress.IsChecked.Value);
+                                _session = new _PRF.ProfilerSession(_engine, HeapAbsoluteAddressChecked);
 
                                 if (_exporter != null)
                                 {
