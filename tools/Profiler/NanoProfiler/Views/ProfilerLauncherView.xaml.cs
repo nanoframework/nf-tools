@@ -1,18 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
-using nanoFramework.Tools.Debugger;
-using nanoFramework.Tools.Debugger.Extensions;
-using nanoFramework.Tools.Debugger.WireProtocol;
-using nanoFramework.Tools.NanoProfiler.Helpers;
 using nanoFramework.Tools.NanoProfiler.ViewModels;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Input;
-using _DBG = nanoFramework.Tools.Debugger;
-using _PRF = nanoFramework.Tools.NanoProfiler;
-using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 
 namespace nanoFramework.Tools.NanoProfiler.Views
 {
