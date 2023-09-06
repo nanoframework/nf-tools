@@ -90,7 +90,7 @@
         </Canvas>-->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="5*" />
+                <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Collapsed" />-->
@@ -100,11 +100,36 @@
                                Hoverable="True"  
                               />
             </Grid>
-            <Grid Grid.Column="1">
-                <Rectangle Width="100" Height="500"
-                           Fill="LightBlue"/>
+            <Grid Grid.Column="1" Margin="10">
+                <ListBox Name="ItemListBox" ItemsSource="{Binding ChartValues}" 
+                         BorderThickness="2" BorderBrush="Blue">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Button HorizontalAlignment="Center" 
+                                        HorizontalContentAlignment="Left"
+                                        Width="400" Height="50" Padding="5" FontSize="14"
+                                        Command="{Binding DataContext.ListButtonSelectedCommand,RelativeSource={RelativeSource Mode=FindAncestor,AncestorType={x:Type ListBox}}}"                                   
+                                        CommandParameter="{Binding .}"
+                                        >
+                                <Button.Content>
+                                    <Grid Width="400">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="90"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="{Binding Name}" Grid.Column="0" FontSize="14" FontWeight="DemiBold"  />
+                                        <Label Content="{Binding GraphBytes}" Grid.Column="1"/>
+                                        <Label Content="{Binding GraphPercentage}" ContentStringFormat=" {0}%" Grid.Column="2" />
+                                    </Grid>                               
+                                </Button.Content>
+                                
+                            </Button>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </Grid>
-
+            <!--Command="{Binding Command}"-->
 
         </Grid>
 

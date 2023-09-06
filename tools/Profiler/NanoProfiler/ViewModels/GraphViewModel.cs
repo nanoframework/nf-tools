@@ -38,11 +38,21 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             //histogramView.DataContext = viewModel;
             //histogramView.Show();
         }
-
+        [RelayCommand]
+        private void ListButtonSelected(object buttonSelected)
+        {
+            Console.WriteLine(  );
+        }
+        
         #endregion
 
 
         #region Observable properties
+
+        //[ObservableProperty]
+        //ObservableCollection<GraphDataModel> _listItems = new ObservableCollection<GraphDataModel>();
+
+
         [ObservableProperty]
         private ChartValues<GraphDataModel> _chartValues = new ChartValues<GraphDataModel>();
 
@@ -102,18 +112,13 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         public GraphViewModel(Graph graph)
         {
             _graph = graph;
-
             SetComboValues();
-            //GetValues();
-            //SetPieValues();
 
         }
 
         private void SetPieValues()
         {
             PieSeriesCollection = new SeriesCollection();
-            //if (PieSeriesCollection.Count > 0)
-            //    PieSeriesCollection.Clear();
             var configuration = new CartesianMapper<GraphDataModel>()
               .X((value, index) => index)
               .Y((value, index) => value.GraphPercentage);
@@ -121,6 +126,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             foreach (var item in ChartValues)
             {
+
                 PieSeriesCollection.Add(new PieSeries
                 {
                     Values = new ChartValues<GraphDataModel>
@@ -204,89 +210,13 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                             Console.WriteLine("The string does not contain a '(' character.");
                         }
 
-
-                        int colorInt = r.Next(255 * 256 * 256);
-                        int red = (colorInt >> 16) & 255;
-                        int green = (colorInt >> 8) & 255;
-                        int blue = colorInt & 255;
-                        System.Drawing.Brush brush = null;
-                        if (e.selected)
-                        {
-                            System.Drawing.Color foreColor = System.Drawing.Color.FromArgb(150, 0, 255, 0);
-                            System.Drawing.Color backColor = System.Drawing.Color.FromArgb(150, 255, 0, 0);
-                            brush = new HatchBrush(HatchStyle.DiagonalCross, foreColor, backColor);
-                        }
-                        else if (e.brush != null)
-                        {
-                            brush = e.brush;
-                        }
-                        else
-                        {
-                            if (red <= green && red <= blue)
-                                red = 0;
-                            else if (green <= blue && green <= red)
-                                green = 0;
-                            else if (blue <= red && blue <= green)
-                                blue = 0;
-                            System.Drawing.Color color = System.Drawing.Color.FromArgb(100, red, green, blue);
-                            Debug.Assert(!color.IsEmpty);
-                            brush = new SolidBrush(color);
-                            e.brush = brush;
-                        }
-                        System.Drawing.Color drawingColor = ((SolidBrush)brush).Color;
-                        System.Windows.Media.Color wpfColor = System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B);
-
-
-
-
                         ChartValues.Add(new GraphDataModel()
                         {
                             GraphPercentage = percentageArrived,
                             GraphBytes = bytesArrived,
                             Name = e.ToVertex.name
                         });
-
-
-                        Debug.Assert(brush != null);
-                        float fWidth = e.weight * scale;
-                        if (fWidth > minWidth && e.FromVertex.active && e.ToVertex.active)
-                        {
-                            int iWidth = (int)fWidth;
-                            if (iWidth < 1)
-                                iWidth = 1;
-                            e.width = iWidth;
-                            System.Drawing.Pen pen = e.pen;
-                            if (pen == null || pen.Width != iWidth || e.selected)
-                            {
-                                pen = new System.Drawing.Pen(brush, iWidth);
-                                if (!e.selected)
-                                    e.pen = pen;
-                            }
-                            Debug.Assert(pen != null);
-                            int deltaX = e.toPoint.X - e.fromPoint.X;
-                            int deltaY = e.toPoint.Y - e.fromPoint.Y;
-                            deltaX = deltaX / 4;
-                            deltaY = deltaY / 9;
-                            int deltaY1 = deltaY;
-                            int deltaY2 = -deltaY;
-                            if (deltaX < 0)
-                            {
-                                deltaX = 20;
-                                if (Math.Abs(deltaY) * 5 < iWidth * 2)
-                                {
-                                    deltaY1 = deltaY2 = iWidth * 2;
-                                    deltaX = iWidth;
-                                }
-                            }
-                            //points[0] = e.fromPoint;
-                            //points[1] = new Point(e.fromPoint.X + deltaX, e.fromPoint.Y + deltaY1);
-                            //points[2] = new Point(e.toPoint.X - deltaX, e.toPoint.Y + deltaY2);
-                            //points[3] = e.toPoint;
-                            //g.DrawCurve(pen, points);
-                            red = (red + 17) % 256;
-                            green = (green + 101) % 256;
-                            blue = (blue + 29) % 256;
-                        }
+                    
                     }
                 }
             }
