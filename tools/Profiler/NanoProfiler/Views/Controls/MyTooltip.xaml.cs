@@ -18,14 +18,6 @@ using System.Windows.Shapes;
 
 namespace nanoFramework.Tools.NanoProfiler.Views.Controls
 {
-    public class MyTooltipContent
-    {
-        public string Name { get; set; }
-        public string Value { get; set; }
-    }
-    /// <summary>
-    /// Interaction logic for MyTooltip.xaml
-    /// </summary>
     public partial class MyTooltip : IChartTooltip
     {
         //public string Name { get; set; } = "ime";

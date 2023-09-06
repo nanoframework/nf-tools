@@ -237,15 +237,15 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             string title = "Histogram by Size for Allocated Objects for: " + _scenario;
 
             //WinFrom option
-            //HistogramViewForm histogramViewForm = new HistogramViewForm(_logResult.allocatedHistogram, title);
-            //histogramViewForm.Show();
+            HistogramViewForm histogramViewForm = new HistogramViewForm(_logResult.allocatedHistogram, title);
+            histogramViewForm.Show();
 
 
 
-            HistogramViewModel viewModel = new HistogramViewModel(_logResult.allocatedHistogram, title);
-            HistogramView histogramView = new HistogramView();
-            histogramView.DataContext = viewModel;
-            histogramView.Show();
+            //HistogramViewModel viewModel = new HistogramViewModel(_logResult.allocatedHistogram, title);
+            //HistogramView histogramView = new HistogramView();
+            //histogramView.DataContext = viewModel;
+            //histogramView.Show();
 
         }
     }

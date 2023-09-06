@@ -83,7 +83,10 @@
                 <ComboBoxItem Content="Fine" />
                 <ComboBoxItem Content="Very Fine" />
             </ComboBox>
-        </StackPanel>
+
+                <Button Content="Move To Grid" Click="showWhoAllocatedMenuItem_Click"
+                    Width="200" Height="70" Background="Yellow"/>
+            </StackPanel>
         </Grid>
 
         <!--<Canvas x:Name="graphPanel" >
@@ -96,13 +99,13 @@
             </Grid.ColumnDefinitions>
                 <WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible"  >
 
-                </WindowsFormsHost>                
+                </WindowsFormsHost>
 
-            <Canvas
+            <!--<Canvas
                 x:Name="typeLegendPanel" Visibility="Collapsed"
                 Grid.Column="1">
 
-            </Canvas>
+            </Canvas>-->
         </Grid>
         
     </Grid>

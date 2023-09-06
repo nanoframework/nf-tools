@@ -56,6 +56,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         [ObservableProperty]
         private string _horizontalScaleSelectedValue;
 
+        [ObservableProperty]
+        private ChartPoint _selectedChartPoint = new();
         #endregion
 
 
@@ -158,18 +160,79 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         #region Commands
         [RelayCommand]
-        private void ShowWhoAllocated()
+        private void ShowWhoAllocated(object something)
         {
-            //showWhoAllocatedMenuItem_Click(null, null);
+            Histogram selectedHistogram;
+            string title;
+            TypeDesc selectedType = FindSelectedType();
+            if (selectedType == null)
+            {
+                title = "Allocation Graph";
+                selectedHistogram = histogram;
+            }
+            else
+            {
+                int minSize = 0;
+                int maxSize = int.MaxValue;
+                foreach (Bucket b in buckets)
+                {
+                    if (b.selected)
+                    {
+                        minSize = b.minSize;
+                        maxSize = b.maxSize;
+                    }
+                }
+                title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
+                if (minSize > 0)
+                {
+                    title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
+                }
 
-            //GraphViewModel viewModel = new GraphViewModel();
-            //GraphView histogramView = new GraphView();
-            //histogramView.DataContext = viewModel;
-            //histogramView.Show();
+                selectedHistogram = new Histogram(histogram.readNewLog);
+                for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
+                {
+                    int count = histogram.typeSizeStacktraceToCount[i];
+                    if (count > 0)
+                    {
+                        int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
+                        int typeIndex = stacktrace[0];
+                        int size = stacktrace[1];
 
+                        if (minSize <= size && size <= maxSize)
+                        {
+                            TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
+
+                            if (t == selectedType)
+                            {
+                                selectedHistogram.AddObject(i, count);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
+            Graph graph = selectedHistogram.BuildAllocationGraph(new FilterForm());
+
+            //WinForms.CLRProfiler.GraphViewForm graphViewForm = new WinForms.CLRProfiler.GraphViewForm(graph, title);
+            //graphViewForm.Show();
+
+
+            GraphViewModel viewModel = new GraphViewModel(graph);
+            GraphView graphView = new GraphView();
+            graphView.DataContext = viewModel;
+            graphView.Show();
 
         }
 
+        
+        
+        [RelayCommand]
+        private void DrillDown(ChartPoint chartPointSelected)
+        {
+            SelectedChartPoint = chartPointSelected;
+        }
         #endregion
 
 

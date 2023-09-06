@@ -39,7 +39,8 @@
                 <!--Row 0 elements-->
                 <Label Grid.Column="0" Grid.Row="0" Name="AllocatedBytesLabel" Content="Allocated bytes:" Margin="0,0,0,0" VerticalAlignment="Center"/>
                 <Label Grid.Column="1" Grid.Row="0" Name="AllocatedBytesValueLabel" Content="N/A" HorizontalAlignment="Right" Margin="0,0,10,0" />
-                <Button Grid.Column="2" Grid.Row="0" Name="AllocatedHistogramButton" Content="Histogram" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center" Click="AllocatedHistogramButton_Click"/>
+                <Button Grid.Column="2" Grid.Row="0" Name="AllocatedHistogramButton" Content="Histogram" HorizontalAlignment="Center" Margin="0,0,0,0" Width="80" VerticalAlignment="Center" 
+                        Click="AllocatedHistogramButton_Click"/>
                 <Button Grid.Column="3" Grid.Row="0" Name="AllocationGraphButton" 
                         Click="allocationGraphButton_Click"
                         

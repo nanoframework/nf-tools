@@ -49,12 +49,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
 
         #region Observable properties
-        [ObservableProperty]
-        private MyTooltipContent _toolTipContent;
-
-
-        //[ObservableProperty]
-        //private ChartValues<MyTooltipContent> _myTooltipContents = new ChartValues<MyTooltipContent>();
 
         [ObservableProperty]
         private ChartValues<GraphDataModel> _chartValues = new ChartValues<GraphDataModel>();
@@ -110,36 +104,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         #endregion
 
-
         #region Constructor
         public GraphViewModel(Graph graph)
         {
             _graph = graph;
             SetComboValues();
-            //MyTooltipContents = new ChartValues<MyTooltipContent>();
-
-            //for (int i = 0; i < 50; i++)
-            //{
-            //    MyTooltipContents.Add(new MyTooltipContent
-            //    {
-            //        Name = $"No{i}",
-            //        Value = "Foo"
-            //    });
-            //}
-
-            ToolTipContent = new MyTooltipContent() { Name = "123", Value = "456" };
-
-            var MyTooltipContentMapper = Mappers.Xy<MyTooltipContent>()
-            .X((value, index) => index)
-            .Y(value => 1);
-
-            //lets save the mapper globally
-            Charting.For<MyTooltipContent>(MyTooltipContentMapper);
         }
 
         private void SetPieValues()
         {
             PieSeriesCollection = new SeriesCollection();
+
             var configuration = new CartesianMapper<GraphDataModel>()
               .X((value, index) => index)
               .Y((value, index) => value.GraphPercentage);
@@ -147,7 +122,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             foreach (var item in ChartValues)
             {
-                PieSeriesCollection.Add(new PieSeries
+
+                var pieSerie = new PieSeries
                 {
                     Values = new ChartValues<GraphDataModel>
                     {
@@ -156,37 +132,24 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     Configuration = configuration,
                     DataLabels = true,
                     LabelPoint = (value => $"{item.GraphPercentage}%"),
-                    Title = $"{item.Name}{Environment.NewLine}{item.GraphBytes}"
-                });
+                    Title = $"{item.Name}{Environment.NewLine}{item.GraphBytes}{Environment.NewLine}{item.GraphPercentage}%",
+                    Foreground = System.Windows.Media.Brushes.Black,
+                    LabelPosition=PieLabelPosition.InsideSlice
+                };
+
+                PieSeriesCollection.Add(pieSerie);
             }
         }
 
-
         private void GetValues()
         {
-
-            int count = 0;
             ChartValues = new ChartValues<GraphDataModel>();
-            //EnableDisableMenuItems();
 
-            //outerPanel.AutoScroll = true;
-            //Graphics g = e.Graphics;
             if (placeVertices || placeEdges)
             {
                 PlaceVertices();
                 placeVertices = placeEdges = false;
             }
-            //using (SolidBrush penBrush = new SolidBrush(Color.Blue))
-            //{
-            //    using (Pen pen = new Pen(penBrush, 1))
-            //    {
-            //        foreach (Vertex v in graph.vertices.Values)
-            //        {
-            //            if (v.visible)
-            //                PaintVertex(v, g, penBrush, pen);
-            //        }
-            //    }
-            //}
 
 
             foreach (Vertex v in _graph.vertices.Values)
@@ -196,7 +159,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     if (e.ToVertex != _graph.BottomVertex
                         && !e.fromPoint.IsEmpty && !e.toPoint.IsEmpty)
                     {
-                        count++;
                         double percentageArrived = -1d;
                         string bytesArrived = string.Empty;
                         Match match = Regex.Match(e.ToVertex.weightString, regexPattern);
@@ -240,7 +202,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     }
                 }
             }
-            var res = count;
         }
 
         void PlaceVertices()

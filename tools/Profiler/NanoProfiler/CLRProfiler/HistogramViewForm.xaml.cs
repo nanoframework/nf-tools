@@ -1,4 +1,6 @@
 ﻿using CLRProfiler;
+using nanoFramework.Tools.NanoProfiler.ViewModels;
+using nanoFramework.Tools.NanoProfiler.Views;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -560,10 +562,10 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 y = t.rect.Bottom + typeLegendSpacing;
             }
             int height = y + bottomMargin;
-            typeLegendPanel.Height = height;
+            //typeLegendPanel.Height = height;
 
             int width = leftMargin + maxWidth + rightMargin;
-            typeLegendPanel.Width = width;
+            //typeLegendPanel.Width = width;
 
             x = leftMargin;
             y = topMargin;
@@ -922,59 +924,67 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         private void showWhoAllocatedMenuItem_Click(object sender, System.EventArgs e)
         {
             Console.WriteLine(  );
-            //Histogram selectedHistogram;
-            //string title;
-            //TypeDesc selectedType = FindSelectedType();
-            //if (selectedType == null)
-            //{
-            //    title = "Allocation Graph";
-            //    selectedHistogram = histogram;
-            //}
-            //else
-            //{
-            //    int minSize = 0;
-            //    int maxSize = int.MaxValue;
-            //    foreach (Bucket b in buckets)
-            //    {
-            //        if (b.selected)
-            //        {
-            //            minSize = b.minSize;
-            //            maxSize = b.maxSize;
-            //        }
-            //    }
-            //    title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
-            //    if (minSize > 0)
-            //    {
-            //        title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
-            //    }
+            Histogram selectedHistogram;
+            string title;
+            TypeDesc selectedType = FindSelectedType();
+            if (selectedType == null)
+            {
+                title = "Allocation Graph";
+                selectedHistogram = histogram;
+            }
+            else
+            {
+                int minSize = 0;
+                int maxSize = int.MaxValue;
+                foreach (Bucket b in buckets)
+                {
+                    if (b.selected)
+                    {
+                        minSize = b.minSize;
+                        maxSize = b.maxSize;
+                    }
+                }
+                title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
+                if (minSize > 0)
+                {
+                    title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
+                }
 
-            //    selectedHistogram = new Histogram(histogram.readNewLog);
-            //    for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
-            //    {
-            //        int count = histogram.typeSizeStacktraceToCount[i];
-            //        if (count > 0)
-            //        {
-            //            int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
-            //            int typeIndex = stacktrace[0];
-            //            int size = stacktrace[1];
+                selectedHistogram = new Histogram(histogram.readNewLog);
+                for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
+                {
+                    int count = histogram.typeSizeStacktraceToCount[i];
+                    if (count > 0)
+                    {
+                        int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
+                        int typeIndex = stacktrace[0];
+                        int size = stacktrace[1];
 
-            //            if (minSize <= size && size <= maxSize)
-            //            {
-            //                TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
+                        if (minSize <= size && size <= maxSize)
+                        {
+                            TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
 
-            //                if (t == selectedType)
-            //                {
-            //                    selectedHistogram.AddObject(i, count);
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
+                            if (t == selectedType)
+                            {
+                                selectedHistogram.AddObject(i, count);
+                            }
+                        }
+                    }
+                }
+            }
 
-            //Graph graph = selectedHistogram.BuildAllocationGraph(new FilterForm());
+
+            Graph graph = selectedHistogram.BuildAllocationGraph(new FilterForm());
+            //WinForms.CLRProfiler.GraphViewForm graphViewForm = new WinForms.CLRProfiler.GraphViewForm(graph, title);
+            //graphViewForm.Show();
+
+            GraphViewModel viewModel = new GraphViewModel(graph);
+            GraphView graphView = new GraphView();
+            graphView.DataContext = viewModel;
+            graphView.Show();
 
             //GraphViewForm graphViewForm = new GraphViewForm(graph, title);
-            //graphViewForm.Visible = true;
+            //graphViewForm.Show();
         }
     }
 }

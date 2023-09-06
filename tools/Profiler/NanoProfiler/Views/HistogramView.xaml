@@ -12,7 +12,7 @@
     <Window.ContextMenu>
         <ContextMenu>
             <MenuItem Header="Show Who Allocated" 
-                Command="{Binding ShowWhoAllocatedCommand}"/>
+                Command="{Binding ShowWhoAllocatedCommand}" CommandParameter="{Binding .}"/>
             <MenuItem Header="Export Data to File.." />
         </ContextMenu>
     </Window.ContextMenu>
@@ -67,7 +67,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid Grid.Row="1" Grid.Column="0" >
-                <lvc:CartesianChart Margin="20" >
+                <lvc:CartesianChart Margin="20" DataClickCommand="{Binding DrillDownCommand}">
                     <lvc:CartesianChart.Series >
                         <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValues}" DataLabels="True"
                                           Configuration="{Binding BucketsConfiguration}" StrokeThickness="1"/>

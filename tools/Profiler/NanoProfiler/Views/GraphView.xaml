@@ -98,64 +98,46 @@
             <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Collapsed" />-->
 
             <Grid Grid.Column="0">
-                <!--<lvc:PieChart Name="pieChart" Width="300" Height="200">
-                    <lvc:PieChart.Series>
-                        <lvc:PieSeries Title="Sample Data" Name="pieSeries" Values="2" 
-                                       DataLabels="True" />
-                        <lvc:PieSeries Title="Sample Data1" Name="pieSeries1" Values="21" 
-                                       DataLabels="True" />
-                        <lvc:PieSeries Title="Sample Data2" Name="pieSeries2" Values="42" 
-                                       DataLabels="True" />
-                        <lvc:PieSeries Title="Sample Data3" Name="pieSeries3" Values="62" 
-                                       DataLabels="True" />
-                    </lvc:PieChart.Series>
-                </lvc:PieChart>-->
-                <lvc:PieChart Series="{Binding PieSeriesCollection}" 
-                               Hoverable="False" 
-                              >
+                <lvc:PieChart Series="{Binding PieSeriesCollection}" Foreground="Black"
+                               Hoverable="True" >
                     <lvc:PieChart.DataTooltip>
-                        <!--<lvc:DefaultTooltip>
-                            <lvc:DefaultTooltip.Content>
-                                <Label Content="123"/>                                
-                            </lvc:DefaultTooltip.Content>
-                        </lvc:DefaultTooltip>-->
-                        <controls:MyTooltip  />
-                        <!--<lvc:DefaultTooltip BulletSize="20" Background="LightSeaGreen" 
-                                            SelectionMode="OnlySender"
-                                            Content="{Binding Name}" IsWrapped ="false"/>-->
+                        <controls:MyTooltip  SelectionMode="OnlySender" />
                     </lvc:PieChart.DataTooltip>
                 </lvc:PieChart>
             </Grid>
             <Grid Grid.Column="1" Margin="10">
-                <ListBox Name="ItemListBox" ItemsSource="{Binding ChartValues}" 
-                         BorderThickness="2" BorderBrush="Blue">
+                <ListBox Name="ItemListBox" ItemsSource="{Binding ChartValues}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         BorderThickness="2" BorderBrush="Blue" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Button HorizontalAlignment="Center" 
-                                        HorizontalContentAlignment="Left"
-                                        Width="400" Height="50" Padding="5" FontSize="14"
+                            <Grid>                                
+                                <Button HorizontalAlignment="Stretch" 
+                                        HorizontalContentAlignment="Stretch"
+                                        Height="50" Padding="5" FontSize="14"
                                         Command="{Binding DataContext.ListButtonSelectedCommand,RelativeSource={RelativeSource Mode=FindAncestor,AncestorType={x:Type ListBox}}}"                                   
                                         CommandParameter="{Binding .}"
                                         >
                                 <Button.Content>
-                                    <Grid Width="400">
+                                    <Grid >
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="70"/>
-                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="50"/>
                                         </Grid.ColumnDefinitions>
-                                        <Label Content="{Binding Name}" Grid.Column="0" FontSize="14" FontWeight="DemiBold"  />
-                                        <Label Content="{Binding GraphBytes}" Grid.Column="1"/>
-                                        <Label Content="{Binding GraphPercentage}" ContentStringFormat=" {0}%" Grid.Column="2" />
+                                            <Label Grid.Column="0"  FontWeight="DemiBold" Padding="0">
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </Label>
+                                            <Label Content="{Binding GraphBytes}" Grid.Column="1" Padding="0"/>
+                                            <Label Content="{Binding GraphPercentage}" ContentStringFormat=" {0} %" Grid.Column="2" Padding="0" />
                                     </Grid>                               
                                 </Button.Content>
-                                
-                            </Button>
+
+                                </Button>
+                            </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </Grid>
-            <!--Command="{Binding Command}"-->
 
         </Grid>
 
