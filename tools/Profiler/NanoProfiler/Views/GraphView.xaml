@@ -9,22 +9,49 @@
         xmlns:clrprofiler="clr-namespace:WinForms.CLRProfiler"
         mc:Ignorable="d"
         Title="GraphView" MinHeight="800" MinWidth="1200">
-
     <Window.ContextMenu>
         <ContextMenu>
-            <MenuItem Header="Show Who Allocated" 
-              Command="{Binding ShowWhoAllocatedCommand}"/>
-            <MenuItem Header="Export Data to File.." />
+            <MenuItem Header="Filter to callers and callees" />
+            <MenuItem Header="Filter.." />
+            <MenuItem Header="Reset Filter" />
+            <MenuItem Header="Prune to callers and callees" />
+            <MenuItem Header="Select All" />
+            <MenuItem Header="Copy as text to clipboard" />
+            <MenuItem Header="Zoom to Node" />
+            <MenuItem Header="Find interesting nodes" />
+            <MenuItem Header="Find routine..." />
+            <MenuItem Header="Find again" />
+            <MenuItem Header="See Who Allocated" />
+            <MenuItem Header="Show New Objects" />
+            <MenuItem Header="Show Who Allocated New Objects" />
+            <MenuItem Header="Show Objects Allocated between..." />
+            <MenuItem Header="Show Who Allocated Objects between..." />
+            <MenuItem Header="Show Individual Instances" />
+            <MenuItem Header="Show Histogram" />
+            <MenuItem Header="Show References" />
         </ContextMenu>
     </Window.ContextMenu>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="100" />
+            <RowDefinition Height=".1*" />
+            <RowDefinition Height=".25*" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid>
+        <Menu
+            Grid.Row="0"
+            IsMainMenu="True">
+            <MenuItem Header="Edit">
+                <MenuItem Header="Select All" />
+                <MenuItem Header="Copy as text to clipboard" />
+                <MenuItem Header="Find routine..." />
+                <MenuItem Header="Find Again" />
+            </MenuItem>
+        </Menu>
+
+
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -40,38 +67,43 @@
             </StackPanel>
 
             <StackPanel
-            Grid.Column="1"
-            Margin="10,0,0,0"
-            VerticalAlignment="Center"
-            Orientation="Horizontal">
-                <Label
-                Width="163"
-                Height="30"
-                HorizontalAlignment="Left"
-                Content="Detail:"
-                FontSize="16" />
-                <ComboBox   Name="HorizontalScaleOption" Width="120" Margin="20,0,0,0" HorizontalAlignment="Left"
-                            SelectedValue="{Binding DetailsSelectedValue, Mode=TwoWay}" 
-                            ItemsSource="{Binding DetailsList}">
+                Grid.Column="1"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                    <Label
+                    Width="163"
+                    Height="30"
+                    HorizontalAlignment="Left"
+                    Content="Detail:"
+                    FontSize="16" />
+                    <ComboBox   Name="HorizontalScaleOption" Width="120" Margin="20,0,0,0" HorizontalAlignment="Left"
+                                SelectedValue="{Binding DetailsSelectedValue, Mode=TwoWay}" 
+                                ItemsSource="{Binding DetailsList}">
 
-                </ComboBox>
+                    </ComboBox>
             </StackPanel>
         </Grid>
 
         <!--<Canvas x:Name="graphPanel" >
             <Canvas Width="508" Height="209" />
         </Canvas>-->
-        <Grid Grid.Row="1">
-
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
             <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Collapsed" />-->
 
-            <Grid>
+            <Grid Grid.Column="0">
                 <lvc:PieChart Series="{Binding PieSeriesCollection}" 
-                               Hoverable="True"        LegendLocation="Bottom"                       
-                              
+                               Hoverable="True"  
                               />
             </Grid>
-
+            <Grid Grid.Column="1">
+                <Rectangle Width="100" Height="500"
+                           Fill="LightBlue"/>
+            </Grid>
 
 
         </Grid>

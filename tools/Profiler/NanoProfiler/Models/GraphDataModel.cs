@@ -14,13 +14,16 @@ namespace nanoFramework.Tools.NanoProfiler.Models
         private string _name = string.Empty;
 
         [ObservableProperty]
-        private double _graphValue;
+        private double _graphPercentage;
+
+        [ObservableProperty]
+        private string _graphBytes = string.Empty;
 
         [ObservableProperty]
         private SolidColorBrush _graphColor = Brushes.Transparent;
 
-        [ObservableProperty]
-        private string _title = string.Empty;
+        //[ObservableProperty]
+        //private string _title = string.Empty;
 
 
     }

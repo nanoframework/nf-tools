@@ -43,18 +43,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
 
         #region Observable properties
-
         [ObservableProperty]
-        private ChartValues<GraphDataModel> _graphValues = new ChartValues<GraphDataModel>();
-
-        [ObservableProperty]
-        private ObservableCollection<string> _graphLabels = new ObservableCollection<string>();
-        [ObservableProperty]
-        private CartesianMapper<GraphDataModel> _graphConfiguration;
+        private ChartValues<GraphDataModel> _chartValues = new ChartValues<GraphDataModel>();
 
         [ObservableProperty]
         private SeriesCollection _pieSeriesCollection = new SeriesCollection();
-
 
         [ObservableProperty]
         private ObservableCollection<int> _scaleList;
@@ -74,36 +67,59 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         #region Properties
 
+
         private readonly Graph _graph;
+        private Font font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(204)));
+
+        //This is setting scaling
+        private float scale = 1.0f;
+        private bool placeVertices = true;
+        private bool placeEdges = true;
+        string regexPattern = @"\((\d+\.\d+)%\)";
+
+        Random r = new Random(0);
 
 
-        public GraphViewForm graphViewForm { get; set; }
+        private int fontHeight;
+
+        private ArrayList levelList;
+        private ulong totalWeight;
+        int totalHeight = 100;
+        const int boxWidth = 300;
+        int gapWidth = 100;
+
+
+        //  This is changing details
+        
+        float minHeight = 1f;
+        float minWidth = 1f;
+
+
         #endregion
 
-        public Func<ChartPoint, string> PointLabel { get; set; }
 
         #region Constructor
         public GraphViewModel(Graph graph)
         {
             _graph = graph;
 
-            font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(204))); ;
             SetComboValues();
-            GetValues();
-            SetPieValues();
+            //GetValues();
+            //SetPieValues();
 
         }
 
         private void SetPieValues()
         {
+            PieSeriesCollection = new SeriesCollection();
+            //if (PieSeriesCollection.Count > 0)
+            //    PieSeriesCollection.Clear();
             var configuration = new CartesianMapper<GraphDataModel>()
               .X((value, index) => index)
-              .Y((value, index) => value.GraphValue)
-              .Fill(value => value.GraphColor)
-              .Stroke(value => value.GraphColor);
+              .Y((value, index) => value.GraphPercentage);
 
 
-            foreach (var item in values)
+            foreach (var item in ChartValues)
             {
                 PieSeriesCollection.Add(new PieSeries
                 {
@@ -113,21 +129,18 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     },
                     Configuration = configuration,
                     DataLabels = true,
-                    LabelPoint = (value => $"{item.GraphValue}%"),
-                    Title = item.Title
+                    LabelPoint = (value => $"{item.GraphPercentage}%"),
+                    Title = $"{item.Name}{Environment.NewLine}{item.GraphBytes}"
                 });
             }
         }
 
-        private Font font;
-        private float scale = 1.0f; 
-        private bool placeVertices = true;
-        private bool placeEdges = true;
-        ChartValues<GraphDataModel> values = new ChartValues<GraphDataModel>();
 
         private void GetValues()
         {
 
+            int count = 0;
+            ChartValues = new ChartValues<GraphDataModel>();
             //EnableDisableMenuItems();
 
             //outerPanel.AutoScroll = true;
@@ -149,9 +162,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             //    }
             //}
 
-            string pattern = @"\((\d+\.\d+)%\)";
 
-            Random r = new Random(0);
             foreach (Vertex v in _graph.vertices.Values)
             {
                 foreach (Edge e in v.outgoingEdges.Values)
@@ -159,18 +170,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     if (e.ToVertex != _graph.BottomVertex
                         && !e.fromPoint.IsEmpty && !e.toPoint.IsEmpty)
                     {
-                        //" 4.2 kB    (2.31%)"
-                        double valueArrived = -1d;
-                        Match match = Regex.Match(e.ToVertex.weightString, pattern);
+                        count++;
+                        double percentageArrived = -1d;
+                        string bytesArrived = string.Empty;
+                        Match match = Regex.Match(e.ToVertex.weightString, regexPattern);
                         if (match.Success)
                         {
                             string percentageValue = match.Groups[1].Value;
 
-                            // Convert the extracted string to a double
                             if (double.TryParse(percentageValue, out double result))
                             {
-                                valueArrived = result;
-                                Console.WriteLine(result); // This will print "2.31"
+                                percentageArrived = result;
                             }
                             else
                             {
@@ -182,8 +192,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                             Console.WriteLine("No percentage value found in the input string");
                         }
 
+                        int indexOfOpenParenthesis = e.ToVertex.weightString.IndexOf('(');
 
-                        
+                        if (indexOfOpenParenthesis != -1)
+                        {
+                            // Extract the substring before the first '(' character and trim any leading or trailing spaces
+                            bytesArrived = e.ToVertex.weightString.Substring(0, indexOfOpenParenthesis).Trim();
+                        }
+                        else
+                        {
+                            Console.WriteLine("The string does not contain a '(' character.");
+                        }
 
 
                         int colorInt = r.Next(255 * 256 * 256);
@@ -216,13 +235,15 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         }
                         System.Drawing.Color drawingColor = ((SolidBrush)brush).Color;
                         System.Windows.Media.Color wpfColor = System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B);
-                        
-                        
-                        values.Add(new GraphDataModel()
+
+
+
+
+                        ChartValues.Add(new GraphDataModel()
                         {
-                            GraphValue = valueArrived,
-                            GraphColor = new SolidColorBrush(wpfColor),
-                            Title = e.ToVertex.name
+                            GraphPercentage = percentageArrived,
+                            GraphBytes = bytesArrived,
+                            Name = e.ToVertex.name
                         });
 
 
@@ -269,16 +290,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     }
                 }
             }
+            var res = count;
         }
-        private int fontHeight;
 
-        private ArrayList levelList;
-        private ulong totalWeight;
-        int totalHeight = 100;
-        const int boxWidth = 300;
-        int gapWidth = 100;
-        float minHeight = 0.1f;
-        float minWidth = 0.1f;
         void PlaceVertices()
         {
             _graph.AssignLevelsToVertices();
@@ -544,8 +558,24 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             ScaleList = new ObservableCollection<int>() { 10, 20, 50, 100, 200, 500, 1000 };
             ScaleSelectedValue = 100;
 
-            DetailsList = new ObservableCollection<double>() { 0.1, 0.2, 0.5, 1, 2, 5, 10, 20 };
+            DetailsList = new ObservableCollection<double>() {0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20 };
             DetailsSelectedValue = 1;
+        }
+
+        partial void OnDetailsSelectedValueChanged(double value)
+        {
+            minWidth = minHeight = (float)value;
+            placeVertices = placeEdges = true;
+            GetValues();
+            SetPieValues();
+        }
+
+        partial void OnScaleSelectedValueChanged(int value)
+        {
+            totalHeight = gapWidth = value;
+            placeVertices = placeEdges = true;
+            GetValues();
+            SetPieValues();
         }
         #endregion
 
