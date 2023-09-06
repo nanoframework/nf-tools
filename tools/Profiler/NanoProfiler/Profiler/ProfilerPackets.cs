@@ -607,11 +607,16 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             var address = sess.HeapAddressIsAbsolute ? sess.HeapStart + m_address : m_address;
 
-            System.Diagnostics.Debug.Assert(sess._liveObjectTable.ContainsKey(address));
+            if (sess._liveObjectTable.ContainsKey(address))
+            {
+                Tracing.PacketTrace($"ALLOC: Object {sess._liveObjectTable[address]} freed from address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : $"{address}")}");
 
-            Tracing.PacketTrace($"ALLOC: Object {sess._liveObjectTable[address]} freed from address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : $"{address}")}");
-            
-            sess._liveObjectTable.Remove(address);
+                sess._liveObjectTable.Remove(address);
+            }
+            else
+            {
+                Tracing.PacketTrace($"ALLOC: ***ERROR*** Reported Object deletion for non existing object @ address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : $"{address}")}");
+            }
 
             ObjectDeletion delete = new ObjectDeletion();
             delete.address = address;
