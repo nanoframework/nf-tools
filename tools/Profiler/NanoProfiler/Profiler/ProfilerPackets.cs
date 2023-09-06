@@ -191,7 +191,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             m_heapAddress = ReadAndUnpackBits(stream);
             m_heapLength  = ReadAndUnpackBits(stream);
-            Tracing.PacketTrace("layout {0}:{1}", m_heapAddress, m_heapLength);
+            Tracing.PacketTrace($"layout 0x{m_heapAddress:X8}:{m_heapLength}");
         }
 
         internal override void Process(ProfilerSession sess)
