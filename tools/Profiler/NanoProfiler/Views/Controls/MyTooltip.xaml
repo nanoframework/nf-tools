@@ -1,0 +1,61 @@
+﻿<UserControl x:Class="nanoFramework.Tools.NanoProfiler.Views.Controls.MyTooltip"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
+            xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf" 
+             xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
+             xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#45555555" Padding="20 10" BorderThickness="2" BorderBrush="#555555">
+    <!--<UserControl.DataContext>
+        <viewModel:GraphViewModel/>
+    </UserControl.DataContext>-->
+    <ItemsControl ItemsSource="{Binding Data.Points}" Grid.IsSharedSizeScope="True">
+        <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type wpf:DataPointViewModel}">
+                <Grid Margin="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" SharedSizeGroup="State"/>
+                        <ColumnDefinition Width="*" SharedSizeGroup="Framesize"/>
+                    </Grid.ColumnDefinitions>
+                    <Rectangle Grid.Column="0" Stroke="{Binding Series.Stroke}" Fill="{Binding Series.Fill}"
+                               Height="15" Width="15" VerticalAlignment="Center" Margin="5 0 5 0"/>
+                    <WrapPanel Grid.Column="1" >
+                        <TextBlock Text="State:" Margin="5 0 0 0"/>
+                        <TextBlock Text="{Binding ChartPoint.Instance.(local:InputClass.State)}" 
+                                Margin="5 0 0 0" VerticalAlignment="Center"/>
+                    </WrapPanel>
+                    <WrapPanel Grid.Column="3" >
+                        <TextBlock Text="Framesize:" Margin="5 0 0 0"/>
+                        <TextBlock Text="{Binding ChartPoint.Instance.(local:InputClass.Framesize)}" 
+                                Margin="5 0 0 0" VerticalAlignment="Center"/>
+                    </WrapPanel>
+                </Grid>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <!--<ItemsControl ItemsSource="{Binding Data.Points}" Grid.IsSharedSizeScope="True">
+        <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type lvc:DataPointViewModel}">
+                <Grid Margin="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="Name"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="Value"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" 
+                               Margin="5 0 0 0" VerticalAlignment="Center" Foreground="White" />
+
+                    <TextBlock Grid.Column="2" Text="{Binding Value}" 
+                               Margin="5 0 0 0" VerticalAlignment="Center" Foreground="White"/>
+
+                </Grid>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>-->
+</UserControl>

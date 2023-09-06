@@ -21,10 +21,5 @@ namespace nanoFramework.Tools.NanoProfiler.Models
 
         [ObservableProperty]
         private SolidColorBrush _graphColor = Brushes.Transparent;
-
-        //[ObservableProperty]
-        //private string _title = string.Empty;
-
-
     }
 }

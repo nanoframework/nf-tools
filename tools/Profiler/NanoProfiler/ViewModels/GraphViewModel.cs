@@ -5,6 +5,7 @@ using LiveCharts;
 using LiveCharts.Configurations;
 using LiveCharts.Wpf;
 using nanoFramework.Tools.NanoProfiler.Models;
+using nanoFramework.Tools.NanoProfiler.Views.Controls;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -43,15 +44,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             Console.WriteLine(  );
         }
-        
+
         #endregion
 
 
         #region Observable properties
+        [ObservableProperty]
+        private MyTooltipContent _toolTipContent;
+
 
         //[ObservableProperty]
-        //ObservableCollection<GraphDataModel> _listItems = new ObservableCollection<GraphDataModel>();
-
+        //private ChartValues<MyTooltipContent> _myTooltipContents = new ChartValues<MyTooltipContent>();
 
         [ObservableProperty]
         private ChartValues<GraphDataModel> _chartValues = new ChartValues<GraphDataModel>();
@@ -113,7 +116,25 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             _graph = graph;
             SetComboValues();
+            //MyTooltipContents = new ChartValues<MyTooltipContent>();
 
+            //for (int i = 0; i < 50; i++)
+            //{
+            //    MyTooltipContents.Add(new MyTooltipContent
+            //    {
+            //        Name = $"No{i}",
+            //        Value = "Foo"
+            //    });
+            //}
+
+            ToolTipContent = new MyTooltipContent() { Name = "123", Value = "456" };
+
+            var MyTooltipContentMapper = Mappers.Xy<MyTooltipContent>()
+            .X((value, index) => index)
+            .Y(value => 1);
+
+            //lets save the mapper globally
+            Charting.For<MyTooltipContent>(MyTooltipContentMapper);
         }
 
         private void SetPieValues()
@@ -126,7 +147,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             foreach (var item in ChartValues)
             {
-
                 PieSeriesCollection.Add(new PieSeries
                 {
                     Values = new ChartValues<GraphDataModel>

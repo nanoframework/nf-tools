@@ -7,8 +7,10 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf" 
         xmlns:clrprofiler="clr-namespace:WinForms.CLRProfiler"
+        xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
         mc:Ignorable="d"
         Title="GraphView" MinHeight="800" MinWidth="1200">
+    
     <Window.ContextMenu>
         <ContextMenu>
             <MenuItem Header="Filter to callers and callees" />
@@ -96,9 +98,33 @@
             <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Collapsed" />-->
 
             <Grid Grid.Column="0">
+                <!--<lvc:PieChart Name="pieChart" Width="300" Height="200">
+                    <lvc:PieChart.Series>
+                        <lvc:PieSeries Title="Sample Data" Name="pieSeries" Values="2" 
+                                       DataLabels="True" />
+                        <lvc:PieSeries Title="Sample Data1" Name="pieSeries1" Values="21" 
+                                       DataLabels="True" />
+                        <lvc:PieSeries Title="Sample Data2" Name="pieSeries2" Values="42" 
+                                       DataLabels="True" />
+                        <lvc:PieSeries Title="Sample Data3" Name="pieSeries3" Values="62" 
+                                       DataLabels="True" />
+                    </lvc:PieChart.Series>
+                </lvc:PieChart>-->
                 <lvc:PieChart Series="{Binding PieSeriesCollection}" 
-                               Hoverable="True"  
-                              />
+                               Hoverable="False" 
+                              >
+                    <lvc:PieChart.DataTooltip>
+                        <!--<lvc:DefaultTooltip>
+                            <lvc:DefaultTooltip.Content>
+                                <Label Content="123"/>                                
+                            </lvc:DefaultTooltip.Content>
+                        </lvc:DefaultTooltip>-->
+                        <controls:MyTooltip  />
+                        <!--<lvc:DefaultTooltip BulletSize="20" Background="LightSeaGreen" 
+                                            SelectionMode="OnlySender"
+                                            Content="{Binding Name}" IsWrapped ="false"/>-->
+                    </lvc:PieChart.DataTooltip>
+                </lvc:PieChart>
             </Grid>
             <Grid Grid.Column="1" Margin="10">
                 <ListBox Name="ItemListBox" ItemsSource="{Binding ChartValues}" 

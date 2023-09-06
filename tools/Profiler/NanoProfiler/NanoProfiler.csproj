@@ -26,10 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Views\Controls\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="Views\GraphViewWinForm.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
