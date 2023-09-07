@@ -2,6 +2,7 @@
 using nanoFramework.Tools.NanoProfiler.ViewModels;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace nanoFramework.Tools.NanoProfiler.Views
 {
@@ -20,7 +21,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             // register message to update log text
             WeakReferenceMessenger.Default.Register<UpdateLogTextMessage>(this, (r, m) =>
             {
-                Dispatcher.BeginInvoke(() =>
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
                 {
                     textLog.AppendText(m.Value + "\r\n");
                     textLog.ScrollToEnd();
