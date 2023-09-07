@@ -1,3 +1,6 @@
+using nanoFramework.Tools.Debugger.WireProtocol;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -295,16 +298,21 @@ namespace nanoFramework.Tools.NanoProfiler
             }
             else
             {
-                var resolvedType = _engine.ResolveType(type);
+                // setup an exponential backoff retry policy to handle the case where the debugger may be overwhelmed with requests
+                var backoffDelay = Backoff.ExponentialBackoff(TimeSpan.FromMilliseconds(500), retryCount: 20);
 
-                if (resolvedType == null)
+                var retryPolicy = Policy
+                    .HandleResult<Commands.Debugging_Resolve_Type.Result>(r => string.IsNullOrEmpty(r?.m_name))
+                    .WaitAndRetry(backoffDelay);
+
+                var resolvedType = retryPolicy.Execute(() =>
                 {
-                    return "*** UNKNOWN TYPE ***";
-                }
-                else
-                {
-                    return resolvedType.m_name;
-                }
+                    return _engine.ResolveType(type);
+                });
+
+                System.Diagnostics.Debug.Assert(resolvedType != null);
+
+                return resolvedType.m_name;
             }
         }
     }
