@@ -10,11 +10,17 @@ namespace nanoFramework.Tools.NanoProfiler.Models
 {
     public partial class BucketDataModel: ObservableObject
     {
-        [ObservableProperty]
-        private double _bucketValue;
+        //[ObservableProperty]
+        //private double _bucketValue;
 
         [ObservableProperty]
         private SolidColorBrush _bucketColor;
+
+        [ObservableProperty]
+        private Bucket _fullBucket;
+
+        [ObservableProperty]
+        private int _bucketPosition;
 
     }
 }

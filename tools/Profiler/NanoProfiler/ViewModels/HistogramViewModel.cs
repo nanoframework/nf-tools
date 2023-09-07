@@ -28,6 +28,7 @@ using Brushes = System.Windows.Media.Brushes;
 using CommunityToolkit.Mvvm.Input;
 using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.Views;
+using System.Xml;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
@@ -77,6 +78,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         ArrayList sortedTypeTable;
         bool initialized = false;
 
+        private int selectedPositionOfTheBucket;
+
         #endregion
 
         public HistogramViewModel(Histogram histogram, string title)
@@ -101,36 +104,41 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
               
         public void SetHistogram()
         {
-
-            //  This will create buckets
             graphPanel_Paint();
 
             BucketsConfiguration = new CartesianMapper<BucketDataModel>()
                 .X((value, index) => index)
-                .Y((value, index) => value.BucketValue)
-                .Fill(value => value.BucketColor)
-                .Stroke(value => value.BucketValue > 0.0 ? Brushes.Black : Brushes.Transparent);
-
+                .Y((value, index) => Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
+                .Fill(SetColumnFill());
         }
-        //private Func<BucketDataModel, object> SetColumnFill()
-        //{
-        //    return (value =>
-        //    {
-        //        if (value.BucketValue > 0 && value.BucketValue < 3)
-        //        {
-        //            return value.BucketColor;
-        //        }
-        //        else if (value.BucketValue > 3 && value.BucketValue < 50)
-        //        {
-        //            return value.BucketColor;
-        //        }
-        //        else
-        //        {
-        //            var res = value.BucketColor;
-        //            return Brushes.Green;
-        //        }
-        //    });
-        //}
+
+       
+        private Func<BucketDataModel, object> SetColumnFill()
+        {
+            //  Trying to provide different coloring for buckets
+            //  Colors are there, I need to find the way to color points separately
+            return (value =>
+            {
+                System.Drawing.Color drawingColor;
+                if (value.FullBucket.typeDescToSizeCount.Count > 0)
+                {
+                    if (value.FullBucket.typeDescToSizeCount.Keys.Count > 1)
+                    {
+                        drawingColor = value.FullBucket.typeDescToSizeCount.Keys.ToList()[1].color;
+                    }
+                    else
+                    {
+                        drawingColor = value.FullBucket.typeDescToSizeCount.Keys.First().color;
+                    }
+                }
+                else
+                    drawingColor = System.Drawing.Color.Red;
+
+                SolidColorBrush finalColor = new SolidColorBrush(System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B));
+
+                return finalColor;
+            });
+        }
 
         partial void OnVerticalScaleSelectedValueChanged(double value)
         {
@@ -157,60 +165,80 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             SetHistogram();
         }
 
-
+        Bucket bucketClicked;
         #region Commands
         [RelayCommand]
-        private void ShowWhoAllocated(object something)
+        private void ShowWhoAllocated(object selectedBucket)
         {
-            Histogram selectedHistogram;
+            bucketClicked = BucketsValues[selectedPositionOfTheBucket].FullBucket;
+
+            var typesInBucketClicked = bucketClicked.typeDescToSizeCount.Count;
+
             string title;
-            TypeDesc selectedType = FindSelectedType();
-            if (selectedType == null)
+            List<TypeDesc> selectedTypes = FindSelectedTypeInSelectedBucket();
+
+            Histogram selectedHistogram = new Histogram(histogram.readNewLog);
+            if (selectedTypes != null && selectedTypes.Count > 0)
             {
-                title = "Allocation Graph";
-                selectedHistogram = histogram;
-            }
-            else
-            {
-                int minSize = 0;
-                int maxSize = int.MaxValue;
-                foreach (Bucket b in buckets)
+                foreach (TypeDesc selectedType in selectedTypes)
                 {
-                    if (b.selected)
+                    if (selectedType == null)
                     {
-                        minSize = b.minSize;
-                        maxSize = b.maxSize;
+                        title = "Allocation Graph";
+                        selectedHistogram = histogram;
                     }
-                }
-                title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
-                if (minSize > 0)
-                {
-                    title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
-                }
-
-                selectedHistogram = new Histogram(histogram.readNewLog);
-                for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
-                {
-                    int count = histogram.typeSizeStacktraceToCount[i];
-                    if (count > 0)
+                    else
                     {
-                        int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
-                        int typeIndex = stacktrace[0];
-                        int size = stacktrace[1];
-
-                        if (minSize <= size && size <= maxSize)
+                        int minSize = 0;
+                        int maxSize = int.MaxValue;
+                        foreach (Bucket b in buckets)
                         {
-                            TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
-
-                            if (t == selectedType)
+                            if (b.selected)
                             {
-                                selectedHistogram.AddObject(i, count);
+                                minSize = b.minSize;
+                                maxSize = b.maxSize;
+                            }
+                        }
+                        title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
+                        if (minSize > 0)
+                        {
+                            title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
+                        }
+
+                        for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
+                        {
+                            int count = histogram.typeSizeStacktraceToCount[i];
+                            if (count > 0)
+                            {
+                                int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
+                                int typeIndex = stacktrace[0];
+                                int size = stacktrace[1];
+
+                                if (minSize <= size && size <= maxSize)
+                                {
+                                    TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
+
+                                    if (t == selectedType)
+                                    {
+                                        selectedHistogram.AddObject(i, count);
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+            
+            
 
+
+            Histogram finalHistogram;
+
+
+            //foreach (KeyValuePair<TypeDesc, SizeCount> entry in bucketClicked.typeDescToSizeCount)
+            //{
+            //    finalHistogram.AddObject()
+            //}
 
 
             Graph graph = selectedHistogram.BuildAllocationGraph(new FilterForm());
@@ -227,11 +255,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         }
 
         
-        
         [RelayCommand]
         private void DrillDown(ChartPoint chartPointSelected)
         {
-            SelectedChartPoint = chartPointSelected;
+            selectedPositionOfTheBucket = chartPointSelected.Key;
         }
         #endregion
 
@@ -450,6 +477,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             using (System.Drawing.Brush blackBrush = new SolidBrush(System.Drawing.Color.Black))
             {
+                int bucketPosition = 0;
                 //int x = leftMargin;
                 foreach (Bucket b in buckets)
                 {
@@ -486,12 +514,15 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     System.Windows.Media.Color wpfColor = System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B);
 
                     BucketsLabels.Add(s);
+
+
                     BucketsValues.Add(new BucketDataModel()
                     {
-                        BucketValue = Math.Round((100.0 * b.totalSize / totalSize), 2),
-                        BucketColor = new SolidColorBrush(wpfColor)
+                        BucketColor = new SolidColorBrush(wpfColor), 
+                        FullBucket = b, 
+                        BucketPosition = bucketPosition
                     });
-
+                    bucketPosition++;
 
                     //x += bucketWidth + gap;
                 }
@@ -564,6 +595,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             }
 
             colors = newColors;
+        }
+
+        private List<TypeDesc> FindSelectedTypeInSelectedBucket()
+        {
+            List<TypeDesc> listReturning = new List<TypeDesc>();
+
+            foreach (KeyValuePair<TypeDesc, SizeCount> item in bucketClicked.typeDescToSizeCount)
+            {
+                listReturning.Add(item.Key);
+            }
+            return listReturning;
         }
 
         private TypeDesc FindSelectedType()
@@ -745,55 +787,55 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         }
 
 
-        struct Bucket
-        {
-            internal int minSize;
-            internal int maxSize;
-            internal ulong totalSize;
-            internal Dictionary<TypeDesc, SizeCount> typeDescToSizeCount;
-            internal bool selected;
-            internal string label;
-        };
+        //struct Bucket
+        //{
+        //    internal int minSize;
+        //    internal int maxSize;
+        //    internal ulong totalSize;
+        //    internal Dictionary<TypeDesc, SizeCount> typeDescToSizeCount;
+        //    internal bool selected;
+        //    internal string label;
+        //};
 
-        private class SizeCount
-        {
-            internal ulong size;
-            internal int count;
-        }
+        //private class SizeCount
+        //{
+        //    internal ulong size;
+        //    internal int count;
+        //}
 
-        class TypeDesc : IComparable
-        {
-            internal string typeName;
-            internal ulong totalSize;
-            internal int count;
-            internal System.Drawing.Color color;
-            internal System.Drawing.Brush brush;
-            internal System.Drawing.Pen pen;
-            internal bool selected;
-            internal System.Drawing.Rectangle rect;
+        //class TypeDesc : IComparable
+        //{
+        //    internal string typeName;
+        //    internal ulong totalSize;
+        //    internal int count;
+        //    internal System.Drawing.Color color;
+        //    internal System.Drawing.Brush brush;
+        //    internal System.Drawing.Pen pen;
+        //    internal bool selected;
+        //    internal System.Drawing.Rectangle rect;
 
-            internal TypeDesc(string typeName)
-            {
-                this.typeName = typeName;
-            }
+        //    internal TypeDesc(string typeName)
+        //    {
+        //        this.typeName = typeName;
+        //    }
 
-            public int CompareTo(object o)
-            {
-                TypeDesc t = (TypeDesc)o;
-                if (t.totalSize < this.totalSize)
-                {
-                    return -1;
-                }
-                else if (t.totalSize > this.totalSize)
-                {
-                    return 1;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
+        //    public int CompareTo(object o)
+        //    {
+        //        TypeDesc t = (TypeDesc)o;
+        //        if (t.totalSize < this.totalSize)
+        //        {
+        //            return -1;
+        //        }
+        //        else if (t.totalSize > this.totalSize)
+        //        {
+        //            return 1;
+        //        }
+        //        else
+        //        {
+        //            return 0;
+        //        }
+        //    }
+        //}
 
 
 
