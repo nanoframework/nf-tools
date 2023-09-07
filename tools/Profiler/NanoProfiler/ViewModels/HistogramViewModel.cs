@@ -29,21 +29,183 @@ using CommunityToolkit.Mvvm.Input;
 using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.Views;
 using System.Xml;
+using System.Runtime.Serialization;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
     public partial class HistogramViewModel: ObservableObject
     {
-        #region Observable Properties
+        //[ObservableProperty]
+        //private SeriesCollection _seriesCollection = new SeriesCollection();
+        [ObservableProperty]
+        private SeriesCollection _seriesCollection11 = new SeriesCollection();
+        public string[] Labels { get; set; }
+        public Func<double, string> Formatter { get; set; }
+        private void SetHistogramDifferentColors()
+        {
 
+            //SeriesCollection11.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<BucketDataModel1>
+            //    {
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 1
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 2
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 3
+            //        }
+            //    },
+            //    StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
+            //    DataLabels = true
+            //});
+
+            //SeriesCollection = new SeriesCollection
+            //{
+            //    new StackedColumnSeries
+            //    {
+            //        Values = new ChartValues<double> {4, 5, 6, 8},
+            //        StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
+            //        DataLabels = true
+            //    },
+            //    new StackedColumnSeries
+            //    {
+            //        Values = new ChartValues<double> {2, 5, 6, 7},
+            //        StackMode = StackMode.Values,
+            //        DataLabels = true
+            //    }
+            //};
+
+            //SeriesCollection.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<double> { 4, 5, 6, 8 },
+            //    //StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
+            //    DataLabels = true
+            //});
+            //SeriesCollection.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<double> { 2, 5, 6, 7 },
+            //    //StackMode = StackMode.Values,
+            //    DataLabels = true
+            //});
+            //SeriesCollection.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<double> { 6, 2, 7 },
+            //    //StackMode = StackMode.Values,
+            //    DataLabels = true
+            //});
+
+
+            //adding series updates and animates the chart
+            //SeriesCollection11.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<BucketDataModel1>
+            //    {
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma", 
+            //                Broj = 1
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 2
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 3
+            //        }
+            //    },
+            //    StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
+            //    DataLabels = true
+            //});
+            //SeriesCollection11.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<BucketDataModel1>
+            //    {
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 4
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 5
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 6
+            //        }
+            //    },
+            //    StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
+            //    DataLabels = true
+            //});
+            //SeriesCollection11.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<BucketDataModel1>
+            //    {
+            //         new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 7
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 8
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 9
+            //        }
+            //    },
+            //    StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
+            //    DataLabels = true
+            //});
+
+            ////adding values also updates and animates
+            //SeriesCollection[2].Values.Add(4d);
+
+            var config = new CartesianMapper<BucketDataModel1>()
+                .X((value, index) => index)
+                .Y((value, index) => Math.Round((100.0 * value.SectionValue / totalSize), 2))
+                //.Y((value, index) => value.SectionValue)
+                //.Fill(value => System.Windows.Media.Colors.Green)
+                ;
+                //.X((value, index) => index)
+                //.Y((value, index) => Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
+
+
+            SeriesCollection11.Configuration = config;
+
+            //Labels = new[] { "Chrome", "Mozilla", "Opera", "IE" };
+            //Formatter = value => value + " Mill";
+        }
+
+
+        
+
+
+        #region Observable Properties
+        [ObservableProperty]
+        private SeriesCollection _seriesCollectionFinal = new SeriesCollection();
+
+        [ObservableProperty]
+        private ChartValues<StackedColumnSeries> _bucketsValuesFULL1 = new ChartValues<StackedColumnSeries>();
+
+        [ObservableProperty]
+        private ChartValues<List<BucketDataModel1>> _bucketsValuesFULL = new ChartValues<List<BucketDataModel1>>();
         [ObservableProperty]
         private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
 
         [ObservableProperty]
         private ObservableCollection<string> _bucketsLabels = new ObservableCollection<string>();
-
         [ObservableProperty]
         private CartesianMapper<BucketDataModel> _bucketsConfiguration;
+        [ObservableProperty]
+        private CartesianMapper<List<BucketDataModel1>> _bucketsConfigurationFULL;
+        [ObservableProperty]
+        private CartesianMapper<StackedColumnSeries> _bucketsConfigurationFULL1;
 
         [ObservableProperty]
         private ObservableCollection<double> _verticalScaleList;
@@ -87,8 +249,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             this.histogram = histogram;
             _title = title;
             typeName = this.histogram.readNewLog.typeName;
+           
             SetComboValues();
-
+            SetHistogramDifferentColors();
 
             //SetHistogram();
         }
@@ -110,6 +273,42 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 .X((value, index) => index)
                 .Y((value, index) => Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
                 .Fill(SetColumnFill());
+
+            BucketsConfigurationFULL = new CartesianMapper<List<BucketDataModel1>>()
+                .X((value, index) =>
+                {
+                    return index;
+                })
+                .Y((value, index) =>
+                {
+                    foreach (var itemS in value)
+                    {
+                        return Math.Round((100.0 * itemS.SectionValue / totalSize), 2);
+                    };
+                    return 0;
+                });
+            
+            
+            BucketsConfigurationFULL1 = new CartesianMapper<StackedColumnSeries>()
+                .X((value, index) =>
+                {
+                    return index;
+                })
+                .Y((value, index) =>
+                {
+                    foreach (var itemS in value.Values)
+                    {
+                        BucketDataModel1 res = (BucketDataModel1)itemS;
+                        return Math.Round((100.0 * res.SectionValue / totalSize), 2);
+                    };
+                    return 0;
+                })
+                ;
+
+            //BucketsConfigurationFULL = new CartesianMapper<List<BucketDataModel>>()
+            //    .X((value, index) => index)
+            //    .Y((value, index) => value.inde)
+            //    ;
         }
 
        
@@ -229,16 +428,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 }
             }
             
-            
-
-
-            Histogram finalHistogram;
-
-
-            //foreach (KeyValuePair<TypeDesc, SizeCount> entry in bucketClicked.typeDescToSizeCount)
-            //{
-            //    finalHistogram.AddObject()
-            //}
 
 
             Graph graph = selectedHistogram.BuildAllocationGraph(new FilterForm());
@@ -460,9 +649,24 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private void DrawBuckets()
         {
             //Clear all data
+            //BucketsValues = new ChartValues<List<BucketDataModel>> { };
             BucketsValues = new ChartValues<BucketDataModel> { };
             BucketsLabels = new ObservableCollection<string>();
 
+            //SeriesCollection = new SeriesCollection();
+
+            //SeriesCollection.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<double> { 6, 2, 7 },
+            //    StackMode = StackMode.Values
+            //});
+
+            //Values = new ChartValues<double> { 4, 5, 6, 8 },
+            //        StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
+            //        DataLabels = true
+
+            StackedColumnSeries columnSeries = new StackedColumnSeries();
+            List<BucketDataModel1> listFull = new List<BucketDataModel1>();
 
             //Debug.Assert(verticalScale != 0);
             bool noBucketSelected = true;
@@ -474,9 +678,13 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     break;
                 }
             }
+            IChartValues valuesF = new ChartValues<BucketDataModel1>();
+            ChartValues<BucketDataModel1> chartValuesF = new ChartValues<BucketDataModel1>();
+
 
             using (System.Drawing.Brush blackBrush = new SolidBrush(System.Drawing.Color.Black))
             {
+                List<BucketDataModel> listBucketDataModels = new List<BucketDataModel>();
                 int bucketPosition = 0;
                 //int x = leftMargin;
                 foreach (Bucket b in buckets)
@@ -493,6 +701,12 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                     System.Drawing.Brush brush = new SolidBrush(System.Drawing.Color.Transparent);
                     //g.DrawString(s, font, blackBrush, x, y + 3 + font.Height * 2);
+                        
+                    
+                    chartValuesF = new ChartValues<BucketDataModel1>();
+
+                    listFull = new List<BucketDataModel1>();
+
                     foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
                     {
                         TypeDesc t = d.Key;
@@ -507,13 +721,43 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         {
                             brush = blackBrush;
                         }
+                        var buckDet = new BucketDataModel1()
+                        {
+                            SectionValue = t.totalSize
+                        };
+                        listFull.Add(buckDet);
                         //g.FillRectangle(brush, x, y, bucketWidth, height);
+
+                        chartValuesF.Add(new BucketDataModel1()
+                        {
+                            SectionValue = t.totalSize
+                        });
+
                     }
+                    columnSeries = new StackedColumnSeries
+                    {
+                        Values = chartValuesF,
+                        DataLabels = false
+                    };
+                    SeriesCollection11.Add(columnSeries);
+
+                    //SeriesCollection.Add(new StackedColumnSeries
+                    //{
+                    //    Values = new ChartValues<double> { 4, 5, 6, 8 },
+                    //    //StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
+                    //    DataLabels = true
+                    //});
 
                     System.Drawing.Color drawingColor = ((SolidBrush)brush).Color;
                     System.Windows.Media.Color wpfColor = System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B);
+                    //Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
+                    //BucketsLabels.Add(s);
+                    //Math.Round((100.0 * b.)
 
-                    BucketsLabels.Add(s);
+                    BucketsValuesFULL.Add(listFull);
+
+
+                    BucketsValuesFULL1.Add(columnSeries);
 
 
                     BucketsValues.Add(new BucketDataModel()
@@ -526,6 +770,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                     //x += bucketWidth + gap;
                 }
+
             }
         }
 

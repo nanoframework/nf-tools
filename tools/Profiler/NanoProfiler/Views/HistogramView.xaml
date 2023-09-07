@@ -22,7 +22,7 @@
 
         <Grid.RowDefinitions>
             <RowDefinition Height="100" />
-            <RowDefinition Height="4*" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -67,7 +67,9 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid Grid.Row="1" Grid.Column="0" >
-                <lvc:CartesianChart Margin="20" DataClickCommand="{Binding DrillDownCommand}">
+
+                <!---->
+                <lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}">                   
                     <lvc:CartesianChart.Series >
                         <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValues}" DataLabels="True"
                                           Configuration="{Binding BucketsConfiguration}" StrokeThickness="1"/>
@@ -94,9 +96,36 @@
             <Grid Grid.Column="1">
                 <Canvas x:Name="typeLegendPanel" Visibility="Collapsed"/>
             </Grid>
-
+            <!--Series="{Binding SeriesCollection11}"-->
         </Grid>
-
+        <Grid Grid.Row="2" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="4*" MinWidth="600" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}"
+                                 Series="{Binding SeriesCollection11}">
+                <!--<lvc:CartesianChart.Series >
+                    <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValuesFULL1}" DataLabels="True"
+                                          Configuration="{Binding BucketsConfigurationFULL1}" StrokeThickness="1"/>
+                </lvc:CartesianChart.Series>-->
+                <lvc:CartesianChart.AxisX  >
+                    <lvc:Axis Labels="{Binding BucketsLabels}" Foreground="Black" >
+                        <lvc:Axis.Separator>
+                            <lvc:Separator Step="1" />
+                        </lvc:Axis.Separator>
+                    </lvc:Axis>
+                </lvc:CartesianChart.AxisX>
+                <lvc:CartesianChart.AxisY  >
+                    <lvc:Axis Foreground="Black" MaxValue="100" MinValue="0" >
+                        <lvc:Axis.Separator>
+                            <lvc:Separator Step="10" />
+                        </lvc:Axis.Separator>
+                    </lvc:Axis>
+                </lvc:CartesianChart.AxisY>
+            </lvc:CartesianChart>
+        </Grid>
+                    
     </Grid>
 
 </Window>

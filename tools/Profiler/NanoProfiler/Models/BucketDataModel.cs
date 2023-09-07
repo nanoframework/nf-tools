@@ -23,4 +23,15 @@ namespace nanoFramework.Tools.NanoProfiler.Models
         private int _bucketPosition;
 
     }
+    public partial class BucketDataModel1 : ObservableObject
+    {
+
+        //[ObservableProperty]
+        //private string _pesma;
+
+        [ObservableProperty]
+        private double _sectionValue;
+
+
+    }
 }

@@ -5,6 +5,7 @@ using LiveCharts.Wpf;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -23,6 +24,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
     /// </summary>
     public partial class HistogramView : Window
     {
+
         public HistogramView()
         {
             InitializeComponent();
