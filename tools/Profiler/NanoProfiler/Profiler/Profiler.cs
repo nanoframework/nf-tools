@@ -72,8 +72,8 @@ namespace nanoFramework.Tools.NanoProfiler
             _engine.SetProfilingMode(_WP.Commands.Profiling_Command.ChangeConditionsFlags.c_Enabled, 0);
 
             //Move IsDeviceInInitializeState(), IsDeviceInExitedState(), GetDeviceState(),EnsureProcessIsInInitializedState() to Debugger.dll?
-           
-            if(!_engine.SetExecutionMode(0, 0))
+
+            if (!_engine.SetExecutionMode(0, 0))
             {
                 // failed to stop execution
                 throw new Exception("Failed to stop execution");
