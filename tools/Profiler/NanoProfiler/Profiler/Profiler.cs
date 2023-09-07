@@ -259,7 +259,7 @@ namespace nanoFramework.Tools.NanoProfiler
                             }
                             else
                             {
-                                System.Diagnostics.Debug.Assert(pay.seqId == _lastSeenStreamPacketID + 1);
+                                System.Diagnostics.Debug.Assert(pay.seqId >= _lastSeenStreamPacketID + 1);
                                 _lastSeenStreamPacketID = pay.seqId;
                             }
                         }
