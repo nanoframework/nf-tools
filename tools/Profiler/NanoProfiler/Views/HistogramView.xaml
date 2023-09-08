@@ -67,9 +67,31 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid Grid.Row="1" Grid.Column="0" >
-
+                <!--Series="{Binding SeriesCollectionDict}"-->
+                <lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}"
+                                    Series="{Binding SeriesCollectionDict}"
+                                    >
+                    <!--<lvc:CartesianChart.Series  >
+                        <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValuesFINI}" DataLabels="True"
+                                          Configuration="{Binding BucketsConfigurationFINI}" StrokeThickness="1"/>
+                    </lvc:CartesianChart.Series>-->
+                    <lvc:CartesianChart.AxisX  >
+                        <lvc:Axis Labels="{Binding BucketsLabels}" Foreground="Black" >
+                            <lvc:Axis.Separator>
+                                <lvc:Separator Step="1" />
+                            </lvc:Axis.Separator>
+                        </lvc:Axis>
+                    </lvc:CartesianChart.AxisX>
+                    <lvc:CartesianChart.AxisY  >
+                        <lvc:Axis Foreground="Black" MinValue="0" >
+                            <lvc:Axis.Separator>
+                                <lvc:Separator Step="10" />
+                            </lvc:Axis.Separator>
+                        </lvc:Axis>
+                    </lvc:CartesianChart.AxisY>
+                </lvc:CartesianChart>
                 <!---->
-                <lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}">                   
+                <!--<lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}">                   
                     <lvc:CartesianChart.Series >
                         <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValues}" DataLabels="True"
                                           Configuration="{Binding BucketsConfiguration}" StrokeThickness="1"/>
@@ -88,7 +110,7 @@
                             </lvc:Axis.Separator>
                         </lvc:Axis>
                     </lvc:CartesianChart.AxisY>
-                </lvc:CartesianChart>
+                </lvc:CartesianChart>-->
 
             </Grid>
 
@@ -104,11 +126,11 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}"
-                                 Series="{Binding SeriesCollection11}">
-                <!--<lvc:CartesianChart.Series >
-                    <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValuesFULL1}" DataLabels="True"
-                                          Configuration="{Binding BucketsConfigurationFULL1}" StrokeThickness="1"/>
-                </lvc:CartesianChart.Series>-->
+                                 >
+                <lvc:CartesianChart.Series >
+                    <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValues}" DataLabels="True"
+                                          Configuration="{Binding BucketsConfiguration}" StrokeThickness="1"/>
+                </lvc:CartesianChart.Series>
                 <lvc:CartesianChart.AxisX  >
                     <lvc:Axis Labels="{Binding BucketsLabels}" Foreground="Black" >
                         <lvc:Axis.Separator>

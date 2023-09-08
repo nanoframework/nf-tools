@@ -35,8 +35,15 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
     public partial class HistogramViewModel: ObservableObject
     {
-        //[ObservableProperty]
-        //private SeriesCollection _seriesCollection = new SeriesCollection();
+
+
+        Dictionary<int, List<double>> convertedDictionary = new Dictionary<int, List<double>>();
+
+
+        [ObservableProperty]
+        private SeriesCollection _seriesCollectionDict = new SeriesCollection();
+        [ObservableProperty]
+        private SeriesCollection _seriesCollection = new SeriesCollection();
         [ObservableProperty]
         private SeriesCollection _seriesCollection11 = new SeriesCollection();
         public string[] Labels { get; set; }
@@ -80,26 +87,104 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             //        DataLabels = true
             //    }
             //};
+            //List<double> listValues = new List<double>();
+            //Dictionary<int, List<double>> originalDictionary = new Dictionary<int, List<double>>();
+            //listValues.Add(4);
+            //listValues.Add(2);
+            //listValues.Add(6);
 
-            //SeriesCollection.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<double> { 4, 5, 6, 8 },
-            //    //StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
-            //    DataLabels = true
-            //});
-            //SeriesCollection.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<double> { 2, 5, 6, 7 },
-            //    //StackMode = StackMode.Values,
-            //    DataLabels = true
-            //});
-            //SeriesCollection.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<double> { 6, 2, 7 },
-            //    //StackMode = StackMode.Values,
-            //    DataLabels = true
-            //});
+            //originalDictionary.Add(1, listValues);
 
+            //listValues = new List<double>();
+            //listValues.Add(5);
+            //listValues.Add(5);
+            //listValues.Add(2);
+            //originalDictionary.Add(2, listValues);
+
+            //listValues = new List<double>();
+            //listValues.Add(6);
+            //listValues.Add(6);
+            //listValues.Add(7);
+            //originalDictionary.Add(3, listValues);
+
+            //listValues = new List<double>();
+            //listValues.Add(8);
+            //listValues.Add(7);
+            //originalDictionary.Add(4, listValues);
+
+            //List<double> listValuesFIN = new List<double>();
+
+            //int maxLength = originalDictionary.Values.Max(list => list.Count);
+
+            //for (int position = 0; position < maxLength; position++)
+            //{
+            //    List<double> values = new List<double>();
+
+            //    foreach (var kvp in originalDictionary)
+            //    {
+            //        List<double> list = kvp.Value;
+            //        if (position < list.Count)
+            //        {
+            //            values.Add(list[position]);
+            //        }
+            //    }
+            //    convertedDictionary[position] = values;
+            //}
+
+
+            //foreach (var kvp in originalDictionary)
+            //{
+            //    int key = kvp.Key;
+            //    List<double> values = kvp.Value;
+
+            //    List<double> positions = Enumerable.Range(0, values.Count).Select(i => (double)i).ToList();
+            //    convertedDictionary[key] = positions;
+            //}
+
+
+            //foreach (KeyValuePair<int, List<double>> item in dictBuckets)
+            //{
+            //    foreach (var item in item.Key)
+            //    {
+
+            //    }
+
+            //    foreach (var itemValues in item.Value)
+            //    {
+            //    }
+            //}
+
+
+            //foreach (KeyValuePair<int, List<double>> item in convertedDictionary)
+            //{
+            //    IChartValues values = new ChartValues<double>();
+            //    foreach (var itemValues in item.Value)
+            //    {
+            //        values.Add(itemValues);
+            //    }
+            //    SeriesCollectionDict.Add(new StackedColumnSeries
+            //    {
+            //        Values = values,
+            //        DataLabels = true
+            //    });
+            //}
+
+            SeriesCollection.Add(new StackedColumnSeries
+            {
+                Values = new ChartValues<double> { 4, 5, 6, 8 },
+                DataLabels = true
+            });
+            SeriesCollection.Add(new StackedColumnSeries
+            {
+                Values = new ChartValues<double> { 2, 5, 6, 7 },
+                DataLabels = true
+            });
+            SeriesCollection.Add(new StackedColumnSeries
+            {
+                Values = new ChartValues<double> { 6, 2, 7 },
+                DataLabels = true
+            });
+            Console.WriteLine(  );
 
             //adding series updates and animates the chart
             //SeriesCollection11.Add(new StackedColumnSeries
@@ -199,6 +284,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
 
         [ObservableProperty]
+        private ChartValues<double> _bucketsValuesFINI = new ChartValues<double>();
+        [ObservableProperty]
+        private CartesianMapper<double> _bucketsConfigurationFINI;
+
+        [ObservableProperty]
         private ObservableCollection<string> _bucketsLabels = new ObservableCollection<string>();
         [ObservableProperty]
         private CartesianMapper<BucketDataModel> _bucketsConfiguration;
@@ -253,7 +343,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             SetComboValues();
             SetHistogramDifferentColors();
 
-            //SetHistogram();
+            SetHistogram();
         }
 
         private void SetComboValues()
@@ -269,6 +359,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             graphPanel_Paint();
 
+            BucketsConfigurationFINI = new CartesianMapper<double>()
+                .X((value, index) => index)
+                .Y((value, index) => value)
+                ;
             BucketsConfiguration = new CartesianMapper<BucketDataModel>()
                 .X((value, index) => index)
                 .Y((value, index) => Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
@@ -361,7 +455,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     scaleFactor = Math.Pow(2.0, 0.125);
                     break;
             }
-            SetHistogram();
+            //SetHistogram();
         }
 
         Bucket bucketClicked;
@@ -681,11 +775,14 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             IChartValues valuesF = new ChartValues<BucketDataModel1>();
             ChartValues<BucketDataModel1> chartValuesF = new ChartValues<BucketDataModel1>();
 
+            List<double> listValues = new List<double>();
+            Dictionary<int, List<double>> originalDictionary = new Dictionary<int, List<double>>();
 
+            double totalsizeCount = 0;
             using (System.Drawing.Brush blackBrush = new SolidBrush(System.Drawing.Color.Black))
             {
                 List<BucketDataModel> listBucketDataModels = new List<BucketDataModel>();
-                int bucketPosition = 0;
+                int bucketPosition = 1;
                 //int x = leftMargin;
                 foreach (Bucket b in buckets)
                 {
@@ -707,6 +804,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                     listFull = new List<BucketDataModel1>();
 
+                    listValues = new List<double>();
                     foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
                     {
                         TypeDesc t = d.Key;
@@ -723,17 +821,21 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         }
                         var buckDet = new BucketDataModel1()
                         {
-                            SectionValue = t.totalSize
+                            SectionValue = d.Value.size   //t.totalSize
                         };
                         listFull.Add(buckDet);
                         //g.FillRectangle(brush, x, y, bucketWidth, height);
 
                         chartValuesF.Add(new BucketDataModel1()
                         {
-                            SectionValue = t.totalSize
+                            SectionValue = d.Value.size   //t.totalSize
                         });
 
+                        listValues.Add(d.Value.size);   //t.totalSize
+                        totalsizeCount += d.Value.size;
                     }
+                    originalDictionary.Add(bucketPosition, listValues);
+
                     columnSeries = new StackedColumnSeries
                     {
                         Values = chartValuesF,
@@ -771,7 +873,111 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     //x += bucketWidth + gap;
                 }
 
+
+                //  we should have full original dictionary here
+
+                var res = originalDictionary;
+
             }
+
+            //double totalsizeCount = 36 + 12 + 192 + 144 + 116 + 60 + 288 + 96;
+
+            List<double> listValuesDummy = new List<double>();
+            Dictionary<int, List<double>> originalDictionaryDummy = new Dictionary<int, List<double>>();
+            listValuesDummy.Add(36);
+            listValuesDummy.Add(12);
+
+            originalDictionaryDummy.Add(1, listValuesDummy);
+
+            listValuesDummy = new List<double>();
+            listValuesDummy.Add(192);
+            listValuesDummy.Add(144);
+            listValuesDummy.Add(116);
+            //listValuesDummy.Add(116304);
+            originalDictionaryDummy.Add(2, listValuesDummy);
+
+            listValuesDummy = new List<double>();
+            listValuesDummy.Add(60);
+            listValuesDummy.Add(288);
+            listValuesDummy.Add(96);
+            originalDictionaryDummy.Add(3, listValuesDummy);
+
+            listValuesDummy = new List<double>();
+            originalDictionaryDummy.Add(4, listValuesDummy);
+
+            //listValuesDummy = new List<double>();
+            //listValuesDummy.Add(252);
+            //listValuesDummy.Add(288);
+            //originalDictionaryDummy.Add(5, listValuesDummy);
+
+            //listValuesDummy = new List<double>();
+            //listValuesDummy.Add(768);
+            //originalDictionaryDummy.Add(6, listValuesDummy);
+
+            //listValuesDummy = new List<double>();
+            //originalDictionaryDummy.Add(7, listValuesDummy);
+
+            //listValuesDummy = new List<double>();
+            //listValuesDummy.Add(1272);
+            //originalDictionaryDummy.Add(8, listValuesDummy);
+
+            //listValuesDummy = new List<double>();
+            //listValuesDummy.Add(4272);
+            //listValuesDummy.Add(622292);
+            //originalDictionaryDummy.Add(9, listValuesDummy);
+
+            var resOriginalDict = originalDictionary;
+            //var resDummyDict = originalDictionaryDummy;
+
+            //  Now convert to converted dictionary
+            int maxLength = originalDictionary.Values.Any() ? originalDictionary.Values.Max(list => list.Count) : 0;
+
+            for (int position = 0; position < maxLength; position++)
+            {
+                List<double> values = new List<double>();
+
+                foreach (var kvp in originalDictionary)
+                {
+                    List<double> list = kvp.Value;
+                    if (position < list.Count)
+                    {
+                        values.Add(list[position]);
+                    }
+                }
+
+                convertedDictionary[position] = values;
+            }
+
+
+            foreach (KeyValuePair<int, List<double>> item in convertedDictionary)
+            {
+                IChartValues values = new ChartValues<double>();
+                if (item.Value != null && item.Value.Count > 0)
+                {
+                    foreach (var itemValues in item.Value)
+                    {
+                        //totalsizeCount
+                        //values.Add(Math.Round((100.0 * itemValues / totalSize), 2));
+                        //values.Add(itemValues);
+                        values.Add(Math.Round((100.0 * itemValues / totalsizeCount), 2));
+                    }
+                }
+
+                //BucketsValuesFINI.Add(new double()
+                //    {
+                //        values
+                //    });
+
+                SeriesCollectionDict.Add(new StackedColumnSeries
+                {
+                    Values = values,
+                    DataLabels = true
+                });
+            }
+
+            var res1 = BucketsValues;
+            var res2 = SeriesCollectionDict;
+
         }
 
 
