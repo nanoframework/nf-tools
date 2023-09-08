@@ -176,6 +176,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             });
             SeriesCollection.Add(new StackedColumnSeries
             {
+                Values = new ChartValues<double> { },
+                DataLabels = true
+            });
+            SeriesCollection.Add(new StackedColumnSeries
+            {
                 Values = new ChartValues<double> { 2, 5, 6, 7 },
                 DataLabels = true
             });
@@ -284,9 +289,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
 
         [ObservableProperty]
-        private ChartValues<double> _bucketsValuesFINI = new ChartValues<double>();
+        private ChartValues<Dictionary<int, List<double>>> _bucketsValuesFINI = new ChartValues<Dictionary<int, List<double>>>();
         [ObservableProperty]
-        private CartesianMapper<double> _bucketsConfigurationFINI;
+        private CartesianMapper<Dictionary<int, List<double>>> _bucketsConfigurationFINI;
 
         [ObservableProperty]
         private ObservableCollection<string> _bucketsLabels = new ObservableCollection<string>();
@@ -359,10 +364,107 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             graphPanel_Paint();
 
-            BucketsConfigurationFINI = new CartesianMapper<double>()
-                .X((value, index) => index)
-                .Y((value, index) => value)
+            BucketsConfigurationFINI = new CartesianMapper<Dictionary<int, List<double>>>()
+                .X((value, index) =>
+                     {
+                         return index;
+                     })
+                .Y((value, index) =>
+                    {
+                        double totalSize = 0;
+                        foreach (KeyValuePair<int, List<double>> item in value)
+                        {
+                            foreach (var itemV in item.Value)
+                            {
+                                totalSize += itemV;
+                            }
+                        }
+                        foreach (KeyValuePair<int, List<double>> item in value)
+                        {
+                            foreach (var itemV in item.Value)
+                            {
+                                //return Math.Round((100.0 * itemV / totalSize), 2);
+                                return itemV;
+                            }
+                        }
+                        return 6;
+                    })
                 ;
+
+
+
+            //.X((value, index) => index)
+            //.Y((value, index) => value)
+            //;
+
+            //foreach (KeyValuePair<int, List<double>> item in convertedDictionary)
+            //{
+            //    IChartValues values = new ChartValues<double>();
+            //    if (item.Value != null && item.Value.Count > 0)
+            //    {
+            //        foreach (var itemValues in item.Value)
+            //        {
+            //            //totalsizeCount
+            //            //values.Add(Math.Round((100.0 * itemValues / totalSize), 2));
+            //            //values.Add(itemValues);
+            //            values.Add(Math.Round((100.0 * itemValues / totalsizeCount), 2));
+            //        }
+            //    }
+            //    SeriesCollectionDict.Add(new StackedColumnSeries
+            //    {
+            //        Values = values,
+            //        DataLabels = true
+            //    });
+            //}
+
+            //BucketsConfiguration = new CartesianMapper<BucketDataModel>()
+            //    .X((value, index) =>
+            //    {
+            //        return index;
+            //    })
+            //    .Y((value, index) =>
+            //    {
+            //        double totalSize = 0;
+
+
+
+
+            //        foreach (KeyValuePair<TypeDesc, SizeCount> item1 in value.FullBucket.typeDescToSizeCount)
+            //        {
+            //            Console.WriteLine(  );
+            //            //foreach (var sec in item1.)
+            //            //{
+
+            //            //}
+            //        }
+            //        foreach (var item in value.FullBucket.typeDescToSizeCount.Keys)
+            //        {
+            //            //foreach (KeyValuePair<TypeDesc, SizeCount> item1 in item)
+            //            //{
+
+            //            //}
+            //        }
+            //        foreach (KeyValuePair<TypeDesc, SizeCount> item in value.FullBucket.typeDescToSizeCount)
+            //        {
+
+            //        //    foreach (var itemV in item.Value)
+            //        //    {
+            //        //        totalSize += itemV;
+            //        //    }
+            //        }
+            //        //foreach (KeyValuePair<int, List<double>> item in value)
+            //        //{
+            //        //    foreach (var itemV in item.Value)
+            //        //    {
+            //        //        //return Math.Round((100.0 * itemV / totalSize), 2);
+            //        //        return itemV;
+            //        //    }
+            //        //}
+            //        return 0;
+            //    })
+            //    ;
+
+
             BucketsConfiguration = new CartesianMapper<BucketDataModel>()
                 .X((value, index) => index)
                 .Y((value, index) => Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
@@ -828,11 +930,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                         chartValuesF.Add(new BucketDataModel1()
                         {
-                            SectionValue = d.Value.size   //t.totalSize
+                            SectionValue = t.totalSize   //t.totalSize
                         });
 
-                        listValues.Add(d.Value.size);   //t.totalSize
-                        totalsizeCount += d.Value.size;
+                        listValues.Add(Math.Round((1000 * ((double)d.Value.size / totalSize)), 2));   //t.totalSize
+                        totalsizeCount += t.totalSize;
                     }
                     originalDictionary.Add(bucketPosition, listValues);
 
@@ -842,6 +944,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         DataLabels = false
                     };
                     SeriesCollection11.Add(columnSeries);
+
 
                     //SeriesCollection.Add(new StackedColumnSeries
                     //{
@@ -880,20 +983,21 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             }
 
-            //double totalsizeCount = 36 + 12 + 192 + 144 + 116 + 60 + 288 + 96;
+            //totalsizeCount = 36 + 12 + 192 + 144 + +116 + 116 + 60 + 288 + 96 + 4 + 252 + 288 + 768;
+            //totalsizeCount = 36 + 12 + 192 + 144 + +116 + 116+60+288+96;
 
             List<double> listValuesDummy = new List<double>();
             Dictionary<int, List<double>> originalDictionaryDummy = new Dictionary<int, List<double>>();
+
             listValuesDummy.Add(36);
             listValuesDummy.Add(12);
-
             originalDictionaryDummy.Add(1, listValuesDummy);
 
             listValuesDummy = new List<double>();
             listValuesDummy.Add(192);
             listValuesDummy.Add(144);
             listValuesDummy.Add(116);
-            //listValuesDummy.Add(116304);
+            listValuesDummy.Add(116);
             originalDictionaryDummy.Add(2, listValuesDummy);
 
             listValuesDummy = new List<double>();
@@ -902,8 +1006,31 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             listValuesDummy.Add(96);
             originalDictionaryDummy.Add(3, listValuesDummy);
 
-            listValuesDummy = new List<double>();
-            originalDictionaryDummy.Add(4, listValuesDummy);
+
+
+            //listValuesDummy.Add(36);
+            //listValuesDummy.Add(192);
+            //listValuesDummy.Add(60);
+            //originalDictionaryDummy.Add(1, listValuesDummy);
+
+            //listValuesDummy = new List<double>();
+            //listValuesDummy.Add(12);
+            //listValuesDummy.Add(144);
+            //listValuesDummy.Add(288);
+            //originalDictionaryDummy.Add(2, listValuesDummy);
+
+            //listValuesDummy = new List<double>();
+            //listValuesDummy.Add(116);
+            //listValuesDummy.Add(96);
+            //originalDictionaryDummy.Add(3, listValuesDummy);
+
+
+            //listValuesDummy = new List<double>();
+            //listValuesDummy.Add(116);
+            //originalDictionaryDummy.Add(4, listValuesDummy);
+
+            //listValuesDummy = new List<double>();
+            //originalDictionaryDummy.Add(4, listValuesDummy);
 
             //listValuesDummy = new List<double>();
             //listValuesDummy.Add(252);
@@ -943,11 +1070,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     {
                         values.Add(list[position]);
                     }
+                    else
+                        values.Add(0);
                 }
 
                 convertedDictionary[position] = values;
             }
-
+            //SeriesCollection.Add(new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<double> { 6, 2, 7 },
+            //    DataLabels = true
+            //});
 
             foreach (KeyValuePair<int, List<double>> item in convertedDictionary)
             {
@@ -958,23 +1091,19 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     {
                         //totalsizeCount
                         //values.Add(Math.Round((100.0 * itemValues / totalSize), 2));
-                        //values.Add(itemValues);
-                        values.Add(Math.Round((100.0 * itemValues / totalsizeCount), 2));
+                        values.Add(itemValues);
+                        //values.Add(Math.Round((1000*(itemValues / totalsizeCount)), 2));
                     }
                 }
-
-                //BucketsValuesFINI.Add(new double()
-                //    {
-                //        values
-                //    });
-
                 SeriesCollectionDict.Add(new StackedColumnSeries
                 {
+                    ToolTip=false,
                     Values = values,
                     DataLabels = true
                 });
             }
 
+            BucketsValuesFINI.Add(convertedDictionary);
             var res1 = BucketsValues;
             var res2 = SeriesCollectionDict;
 

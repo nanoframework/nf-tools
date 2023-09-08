@@ -69,7 +69,7 @@
             <Grid Grid.Row="1" Grid.Column="0" >
                 <!--Series="{Binding SeriesCollectionDict}"-->
                 <lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}"
-                                    Series="{Binding SeriesCollectionDict}"
+                                    Series="{Binding SeriesCollectionDict}" 
                                     >
                     <!--<lvc:CartesianChart.Series  >
                         <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValuesFINI}" DataLabels="True"
