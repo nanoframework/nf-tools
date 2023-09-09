@@ -30,6 +30,7 @@ using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.Views;
 using System.Xml;
 using System.Runtime.Serialization;
+using System.Configuration;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
@@ -468,7 +469,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             BucketsConfiguration = new CartesianMapper<BucketDataModel>()
                 .X((value, index) => index)
                 .Y((value, index) => Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
-                .Fill(SetColumnFill());
+                .Fill(SetColumnFill())
+                ;
 
             BucketsConfigurationFULL = new CartesianMapper<List<BucketDataModel1>>()
                 .X((value, index) =>
@@ -1087,9 +1089,31 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             //    Values = new ChartValues<double> { 6, 2, 7 },
             //    DataLabels = true
             //});
+            int bucketNumber = 0;
+            string titleTest = string.Empty;
+
+            List<string> typeNames = new List<string>();
 
             foreach (KeyValuePair<int, List<TypeDescModel>> item in convertedDictionary)
             {
+
+                foreach (var value in item.Value)
+                {
+                    if (value?.TypeDesc?.typeName != null)
+                    {
+                        if (!typeNames.Contains(value.TypeDesc.typeName))
+                            typeNames.Add(value.TypeDesc.typeName);
+                    }
+                }
+            }
+
+
+
+            foreach (KeyValuePair<int, List<TypeDescModel>> item in convertedDictionary)
+            {
+
+                //titleTest = item.Value.
+                bucketNumber++;
                 IChartValues values = new ChartValues<TypeDescModel>();
                 if (item.Value != null && item.Value.Count > 0)
                 {
@@ -1113,17 +1137,39 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                 var config = new CartesianMapper<TypeDescModel>()
                       .X((value, index) => index)
-                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d);
+                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d)                      
                       ;
 
-                SeriesCollectionDict.Add(new StackedColumnSeries
+                //new StackedColumnSeries
+            //{
+            //    Values = new ChartValues<BucketDataModel1>
+            //    {
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 1
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 2
+            //        },
+            //        new BucketDataModel1() {
+            //                Pesma="neka pesma",
+            //                Broj = 3
+            //        }
+            //    },
+
+
+
+                var stackedColumSeries = new StackedColumnSeries
                 {
-                    Title = "Value",
-                    ToolTip =false,
                     Configuration = config,
-                    Values = values,
-                    DataLabels = true
-                });
+                    Values = values, 
+                    DataLabels=false
+                };
+
+                
+
+                SeriesCollectionDict.Add(stackedColumSeries);
 
             }
 
@@ -1132,7 +1178,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             var res2 = SeriesCollectionDict;
 
         }
-
 
 
         static System.Drawing.Color[] colors = new System.Drawing.Color[16];
