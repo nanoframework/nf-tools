@@ -37,7 +37,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
     {
 
 
-        Dictionary<int, List<double>> convertedDictionary = new Dictionary<int, List<double>>();
+        Dictionary<int, List<TypeDescModel>> convertedDictionary = new Dictionary<int, List<TypeDescModel>>();
 
 
         [ObservableProperty]
@@ -289,9 +289,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
 
         [ObservableProperty]
-        private ChartValues<Dictionary<int, List<double>>> _bucketsValuesFINI = new ChartValues<Dictionary<int, List<double>>>();
+        private ChartValues<Dictionary<int, List<TypeDescModel>>> _bucketsValuesFINI = new ChartValues<Dictionary<int, List<TypeDescModel>>>();
         [ObservableProperty]
-        private CartesianMapper<Dictionary<int, List<double>>> _bucketsConfigurationFINI;
+        private CartesianMapper<Dictionary<int, List<TypeDescModel>>> _bucketsConfigurationFINI;
 
         [ObservableProperty]
         private ObservableCollection<string> _bucketsLabels = new ObservableCollection<string>();
@@ -364,32 +364,32 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             graphPanel_Paint();
 
-            BucketsConfigurationFINI = new CartesianMapper<Dictionary<int, List<double>>>()
-                .X((value, index) =>
-                     {
-                         return index;
-                     })
-                .Y((value, index) =>
-                    {
-                        double totalSize = 0;
-                        foreach (KeyValuePair<int, List<double>> item in value)
-                        {
-                            foreach (var itemV in item.Value)
-                            {
-                                totalSize += itemV;
-                            }
-                        }
-                        foreach (KeyValuePair<int, List<double>> item in value)
-                        {
-                            foreach (var itemV in item.Value)
-                            {
-                                //return Math.Round((100.0 * itemV / totalSize), 2);
-                                return itemV;
-                            }
-                        }
-                        return 6;
-                    })
-                ;
+            //BucketsConfigurationFINI = new CartesianMapper<Dictionary<int, List<double>>>()
+            //    .X((value, index) =>
+            //         {
+            //             return index;
+            //         })
+            //    .Y((value, index) =>
+            //        {
+            //            double totalSize = 0;
+            //            foreach (KeyValuePair<int, List<double>> item in value)
+            //            {
+            //                foreach (var itemV in item.Value)
+            //                {
+            //                    totalSize += itemV;
+            //                }
+            //            }
+            //            foreach (KeyValuePair<int, List<double>> item in value)
+            //            {
+            //                foreach (var itemV in item.Value)
+            //                {
+            //                    //return Math.Round((100.0 * itemV / totalSize), 2);
+            //                    return itemV;
+            //                }
+            //            }
+            //            return 6;
+            //        })
+            //    ;
 
 
 
@@ -877,8 +877,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             IChartValues valuesF = new ChartValues<BucketDataModel1>();
             ChartValues<BucketDataModel1> chartValuesF = new ChartValues<BucketDataModel1>();
 
-            List<double> listValues = new List<double>();
-            Dictionary<int, List<double>> originalDictionary = new Dictionary<int, List<double>>();
+            List<TypeDescModel> listValues = new List<TypeDescModel>();
+            Dictionary<int, List<TypeDescModel>> originalDictionary = new Dictionary<int, List<TypeDescModel>>();
 
             double totalsizeCount = 0;
             using (System.Drawing.Brush blackBrush = new SolidBrush(System.Drawing.Color.Black))
@@ -906,15 +906,18 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                     listFull = new List<BucketDataModel1>();
 
-                    listValues = new List<double>();
+                    listValues = new List<TypeDescModel>();
                     foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
                     {
                         TypeDesc t = d.Key;
+
                         //SizeCount sizeCount = d.Value;
                         //ulong size = sizeCount.size;
                         //int height = (int)(size / (ulong)verticalScale);
 
                         //y -= height;
+
+
 
                         brush = t.brush;
                         if (t.selected && (b.selected || noBucketSelected))
@@ -932,9 +935,12 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         {
                             SectionValue = t.totalSize   //t.totalSize
                         });
-
-                        listValues.Add(Math.Round((1000 * ((double)d.Value.size / totalSize)), 2));   //t.totalSize
-                        totalsizeCount += t.totalSize;
+                        listValues.Add(new TypeDescModel()
+                        {
+                            TypeDesc = t, ValueSize = d.Value.size, BucketTotalSize = b.totalSize
+                        });
+                        //listValues.Add(Math.Round((1000 * ((double)d.Value.size / totalSize)), 2));   //t.totalSize
+                        totalsizeCount += d.Value.size;
                     }
                     originalDictionary.Add(bucketPosition, listValues);
 
@@ -1061,17 +1067,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             for (int position = 0; position < maxLength; position++)
             {
-                List<double> values = new List<double>();
+                List<TypeDescModel> values = new List<TypeDescModel>();
 
                 foreach (var kvp in originalDictionary)
                 {
-                    List<double> list = kvp.Value;
+                    List<TypeDescModel> list = kvp.Value;
                     if (position < list.Count)
                     {
                         values.Add(list[position]);
                     }
                     else
-                        values.Add(0);
+                        values.Add(null);
                 }
 
                 convertedDictionary[position] = values;
@@ -1082,25 +1088,43 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             //    DataLabels = true
             //});
 
-            foreach (KeyValuePair<int, List<double>> item in convertedDictionary)
+            foreach (KeyValuePair<int, List<TypeDescModel>> item in convertedDictionary)
             {
-                IChartValues values = new ChartValues<double>();
+                IChartValues values = new ChartValues<TypeDescModel>();
                 if (item.Value != null && item.Value.Count > 0)
                 {
-                    foreach (var itemValues in item.Value)
+                    foreach (TypeDescModel typeDescModel in item.Value)
                     {
+                        if (typeDescModel != null)
+                        {
+                            //values.Add((double)(Math.Round((100.0 * typeDesc.totalSize / totalsizeCount), 2)));
+                            values.Add(typeDescModel);
+                        }
+                        else
+                        {
+                            values.Add(new TypeDescModel());
+                        }
                         //totalsizeCount
                         //values.Add(Math.Round((100.0 * itemValues / totalSize), 2));
-                        values.Add(itemValues);
+                        
                         //values.Add(Math.Round((1000*(itemValues / totalsizeCount)), 2));
                     }
                 }
+
+                var config = new CartesianMapper<TypeDescModel>()
+                      .X((value, index) => index)
+                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d);
+                      ;
+
                 SeriesCollectionDict.Add(new StackedColumnSeries
                 {
-                    ToolTip=false,
+                    Title = "Value",
+                    ToolTip =false,
+                    Configuration = config,
                     Values = values,
                     DataLabels = true
                 });
+
             }
 
             BucketsValuesFINI.Add(convertedDictionary);

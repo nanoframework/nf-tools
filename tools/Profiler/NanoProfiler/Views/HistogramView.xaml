@@ -7,6 +7,7 @@
         xmlns:viewModels="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"             
         mc:Ignorable="d" MinWidth="1000" MinHeight="700"
+        xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
         Title="HistogramView" >
 
     <Window.ContextMenu>
@@ -69,8 +70,11 @@
             <Grid Grid.Row="1" Grid.Column="0" >
                 <!--Series="{Binding SeriesCollectionDict}"-->
                 <lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}"
-                                    Series="{Binding SeriesCollectionDict}" 
+                                    Series="{Binding SeriesCollectionDict}" Hoverable="False" 
                                     >
+                    <lvc:CartesianChart.DataTooltip>
+                        <controls:HistogramTooltip  SelectionMode="OnlySender" />
+                    </lvc:CartesianChart.DataTooltip>
                     <!--<lvc:CartesianChart.Series  >
                         <lvc:ColumnSeries Title="Value"  Values="{Binding BucketsValuesFINI}" DataLabels="True"
                                           Configuration="{Binding BucketsConfigurationFINI}" StrokeThickness="1"/>

@@ -27,6 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Views\Controls\HistogramTooltip.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\GraphViewWinForm.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
