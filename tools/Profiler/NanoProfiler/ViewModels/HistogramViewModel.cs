@@ -37,271 +37,13 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
     public partial class HistogramViewModel: ObservableObject
     {
 
+        #region Observable Properties        
 
-        Dictionary<int, List<TypeDescModel>> convertedDictionary = new Dictionary<int, List<TypeDescModel>>();
-
-
-        [ObservableProperty]
-        private SeriesCollection _seriesCollectionDict = new SeriesCollection();
         [ObservableProperty]
         private SeriesCollection _seriesCollection = new SeriesCollection();
-        [ObservableProperty]
-        private SeriesCollection _seriesCollection11 = new SeriesCollection();
-        public string[] Labels { get; set; }
-        public Func<double, string> Formatter { get; set; }
-        private void SetHistogramDifferentColors()
-        {
-
-            //SeriesCollection11.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<BucketDataModel1>
-            //    {
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 1
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 2
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 3
-            //        }
-            //    },
-            //    StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
-            //    DataLabels = true
-            //});
-
-            //SeriesCollection = new SeriesCollection
-            //{
-            //    new StackedColumnSeries
-            //    {
-            //        Values = new ChartValues<double> {4, 5, 6, 8},
-            //        StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
-            //        DataLabels = true
-            //    },
-            //    new StackedColumnSeries
-            //    {
-            //        Values = new ChartValues<double> {2, 5, 6, 7},
-            //        StackMode = StackMode.Values,
-            //        DataLabels = true
-            //    }
-            //};
-            //List<double> listValues = new List<double>();
-            //Dictionary<int, List<double>> originalDictionary = new Dictionary<int, List<double>>();
-            //listValues.Add(4);
-            //listValues.Add(2);
-            //listValues.Add(6);
-
-            //originalDictionary.Add(1, listValues);
-
-            //listValues = new List<double>();
-            //listValues.Add(5);
-            //listValues.Add(5);
-            //listValues.Add(2);
-            //originalDictionary.Add(2, listValues);
-
-            //listValues = new List<double>();
-            //listValues.Add(6);
-            //listValues.Add(6);
-            //listValues.Add(7);
-            //originalDictionary.Add(3, listValues);
-
-            //listValues = new List<double>();
-            //listValues.Add(8);
-            //listValues.Add(7);
-            //originalDictionary.Add(4, listValues);
-
-            //List<double> listValuesFIN = new List<double>();
-
-            //int maxLength = originalDictionary.Values.Max(list => list.Count);
-
-            //for (int position = 0; position < maxLength; position++)
-            //{
-            //    List<double> values = new List<double>();
-
-            //    foreach (var kvp in originalDictionary)
-            //    {
-            //        List<double> list = kvp.Value;
-            //        if (position < list.Count)
-            //        {
-            //            values.Add(list[position]);
-            //        }
-            //    }
-            //    convertedDictionary[position] = values;
-            //}
-
-
-            //foreach (var kvp in originalDictionary)
-            //{
-            //    int key = kvp.Key;
-            //    List<double> values = kvp.Value;
-
-            //    List<double> positions = Enumerable.Range(0, values.Count).Select(i => (double)i).ToList();
-            //    convertedDictionary[key] = positions;
-            //}
-
-
-            //foreach (KeyValuePair<int, List<double>> item in dictBuckets)
-            //{
-            //    foreach (var item in item.Key)
-            //    {
-
-            //    }
-
-            //    foreach (var itemValues in item.Value)
-            //    {
-            //    }
-            //}
-
-
-            //foreach (KeyValuePair<int, List<double>> item in convertedDictionary)
-            //{
-            //    IChartValues values = new ChartValues<double>();
-            //    foreach (var itemValues in item.Value)
-            //    {
-            //        values.Add(itemValues);
-            //    }
-            //    SeriesCollectionDict.Add(new StackedColumnSeries
-            //    {
-            //        Values = values,
-            //        DataLabels = true
-            //    });
-            //}
-
-            SeriesCollection.Add(new StackedColumnSeries
-            {
-                Values = new ChartValues<double> { 4, 5, 6, 8 },
-                DataLabels = true
-            });
-            SeriesCollection.Add(new StackedColumnSeries
-            {
-                Values = new ChartValues<double> { },
-                DataLabels = true
-            });
-            SeriesCollection.Add(new StackedColumnSeries
-            {
-                Values = new ChartValues<double> { 2, 5, 6, 7 },
-                DataLabels = true
-            });
-            SeriesCollection.Add(new StackedColumnSeries
-            {
-                Values = new ChartValues<double> { 6, 2, 7 },
-                DataLabels = true
-            });
-            Console.WriteLine(  );
-
-            //adding series updates and animates the chart
-            //SeriesCollection11.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<BucketDataModel1>
-            //    {
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma", 
-            //                Broj = 1
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 2
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 3
-            //        }
-            //    },
-            //    StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
-            //    DataLabels = true
-            //});
-            //SeriesCollection11.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<BucketDataModel1>
-            //    {
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 4
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 5
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 6
-            //        }
-            //    },
-            //    StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
-            //    DataLabels = true
-            //});
-            //SeriesCollection11.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<BucketDataModel1>
-            //    {
-            //         new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 7
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 8
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 9
-            //        }
-            //    },
-            //    StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
-            //    DataLabels = true
-            //});
-
-            ////adding values also updates and animates
-            //SeriesCollection[2].Values.Add(4d);
-
-            var config = new CartesianMapper<BucketDataModel1>()
-                .X((value, index) => index)
-                .Y((value, index) => Math.Round((100.0 * value.SectionValue / totalSize), 2))
-                //.Y((value, index) => value.SectionValue)
-                //.Fill(value => System.Windows.Media.Colors.Green)
-                ;
-                //.X((value, index) => index)
-                //.Y((value, index) => Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
-
-
-            SeriesCollection11.Configuration = config;
-
-            //Labels = new[] { "Chrome", "Mozilla", "Opera", "IE" };
-            //Formatter = value => value + " Mill";
-        }
-
-
         
-
-
-        #region Observable Properties
-        [ObservableProperty]
-        private SeriesCollection _seriesCollectionFinal = new SeriesCollection();
-
-        [ObservableProperty]
-        private ChartValues<StackedColumnSeries> _bucketsValuesFULL1 = new ChartValues<StackedColumnSeries>();
-
-        [ObservableProperty]
-        private ChartValues<List<BucketDataModel1>> _bucketsValuesFULL = new ChartValues<List<BucketDataModel1>>();
         [ObservableProperty]
         private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
-
-        [ObservableProperty]
-        private ChartValues<Dictionary<int, List<TypeDescModel>>> _bucketsValuesFINI = new ChartValues<Dictionary<int, List<TypeDescModel>>>();
-        [ObservableProperty]
-        private CartesianMapper<Dictionary<int, List<TypeDescModel>>> _bucketsConfigurationFINI;
-
-        [ObservableProperty]
-        private ObservableCollection<string> _bucketsLabels = new ObservableCollection<string>();
-        [ObservableProperty]
-        private CartesianMapper<BucketDataModel> _bucketsConfiguration;
-        [ObservableProperty]
-        private CartesianMapper<List<BucketDataModel1>> _bucketsConfigurationFULL;
-        [ObservableProperty]
-        private CartesianMapper<StackedColumnSeries> _bucketsConfigurationFULL1;
 
         [ObservableProperty]
         private ObservableCollection<double> _verticalScaleList;
@@ -321,6 +63,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
 
         #region Properties
+        private List<TypeDescModel> listValues = new List<TypeDescModel>();
+        private Dictionary<int, List<TypeDescModel>> originalDictionary = new Dictionary<int, List<TypeDescModel>>();
+        private Dictionary<int, List<TypeDescModel>> convertedDictionary = new Dictionary<int, List<TypeDescModel>>();
 
         Bucket[] buckets = new Bucket[] {};
         double currentScaleFactor;
@@ -347,7 +92,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             typeName = this.histogram.readNewLog.typeName;
            
             SetComboValues();
-            SetHistogramDifferentColors();
 
             SetHistogram();
         }
@@ -365,176 +109,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             graphPanel_Paint();
 
-            //BucketsConfigurationFINI = new CartesianMapper<Dictionary<int, List<double>>>()
-            //    .X((value, index) =>
-            //         {
-            //             return index;
-            //         })
-            //    .Y((value, index) =>
-            //        {
-            //            double totalSize = 0;
-            //            foreach (KeyValuePair<int, List<double>> item in value)
-            //            {
-            //                foreach (var itemV in item.Value)
-            //                {
-            //                    totalSize += itemV;
-            //                }
-            //            }
-            //            foreach (KeyValuePair<int, List<double>> item in value)
-            //            {
-            //                foreach (var itemV in item.Value)
-            //                {
-            //                    //return Math.Round((100.0 * itemV / totalSize), 2);
-            //                    return itemV;
-            //                }
-            //            }
-            //            return 6;
-            //        })
-            //    ;
-
-
-
-            //.X((value, index) => index)
-            //.Y((value, index) => value)
-            //;
-
-            //foreach (KeyValuePair<int, List<double>> item in convertedDictionary)
-            //{
-            //    IChartValues values = new ChartValues<double>();
-            //    if (item.Value != null && item.Value.Count > 0)
-            //    {
-            //        foreach (var itemValues in item.Value)
-            //        {
-            //            //totalsizeCount
-            //            //values.Add(Math.Round((100.0 * itemValues / totalSize), 2));
-            //            //values.Add(itemValues);
-            //            values.Add(Math.Round((100.0 * itemValues / totalsizeCount), 2));
-            //        }
-            //    }
-            //    SeriesCollectionDict.Add(new StackedColumnSeries
-            //    {
-            //        Values = values,
-            //        DataLabels = true
-            //    });
-            //}
-
-            //BucketsConfiguration = new CartesianMapper<BucketDataModel>()
-            //    .X((value, index) =>
-            //    {
-            //        return index;
-            //    })
-            //    .Y((value, index) =>
-            //    {
-            //        double totalSize = 0;
-
-
-
-
-            //        foreach (KeyValuePair<TypeDesc, SizeCount> item1 in value.FullBucket.typeDescToSizeCount)
-            //        {
-            //            Console.WriteLine(  );
-            //            //foreach (var sec in item1.)
-            //            //{
-
-            //            //}
-            //        }
-            //        foreach (var item in value.FullBucket.typeDescToSizeCount.Keys)
-            //        {
-            //            //foreach (KeyValuePair<TypeDesc, SizeCount> item1 in item)
-            //            //{
-
-            //            //}
-            //        }
-            //        foreach (KeyValuePair<TypeDesc, SizeCount> item in value.FullBucket.typeDescToSizeCount)
-            //        {
-
-            //        //    foreach (var itemV in item.Value)
-            //        //    {
-            //        //        totalSize += itemV;
-            //        //    }
-            //        }
-            //        //foreach (KeyValuePair<int, List<double>> item in value)
-            //        //{
-            //        //    foreach (var itemV in item.Value)
-            //        //    {
-            //        //        //return Math.Round((100.0 * itemV / totalSize), 2);
-            //        //        return itemV;
-            //        //    }
-            //        //}
-            //        return 0;
-            //    })
-            //    ;
-
-
-            BucketsConfiguration = new CartesianMapper<BucketDataModel>()
-                .X((value, index) => index)
-                .Y((value, index) => Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
-                .Fill(SetColumnFill())
-                ;
-
-            BucketsConfigurationFULL = new CartesianMapper<List<BucketDataModel1>>()
-                .X((value, index) =>
-                {
-                    return index;
-                })
-                .Y((value, index) =>
-                {
-                    foreach (var itemS in value)
-                    {
-                        return Math.Round((100.0 * itemS.SectionValue / totalSize), 2);
-                    };
-                    return 0;
-                });
-            
-            
-            BucketsConfigurationFULL1 = new CartesianMapper<StackedColumnSeries>()
-                .X((value, index) =>
-                {
-                    return index;
-                })
-                .Y((value, index) =>
-                {
-                    foreach (var itemS in value.Values)
-                    {
-                        BucketDataModel1 res = (BucketDataModel1)itemS;
-                        return Math.Round((100.0 * res.SectionValue / totalSize), 2);
-                    };
-                    return 0;
-                })
-                ;
-
-            //BucketsConfigurationFULL = new CartesianMapper<List<BucketDataModel>>()
-            //    .X((value, index) => index)
-            //    .Y((value, index) => value.inde)
-            //    ;
-        }
-
-       
-        private Func<BucketDataModel, object> SetColumnFill()
-        {
-            //  Trying to provide different coloring for buckets
-            //  Colors are there, I need to find the way to color points separately
-            return (value =>
-            {
-                System.Drawing.Color drawingColor;
-                if (value.FullBucket.typeDescToSizeCount.Count > 0)
-                {
-                    if (value.FullBucket.typeDescToSizeCount.Keys.Count > 1)
-                    {
-                        drawingColor = value.FullBucket.typeDescToSizeCount.Keys.ToList()[1].color;
-                    }
-                    else
-                    {
-                        drawingColor = value.FullBucket.typeDescToSizeCount.Keys.First().color;
-                    }
-                }
-                else
-                    drawingColor = System.Drawing.Color.Red;
-
-                SolidColorBrush finalColor = new SolidColorBrush(System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B));
-
-                return finalColor;
-            });
         }
 
         partial void OnVerticalScaleSelectedValueChanged(double value)
@@ -649,67 +223,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         }
         #endregion
 
-
-        private void showWhoAllocatedMenuItem_Click(object sender, System.EventArgs e)
-        {
-            Console.WriteLine();
-            Histogram selectedHistogram;
-            string title;
-            TypeDesc selectedType = FindSelectedType();
-            if (selectedType == null)
-            {
-                title = "Allocation Graph";
-                selectedHistogram = histogram;
-            }
-            else
-            {
-                int minSize = 0;
-                int maxSize = int.MaxValue;
-                foreach (Bucket b in buckets)
-                {
-                    if (b.selected)
-                    {
-                        minSize = b.minSize;
-                        maxSize = b.maxSize;
-                    }
-                }
-                title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
-                if (minSize > 0)
-                {
-                    title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
-                }
-
-                selectedHistogram = new Histogram(histogram.readNewLog);
-                for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
-                {
-                    int count = histogram.typeSizeStacktraceToCount[i];
-                    if (count > 0)
-                    {
-                        int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
-                        int typeIndex = stacktrace[0];
-                        int size = stacktrace[1];
-
-                        if (minSize <= size && size <= maxSize)
-                        {
-                            TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
-
-                            if (t == selectedType)
-                            {
-                                selectedHistogram.AddObject(i, count);
-                            }
-                        }
-                    }
-                }
-            }
-
-
-
-            Graph graph = selectedHistogram.BuildAllocationGraph(new FilterForm());
-
-            WinForms.CLRProfiler.GraphViewForm graphViewForm = new WinForms.CLRProfiler.GraphViewForm(graph, title);
-            graphViewForm.Show();
-        }
-
         private void graphPanel_Paint()
         {
             initialized = false;
@@ -719,103 +232,18 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 return;
             }
 
-            //if (e != null)
-            //{
-                //Graphics g = e.Graphics;
-
-                //bucketWidth = BucketWidth(g);
-                //bottomMargin = BottomMargin();
-
-                BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
+            BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
                 
-                ColorTypes();
+            ColorTypes();
 
-                //ulong maxTotalSize = 0;
-                //foreach (Bucket b in buckets)
-                //{
-                //    if (maxTotalSize < b.totalSize)
-                //    {
-                //        maxTotalSize = b.totalSize;
-                //    }
-                //}
-
-                //Here some vetical changes should take effect
-                //verticalScale = VerticalScale((int)graphPanel.Height - topMargin - bottomMargin, maxTotalSize, verticalScale == 0);
-
-                //int maxBucketHeight = (int)(maxTotalSize / (ulong)verticalScale);
-                //int height = topMargin + maxBucketHeight + bottomMargin;
-                //if (height < minHeight)
-                //{
-                //    height = minHeight;
-                //}
-
-                //graphPanel.Height = height;
-
-                //int width = leftMargin + buckets.Length * bucketWidth + (buckets.Length - 1) * gap + rightMargin;
-                //graphPanel.Width = width;
-
-                DrawBuckets();
+            DrawBuckets();
                 
-                initialized = true;
-            //}
-
-
+            initialized = true;
         }
 
         int verticalScale = 0;
 
-        //int VerticalScale(int pixelsAvailable, ulong rangeNeeded, bool firstTime)
-        //{
-        //    return Scale(pixelsAvailable, (int)(rangeNeeded / 1024), firstTime) * 1024;
-        //}
-
-        //int Scale(int pixelsAvailable, int rangeNeeded, bool firstTime)
-        //{
-        //    if (!firstTime)
-        //    {
-        //        foreach (RadioButton rb in groupBox.Controls)
-        //        {
-        //            if (rb.Checked)
-        //                return Int32.Parse(rb.Text);
-        //        }
-        //    }
-        //    // No radio button was checked - let's come up with a suitable default
-        //    RadioButton maxLowScaleRB = null;
-        //    int maxLowRange = 0;
-        //    RadioButton minHighScaleRB = null;
-        //    int minHighRange = Int32.MaxValue;
-        //    foreach (RadioButton rb in groupBox.Controls)
-        //    {
-        //        int range = pixelsAvailable * Int32.Parse(rb.Text);
-        //        if (range < rangeNeeded)
-        //        {
-        //            if (maxLowRange < range)
-        //            {
-        //                maxLowRange = range;
-        //                maxLowScaleRB = rb;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            if (minHighRange > range)
-        //            {
-        //                minHighRange = range;
-        //                minHighScaleRB = rb;
-        //            }
-        //        }
-        //    }
-        //    if (minHighScaleRB != null)
-        //    {
-        //        minHighScaleRB.Checked = true;
-        //        return Int32.Parse(minHighScaleRB.Text);
-        //    }
-        //    else
-        //    {
-        //        maxLowScaleRB.Checked = true;
-        //        return Int32.Parse(maxLowScaleRB.Text);
-        //    }
-        //}
-
+       
         string FormatSize(ulong size)
         {
             double w = size;
@@ -846,27 +274,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private void DrawBuckets()
         {
-            //Clear all data
-            //BucketsValues = new ChartValues<List<BucketDataModel>> { };
             BucketsValues = new ChartValues<BucketDataModel> { };
-            BucketsLabels = new ObservableCollection<string>();
-
-            //SeriesCollection = new SeriesCollection();
-
-            //SeriesCollection.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<double> { 6, 2, 7 },
-            //    StackMode = StackMode.Values
-            //});
-
-            //Values = new ChartValues<double> { 4, 5, 6, 8 },
-            //        StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
-            //        DataLabels = true
 
             StackedColumnSeries columnSeries = new StackedColumnSeries();
-            List<BucketDataModel1> listFull = new List<BucketDataModel1>();
 
-            //Debug.Assert(verticalScale != 0);
             bool noBucketSelected = true;
             foreach (Bucket b in buckets)
             {
@@ -876,50 +287,31 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     break;
                 }
             }
-            IChartValues valuesF = new ChartValues<BucketDataModel1>();
-            ChartValues<BucketDataModel1> chartValuesF = new ChartValues<BucketDataModel1>();
-
-            List<TypeDescModel> listValues = new List<TypeDescModel>();
-            Dictionary<int, List<TypeDescModel>> originalDictionary = new Dictionary<int, List<TypeDescModel>>();
 
             double totalsizeCount = 0;
             using (System.Drawing.Brush blackBrush = new SolidBrush(System.Drawing.Color.Black))
             {
-                List<BucketDataModel> listBucketDataModels = new List<BucketDataModel>();
-                int bucketPosition = 1;
+                int bucketPosition = 0;
                 //int x = leftMargin;
                 foreach (Bucket b in buckets)
                 {
+                    BucketsValues.Add(new BucketDataModel()
+                    {
+                        BucketPosition = bucketPosition, FullBucket = b                    
+                    });
+
                     string s = "< " + FormatSize((ulong)b.maxSize + 1) + $"{Environment.NewLine}";
 
-                    //int y = (int)(graphPanel.Height - bottomMargin);
-
-                    //g.DrawString(s, font, blackBrush, x, y + 3);
                     s += FormatSize(b.totalSize) + $"{Environment.NewLine}";
-                    //g.DrawString(s, font, blackBrush, x, y + 3 + font.Height);
                     s += string.Format("({0:f2}%)", 100.0 * b.totalSize / totalSize);
 
 
                     System.Drawing.Brush brush = new SolidBrush(System.Drawing.Color.Transparent);
-                    //g.DrawString(s, font, blackBrush, x, y + 3 + font.Height * 2);
-                        
-                    
-                    chartValuesF = new ChartValues<BucketDataModel1>();
-
-                    listFull = new List<BucketDataModel1>();
 
                     listValues = new List<TypeDescModel>();
                     foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
                     {
                         TypeDesc t = d.Key;
-
-                        //SizeCount sizeCount = d.Value;
-                        //ulong size = sizeCount.size;
-                        //int height = (int)(size / (ulong)verticalScale);
-
-                        //y -= height;
-
-
 
                         brush = t.brush;
                         if (t.selected && (b.selected || noBucketSelected))
@@ -930,139 +322,23 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         {
                             SectionValue = d.Value.size   //t.totalSize
                         };
-                        listFull.Add(buckDet);
-                        //g.FillRectangle(brush, x, y, bucketWidth, height);
 
-                        chartValuesF.Add(new BucketDataModel1()
-                        {
-                            SectionValue = t.totalSize   //t.totalSize
-                        });
                         listValues.Add(new TypeDescModel()
                         {
                             TypeDesc = t, ValueSize = d.Value.size, BucketTotalSize = b.totalSize
                         });
-                        //listValues.Add(Math.Round((1000 * ((double)d.Value.size / totalSize)), 2));   //t.totalSize
                         totalsizeCount += d.Value.size;
                     }
                     originalDictionary.Add(bucketPosition, listValues);
 
-                    columnSeries = new StackedColumnSeries
-                    {
-                        Values = chartValuesF,
-                        DataLabels = false
-                    };
-                    SeriesCollection11.Add(columnSeries);
-
-
-                    //SeriesCollection.Add(new StackedColumnSeries
-                    //{
-                    //    Values = new ChartValues<double> { 4, 5, 6, 8 },
-                    //    //StackMode = StackMode.Values, // this is not necessary, values is the default stack mode
-                    //    DataLabels = true
-                    //});
-
                     System.Drawing.Color drawingColor = ((SolidBrush)brush).Color;
                     System.Windows.Media.Color wpfColor = System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B);
-                    //Math.Round((100.0 * value.FullBucket.totalSize / totalSize), 2))
-                    //BucketsLabels.Add(s);
-                    //Math.Round((100.0 * b.)
 
-                    BucketsValuesFULL.Add(listFull);
-
-
-                    BucketsValuesFULL1.Add(columnSeries);
-
-
-                    BucketsValues.Add(new BucketDataModel()
-                    {
-                        BucketColor = new SolidColorBrush(wpfColor), 
-                        FullBucket = b, 
-                        BucketPosition = bucketPosition
-                    });
                     bucketPosition++;
 
                     //x += bucketWidth + gap;
                 }
-
-
-                //  we should have full original dictionary here
-
-                var res = originalDictionary;
-
             }
-
-            //totalsizeCount = 36 + 12 + 192 + 144 + +116 + 116 + 60 + 288 + 96 + 4 + 252 + 288 + 768;
-            //totalsizeCount = 36 + 12 + 192 + 144 + +116 + 116+60+288+96;
-
-            List<double> listValuesDummy = new List<double>();
-            Dictionary<int, List<double>> originalDictionaryDummy = new Dictionary<int, List<double>>();
-
-            listValuesDummy.Add(36);
-            listValuesDummy.Add(12);
-            originalDictionaryDummy.Add(1, listValuesDummy);
-
-            listValuesDummy = new List<double>();
-            listValuesDummy.Add(192);
-            listValuesDummy.Add(144);
-            listValuesDummy.Add(116);
-            listValuesDummy.Add(116);
-            originalDictionaryDummy.Add(2, listValuesDummy);
-
-            listValuesDummy = new List<double>();
-            listValuesDummy.Add(60);
-            listValuesDummy.Add(288);
-            listValuesDummy.Add(96);
-            originalDictionaryDummy.Add(3, listValuesDummy);
-
-
-
-            //listValuesDummy.Add(36);
-            //listValuesDummy.Add(192);
-            //listValuesDummy.Add(60);
-            //originalDictionaryDummy.Add(1, listValuesDummy);
-
-            //listValuesDummy = new List<double>();
-            //listValuesDummy.Add(12);
-            //listValuesDummy.Add(144);
-            //listValuesDummy.Add(288);
-            //originalDictionaryDummy.Add(2, listValuesDummy);
-
-            //listValuesDummy = new List<double>();
-            //listValuesDummy.Add(116);
-            //listValuesDummy.Add(96);
-            //originalDictionaryDummy.Add(3, listValuesDummy);
-
-
-            //listValuesDummy = new List<double>();
-            //listValuesDummy.Add(116);
-            //originalDictionaryDummy.Add(4, listValuesDummy);
-
-            //listValuesDummy = new List<double>();
-            //originalDictionaryDummy.Add(4, listValuesDummy);
-
-            //listValuesDummy = new List<double>();
-            //listValuesDummy.Add(252);
-            //listValuesDummy.Add(288);
-            //originalDictionaryDummy.Add(5, listValuesDummy);
-
-            //listValuesDummy = new List<double>();
-            //listValuesDummy.Add(768);
-            //originalDictionaryDummy.Add(6, listValuesDummy);
-
-            //listValuesDummy = new List<double>();
-            //originalDictionaryDummy.Add(7, listValuesDummy);
-
-            //listValuesDummy = new List<double>();
-            //listValuesDummy.Add(1272);
-            //originalDictionaryDummy.Add(8, listValuesDummy);
-
-            //listValuesDummy = new List<double>();
-            //listValuesDummy.Add(4272);
-            //listValuesDummy.Add(622292);
-            //originalDictionaryDummy.Add(9, listValuesDummy);
-
-            var resOriginalDict = originalDictionary;
-            //var resDummyDict = originalDictionaryDummy;
 
             //  Now convert to converted dictionary
             int maxLength = originalDictionary.Values.Any() ? originalDictionary.Values.Max(list => list.Count) : 0;
@@ -1084,36 +360,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                 convertedDictionary[position] = values;
             }
-            //SeriesCollection.Add(new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<double> { 6, 2, 7 },
-            //    DataLabels = true
-            //});
-            int bucketNumber = 0;
-            string titleTest = string.Empty;
-
-            List<string> typeNames = new List<string>();
 
             foreach (KeyValuePair<int, List<TypeDescModel>> item in convertedDictionary)
             {
-
-                foreach (var value in item.Value)
-                {
-                    if (value?.TypeDesc?.typeName != null)
-                    {
-                        if (!typeNames.Contains(value.TypeDesc.typeName))
-                            typeNames.Add(value.TypeDesc.typeName);
-                    }
-                }
-            }
-
-
-
-            foreach (KeyValuePair<int, List<TypeDescModel>> item in convertedDictionary)
-            {
-
-                //titleTest = item.Value.
-                bucketNumber++;
+                //bucketNumber++;
                 IChartValues values = new ChartValues<TypeDescModel>();
                 if (item.Value != null && item.Value.Count > 0)
                 {
@@ -1121,17 +371,12 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     {
                         if (typeDescModel != null)
                         {
-                            //values.Add((double)(Math.Round((100.0 * typeDesc.totalSize / totalsizeCount), 2)));
                             values.Add(typeDescModel);
                         }
                         else
                         {
                             values.Add(new TypeDescModel());
                         }
-                        //totalsizeCount
-                        //values.Add(Math.Round((100.0 * itemValues / totalSize), 2));
-                        
-                        //values.Add(Math.Round((1000*(itemValues / totalsizeCount)), 2));
                     }
                 }
 
@@ -1140,26 +385,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                       .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d)                      
                       ;
 
-                //new StackedColumnSeries
-            //{
-            //    Values = new ChartValues<BucketDataModel1>
-            //    {
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 1
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 2
-            //        },
-            //        new BucketDataModel1() {
-            //                Pesma="neka pesma",
-            //                Broj = 3
-            //        }
-            //    },
-
-
-
                 var stackedColumSeries = new StackedColumnSeries
                 {
                     Configuration = config,
@@ -1167,15 +392,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     DataLabels=false
                 };
 
-                
-
-                SeriesCollectionDict.Add(stackedColumSeries);
-
+                SeriesCollection.Add(stackedColumSeries);
             }
-
-            BucketsValuesFINI.Add(convertedDictionary);
-            var res1 = BucketsValues;
-            var res2 = SeriesCollectionDict;
 
         }
 
@@ -1434,321 +652,5 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 buckets = newBuckets;
             }
         }
-
-
-        //struct Bucket
-        //{
-        //    internal int minSize;
-        //    internal int maxSize;
-        //    internal ulong totalSize;
-        //    internal Dictionary<TypeDesc, SizeCount> typeDescToSizeCount;
-        //    internal bool selected;
-        //    internal string label;
-        //};
-
-        //private class SizeCount
-        //{
-        //    internal ulong size;
-        //    internal int count;
-        //}
-
-        //class TypeDesc : IComparable
-        //{
-        //    internal string typeName;
-        //    internal ulong totalSize;
-        //    internal int count;
-        //    internal System.Drawing.Color color;
-        //    internal System.Drawing.Brush brush;
-        //    internal System.Drawing.Pen pen;
-        //    internal bool selected;
-        //    internal System.Drawing.Rectangle rect;
-
-        //    internal TypeDesc(string typeName)
-        //    {
-        //        this.typeName = typeName;
-        //    }
-
-        //    public int CompareTo(object o)
-        //    {
-        //        TypeDesc t = (TypeDesc)o;
-        //        if (t.totalSize < this.totalSize)
-        //        {
-        //            return -1;
-        //        }
-        //        else if (t.totalSize > this.totalSize)
-        //        {
-        //            return 1;
-        //        }
-        //        else
-        //        {
-        //            return 0;
-        //        }
-        //    }
-        //}
-
-
-
     }
 }
-
-
-
-//public async Task Load()
-//{
-
-
-
-
-
-//    //countries = await _coronavirusCountryService.GetTopCasesAsync(_numberOfBuckets);
-
-//    //CoronavirusCountryCaseCounts = new ChartValues<int>(countries.Select(c => c.Cases));
-
-//    //BucketLabels.Clear();
-
-
-//    //foreach (string countryName in countries.Select(c => c.Country))
-//    //{
-//    //    BucketLabels.Add(countryName);
-//    //}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//    //SeriesCollection = new SeriesCollection()
-//    //    {
-//    //        new LineSeries() {  Values = CoronavirusCountryCaseCounts }
-//    //    };
-
-//    // Initialize the binding source
-
-
-
-//    //.X(point => point.X)
-//    //.Y(point => point.Y)
-//    //.Stroke(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen)
-//    //.Fill(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen);
-
-//    //SeriesCollection = new LiveCharts.SeriesCollection();
-
-//    //List<ChartValues<int>> seriesList = new List<ChartValues<int>>();
-//    //CoronavirusCountryCaseCounts = new ChartValues<int>(countries.Select(c => c.Cases));
-
-
-
-
-//    //for (int i = 0; i < countries.Count(); ++i)
-//    //{
-//    //    SeriesCollection.Add(new ColumnSeries
-//    //    {
-//    //        Values = countries[i],
-//    //        Name = CoronavirusCountryCaseCounts[i].ToString(),
-//    //        Fill = System.Windows.Media.Brushes.Transparent,
-//    //        StrokeThickness = 1,
-//    //        PointGeometry = null,
-//    //    });
-//    //}
-
-//    //this.BlueSeries = new ColumnSeries()
-//    //{
-//    //    Title = "Population of Bodrum",
-//    //    Values = new ChartValues<double> { 1500, 2500, 3700, 2000, 1000 },
-//    //    Fill = System.Windows.Media.Brushes.Blue
-//    //};
-//    //this.SeriesCollection = new SeriesCollection() { this.BlueSeries };
-
-
-
-//    ////graphPanel_Paint();
-
-
-//    //BucketLabels.Clear();
-
-
-//    //foreach (string countryName in countries.Select(c => c.Country))
-//    //{
-//    //    BucketLabels.Add(countryName);
-//    //}
-
-
-//    //foreach (var bucket in buckets)
-//    //{
-//    //    BucketLabels.Add(bucket.label);
-//    //}
-//    //ChangeThirdChartPointColorToRed();
-//}
-
-////private void ChangeThirdChartPointColorToRed()
-////{
-////    CartesianMapper<double> mapper = Mappers.Xy<double>()
-////      .X((value, index) => index)
-////      .Y(value => value)
-////      .Fill((value, index) => index == 2 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.Blue);
-
-////    // Dynamically set the third chart point color to red
-////    this.BlueSeries.Configuration = mapper;
-////}
-///
-//var res = _numberOfBuckets;
-//var res1 = BucketLabels;
-
-//countries = new List<CoronavirusCountry>()
-//{
-//    new CoronavirusCountry() {Country="AAAA", Cases=10},
-//    new CoronavirusCountry() {Country="BBBB", Cases=20},
-//    new CoronavirusCountry() {Country="CCCC", Cases=30},
-//    new CoronavirusCountry() {Country="DDDD", Cases=40},
-//    new CoronavirusCountry() {Country="EEEE", Cases=50},
-//    new CoronavirusCountry() {Country="FFFF", Cases=60},
-//    new CoronavirusCountry() {Country="GGGG", Cases=70},
-//};
-
-
-
-
-
-//values.Add(new DataModel() { Label = $"Column 1", Value = 11 });
-//values.Add(new DataModel() { Label = $"Column 2", Value = 22 });
-//values.Add(new DataModel() { Label = $"Column 3", Value = 33 });
-//values.Add(new DataModel() { Label = $"Column 4", Value = 44 });
-//values.Add(new DataModel() { Label = $"Column 5", Value = 55 });
-
-//for (double value = 0; value < 4; value++)
-//{
-//    values.Add(new DataModel() { Label = $"Column {value + 1}", Value = value + 10 });
-//}
-
-// Create a labels collection from the DataModel items
-//ColumnLabels = new ObservableCollection<string>(values.Select(dataModel => dataModel.Label));
-
-// Define a data mapper, which tells the Chart how to extract data from the model
-// and how to map it to the corresponding axis. The mapper also allows 
-// to define a predicate which will be applied to color each data item (Fill, Stroke)
-//CartesianMapper<DataModel> dataMapper = new CartesianMapper<DataModel>()
-
-//  //.X(dataModel => dataModel.Value)
-//  //.Y(dataModel => dataModel.Value)
-//  .Fill(dataModel => dataModel.Value > 5.0 ? Brushes.Red : Brushes.Green);
-
-
-
-
-//ChartDataSets = new SeriesCollection
-//{
-//    new ColumnSeries
-//    {
-//        Values = values,
-//        Configuration = dataMapper,
-//        DataLabels=true,
-//        ColumnPadding = 0,
-//        StrokeThickness = 2
-//    }
-//};
-
-
-//CoronavirusCountryCaseCounts = new ChartValues<int>(countries.Select(c => c.Cases));
-
-//BucketLabels.Clear();
-
-//foreach (string countryName in countries.Select(c => c.Country))
-//{
-//    BucketLabels.Add(countryName);
-//}
-
-
-
-
-
-
-
-//SineGraphValues = new ChartValues<ObservablePoint>();
-
-//// Plot a sine graph
-//for (double x = 0; x <= 360; x++)
-//{
-//    var point = new ObservablePoint()
-//    {
-//        X = x,
-//        Y = Math.Sin(x * Math.PI / 180)
-//    };
-
-//    SineGraphValues.Add(point);
-//}
-
-
-//DataMapper = new CartesianMapper<ObservablePoint>()
-//  .X(point => point.X)
-//  .Y(point => point.Y)
-//  .Stroke(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen)
-//  .Fill(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen);
-
-
-//CoronavirusCountryCaseCounts = new ChartValues<int>()
-//{
-//    500,1000,1500,2000
-//};
-
-//SeriesCollection = new SeriesCollection()
-//    {
-//        new LineSeries() {  Values = CoronavirusCountryCaseCounts }
-//    };
-
-
-
-//_random = new Random();
-//_ys = new ChartValues<double>();
-
-
-////for (int i = 0; i < 100; ++i)
-////{
-////    _ys.Add(_random.NextDouble() * 100);
-////}
-
-////SeriesCollection = new SeriesCollection()
-////    {
-////        new LineSeries() {  Values = _ys }
-////    };
-//Console.WriteLine(  );
-
-
-
-// Initialize the binding source
-//this.SineGraphValues = new ChartValues<ObservablePoint>();
-
-//// Plot a sine graph
-//for (double x = 0; x <= 360; x++)
-//{
-//    var point = new ObservablePoint()
-//    {
-//        X = x,
-//        Y = Math.Sin(x * Math.PI / 180)
-//    };
-
-//    this.SineGraphValues.Add(point);
-//}
-
-//// Setup the data mapper
-//this.DataMapper = new CartesianMapper<ObservablePoint>()
-//  .X(point => point.X)
-//  .Y(point => point.Y)
-//  .Stroke(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen)
-//  .Fill(point => point.Y > 0.3 ? System.Windows.Media.Brushes.Red : System.Windows.Media.Brushes.LightGreen);
-
-//
-//this.BlueSeries = new ColumnSeries()
-//{
-//    Title = "Population of Bodrum",
-//    Values = new ChartValues<double> { 1500, 2500, 3700, 2000, 1000 },
-//    Fill = System.Windows.Media.Brushes.Blue
-//};
-//this.SeriesCollection = new SeriesCollection() { this.BlueSeries };
