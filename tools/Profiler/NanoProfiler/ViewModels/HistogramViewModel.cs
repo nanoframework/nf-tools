@@ -137,7 +137,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     scaleFactor = Math.Pow(2.0, 0.125);
                     break;
             }
-            //SetHistogram();
+            SetHistogram();
         }
 
         Bucket bucketClicked;
@@ -278,8 +278,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private void DrawBuckets()
         {
+            originalDictionary = new Dictionary<int, List<TypeDescModel>>();
+            convertedDictionary = new Dictionary<int, List<TypeDescModel>>();
             BucketsValues = new ChartValues<BucketDataModel> { };
             BucketsLabels = new ObservableCollection<string>();
+            SeriesCollection = new();
 
             StackedColumnSeries columnSeries = new StackedColumnSeries();
 
