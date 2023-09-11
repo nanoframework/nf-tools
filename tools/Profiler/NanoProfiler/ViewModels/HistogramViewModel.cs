@@ -38,6 +38,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
     {
 
         #region Observable Properties        
+        [ObservableProperty]
+        private List<string> _bucketLabels = new();
 
         [ObservableProperty]
         private SeriesCollection _seriesCollection = new SeriesCollection();
@@ -90,11 +92,14 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             this.histogram = histogram;
             _title = title;
             typeName = this.histogram.readNewLog.typeName;
-           
+
+
             SetComboValues();
 
             SetHistogram();
         }
+
+
 
         private void SetComboValues()
         {
@@ -279,13 +284,16 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             StackedColumnSeries columnSeries = new StackedColumnSeries();
 
             bool noBucketSelected = true;
+            int bucketNumber = 1;
             foreach (Bucket b in buckets)
             {
+                BucketLabels.Add(bucketNumber.ToString());
                 if (b.selected)
                 {
                     noBucketSelected = false;
                     break;
                 }
+                bucketNumber++;
             }
 
             double totalsizeCount = 0;
@@ -389,7 +397,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 {
                     Configuration = config,
                     Values = values, 
-                    DataLabels=false
+                    DataLabels=true
                 };
 
                 SeriesCollection.Add(stackedColumSeries);
