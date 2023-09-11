@@ -10,6 +10,8 @@ namespace nanoFramework.Tools.NanoProfiler.Models
 {
     public partial class TypeDescModel : ObservableObject
     {
+        [ObservableProperty]
+        private string _title;
 
         [ObservableProperty]
         private TypeDesc _typeDesc;

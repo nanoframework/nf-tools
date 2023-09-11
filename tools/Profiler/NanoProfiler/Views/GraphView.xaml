@@ -128,8 +128,7 @@
                                                 <TextBlock Text="{Binding Name}"/>
                                             </Label>
                                             <Label Content="{Binding GraphBytes}" Grid.Column="1" Padding="0"/>
-                                            <Label Content="{Binding GraphPercentage}" Grid.Column="2" Padding="0"/>
-                                            <!--<Label Content="{Binding GraphPercentage}" ContentStringFormat=" {0} %"  Padding="0" />-->
+                                            <Label Content="{Binding GraphPercentage}" Grid.Column="2" ContentStringFormat=" {0} %"  Padding="0" />
                                     </Grid>                               
                                 </Button.Content>
 

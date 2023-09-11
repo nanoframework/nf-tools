@@ -36,10 +36,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
     public partial class HistogramViewModel: ObservableObject
     {
+        #region Observable Properties     
 
-        #region Observable Properties        
         [ObservableProperty]
-        private List<string> _bucketLabels = new();
+        private ObservableCollection<string> _bucketsLabels = new();
 
         [ObservableProperty]
         private SeriesCollection _seriesCollection = new SeriesCollection();
@@ -92,7 +92,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             this.histogram = histogram;
             _title = title;
             typeName = this.histogram.readNewLog.typeName;
-
 
             SetComboValues();
 
@@ -280,20 +279,18 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private void DrawBuckets()
         {
             BucketsValues = new ChartValues<BucketDataModel> { };
+            BucketsLabels = new ObservableCollection<string>();
 
             StackedColumnSeries columnSeries = new StackedColumnSeries();
 
             bool noBucketSelected = true;
-            int bucketNumber = 1;
             foreach (Bucket b in buckets)
             {
-                BucketLabels.Add(bucketNumber.ToString());
                 if (b.selected)
                 {
                     noBucketSelected = false;
                     break;
                 }
-                bucketNumber++;
             }
 
             double totalsizeCount = 0;
@@ -312,6 +309,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                     s += FormatSize(b.totalSize) + $"{Environment.NewLine}";
                     s += string.Format("({0:f2}%)", 100.0 * b.totalSize / totalSize);
+
+
 
 
                     System.Drawing.Brush brush = new SolidBrush(System.Drawing.Color.Transparent);
@@ -342,9 +341,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     System.Drawing.Color drawingColor = ((SolidBrush)brush).Color;
                     System.Windows.Media.Color wpfColor = System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B);
 
-                    bucketPosition++;
+                    BucketsLabels.Add(s);
 
                     //x += bucketWidth + gap;
+                    bucketPosition++;
                 }
             }
 
@@ -371,7 +371,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             foreach (KeyValuePair<int, List<TypeDescModel>> item in convertedDictionary)
             {
-                //bucketNumber++;
                 IChartValues values = new ChartValues<TypeDescModel>();
                 if (item.Value != null && item.Value.Count > 0)
                 {
@@ -390,14 +389,14 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                 var config = new CartesianMapper<TypeDescModel>()
                       .X((value, index) => index)
-                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d)                      
+                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d)
                       ;
 
                 var stackedColumSeries = new StackedColumnSeries
                 {
                     Configuration = config,
-                    Values = values, 
-                    DataLabels=true
+                    Values = values,
+                    DataLabels = false
                 };
 
                 SeriesCollection.Add(stackedColumSeries);

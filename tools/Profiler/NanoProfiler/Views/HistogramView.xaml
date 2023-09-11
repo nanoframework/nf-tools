@@ -68,16 +68,18 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid Grid.Row="1" Grid.Column="0" >
-                <lvc:CartesianChart Margin="10" DataClickCommand="{Binding DrillDownCommand}"
+                <lvc:CartesianChart Name="cartesianChart0" Margin="10" 
+                                    DataClickCommand="{Binding DrillDownCommand}"
                                     Series="{Binding SeriesCollection}" Hoverable="False" 
                                     >
                     <lvc:CartesianChart.DataTooltip>
                         <controls:HistogramTooltip  SelectionMode="OnlySender" />
                     </lvc:CartesianChart.DataTooltip>
                     <lvc:CartesianChart.AxisX  >
-                        <lvc:Axis Labels="{Binding BucketsLabels}" Foreground="Black" >
+                        <lvc:Axis Labels="{Binding BucketsLabels}" Foreground="Black" 
+                                  >
                             <lvc:Axis.Separator>
-                                <lvc:Separator Step="1" />
+                                <lvc:Separator Step="1"  />
                             </lvc:Axis.Separator>
                         </lvc:Axis>
                     </lvc:CartesianChart.AxisX>
@@ -95,10 +97,8 @@
             <Grid Grid.Column="1">
                 <Canvas x:Name="typeLegendPanel" Visibility="Collapsed"/>
             </Grid>
-        </Grid>
-        <Grid Grid.Row="2" >
-        </Grid>
-                    
+        </Grid>       
+
     </Grid>
 
 </Window>

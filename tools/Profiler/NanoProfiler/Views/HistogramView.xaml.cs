@@ -1,6 +1,7 @@
 ﻿using CLRProfiler;
 using LiveCharts;
 using LiveCharts.Configurations;
+using LiveCharts.Definitions.Charts;
 using LiveCharts.Wpf;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
 
         public HistogramView()
         {
-            InitializeComponent();
+            InitializeComponent();          
         }
     }
 }
