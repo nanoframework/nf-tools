@@ -307,14 +307,21 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     {
                         BucketPosition = bucketPosition, FullBucket = b                    
                     });
-
-                    string s = "< " + FormatSize((ulong)b.maxSize + 1) + $"{Environment.NewLine}";
-
-                    s += FormatSize(b.totalSize) + $"{Environment.NewLine}";
-                    s += string.Format("({0:f2}%)", 100.0 * b.totalSize / totalSize);
-
-
-
+                    string label = string.Empty;
+                    if (HorizontalScaleSelectedValue.Equals("Coarse"))
+                    {
+                        label = "< " + FormatSize((ulong)b.maxSize + 1) + $"{Environment.NewLine}";
+                        label += FormatSize(b.totalSize) + $"{Environment.NewLine}";
+                        label += "(";
+                        label += string.Format("{0:f2}%", 100.0 * b.totalSize / totalSize);
+                        label += ")";
+                    }
+                    else
+                    {
+                        double res = Math.Round(100.0 * b.totalSize / totalSize, 2);
+                        label += $"{res}{Environment.NewLine}";
+                        label += $"%";
+                    }
 
                     System.Drawing.Brush brush = new SolidBrush(System.Drawing.Color.Transparent);
 
@@ -344,7 +351,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     System.Drawing.Color drawingColor = ((SolidBrush)brush).Color;
                     System.Windows.Media.Color wpfColor = System.Windows.Media.Color.FromArgb(drawingColor.A, drawingColor.R, drawingColor.G, drawingColor.B);
 
-                    BucketsLabels.Add(s);
+                    BucketsLabels.Add(label);
 
                     //x += bucketWidth + gap;
                     bucketPosition++;
