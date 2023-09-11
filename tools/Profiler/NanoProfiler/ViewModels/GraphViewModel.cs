@@ -13,9 +13,11 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -161,24 +163,29 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     {
                         double percentageArrived = -1d;
                         string bytesArrived = string.Empty;
-                        Match match = Regex.Match(e.ToVertex.weightString, regexPattern);
-                        if (match.Success)
-                        {
-                            string percentageValue = match.Groups[1].Value;
 
-                            if (double.TryParse(percentageValue, out double result))
-                            {
-                                percentageArrived = result;
-                            }
-                            else
-                            {
-                                Console.WriteLine("Invalid percentage value");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("No percentage value found in the input string");
-                        }
+                        //  Regex is not working on Jose's machine, so we're using this:                                               
+
+                        percentageArrived = ConvertToDouble(GetPercentageInString(e.ToVertex.weightString));
+
+                        //Match match = Regex.Match(e.ToVertex.weightString, regexPattern);
+                        //if (match.Success)
+                        //{
+                        //    string percentageValue = match.Groups[1].Value;
+
+                        //    if (double.TryParse(percentageValue, out double result))
+                        //    {
+                        //        percentageArrived = result;
+                        //    }
+                        //    else
+                        //    {
+                        //        Console.WriteLine("Invalid percentage value");
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    Console.WriteLine("No percentage value found in the input string");
+                        //}
 
                         int indexOfOpenParenthesis = e.ToVertex.weightString.IndexOf('(');
 
@@ -202,6 +209,56 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     }
                 }
             }
+        }
+
+        private string GetPercentageInString(string weightString)
+        {
+            //  Try and find other solution
+            StringBuilder percentageStringBuild = new StringBuilder(string.Empty);
+            //  We'll go reverse, and start from third position (since last two positions are '%)'
+            for (int i = weightString.Length - 3; i >= 0; i--)
+            {
+                char resChar = weightString[i];
+                if (resChar.Equals('('))
+                    break;
+                percentageStringBuild.Append(resChar);
+            }
+            return new String(percentageStringBuild.ToString().Reverse().ToArray());
+        }
+
+        private double ConvertToDouble(string s)
+        {
+            char systemSeparator = Thread.CurrentThread.CurrentCulture.NumberFormat.CurrencyDecimalSeparator[0];
+            double result = 0;
+            try
+            {
+                if (s != null)
+                    //  If some double is separated with coma, we'll use this (this is not expected)
+                    if (!s.Contains(","))
+                        result = double.Parse(s, CultureInfo.InvariantCulture);
+                    //  Otherwise, we'll use this (as expected)
+                    else
+                        result = Convert.ToDouble(s.Replace(".", systemSeparator.ToString()).Replace(",", systemSeparator.ToString()));
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    result = Convert.ToDouble(s);
+                }
+                catch
+                {
+                    try
+                    {
+                        result = Convert.ToDouble(s.Replace(",", ";").Replace(".", ",").Replace(";", "."));
+                    }
+                    catch
+                    {
+                        throw new Exception("Wrong string-to-double format");
+                    }
+                }
+            }
+            return result;
         }
 
         void PlaceVertices()
