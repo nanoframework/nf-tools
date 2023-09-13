@@ -127,13 +127,13 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private SolidColorBrush _backgroundProfileLauncher = Brushes.AliceBlue;
 
         [ObservableProperty]
-        bool _rebootChecked;
+        bool _rebootChecked = true;
 
         [ObservableProperty]
-        private bool _callsChecked = true;
+        private bool _callsChecked = false;
 
         [ObservableProperty]
-        private bool _allocationsChecked;
+        private bool _allocationsChecked = true;
 
         [ObservableProperty]
         private bool _heapAbsoluteAddressChecked = true;
