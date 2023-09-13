@@ -1,15 +1,17 @@
-﻿using CLRProfiler;
-using Microsoft.VisualBasic.Logging;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
+using CLRProfiler;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 {
-   public class MainForm
+    public class MainForm
     {
         internal Font font;
         private string logFileName;

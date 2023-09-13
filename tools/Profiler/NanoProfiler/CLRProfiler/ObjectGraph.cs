@@ -1,13 +1,15 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
 
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
-using nanoFramework.Tools.NanoProfiler.CLRProfiler;
+using System.Text;
 
 namespace CLRProfiler
 {
@@ -105,7 +107,7 @@ namespace CLRProfiler
                     {
                         for (GcObject gcObject = subTable[j]; gcObject != null; gcObject = gcObject.nextInHash)
                         {
-                            yield return new KeyValuePair<ulong, GcObject>(((ulong)i<<lowAddressBits)+ 
+                            yield return new KeyValuePair<ulong, GcObject>(((ulong)i << lowAddressBits) +
                                                                            ((ulong)j << bucketBits) +
                                                                            ((ulong)gcObject.Id << alignBits), gcObject);
                         }
@@ -171,7 +173,7 @@ namespace CLRProfiler
             intEqualityComparer = new IntEqualityComparer();
             typeIdToGcType = new Dictionary<int, GcType>(intEqualityComparer);
             addressToForwardReferences = new Dictionary<ulong, ForwardReference>();
-            unknownTypeId = GetOrCreateGcType("<unknown type>");   
+            unknownTypeId = GetOrCreateGcType("<unknown type>");
             this.readNewLog = readNewLog;
             this.tickIndex = tickIndex;
             empty = true;
@@ -435,8 +437,8 @@ namespace CLRProfiler
                 this.referenceNumber = referenceNumber;
                 this.next = next;
             }
-            internal GcObject         source;            // the object having the forward reference
-            internal int              referenceNumber;   // the number of the reference within the object
+            internal GcObject source;            // the object having the forward reference
+            internal int referenceNumber;   // the number of the reference within the object
             internal ForwardReference next;              // next forward reference to the same address
         }
 
@@ -534,8 +536,8 @@ namespace CLRProfiler
 
         internal void GrowRoots()
         {
-            GcObject[] newRoots = new GcObject[roots.Length*2];
-            ulong[] newRootIDs = new ulong[roots.Length*2];
+            GcObject[] newRoots = new GcObject[roots.Length * 2];
+            ulong[] newRootIDs = new ulong[roots.Length * 2];
             for (int i = 0; i < roots.Length; i++)
             {
                 newRoots[i] = roots[i];
@@ -617,7 +619,7 @@ namespace CLRProfiler
             {
                 switch (options)
                 {
-                    case    BuildTypeGraphOptions.IndividualObjects:
+                    case BuildTypeGraphOptions.IndividualObjects:
                         if (gcObject.Type(this).name == "Stack" || gcObject.Type(this).name.StartsWith("Stack, "))
                         {
                             if (id < (ulong)readNewLog.funcName.Length)
@@ -629,7 +631,7 @@ namespace CLRProfiler
                             sb.AppendFormat("Address = {0}, size = {1:n0} bytes", FormatAddress(id), gcObject.Size(this));
                         break;
 
-                    case    BuildTypeGraphOptions.LumpBySignature:
+                    case BuildTypeGraphOptions.LumpBySignature:
                         sb.Append(gcObject.parent.Type(this).name);
                         sb.Append("->");
                         sb.Append(gcObject.Type(this).name);
@@ -825,7 +827,7 @@ namespace CLRProfiler
         {
             Graph graph;
 
-			if (   filterForm.filterVersion != 0
+            if (filterForm.filterVersion != 0
                 || options != BuildTypeGraphOptions.LumpBySignature
                 || allocatedAfterTickIndex > 0
                 || allocatedBeforeTickIndex < int.MaxValue)
@@ -923,7 +925,7 @@ namespace CLRProfiler
             {
                 ulong id = keyValuePair.Key;
                 GcObject gcObject = keyValuePair.Value;
-                if (    gcObject.parent == null
+                if (gcObject.parent == null
                     || (gcObject.InterestLevel & (InterestLevel.Interesting | InterestLevel.Display)) == InterestLevel.Ignore)
                 {
                     continue;
@@ -935,7 +937,7 @@ namespace CLRProfiler
 
             foreach (GcObject gcObject in idToObject.Values)
             {
-                if (    gcObject.parent == null
+                if (gcObject.parent == null
                     || (gcObject.InterestLevel & (InterestLevel.Interesting | InterestLevel.Display)) == InterestLevel.Ignore
                     || gcObject.AllocTickIndex <= allocatedAfterTickIndex
                     || gcObject.AllocTickIndex >= allocatedBeforeTickIndex)
@@ -1028,8 +1030,8 @@ namespace CLRProfiler
 
         Dictionary<GcObject, ulong> objectToId;        // reverse mapping from gc objects to their addresses
 
-		internal void WriteVertexPaths(int allocatedAfterTickIndex, int allocatedBeforeTickIndex, string typeName)
-		{
+        internal void WriteVertexPaths(int allocatedAfterTickIndex, int allocatedBeforeTickIndex, string typeName)
+        {
             BuildTypeGraph(new FilterForm());
 
             if (objectToId == null)
@@ -1042,28 +1044,28 @@ namespace CLRProfiler
                 }
             }
 
-			ulong[][] idsFromRoot = new ulong[1][];
-			Vertex[] pathFromRoot = new Vertex[32];
-			int counter = 0;
-			foreach (GcObject gcObject in idToObject.Values)
-			{
+            ulong[][] idsFromRoot = new ulong[1][];
+            Vertex[] pathFromRoot = new Vertex[32];
+            int counter = 0;
+            foreach (GcObject gcObject in idToObject.Values)
+            {
                 if (gcObject.Type(this).name.CompareTo(typeName) != 0)
                 {
                     continue;
                 }
 
-                if (   gcObject.AllocTickIndex <= allocatedAfterTickIndex
+                if (gcObject.AllocTickIndex <= allocatedAfterTickIndex
                     || gcObject.AllocTickIndex >= allocatedBeforeTickIndex)
-				{
-					continue;
-				}
-				ulong[][] _idsFromRoot = idsFromRoot;
-				if (_idsFromRoot.Length <= counter)
-				{
-					idsFromRoot = new ulong[counter + 1][];
-					for (int i = 0; i < _idsFromRoot.Length; i++)
-						idsFromRoot[i] = _idsFromRoot[i];
-				}
+                {
+                    continue;
+                }
+                ulong[][] _idsFromRoot = idsFromRoot;
+                if (_idsFromRoot.Length <= counter)
+                {
+                    idsFromRoot = new ulong[counter + 1][];
+                    for (int i = 0; i < _idsFromRoot.Length; i++)
+                        idsFromRoot[i] = _idsFromRoot[i];
+                }
 
                 int levels = 0;
                 for (GcObject pathObject = gcObject; pathObject != null; pathObject = pathObject.parent)
@@ -1073,9 +1075,9 @@ namespace CLRProfiler
                 }
 
                 while (pathFromRoot.Length < levels + 1)
-				{
-					pathFromRoot = new Vertex[pathFromRoot.Length * 2];
-				}
+                {
+                    pathFromRoot = new Vertex[pathFromRoot.Length * 2];
+                }
 
                 int level = levels;
                 for (GcObject pathObject = gcObject; pathObject != null; pathObject = pathObject.parent)
@@ -1192,7 +1194,7 @@ namespace CLRProfiler
                     {
                         // this is a reference to either one of the "selected" objects
                         // or just to a new object
-                        if (   refObject.vertex != null && refObject.vertex.selected
+                        if (refObject.vertex != null && refObject.vertex.selected
                             && (refObject.InterestLevel & (InterestLevel.Interesting | InterestLevel.Display)) != InterestLevel.Ignore
                             && refObject.AllocTickIndex > orgGraph.allocatedAfterTickIndex
                             && refObject.AllocTickIndex < orgGraph.allocatedBeforeTickIndex)
@@ -1204,14 +1206,14 @@ namespace CLRProfiler
 
                             while (pathFromRoot.Length < levels + 2)
                             {
-                                pathFromRoot = new Vertex[pathFromRoot.Length*2];
+                                pathFromRoot = new Vertex[pathFromRoot.Length * 2];
                             }
 
-                            pathFromRoot[levels+1] = graph.FindOrCreateVertex(refObject.vertex.name, refObject.vertex.signature, refObject.vertex.moduleName);
+                            pathFromRoot[levels + 1] = graph.FindOrCreateVertex(refObject.vertex.name, refObject.vertex.signature, refObject.vertex.moduleName);
                             int level = levels;
                             for (GcObject pathObject = head; pathObject != null; pathObject = pathObject.parent)
                             {
-                                if (  (pathObject.InterestLevel & (InterestLevel.Interesting | InterestLevel.Display)) == InterestLevel.Ignore
+                                if ((pathObject.InterestLevel & (InterestLevel.Interesting | InterestLevel.Display)) == InterestLevel.Ignore
                                     || pathObject.vertex == null)
                                     pathFromRoot[level] = null;
                                 else
@@ -1220,7 +1222,7 @@ namespace CLRProfiler
                             }
 
                             int nonZeroLevels = 0;
-                            for (int j = 0; j <= levels+1; j++)
+                            for (int j = 0; j <= levels + 1; j++)
                             {
                                 if (pathFromRoot[j] != null)
                                     pathFromRoot[nonZeroLevels++] = pathFromRoot[j];
@@ -1228,15 +1230,15 @@ namespace CLRProfiler
 
                             levels = Vertex.SqueezeOutRepetitions(pathFromRoot, nonZeroLevels);
 
-                            for (int j = 0; j < levels-1; j++)
+                            for (int j = 0; j < levels - 1; j++)
                             {
                                 Vertex fromVertex = pathFromRoot[j];
-                                Vertex toVertex = pathFromRoot[j+1];
+                                Vertex toVertex = pathFromRoot[j + 1];
                                 Edge edge = graph.FindOrCreateEdge(fromVertex, toVertex);
                                 edge.AddWeight(1);
                             }
 
-                            Vertex thisVertex = pathFromRoot[levels-1];
+                            Vertex thisVertex = pathFromRoot[levels - 1];
                             thisVertex.basicWeight += 1;
                             if (refObject.parent == null)
                             {

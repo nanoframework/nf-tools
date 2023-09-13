@@ -1,4 +1,10 @@
-﻿using CLRProfiler;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
+using CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.Models;
 using nanoFramework.Tools.NanoProfiler.ViewModels;
 using nanoFramework.Tools.NanoProfiler.Views;
@@ -81,7 +87,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         {
             double scaleFactor = 2.0;
 
-            switch(VerticalScaleOption.SelectedValue?.ToString())
+            switch (VerticalScaleOption.SelectedValue?.ToString())
             {
                 case "Coarse":
                     scaleFactor = 2.0;
@@ -96,7 +102,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                     scaleFactor = Math.Pow(2.0, 0.125);
                     break;
             }
-            
+
             if (currentScaleFactor == scaleFactor)
             {
                 for (int i = 0; i < buckets.Length; i++)
@@ -366,11 +372,11 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 
             ComboBoxItem minHighScaleRB = null;
             int minHighRange = int.MaxValue;
-            
+
             foreach (ComboBoxItem comboItem in items)
             {
                 int range = pixelsAvailable * int.Parse(comboItem.Content.ToString());
-            
+
                 if (range < rangeNeeded)
                 {
                     if (maxLowRange < range)
@@ -396,7 +402,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             }
             else
             {
-                if(maxLowScaleRB != null)
+                if (maxLowScaleRB != null)
                 {
                     maxLowScaleRB.IsSelected = true;
                     return int.Parse(maxLowScaleRB.Content.ToString());
@@ -576,7 +582,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 return;
             }
 
-            if(e != null)
+            if (e != null)
             {
                 Graphics g = e.Graphics;
 
@@ -615,7 +621,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 initialized = true;
             }
 
-           
+
         }
 
         private void typeLegendPanel_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
@@ -675,7 +681,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             else if ((e.Button & MouseButtons.Right) != MouseButtons.None)
             {
                 System.Drawing.Point p = new System.Drawing.Point(e.X, e.Y);
-                
+
                 // TODO
                 //contextMenu.Show(typeLegendPanel, p);
             }
@@ -708,25 +714,25 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                     buckets[i].selected = false;
 
                     // TODO
-                //    int y = graphPanel.Height - bottomMargin;
+                    //    int y = graphPanel.Height - bottomMargin;
 
-                //    foreach (TypeDesc t in buckets[i].typeDescToSizeCount.Keys)
-                //    {
-                //        SizeCount sizeCount = buckets[i].typeDescToSizeCount[t];
-                //        ulong size = sizeCount.size;
-                //        int height = (int)(size / (ulong)verticalScale);
+                    //    foreach (TypeDesc t in buckets[i].typeDescToSizeCount.Keys)
+                    //    {
+                    //        SizeCount sizeCount = buckets[i].typeDescToSizeCount[t];
+                    //        ulong size = sizeCount.size;
+                    //        int height = (int)(size / (ulong)verticalScale);
 
-                //        y -= height;
+                    //        y -= height;
 
-                //        System.Drawing.Rectangle r = new System.Drawing.Rectangle(x, y, bucketWidth, height);
-                //        if (r.Contains(e.X, e.Y))
-                //        {
-                //            t.selected = true;
-                //            buckets[i].selected = true;
-                //        }
-                //    }
+                    //        System.Drawing.Rectangle r = new System.Drawing.Rectangle(x, y, bucketWidth, height);
+                    //        if (r.Contains(e.X, e.Y))
+                    //        {
+                    //            t.selected = true;
+                    //            buckets[i].selected = true;
+                    //        }
+                    //    }
 
-                //    x += bucketWidth + gap;
+                    //    x += bucketWidth + gap;
                 }
                 //graphPanel.Invalidate();
                 //typeLegendPanel.Invalidate();
@@ -734,7 +740,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             else if ((e.Button & MouseButtons.Right) != MouseButtons.None)
             {
                 System.Drawing.Point p = new System.Drawing.Point(e.X, e.Y);
-                    // TODO
+                // TODO
                 //contextMenu.Show(graphPanel, p);
             }
         }
@@ -798,91 +804,91 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         //}
 
         //private void exportMenuItem_Click(object sender, System.EventArgs e)
-       // {
-            //exportSaveFileDialog.FileName = "HistogramBySize.csv";
-            //exportSaveFileDialog.Filter = "Comma separated files | *.csv";
-            //if (exportSaveFileDialog.ShowDialog() == DialogResult.OK)
-            //{
-            //    StreamWriter w = new StreamWriter(exportSaveFileDialog.FileName);
+        // {
+        //exportSaveFileDialog.FileName = "HistogramBySize.csv";
+        //exportSaveFileDialog.Filter = "Comma separated files | *.csv";
+        //if (exportSaveFileDialog.ShowDialog() == DialogResult.OK)
+        //{
+        //    StreamWriter w = new StreamWriter(exportSaveFileDialog.FileName);
 
-            //    TypeDesc selectedType = FindSelectedType();
+        //    TypeDesc selectedType = FindSelectedType();
 
-            //    string title = "Histogram by Size";
-            //    if (selectedType != null)
-            //    {
-            //        title += " of " + selectedType.typeName + " objects";
-            //    }
+        //    string title = "Histogram by Size";
+        //    if (selectedType != null)
+        //    {
+        //        title += " of " + selectedType.typeName + " objects";
+        //    }
 
-            //    w.WriteLine(title);
-            //    w.WriteLine();
+        //    w.WriteLine(title);
+        //    w.WriteLine();
 
-            //    w.WriteLine("{0},{1},{2},{3},{4}", "Min Size", "Max Size", "# Instances", "Total Size", "Type");
+        //    w.WriteLine("{0},{1},{2},{3},{4}", "Min Size", "Max Size", "# Instances", "Total Size", "Type");
 
-            //    bool noBucketSelected = true;
-            //    int minSize = 0;
-            //    int maxSize = int.MaxValue;
-            //    foreach (Bucket b in buckets)
-            //    {
-            //        if (b.selected)
-            //        {
-            //            noBucketSelected = false;
-            //            minSize = b.minSize;
-            //            maxSize = b.maxSize;
-            //        }
-            //    }
-            //    foreach (Bucket b in buckets)
-            //    {
-            //        if (noBucketSelected || b.selected)
-            //        {
-            //            foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
-            //            {
-            //                TypeDesc t = d.Key;
-            //                SizeCount sizeCount = d.Value;
+        //    bool noBucketSelected = true;
+        //    int minSize = 0;
+        //    int maxSize = int.MaxValue;
+        //    foreach (Bucket b in buckets)
+        //    {
+        //        if (b.selected)
+        //        {
+        //            noBucketSelected = false;
+        //            minSize = b.minSize;
+        //            maxSize = b.maxSize;
+        //        }
+        //    }
+        //    foreach (Bucket b in buckets)
+        //    {
+        //        if (noBucketSelected || b.selected)
+        //        {
+        //            foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
+        //            {
+        //                TypeDesc t = d.Key;
+        //                SizeCount sizeCount = d.Value;
 
-            //                if (selectedType == null || t == selectedType)
-            //                {
-            //                    w.WriteLine("{0},{1},{2},{3},{4}", b.minSize, b.maxSize, sizeCount.count, sizeCount.size, t.typeName);
-            //                }
-            //            }
-            //        }
-            //    }
+        //                if (selectedType == null || t == selectedType)
+        //                {
+        //                    w.WriteLine("{0},{1},{2},{3},{4}", b.minSize, b.maxSize, sizeCount.count, sizeCount.size, t.typeName);
+        //                }
+        //            }
+        //        }
+        //    }
 
-            //    w.WriteLine();
-            //    w.WriteLine();
-            //    w.WriteLine("Raw data:");
-            //    w.WriteLine();
+        //    w.WriteLine();
+        //    w.WriteLine();
+        //    w.WriteLine("Raw data:");
+        //    w.WriteLine();
 
-            //    w.WriteLine("{0},{1},{2},{3}", "Instance Size", "# Instances", "Total Size", "Type");
-            //    for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
-            //    {
-            //        int count = histogram.typeSizeStacktraceToCount[i];
-            //        if (count == 0)
-            //        {
-            //            continue;
-            //        }
+        //    w.WriteLine("{0},{1},{2},{3}", "Instance Size", "# Instances", "Total Size", "Type");
+        //    for (int i = 0; i < histogram.typeSizeStacktraceToCount.Length; i++)
+        //    {
+        //        int count = histogram.typeSizeStacktraceToCount[i];
+        //        if (count == 0)
+        //        {
+        //            continue;
+        //        }
 
-            //        int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
-            //        int typeIndex = stacktrace[0];
-            //        int size = stacktrace[1];
+        //        int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
+        //        int typeIndex = stacktrace[0];
+        //        int size = stacktrace[1];
 
-            //        if (minSize <= size && size <= maxSize)
-            //        {
-            //            TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
+        //        if (minSize <= size && size <= maxSize)
+        //        {
+        //            TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
 
-            //            if (selectedType == null || t == selectedType)
-            //            {
-            //                w.WriteLine("{0},{1},{2},{3}", size, count, size * count, t.typeName);
-            //            }
-            //        }
-            //    }
+        //            if (selectedType == null || t == selectedType)
+        //            {
+        //                w.WriteLine("{0},{1},{2},{3}", size, count, size * count, t.typeName);
+        //            }
+        //        }
+        //    }
 
-            //    w.Close();
-            //}
-     //   }
+        //    w.Close();
+        //}
+        //   }
 
         private void showWhoAllocatedMenuItem_Click(object sender, System.EventArgs e)
         {
-            Console.WriteLine(  );
+            Console.WriteLine();
             Histogram selectedHistogram;
             string title;
             TypeDesc selectedType = FindSelectedType();

@@ -1,14 +1,17 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using System;
-using System.Text;
-using System.IO;
-using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
 using System.Windows.Forms;
-using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 
 namespace CLRProfiler
 {

@@ -1,35 +1,29 @@
-﻿using CLRProfiler;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// See LICENSE file in the project root for full license information.
+////
+
+using CLRProfiler;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveCharts;
 using LiveCharts.Configurations;
 using LiveCharts.Wpf;
 using nanoFramework.Tools.NanoProfiler.Models;
-using nanoFramework.Tools.NanoProfiler.Views.Controls;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Forms.Integration;
-using System.Windows.Media;
-using WinForms.CLRProfiler;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
-    public partial class GraphViewModel: ObservableObject
+    public partial class GraphViewModel : ObservableObject
     {
-
         #region Commands
         [RelayCommand]
         private void ShowWhoAllocated()
@@ -44,11 +38,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         [RelayCommand]
         private void ListButtonSelected(object buttonSelected)
         {
-            Console.WriteLine(  );
+            Console.WriteLine();
         }
 
         #endregion
-
 
         #region Observable properties
 
@@ -72,10 +65,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         #endregion
 
-
-
         #region Properties
-
 
         private readonly Graph _graph;
         private Font font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(204)));
@@ -88,7 +78,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         Random r = new Random(0);
 
-
         private int fontHeight;
 
         private ArrayList levelList;
@@ -99,10 +88,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
 
         //  This is changing details
-        
+
         float minHeight = 1f;
         float minWidth = 1f;
-
 
         #endregion
 
@@ -136,7 +124,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     LabelPoint = (value => $"{item.GraphPercentage}%"),
                     Title = $"{item.Name}{Environment.NewLine}{item.GraphBytes}{Environment.NewLine}{item.GraphPercentage}%",
                     Foreground = System.Windows.Media.Brushes.Black,
-                    LabelPosition=PieLabelPosition.InsideSlice
+                    LabelPosition = PieLabelPosition.InsideSlice
                 };
 
                 PieSeriesCollection.Add(pieSerie);
@@ -205,7 +193,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                             GraphBytes = bytesArrived,
                             Name = e.ToVertex.name
                         });
-                    
+
                     }
                 }
             }
@@ -526,7 +514,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             ScaleList = new ObservableCollection<int>() { 10, 20, 50, 100, 200, 500, 1000 };
             ScaleSelectedValue = 100;
 
-            DetailsList = new ObservableCollection<double>() {0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20 };
+            DetailsList = new ObservableCollection<double>() { 0, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20 };
             DetailsSelectedValue = 1;
         }
 
@@ -546,7 +534,5 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             SetPieValues();
         }
         #endregion
-
-
     }
 }

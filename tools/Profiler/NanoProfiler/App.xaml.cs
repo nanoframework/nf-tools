@@ -1,6 +1,10 @@
-﻿using nanoFramework.Tools.NanoProfiler.Views;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// See LICENSE file in the project root for full license information.
+////
+
+using nanoFramework.Tools.NanoProfiler.Views;
 using System.Windows;
-using nanoFramework.Tools.NanoProfiler;
 
 namespace nanoFramework.Tools.NanoProfiler
 {
@@ -11,8 +15,6 @@ namespace nanoFramework.Tools.NanoProfiler
     {
         public App()
         {
-            //this.InitializeComponent();
-            //MainWindow = new ProfilerLauncher();
             MainWindow = new ProfilerLauncherView();
             MainWindow.Show();
         }

@@ -1,4 +1,9 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// See LICENSE file in the project root for full license information.
+////
+
+using CommunityToolkit.Mvvm.Messaging;
 using nanoFramework.Tools.NanoProfiler.ViewModels;
 using System.Windows;
 using System.Windows.Input;

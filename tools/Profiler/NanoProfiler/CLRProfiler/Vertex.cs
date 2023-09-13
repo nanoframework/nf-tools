@@ -1,12 +1,14 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////namespace CLRProfiler
+////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
 namespace CLRProfiler
 {
     using System;
-    using System.Drawing;
     using System.Collections.Generic;
-    using System.Text;
+    using System.Drawing;
 
     /// <summary>
     ///    Summary description for Vertex.
@@ -31,7 +33,7 @@ namespace CLRProfiler
         internal string basicSignature;
         internal bool signatureCurtated;
         internal bool active;
-        private  Edge cachedOutgoingEdge;
+        private Edge cachedOutgoingEdge;
         internal ulong[] weightHistory;
         private int hint;
         internal ulong basicWeight;
@@ -55,18 +57,18 @@ namespace CLRProfiler
 
             while (true)
             {
-                int nextSeparatorPos = name.IndexOf('.', thisSeparatorPos+1, endPos - (thisSeparatorPos+1));
-                if (nextSeparatorPos < 0 && thisSeparatorPos < name.Length-2)
-                    nextSeparatorPos = name.IndexOf("::", thisSeparatorPos+1, endPos - (thisSeparatorPos+1));
-                if (nextSeparatorPos < 0 || nextSeparatorPos >= name.Length-1)
+                int nextSeparatorPos = name.IndexOf('.', thisSeparatorPos + 1, endPos - (thisSeparatorPos + 1));
+                if (nextSeparatorPos < 0 && thisSeparatorPos < name.Length - 2)
+                    nextSeparatorPos = name.IndexOf("::", thisSeparatorPos + 1, endPos - (thisSeparatorPos + 1));
+                if (nextSeparatorPos < 0 || nextSeparatorPos >= name.Length - 1)
                     break;
                 prevSeparatorPos = thisSeparatorPos;
                 thisSeparatorPos = nextSeparatorPos;
             }
             if (prevSeparatorPos >= 0)
             {
-                basicName = name.Substring(prevSeparatorPos+1);
-                return name.Substring(0, prevSeparatorPos+1);
+                basicName = name.Substring(prevSeparatorPos + 1);
+                return name.Substring(0, prevSeparatorPos + 1);
             }
             else
             {
@@ -140,7 +142,7 @@ namespace CLRProfiler
         static bool IdenticalSequence(Vertex[] path, int i, int j, int length)
         {
             for (int k = 0; k < length; k++)
-                if (path[i+k] != path[j+k])
+                if (path[i + k] != path[j + k])
                     return false;
             return true;
         }
@@ -150,7 +152,7 @@ namespace CLRProfiler
             int len = i;
             if (len > length - j)
                 len = length - j;
-            for ( ; len > 0; len--)
+            for (; len > 0; len--)
             {
                 int repLen = 0;
                 while (j + repLen + len <= length && IdenticalSequence(path, i - len, j + repLen, len))
@@ -176,7 +178,7 @@ namespace CLRProfiler
 
         internal static string RemoveRecursionCount(string name)
         {
-            int i = name.Length-1;
+            int i = name.Length - 1;
             if (i <= 0 || name[i] != ')')
                 return name;
             i--;

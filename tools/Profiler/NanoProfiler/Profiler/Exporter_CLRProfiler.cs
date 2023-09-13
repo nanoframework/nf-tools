@@ -1,6 +1,10 @@
-using System;
+////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using _PRF = nanoFramework.Tools.NanoProfiler;
@@ -11,8 +15,8 @@ namespace nanoFramework.Tools.NanoProfiler
     {
         private bool _processedFirstEvent;
 
-        private Dictionary<uint, uint>          _methodIdLookup;
-        private Dictionary<ObjectType, ulong>   _typeIdLookup;
+        private Dictionary<uint, uint> _methodIdLookup;
+        private Dictionary<ObjectType, ulong> _typeIdLookup;
 
         private uint _nextMethodId;
         private ulong _nextTypeId;
@@ -48,7 +52,7 @@ namespace nanoFramework.Tools.NanoProfiler
             else
             {
                 if (pe.Time >= _lastWrittenTime + 1)
-                {   
+                {
                     // Mimic the 5-ms granularity of the CLRProfiler.
                     _sw.WriteLine("i {0}", pe.Time - _startTime);
                     _lastWrittenTime = pe.Time;
@@ -177,7 +181,7 @@ namespace nanoFramework.Tools.NanoProfiler
 
                         uint lastObjAddress = ps._liveObjectTable.Last().Key + 1;
                         _sw.WriteLine($"b 1 0 0 0x{ps.HeapStart:x} {(ps.HeapAddressIsAbsolute ? $"0x{lastObjAddress:X8}" : $"{lastObjAddress}")} {ps.HeapBytesReserved} 0");
-                        
+
                         break;
                     }
 
@@ -268,7 +272,7 @@ namespace nanoFramework.Tools.NanoProfiler
                 }
 
                 _sw.WriteLine($"f {methodid} {methodName} (UNKNOWN_ARGUMENTS) 0 0");
-                
+
                 return methodid;
             }
         }
@@ -283,8 +287,8 @@ namespace nanoFramework.Tools.NanoProfiler
             ulong typeid = FindType(ps, type);
 
             //"1" means a type id and size come before the call stack.
-            string flags = $"1 {typeid} {size}";  
-            
+            string flags = $"1 {typeid} {size}";
+
             return MakeCallStackInternal(ps, callStack, flags);
         }
 

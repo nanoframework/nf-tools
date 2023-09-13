@@ -1,10 +1,9 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// See LICENSE file in the project root for full license information.
+////
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace nanoFramework.Tools.NanoProfiler.Models
 {
@@ -21,7 +20,5 @@ namespace nanoFramework.Tools.NanoProfiler.Models
 
         [ObservableProperty]
         private double _bucketTotalSize;
-
     }
-
 }

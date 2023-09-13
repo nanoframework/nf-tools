@@ -1,4 +1,10 @@
-﻿using CLRProfiler;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
+using CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.ViewModels;
 using nanoFramework.Tools.NanoProfiler.Views;
 using System.Text;
@@ -37,50 +43,50 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             RelocatedBytesValueLabel.Content = CalculateTotalSize(_logResult.relocatedHistogram);
             FinalHeapBytesValueLabel.Content = CalculateTotalSize(GetFinalHeapHistogram());
 
-            Gen0CollectionsValueLabel.Content= FormatNumber(_logResult.liveObjectTable.lastGcGen0Count);
-            Gen1CollectionsValueLabel.Content= FormatNumber(_logResult.liveObjectTable.lastGcGen1Count);
-            Gen2CollectionsValueLabel.Content= FormatNumber(_logResult.liveObjectTable.lastGcGen2Count);
-            InducedCollectionsValueLabel.Content= "Unknown";
+            Gen0CollectionsValueLabel.Content = FormatNumber(_logResult.liveObjectTable.lastGcGen0Count);
+            Gen1CollectionsValueLabel.Content = FormatNumber(_logResult.liveObjectTable.lastGcGen1Count);
+            Gen2CollectionsValueLabel.Content = FormatNumber(_logResult.liveObjectTable.lastGcGen2Count);
+            InducedCollectionsValueLabel.Content = "Unknown";
 
-            Gen0HeapBytesValueLabel.Content= "Unknown";
-            Gen1HeapBytesValueLabel.Content= "Unknown";
-            Gen2HeapBytesValueLabel.Content= "Unknown";
-            ObjectsFinalizedValueLabel.Content= "Unknown";
-            CriticalObjectsFinalizedValueLabel.Content= "Unknown";
-            LargeObjectHeapBytesValueLabel.Content= "Unknown";
+            Gen0HeapBytesValueLabel.Content = "Unknown";
+            Gen1HeapBytesValueLabel.Content = "Unknown";
+            Gen2HeapBytesValueLabel.Content = "Unknown";
+            ObjectsFinalizedValueLabel.Content = "Unknown";
+            CriticalObjectsFinalizedValueLabel.Content = "Unknown";
+            LargeObjectHeapBytesValueLabel.Content = "Unknown";
 
             if (_log.gcCount[0] > 0)
             {
-                ObjectsFinalizedValueLabel.Content= CalculateTotalCount(_logResult.finalizerHistogram);
-                CriticalObjectsFinalizedValueLabel.Content= CalculateTotalCount(_logResult.criticalFinalizerHistogram);
-                InducedCollectionsValueLabel.Content= FormatNumber(_log.inducedGcCount[0]);
-                Gen0HeapBytesValueLabel.Content= FormatNumber(_log.cumulativeGenerationSize[0] / (uint)_log.gcCount[0]);
-                
+                ObjectsFinalizedValueLabel.Content = CalculateTotalCount(_logResult.finalizerHistogram);
+                CriticalObjectsFinalizedValueLabel.Content = CalculateTotalCount(_logResult.criticalFinalizerHistogram);
+                InducedCollectionsValueLabel.Content = FormatNumber(_log.inducedGcCount[0]);
+                Gen0HeapBytesValueLabel.Content = FormatNumber(_log.cumulativeGenerationSize[0] / (uint)_log.gcCount[0]);
+
                 if (_log.gcCount[1] > 0)
                 {
-                    Gen1HeapBytesValueLabel.Content= FormatNumber(_log.cumulativeGenerationSize[1] / (uint)_log.gcCount[1]);
+                    Gen1HeapBytesValueLabel.Content = FormatNumber(_log.cumulativeGenerationSize[1] / (uint)_log.gcCount[1]);
                 }
                 else
                 {
-                    Gen1HeapBytesValueLabel.Content= FormatNumber(_log.generationSize[1]);
+                    Gen1HeapBytesValueLabel.Content = FormatNumber(_log.generationSize[1]);
                 }
 
                 if (_log.gcCount[2] > 0)
                 {
-                    Gen2HeapBytesValueLabel.Content= FormatNumber(_log.cumulativeGenerationSize[2] / (uint)_log.gcCount[2]);
+                    Gen2HeapBytesValueLabel.Content = FormatNumber(_log.cumulativeGenerationSize[2] / (uint)_log.gcCount[2]);
                 }
                 else
                 {
-                    Gen2HeapBytesValueLabel.Content= FormatNumber(_log.generationSize[2]);
+                    Gen2HeapBytesValueLabel.Content = FormatNumber(_log.generationSize[2]);
                 }
 
                 if (_log.gcCount[3] > 0)
                 {
-                    LargeObjectHeapBytesValueLabel.Content= FormatNumber(_log.cumulativeGenerationSize[3] / (uint)_log.gcCount[3]);
+                    LargeObjectHeapBytesValueLabel.Content = FormatNumber(_log.cumulativeGenerationSize[3] / (uint)_log.gcCount[3]);
                 }
                 else
                 {
-                    LargeObjectHeapBytesValueLabel.Content= FormatNumber(_log.generationSize[3]);
+                    LargeObjectHeapBytesValueLabel.Content = FormatNumber(_log.generationSize[3]);
                 }
             }
             else if (!_logResult.createdHandlesHistogram.Empty)
@@ -88,21 +94,21 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 // we know this is a new format log file
                 // log.gcCount[0] was zero because there were no collections
                 // in that case we know there were no induced collections and no finalized objects
-                InducedCollectionsValueLabel.Content= "0";
-                ObjectsFinalizedValueLabel.Content= "0";
-                CriticalObjectsFinalizedValueLabel.Content= "0";
+                InducedCollectionsValueLabel.Content = "0";
+                ObjectsFinalizedValueLabel.Content = "0";
+                CriticalObjectsFinalizedValueLabel.Content = "0";
             }
 
             if (_logResult.createdHandlesHistogram.Empty)
             {
-                HandlesCreatedValueLabel.Content= "Unknown";
-                HandlesDestroyedValueLabel.Content= "Unknown";
-                HandlesSurvivingValueLabel.Content= "Unknown";
+                HandlesCreatedValueLabel.Content = "Unknown";
+                HandlesDestroyedValueLabel.Content = "Unknown";
+                HandlesSurvivingValueLabel.Content = "Unknown";
             }
             else
             {
-                HandlesCreatedValueLabel.Content= CalculateTotalCount(_logResult.createdHandlesHistogram);
-                HandlesDestroyedValueLabel.Content= CalculateTotalCount(_logResult.destroyedHandlesHistogram);
+                HandlesCreatedValueLabel.Content = CalculateTotalCount(_logResult.createdHandlesHistogram);
+                HandlesDestroyedValueLabel.Content = CalculateTotalCount(_logResult.destroyedHandlesHistogram);
 
                 int count = 0;
 
@@ -111,11 +117,11 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                     count++;
                 }
 
-                HandlesSurvivingValueLabel.Content= FormatNumber(count);
+                HandlesSurvivingValueLabel.Content = FormatNumber(count);
             }
 
-            CommentsValueLabel.Content= FormatNumber(_log.commentEventList.count);
-            HeapDumpsValueLabel.Content= FormatNumber(_log.heapDumpEventList.count);
+            CommentsValueLabel.Content = FormatNumber(_log.commentEventList.count);
+            HeapDumpsValueLabel.Content = FormatNumber(_log.heapDumpEventList.count);
         }
 
         private string FormatNumber(double number)

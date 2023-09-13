@@ -1,32 +1,23 @@
-﻿using LiveCharts.Wpf;
-using LiveCharts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// See LICENSE file in the project root for full license information.
+////
+
 using CLRProfiler;
-using System.Drawing;
-using Pen = System.Drawing.Pen;
-using System.Diagnostics;
-using System.Drawing.Drawing2D;
-using System.Collections;
-using Size = System.Windows.Size;
-using System.ComponentModel;
-using System.Collections.ObjectModel;
-using nanoFramework.Tools.NanoProfiler.CLRProfiler;
-using static System.Net.Mime.MediaTypeNames;
-using System.Globalization;
-using nanoFramework.Tools.NanoProfiler.Models;
+using LiveCharts;
 using LiveCharts.Configurations;
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
+using nanoFramework.Tools.NanoProfiler.Models;
+using System;
+using System.Collections;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Text;
+using System.Windows;
+using Pen = System.Drawing.Pen;
 
 namespace nanoFramework.Tools.NanoProfiler.Views
 {
@@ -101,7 +92,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
         private System.Windows.Forms.Panel outerPanel = new System.Windows.Forms.Panel();
         private Graph _graph;
         private System.Windows.Forms.Panel graphPanel = new System.Windows.Forms.Panel();
-        
+
         public Func<ChartPoint, string> PointLabel { get; set; }
         private CartesianMapper<GraphDataModel> GraphConfiguration;
         #region Constructor
@@ -180,7 +171,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             ScaleList = new ObservableCollection<int>() { 10, 20, 50, 100, 200, 500, 1000 };
             ScaleSelectedValue = 100;
 
-            DetailsList = new ObservableCollection<double>() { 0.1, 0.2, 0.5, 1, 2,5,10,20 };
+            DetailsList = new ObservableCollection<double>() { 0.1, 0.2, 0.5, 1, 2, 5, 10, 20 };
             DetailsSelectedValue = 1;
         }
 
@@ -206,7 +197,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
         int gapWidth = 100;
         float minHeight = 1.0f;
         float minWidth = 1.0f;
-        private ulong totalWeight; 
+        private ulong totalWeight;
         private ArrayList levelList;
         private Font font;
         private int fontHeight;
@@ -812,7 +803,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine(  );
+            Console.WriteLine();
         }
     }
 }

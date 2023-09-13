@@ -1,40 +1,27 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// See LICENSE file in the project root for full license information.
+////
+
+using CLRProfiler;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using LiveCharts;
+using LiveCharts.Configurations;
+using LiveCharts.Wpf;
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.Models;
-using nanoFramework.Tools.NanoProfiler.Services;
+using nanoFramework.Tools.NanoProfiler.Views;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
-using System;
-using System.Windows.Media;
-using LiveCharts;
-using System.Linq;
-using nanoFramework.Tools.NanoProfiler.Services.API;
-using CLRProfiler;
-using System.Collections;
-using System.Diagnostics.Metrics;
 using System.Drawing;
-using System.Windows.Controls;
-using System.Diagnostics;
-using System.Windows.Automation.Peers;
-using System.Windows;
-using Polly.Bulkhead;
-using LiveCharts.Wpf;
-using LiveCharts.Defaults;
-using LiveCharts.Configurations;
-using System.Windows.Markup;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Brushes = System.Windows.Media.Brushes;
-using CommunityToolkit.Mvvm.Input;
-using nanoFramework.Tools.NanoProfiler.CLRProfiler;
-using nanoFramework.Tools.NanoProfiler.Views;
-using System.Xml;
-using System.Runtime.Serialization;
-using System.Configuration;
+using System.Linq;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
-    public partial class HistogramViewModel: ObservableObject
+    public partial class HistogramViewModel : ObservableObject
     {
         #region Observable Properties     
 
@@ -43,7 +30,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         [ObservableProperty]
         private SeriesCollection _seriesCollection = new SeriesCollection();
-        
+
         [ObservableProperty]
         private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
 
@@ -69,7 +56,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private Dictionary<int, List<TypeDescModel>> originalDictionary = new Dictionary<int, List<TypeDescModel>>();
         private Dictionary<int, List<TypeDescModel>> convertedDictionary = new Dictionary<int, List<TypeDescModel>>();
 
-        Bucket[] buckets = new Bucket[] {};
+        Bucket[] buckets = new Bucket[] { };
         double currentScaleFactor;
         public Histogram histogram { get; set; }
         private string[] typeName;
@@ -102,13 +89,13 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private void SetComboValues()
         {
-            VerticalScaleList = new ObservableCollection<double>() { 1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000 };
+            VerticalScaleList = new ObservableCollection<double>() { 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000 };
             VerticalScaleSelectedValue = 10;
 
             HorizontalScaleList = new ObservableCollection<string>() { "Coarse", "Medium", "Fine", "Very Fine" };
             HorizontalScaleSelectedValue = "Coarse";
         }
-              
+
         public void SetHistogram()
         {
             graphPanel_Paint();
@@ -203,7 +190,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     }
                 }
             }
-            
+
 
 
             Graph graph = selectedHistogram.BuildAllocationGraph(new FilterForm());
@@ -219,7 +206,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         }
 
-        
+
         [RelayCommand]
         private void DrillDown(ChartPoint chartPointSelected)
         {
@@ -237,17 +224,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             }
 
             BuildSizeRangesAndTypeTable(histogram.typeSizeStacktraceToCount);
-                
+
             ColorTypes();
 
             DrawBuckets();
-                
+
             initialized = true;
         }
 
         int verticalScale = 0;
 
-       
+
         string FormatSize(ulong size)
         {
             double w = size;
@@ -305,7 +292,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 {
                     BucketsValues.Add(new BucketDataModel()
                     {
-                        BucketPosition = bucketPosition, FullBucket = b                    
+                        BucketPosition = bucketPosition,
+                        FullBucket = b
                     });
                     string label = string.Empty;
                     if (HorizontalScaleSelectedValue.Equals("Coarse"))
@@ -342,7 +330,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                         listValues.Add(new TypeDescModel()
                         {
-                            TypeDesc = t, ValueSize = d.Value.size, BucketTotalSize = b.totalSize
+                            TypeDesc = t,
+                            ValueSize = d.Value.size,
+                            BucketTotalSize = b.totalSize
                         });
                         totalsizeCount += d.Value.size;
                     }

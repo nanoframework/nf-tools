@@ -1,4 +1,10 @@
-﻿using nanoFramework.Tools.Debugger;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
+using nanoFramework.Tools.Debugger;
 using nanoFramework.Tools.Debugger.Extensions;
 using nanoFramework.Tools.Debugger.WireProtocol;
 using System;
@@ -206,17 +212,17 @@ namespace nanoFramework.Tools.NanoProfiler
             }
             else
             {
-                if(await Connect())
+                if (await Connect())
                 {
                     //if (result)
                     //{
-                        _session.SetProfilingOptions(checkCalls.IsChecked.Value, checkAllocations.IsChecked.Value);
-                        _engine.ResumeExecution();
+                    _session.SetProfilingOptions(checkCalls.IsChecked.Value, checkAllocations.IsChecked.Value);
+                    _engine.ResumeExecution();
 
-                        LogText("INFO: Successfully connected to nanoCLR.");
-                        LogText("INFO: Using file: " + _exporter.FileName);
+                    LogText("INFO: Successfully connected to nanoCLR.");
+                    LogText("INFO: Using file: " + _exporter.FileName);
 
-                        ConnectComplete();
+                    ConnectComplete();
                     //}
                     //else
                     //{
@@ -227,9 +233,9 @@ namespace nanoFramework.Tools.NanoProfiler
                 else
                 {
                     //Exception ex = (Exception)e.Error;
-                    
+
                     LogText(string.Format("INFO: Error connecting to device:\r\n{0}", "???"));
-                    
+
                     Disconnect();
                 }
             }
@@ -349,7 +355,7 @@ namespace nanoFramework.Tools.NanoProfiler
 
                             }
 
-                            return Task.FromResult(true); 
+                            return Task.FromResult(true);
                             // done here
                             //break;
                         }
@@ -424,9 +430,9 @@ namespace nanoFramework.Tools.NanoProfiler
             if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(openFileDialog.FileName))
             {
                 // looks like we have a valid path
-                
+
                 _clrProfiler.LoadLogFile(openFileDialog.FileName);
-               
+
                 EnableDisableViewMenuItems();
 
             }

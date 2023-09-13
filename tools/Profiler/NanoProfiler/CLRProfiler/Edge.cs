@@ -1,6 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////namespace CLRProfiler
+////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
 namespace CLRProfiler
 {
     using System;
@@ -16,14 +19,14 @@ namespace CLRProfiler
         internal bool selected;
         internal Brush brush;
         internal Pen pen;
-        internal Vertex ToVertex 
+        internal Vertex ToVertex
         {
             get
             {
                 return toVertex;
             }
         }
-        internal Vertex FromVertex 
+        internal Vertex FromVertex
         {
             get
             {

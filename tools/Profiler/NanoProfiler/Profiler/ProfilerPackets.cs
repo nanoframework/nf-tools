@@ -1,14 +1,14 @@
+////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
+using nanoFramework.Tools.NanoProfiler.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
-
 using _DBG = nanoFramework.Tools.Debugger;
-using _WP = nanoFramework.Tools.Debugger.WireProtocol;
-using _PRF = nanoFramework.Tools.NanoProfiler;
-using nanoFramework.Tools.NanoProfiler.Extensions;
 
 namespace nanoFramework.Tools.NanoProfiler
 {
@@ -19,7 +19,7 @@ namespace nanoFramework.Tools.NanoProfiler
         {
             System.Diagnostics.Debug.Print(format, args);
         }
-        
+
         [Conditional("PACKET_TRACE")]
         internal static void PacketTrace(string ouptut)
         {
@@ -32,10 +32,10 @@ namespace nanoFramework.Tools.NanoProfiler
         internal static Packets.ProfilerPacket Decode(_DBG.BitStream stream)
         {
             uint type = stream.ReadBits(Packets.Commands.Bits.CommandHeader);
-            
+
             Tracing.PacketTrace("New Packet: {0}", type.ToCommandName());
-            
-            switch(type)
+
+            switch (type)
             {
                 case Packets.Commands.c_Profiling_Timestamp:
                     return new Packets.TimestampPacket(stream);
@@ -80,46 +80,46 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 {
     internal static class Commands
     {
-        internal const byte c_Profiling_Timestamp            = 0x01;
-        internal const byte c_Profiling_Memory_Layout        = 0x02;
+        internal const byte c_Profiling_Timestamp = 0x01;
+        internal const byte c_Profiling_Memory_Layout = 0x02;
 
-        internal const byte c_Profiling_HeapDump_Start       = 0x03;
-        internal const byte c_Profiling_HeapDump_Root        = 0x04;
-        internal const byte c_Profiling_HeapDump_Object      = 0x05;
-        internal const byte c_Profiling_HeapDump_Stop        = 0x06;
+        internal const byte c_Profiling_HeapDump_Start = 0x03;
+        internal const byte c_Profiling_HeapDump_Root = 0x04;
+        internal const byte c_Profiling_HeapDump_Object = 0x05;
+        internal const byte c_Profiling_HeapDump_Stop = 0x06;
 
-        internal const byte c_Profiling_Calls_Call           = 0x07;
-        internal const byte c_Profiling_Calls_Return         = 0x08;
-        internal const byte c_Profiling_Calls_CtxSwitch      = 0x09;
+        internal const byte c_Profiling_Calls_Call = 0x07;
+        internal const byte c_Profiling_Calls_Return = 0x08;
+        internal const byte c_Profiling_Calls_CtxSwitch = 0x09;
 
-        internal const byte c_Profiling_Allocs_Alloc         = 0x0a;
-        internal const byte c_Profiling_Allocs_Relloc        = 0x0b;
-        internal const byte c_Profiling_Allocs_Delete        = 0x0c;
+        internal const byte c_Profiling_Allocs_Alloc = 0x0a;
+        internal const byte c_Profiling_Allocs_Relloc = 0x0b;
+        internal const byte c_Profiling_Allocs_Delete = 0x0c;
 
         internal const byte c_Profiling_GarbageCollect_Begin = 0x0d;
-        internal const byte c_Profiling_GarbageCollect_End   = 0x0e;
+        internal const byte c_Profiling_GarbageCollect_End = 0x0e;
 
-        internal const byte c_Profiling_HeapCompact_Begin    = 0x0f;
-        internal const byte c_Profiling_HeapCompact_End      = 0x10;
+        internal const byte c_Profiling_HeapCompact_Begin = 0x0f;
+        internal const byte c_Profiling_HeapCompact_End = 0x10;
 
         internal static class RootTypes
         {
             internal const byte Root_Finalizer = 0x01;
             internal const byte Root_AppDomain = 0x02;
-            internal const byte Root_Assembly  = 0x03;
-            internal const byte Root_Thread    = 0x04;
-            internal const byte Root_Stack     = 0x05;
+            internal const byte Root_Assembly = 0x03;
+            internal const byte Root_Thread = 0x04;
+            internal const byte Root_Stack = 0x05;
         }
 
         internal static class Bits
         {
-            internal const int AssemblyShift       = 16;
-            internal const int CallTimingShift     = 4;
-            internal const int CommandHeader       = 8;
-            internal const int DataType            = 8;
-            internal const int NibbleCount         = 3;
-            internal const int RootTypes           = 3;
-            internal const int TimestampShift      = 8;
+            internal const int AssemblyShift = 16;
+            internal const int CallTimingShift = 4;
+            internal const int CommandHeader = 8;
+            internal const int DataType = 8;
+            internal const int NibbleCount = 3;
+            internal const int RootTypes = 3;
+            internal const int TimestampShift = 8;
         }
     }
 
@@ -131,7 +131,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             get { return m_type; }
         }
 
-        private   ProfilerPacket(         ) { }
+        private ProfilerPacket() { }
         protected ProfilerPacket(byte type) { m_type = type; }
 
         internal abstract void Process(ProfilerSession sess);
@@ -190,7 +190,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         public MemoryLayoutPacket(_DBG.BitStream stream) : base(Commands.c_Profiling_Memory_Layout)
         {
             m_heapAddress = ReadAndUnpackBits(stream);
-            m_heapLength  = ReadAndUnpackBits(stream);
+            m_heapLength = ReadAndUnpackBits(stream);
             Tracing.PacketTrace($"layout 0x{m_heapAddress:X8}:{m_heapLength}");
         }
 
@@ -209,7 +209,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
         internal override void Process(ProfilerSession sess)
         {
-            if(sess._currentHeapDump != null)
+            if (sess._currentHeapDump != null)
             {
                 //We lost a heap-dump end packet somewhere.
                 //Insert one to clean up the last heap dump.
@@ -231,7 +231,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         public HeapDumpStopPacket(_DBG.BitStream stream)
             : base(Commands.c_Profiling_HeapDump_Stop)
         {
-             m_heapBytesUsed = ReadAndUnpackBits(stream);
+            m_heapBytesUsed = ReadAndUnpackBits(stream);
         }
 
         internal override void Process(ProfilerSession sess)
@@ -256,7 +256,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             m_address = ReadAndUnpackBits(stream);
             m_source = stream.ReadBits(Packets.Commands.Bits.RootTypes);
-            switch(m_source)
+            switch (m_source)
             {
                 case Packets.Commands.RootTypes.Root_Stack:
                     m_method = ReadMethodDefIndex(stream);
@@ -275,7 +275,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
             HeapDumpRoot hdr = new HeapDumpRoot();
             hdr._address = m_address;
-            switch(m_source)
+            switch (m_source)
             {
                 case Packets.Commands.RootTypes.Root_AppDomain:
                     hdr._type = HeapDumpRoot.RootType.AppDomain;
@@ -306,7 +306,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         private uint m_size;
         private _DBG.nanoClrDataType m_dt;
         private uint m_typedef;
-        
+
         private ushort m_arrayLevels;
         private uint m_arrayElementType;
 
@@ -349,11 +349,13 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             hdo._address = m_address;
             hdo._size = m_size;
 
-            if(m_dt == _DBG.nanoClrDataType.DATATYPE_CLASS || m_dt == _DBG.nanoClrDataType.DATATYPE_VALUETYPE)
+            if (m_dt == _DBG.nanoClrDataType.DATATYPE_CLASS || m_dt == _DBG.nanoClrDataType.DATATYPE_VALUETYPE)
             {
                 sess.ResolveTypeName(m_typedef); //Cache type name.
                 hdo._type = new ObjectType(m_typedef);
-            } else {
+            }
+            else
+            {
                 _DBG.nanoClrDataType dt = (_DBG.nanoClrDataType)m_dt;
                 if (dt == _DBG.nanoClrDataType.DATATYPE_SZARRAY)
                 {
@@ -518,9 +520,9 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             {
                 sess._threadCallStacks.Add(sess._currentThreadPID, new Stack<uint>());
             }
-            
+
             alloc._callStack = sess._threadCallStacks[sess._currentThreadPID].ToArray();
-            
+
             Array.Reverse(alloc._callStack);
 
             // cache the type name
@@ -563,7 +565,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
             SortedDictionary<uint, string> newTable = new SortedDictionary<uint, string>();
 
-            foreach(var liveObject in sess._liveObjectTable)
+            foreach (var liveObject in sess._liveObjectTable)
             {
                 uint ptr = liveObject.Key;
                 uint j;
@@ -583,7 +585,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
                     newTable.Add(ptr, liveObject.Value);
                 }
             }
-            
+
             sess._liveObjectTable = newTable;
 
             ObjectRelocation or = new ObjectRelocation();
@@ -667,7 +669,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             sess.AddEvent(gc);
         }
     }
-    
+
     internal class HeapCompactionBeginPacket : ProfilerPacket
     {
         private uint m_freeBytes;

@@ -14,16 +14,35 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="CLRProfiler\AgeHistogram.xaml.cs" />
+    <Compile Remove="CLRProfiler\AllocationDiff.cs" />
+    <Compile Remove="CLRProfiler\DiffCallTreeForm.xaml.cs" />
+    <Compile Remove="CLRProfiler\DiffDataNode.cs" />
+    <Compile Remove="CLRProfiler\DiffTreeListView.cs" />
+    <Compile Remove="CLRProfiler\NamedManualResetEvent.cs" />
+    <Compile Remove="CLRProfiler\Readers.cs" />
+    <Compile Remove="CLRProfiler\RegisterDLL.cs" />
+    <Compile Remove="CLRProfiler\Reports.cs" />
+    <Compile Remove="CLRProfiler\ViewByAddressForm.xaml.cs" />
+    <Compile Remove="CLRProfiler\ViewCommentsForm.xaml.cs" />
+    <Compile Remove="CLRProfiler\ViewFilter.xaml.cs" />
+    <Compile Remove="CLRProfiler\WaitingForConnectionForm.xaml.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="CLRProfiler\AgeHistogram.xaml" />
+    <Page Remove="CLRProfiler\DiffCallTreeForm.xaml" />
+    <Page Remove="CLRProfiler\ViewByAddressForm.xaml" />
+    <Page Remove="CLRProfiler\ViewCommentsForm.xaml" />
+    <Page Remove="CLRProfiler\ViewFilter.xaml" />
+    <Page Remove="CLRProfiler\WaitingForConnectionForm.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
     <PackageReference Include="LiveCharts.Wpf" Version="0.9.7" />
     <PackageReference Include="nanoFramework.Tools.Debugger.Net" Version="2.4.34" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Update="CLRProfiler\GraphViewForm.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-    </Page>
   </ItemGroup>
 
   <ItemGroup>

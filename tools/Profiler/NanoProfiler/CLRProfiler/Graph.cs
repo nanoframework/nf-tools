@@ -1,12 +1,14 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////namespace CLRProfiler
+////
+// Copyright (c) .NET Foundation and Contributors.
+// Portions Copyright (c) Microsoft Corporation.  All rights reserved.
+// See LICENSE file in the project root for full license information.
+////
+
 namespace CLRProfiler
 {
     using System;
-    using System.Collections;
-    using System.Diagnostics;
     using System.Collections.Generic;
+    using System.Diagnostics;
 
     /// <summary>
     ///    Summary description for Graph.
@@ -28,7 +30,7 @@ namespace CLRProfiler
             AssemblyGraph,
             HandleAllocationGraph,
             ReferenceGraph,
-    	    Invalid
+            Invalid
         };
         internal GraphType graphType;
         internal ObjectGraph.BuildTypeGraphOptions typeGraphOptions;
@@ -177,14 +179,14 @@ namespace CLRProfiler
 #else
         internal void AssignLevelsToVertices()
         {
-            const int UNASSIGNED_LEVEL = Int32.MaxValue/2;
+            const int UNASSIGNED_LEVEL = Int32.MaxValue / 2;
             foreach (Vertex v in vertices.Values)
             {
                 v.level = UNASSIGNED_LEVEL;
-                if (   v != topVertex
+                if (v != topVertex
                     && v != bottomVertex)
                 {
-                    if (   v.incomingEdges.Count == 0
+                    if (v.incomingEdges.Count == 0
                         && v.outgoingEdges.Count != 0)
                         topVertex.FindOrCreateOutgoingEdge(v);
                     else if (v.incomingEdges.Count != 0
@@ -236,7 +238,7 @@ namespace CLRProfiler
                         continue;
                     }
                 }
-                
+
                 // If we made progress, continue.
                 if (assignedVertexCount > 0)
                     continue;
@@ -273,7 +275,7 @@ namespace CLRProfiler
                         if (e.ToVertex.level == UNASSIGNED_LEVEL)
                             unAssignedOutputCount++;
                     }
-                    if (   unAssignedInputCount <  minInputCount
+                    if (unAssignedInputCount < minInputCount
                         || unAssignedInputCount == minInputCount && unAssignedOutputCount > maxOutputCount)
                     {
                         bestVertex = v;
@@ -287,7 +289,7 @@ namespace CLRProfiler
                 int maxInputLevel = 0;
                 foreach (Edge e in bestVertex.incomingEdges.Values)
                 {
-                    if (   e.FromVertex.level != UNASSIGNED_LEVEL
+                    if (e.FromVertex.level != UNASSIGNED_LEVEL
                         && e.FromVertex.level > maxInputLevel)
                         maxInputLevel = e.FromVertex.level;
                 }

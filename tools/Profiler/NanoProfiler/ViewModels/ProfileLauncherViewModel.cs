@@ -1,4 +1,9 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿////
+// Copyright (c) .NET Foundation and Contributors.
+// See LICENSE file in the project root for full license information.
+////
+
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using nanoFramework.Tools.Debugger;
@@ -16,7 +21,7 @@ using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
-    public partial class ProfileLauncherViewModel: ObservableObject
+    public partial class ProfileLauncherViewModel : ObservableObject
     {
         #region Events
         public event NotifyDelegate<bool> EventViewLoaded;
@@ -268,7 +273,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 case _WP.Commands.c_Monitor_ProgramExit:
                     //Dispatcher.Invoke(() =>
                     //{
-                        SoftDisconnect();
+                    SoftDisconnect();
                     //});
                     break;
             }
@@ -295,7 +300,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 #endif
             //Dispatcher.Invoke(() =>
             //{
-                Disconnect();
+            Disconnect();
             //});
 
         }
@@ -311,7 +316,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             _state = ProfilingState.Connected;
             ConnectButtonContent = c_Disconnect;
 
-            AllocationsChecked = AllocationsChecked  && _engine.Capabilities.ProfilingAllocations;
+            AllocationsChecked = AllocationsChecked && _engine.Capabilities.ProfilingAllocations;
             CallsChecked = CallsChecked && _engine.Capabilities.ProfilingCalls;
         }
 
@@ -392,7 +397,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                             throw new ApplicationException("This device is running a nanoCLR build that does not support profiling allocations.");
                         }
 
-                        checInitState:
+                    checInitState:
 
                         if (_engine.SetExecutionMode(0, 0))
                         {
