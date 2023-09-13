@@ -9,7 +9,7 @@
         Title="Profiler Launcher" Height="450" Width="800" 
         Unloaded="Window_Unloaded" Loaded="Window_Loaded">
     <Window.DataContext>
-        <viewModel:ProfileLauncherViewModel/>
+        <viewModel:ProfilerLauncherViewModel/>
     </Window.DataContext>
     <Grid Background="{Binding BackgroundProfileLauncher}">
         <Label Content="nanoDevice to connect to:" HorizontalAlignment="Left" Margin="22,19,0,0" VerticalAlignment="Top"/>

@@ -17,7 +17,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
     public partial class ProfilerLauncherView : Window
     {
         private ICommand ViewUnLoaded { get; set; }
-        private ProfileLauncherViewModel _viewModel;
+        private ProfilerLauncherViewModel _viewModel;
 
         public ProfilerLauncherView()
         {
@@ -36,7 +36,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            _viewModel = DataContext as ProfileLauncherViewModel;
+            _viewModel = DataContext as ProfilerLauncherViewModel;
             if (_viewModel != null)
             {
                 ViewUnLoaded = _viewModel.ViewLoadedCommand;

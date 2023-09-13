@@ -21,7 +21,7 @@ using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
-    public partial class ProfileLauncherViewModel : ObservableObject
+    public partial class ProfilerLauncherViewModel : ObservableObject
     {
         #region Events
         public event NotifyDelegate<bool> EventViewLoaded;
@@ -149,7 +149,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         internal string c_Launch = "Launch...";
         internal string c_Cancel = "Cancel";
 
-        private bool _closing;
+        private bool _closing = true;
         private ProfilingState _state;
 
         private NanoDeviceBase _nanoDevice;
@@ -166,7 +166,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
 
         #region Constructor
-        public ProfileLauncherViewModel()
+        public ProfilerLauncherViewModel()
         {
             _serialDebuggerPort = PortBase.CreateInstanceForSerial(false);
         }
