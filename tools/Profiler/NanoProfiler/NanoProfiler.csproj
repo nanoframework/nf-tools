@@ -7,6 +7,7 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>nanoFramework.Tools.NanoProfiler</RootNamespace>
+    <ApplicationIcon>Views\nanoframework.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -40,6 +41,12 @@
     <Page Remove="CLRProfiler\ViewCommentsForm.xaml" />
     <Page Remove="CLRProfiler\ViewFilter.xaml" />
     <Page Remove="CLRProfiler\WaitingForConnectionForm.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Views\nanoframework.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
