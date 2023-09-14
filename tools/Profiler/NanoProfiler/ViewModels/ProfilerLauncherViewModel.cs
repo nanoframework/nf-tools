@@ -15,6 +15,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Media;
+using System.Windows.Threading;
 using _DBG = nanoFramework.Tools.Debugger;
 using _PRF = nanoFramework.Tools.NanoProfiler;
 using _WP = nanoFramework.Tools.Debugger.WireProtocol;
@@ -23,8 +24,16 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
     public partial class ProfilerLauncherViewModel : ObservableObject
     {
+        private const string _connectLabel = "Connect";
+        private const string _connectingLabel = "Connecting...";
+        private const string _disconnectLabel = "Disconnect";
+        private const string _launchLabel = "Launch...";
+        private const string _cancelLabel = "Cancel";
+
         #region Events
+
         public event NotifyDelegate<bool> EventViewLoaded;
+
         #endregion
 
         #region Commands
@@ -64,46 +73,53 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         }
 
         [RelayCommand]
-        private async void ConnectClicked()
+        private async Task ConnectClicked()
         {
-            //if (Connecter.IsBusy && !Connecter.CancellationPending)
-            //{
-            //    ConnectButton.IsEnabled = false;
-            //}
-            //else 
-            if (_state == ProfilingState.Connected)
+            await Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, async () =>
             {
-                UserDisconnect();
-            }
-            else
-            {
-                if (await Connect())
+                //if (Connecter.IsBusy && !Connecter.CancellationPending)
+                //{
+                //    ConnectButton.IsEnabled = false;
+                //}
+                //else 
+                if (_state == ProfilingState.Connected)
                 {
-                    //if (result)
-                    //{
-                    _session.SetProfilingOptions(CallsChecked, AllocationsChecked);
-                    _engine.ResumeExecution();
-
-                    LogText("INFO: Successfully connected to nanoCLR.");
-                    LogText("INFO: Using file: " + _exporter.FileName);
-
-                    ConnectComplete();
-                    //}
-                    //else
-                    //{
-                    //    LogText("Device is unresponsive or cannot be found.");
-                    //    Disconnect();
-                    //}
+                    UserDisconnect();
                 }
                 else
                 {
-                    //Exception ex = (Exception)e.Error;
+                    // disable button
+                    ConnectButtonEnabled = false;
 
-                    LogText(string.Format("INFO: Error connecting to device:\r\n{0}", "???"));
+                    // update label
+                    ConnectButtonContent = _connectingLabel;
 
-                    Disconnect();
+                    if (await Connect())
+                    {
+                        _session.SetProfilingOptions(CallsChecked, AllocationsChecked);
+                        _engine.ResumeExecution();
+
+                        LogText("INFO: Using file: " + _exporter.FileName);
+
+                        ConnectComplete();
+
+                        // update label
+                        ConnectButtonContent = _cancelLabel;
+                    }
+                    else
+                    {
+                        LogText($"ERROR: failed to connect to device @ {ComPortName}");
+
+                        Disconnect();
+
+                        // update label
+                        ConnectButtonContent = _connectLabel;
+                    }
                 }
-            }
+
+                // enable button
+                ConnectButtonEnabled = true;
+            });
         }
 
         [RelayCommand]
@@ -112,6 +128,34 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             _closing = true;
             Disconnect();
         }
+
+
+        [RelayCommand]
+        private void BrowseLogFile()
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                Filter = "nanoProfiler log files (*.log)|*.log",
+                AddExtension = true,
+                DefaultExt = "log",
+                FilterIndex = 1,
+                RestoreDirectory = true
+            };
+
+            // show dialog
+            DialogResult result = saveFileDialog.ShowDialog();
+
+            if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(saveFileDialog.FileName))
+            {
+                // looks like we have a valid path
+                OutputFileName = saveFileDialog.FileName;
+            }
+            else
+            {
+                // any other outcome from save file dialog doesn't require processing
+            }
+        }
+
         #endregion
 
         #region Observable Properties
@@ -121,7 +165,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
 
         [ObservableProperty]
-        private string _connectButtonContent = "Connect";
+        private string _connectButtonContent = _connectLabel;
 
         [ObservableProperty]
         private SolidColorBrush _backgroundProfileLauncher = Brushes.AliceBlue;
@@ -141,13 +185,15 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         [ObservableProperty]
         private bool _connectButtonEnabled = true;
 
+        [ObservableProperty]
+        private string _comPortName = "COM1";
+
+        [ObservableProperty]
+        private string _outputFileName;
+
         #endregion
 
         #region Properties
-        internal string c_Connect = "Connect";
-        internal string c_Disconnect = "Disconnect";
-        internal string c_Launch = "Launch...";
-        internal string c_Cancel = "Cancel";
 
         private bool _closing = true;
         private ProfilingState _state;
@@ -178,9 +224,12 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private void Disconnect()
         {
+            // update label
+            ConnectButtonContent = _connectLabel;
+
             if (_state == ProfilingState.Disconnected)
             {
-                return;
+                goto doneHere;
             }
 
             if (_state == ProfilingState.Connected)
@@ -233,6 +282,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 EnableDisableViewMenuItems();
             }
 
+        doneHere:
+            // OK to enable button
+            ConnectButtonEnabled = true;
         }
 
 
@@ -271,10 +323,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             switch (message.Header.Cmd)
             {
                 case _WP.Commands.c_Monitor_ProgramExit:
-                    //Dispatcher.Invoke(() =>
-                    //{
                     SoftDisconnect();
-                    //});
                     break;
             }
         }
@@ -298,11 +347,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 #if DEBUG
             LogText($"INFO: Profiling Session Length: {((_session != null) ? _session.BitsReceived : 0)} bits.");
 #endif
-            //Dispatcher.Invoke(() =>
-            //{
-            Disconnect();
-            //});
 
+            Disconnect();
         }
 
         public void LogText(string text)
@@ -314,7 +360,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private void ConnectComplete()
         {
             _state = ProfilingState.Connected;
-            ConnectButtonContent = c_Disconnect;
+            ConnectButtonContent = _disconnectLabel;
 
             AllocationsChecked = AllocationsChecked && _engine.Capabilities.ProfilingAllocations;
             CallsChecked = CallsChecked && _engine.Capabilities.ProfilingCalls;
@@ -335,13 +381,12 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         public Task<bool> Connect()
         {
-            string serialPort = "COM15";
-            string outputFileName = $"E:\\temp\\nano\\profile-{DateTime.UtcNow.ToString("yyyyMMddHHmmss")}.log";
+            // string outputFileName = $"E:\\temp\\nano\\profile-{DateTime.UtcNow.ToString("yyyyMMddHHmmss")}.log";
 
             // connect to specified serial port
             try
             {
-                _serialDebuggerPort.AddDevice(serialPort);
+                _serialDebuggerPort.AddDevice(ComPortName);
             }
 #if DEBUG
             catch (Exception ex)
@@ -369,16 +414,17 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 }
 
                 _engine = _nanoDevice.DebugEngine;
-
                 _engine.StopDebuggerOnConnect = true;
-                _engine.OnCommand += new _DBG.CommandEventHandler(OnWPCommand);
-                _engine.OnMessage += new _DBG.MessageEventHandler(OnWPMessage);
+
+                bool failure = false;
 
                 // connect to the device
                 if (_engine.Connect(
                     false,
                     true))
                 {
+                    LogText("INFO: Successfully connected to nanoCLR.");
+
                     // check that we are in CLR
                     if (_engine.IsConnectedTonanoCLR)
                     {
@@ -386,27 +432,43 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                         if (_engine.Capabilities.Profiling == false)
                         {
-                            throw new ApplicationException("This device is running a nanoCLR build that does not support profiling.");
+                            LogText("ERROR: This device is running a nanoCLR build that does not support profiling.");
+                            failure = true;
                         }
                         if (CallsChecked && _engine.Capabilities.ProfilingCalls == false)
                         {
-                            throw new ApplicationException("This device is running a nanoCLR build that does not support profiling function calls.");
+                            LogText("ERROR: This device is running a nanoCLR build that does not support profiling function calls.");
+                            failure = true;
                         }
                         if (AllocationsChecked && _engine.Capabilities.ProfilingAllocations == false)
                         {
-                            throw new ApplicationException("This device is running a nanoCLR build that does not support profiling allocations.");
+                            LogText("ERROR: This device is running a nanoCLR build that does not support profiling allocations.");
+                            failure = true;
+                        }
+
+                        // check if we're good to go
+                        if (failure)
+                        {
+                            Disconnect();
+
+                            return Task.FromResult(false);
                         }
 
                     checInitState:
 
                         if (_engine.SetExecutionMode(0, 0))
                         {
-
                             var currentExecutionMode = _engine.GetExecutionMode();
 
                             if (currentExecutionMode.IsDeviceInInitializeState())
                             {
                                 _engine.ThrowOnCommunicationFailure = true;
+
+                                _engine.OnCommand -= new _DBG.CommandEventHandler(OnWPCommand);
+                                _engine.OnCommand += new _DBG.CommandEventHandler(OnWPCommand);
+                                _engine.OnMessage -= new _DBG.MessageEventHandler(OnWPMessage);
+                                _engine.OnMessage += new _DBG.MessageEventHandler(OnWPMessage);
+
                                 _session = new _PRF.ProfilerSession(_engine, HeapAbsoluteAddressChecked);
 
                                 if (_exporter != null)
@@ -414,7 +476,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                                     _exporter.Close();
                                 }
 
-                                _exporter = new _PRF.Exporter_CLRProfiler(_session, outputFileName);
+                                _exporter = new _PRF.Exporter_CLRProfiler(_session, OutputFileName);
                                 _session.EnableProfiling();
                             }
                             else
@@ -425,61 +487,16 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                             }
 
-                            return Task.FromResult(true);
                             // done here
-                            //break;
-                        }
-
-                        try
-                        {
-                            //// get device info
-                            //var deviceInfo = _nanoDevice.GetDeviceInfo(true);
-
-                            //// we have to have a valid device info
-                            //if (deviceInfo.Valid)
-                            //{
-                            //    // done here
-                            //}
-                            //else
-                            //{
-                            //    // report issue
-                            //    throw new Exception("Couldn't retrieve device details from nano device.");
-                            //}
-                        }
-                        catch
-                        {
-                            // report issue 
-                            throw new Exception("Couldn't retrieve device details from nano device.");
+                            return Task.FromResult(true);
                         }
                     }
                 }
-                else
-                {
-                    // report issue 
-                    throw new Exception("Couldn't connect to specified nano device.");
-                }
-
-                if (_engine.IsConnectedTonanoCLR)
-                {
-                    // we have to have a valid device info
-                    if (_nanoDevice.DeviceInfo.Valid)
-                    {
-
-
-                        return Task.FromResult(true);
-                    }
-                    else
-                    {
-                        // report issue
-                        throw new Exception("Couldn't retrieve device details from nano device.");
-                    }
-                }
-
             }
 
             return Task.FromResult(false);
         }
-        #endregion
 
+        #endregion
     }
 }
