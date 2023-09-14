@@ -374,12 +374,7 @@ jobs:
   - template: azure-pipelines-templates/install-nuget.yml
 
   - task: VSBuild@1
-    condition: >-
-      and(
-        succeeded(),
-        eq(variables['StartReleaseCandidate'], false),
-        not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
-      )
+    condition: succeeded()
     displayName: Build nanoProfiler
     inputs:
       solution: '$(System.DefaultWorkingDirectory)/tools/Profiler/NanoProfiler/NanoProfiler.sln'
