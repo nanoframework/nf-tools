@@ -57,6 +57,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NanoProfiler.Themes\NanoProfiler.Themes.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Views\nanoframework.ico" />
   </ItemGroup>
 

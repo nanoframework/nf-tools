@@ -2,10 +2,15 @@
     x:Class="nanoFramework.Tools.NanoProfiler.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler"
-    xmlns:views="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
-    
+     
     >
     <!--StartupUri="ProfilerLauncher.xaml"-->
-    <Application.Resources />
+    <Application.Resources>
+        <ResourceDictionary> 
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/NanoProfiler.Themes;component/Assets/NanoProfiler.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/NanoProfiler.Themes;component/Assets/NanoProfiler.Light.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 </Application>
