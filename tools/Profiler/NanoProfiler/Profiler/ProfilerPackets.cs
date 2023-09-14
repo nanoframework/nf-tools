@@ -29,7 +29,7 @@ namespace nanoFramework.Tools.NanoProfiler
 
     internal class ProfilerPacketFactory
     {
-        internal static Packets.ProfilerPacket Decode(_DBG.BitStream stream)
+        internal static Packets.ProfilerPacket Decode(_DBG.BitStream stream, Action<string> logText)
         {
             uint type = stream.ReadBits(Packets.Commands.Bits.CommandHeader);
 
@@ -191,6 +191,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             m_heapAddress = ReadAndUnpackBits(stream);
             m_heapLength = ReadAndUnpackBits(stream);
+
             Tracing.PacketTrace($"layout 0x{m_heapAddress:X8}:{m_heapLength}");
         }
 
@@ -198,6 +199,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             sess.HeapStart = m_heapAddress;
             sess.HeapBytesReserved = m_heapLength;
+
+            sess.LogText($"[TRACE] Heap layout: 0x{m_heapAddress:X8}:{m_heapLength}");
         }
     }
 
@@ -221,6 +224,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
             sess._currentHeapDump = new HeapDump();
             Tracing.PacketTrace("HEAP DUMP BEGIN======================>");
+
+            sess.LogText($"[TRACE] HEAP DUMP BEGIN======================>");
         }
     }
 
@@ -241,7 +246,10 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             sess.HeapBytesUsed = m_heapBytesUsed;
             sess.AddEvent(sess._currentHeapDump);
             sess._currentHeapDump = null;
+
             Tracing.PacketTrace("<======================HEAP DUMP END");
+
+            sess.LogText($"[TRACE] <======================HEAP DUMP END");
         }
     }
 
@@ -262,6 +270,7 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
                     m_method = ReadMethodDefIndex(stream);
                     break;
             }
+
             Tracing.PacketTrace("root type:{0} at {1}", m_source, m_address);
         }
 
@@ -372,6 +381,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
 
             Tracing.PacketTrace("object @ {0} ({1})", m_address, hdo._type);
 
+            sess.LogText($"[TRACE] object @ {m_address} ({hdo._type})");
+
             sess._currentHeapDump._objectTable.Add(hdo);
         }
     }
@@ -409,6 +420,9 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             uint md = m_assembly << Packets.Commands.Bits.AssemblyShift | m_method;
 
             Tracing.PacketTrace("CALLS: Thread {0} called function {1}", m_thread, md);
+
+            sess.LogText($"[TRACE] CALLS: Thread {m_thread} called function {md}");
+
             if (!sess._threadCallStacks.ContainsKey(m_thread))
             {
                 sess._threadCallStacks.Add(m_thread, new Stack<uint>());
@@ -438,6 +452,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             Tracing.PacketTrace("CALLS: Function returned on thread {0}", sess._currentThreadPID);
 
+            sess.LogText($"[TRACE] CALLS: Function returned on thread {sess._currentThreadPID}");
+
             if (sess._threadCallStacks.ContainsKey(sess._currentThreadPID))
             {
                 Debug.Assert(sess._threadCallStacks[sess._currentThreadPID].Count > 0);
@@ -464,6 +480,9 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         internal override void Process(ProfilerSession sess)
         {
             Tracing.PacketTrace("CALLS: Switched to thread {0}", _thread);
+
+            sess.LogText($"[TRACE] CALLS: Switched to thread {_thread}");
+
             ContextSwitch c = new ContextSwitch();
             c._thread = _thread;
             sess._currentThreadPID = _thread;
@@ -508,6 +527,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             var address = sess.HeapAddressIsAbsolute ? sess.HeapStart + m_address : m_address;
 
             Tracing.PacketTrace($"ALLOC: Object allocated {{{sess.ResolveTypeName(m_type)}{(m_rank > 0 ? "[]" : "")}}} ({m_size} bytes) @ address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : "{address:0}")}");
+
+            sess.LogText($"[TRACE] ALLOC: Object allocated {{{sess.ResolveTypeName(m_type)}{(m_rank > 0 ? "[]" : "")}}} ({m_size} bytes) @ address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : "{address:0}")}");
 
             ObjectAllocation alloc = new()
             {
@@ -563,6 +584,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             Tracing.PacketTrace("ALLOC: Objects relocated");
 
+            sess.LogText($"[TRACE] ALLOC: Objects relocated");
+
             SortedDictionary<uint, string> newTable = new SortedDictionary<uint, string>();
 
             foreach (var liveObject in sess._liveObjectTable)
@@ -613,11 +636,15 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
             {
                 Tracing.PacketTrace($"ALLOC: Object {sess._liveObjectTable[address]} freed from address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : $"{address}")}");
 
+                sess.LogText($"[TRACE] ALLOC: Object {sess._liveObjectTable[address]} freed from address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : $"{address}")}");
+
                 sess._liveObjectTable.Remove(address);
             }
             else
             {
                 Tracing.PacketTrace($"ALLOC: ***ERROR*** Reported Object deletion for non existing object @ address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : $"{address}")}");
+
+                sess.LogText($"[TRACE] ALLOC: ***ERROR*** Reported Object deletion for non existing object @ address {(sess.HeapAddressIsAbsolute ? $"0x{address:X8}" : $"{address}")}");
             }
 
             ObjectDeletion delete = new ObjectDeletion();
@@ -640,6 +667,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             Tracing.PacketTrace("GC BEGIN >>>");
 
+            sess.LogText($"[TRACE] GC BEGIN >>>");
+
             sess.HeapBytesFree = m_freeBytes;
 
             GarbageCollectionBegin gc = new GarbageCollectionBegin();
@@ -660,6 +689,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         internal override void Process(ProfilerSession sess)
         {
             Tracing.PacketTrace("<<< GC END");
+
+            sess.LogText($"[TRACE] <<< GC END");
 
             sess.HeapBytesFree = m_freeBytes;
 
@@ -684,6 +715,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         {
             Tracing.PacketTrace("Heap Compaction BEGIN >>>");
 
+            sess.LogText($"[TRACE] Heap Compaction BEGIN >>>");
+
             sess.HeapBytesFree = m_freeBytes;
 
             HeapCompactionBegin hc = new HeapCompactionBegin();
@@ -704,6 +737,8 @@ namespace nanoFramework.Tools.NanoProfiler.Packets
         internal override void Process(ProfilerSession sess)
         {
             Tracing.PacketTrace("<<< Heap Compaction END");
+
+            sess.LogText($"[TRACE] <<< Heap Compaction END");
 
             // on CLR Profiler side: Need to preserve objects not relocated.
 
