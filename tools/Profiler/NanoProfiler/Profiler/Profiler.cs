@@ -158,6 +158,7 @@ namespace nanoFramework.Tools.NanoProfiler
             if (_connected)
             {
                 _connected = false;
+
                 try
                 {
                     DisableProfiling();
@@ -166,7 +167,10 @@ namespace nanoFramework.Tools.NanoProfiler
                      */
                     _engine.FlushProfilingStream();
                 }
-                catch { /* Ignore errors if we are already disconnected from the device. */}
+                catch
+                {
+                    // Ignore errors if we are already disconnected from the device.
+                }
 
                 _incomingStream.MarkStreamEnd();
             }
@@ -186,15 +190,19 @@ namespace nanoFramework.Tools.NanoProfiler
                 }
                 catch (System.IO.IOException)
                 {
-                    /* The CLR is allowed to resume/quit now; we have all data we need. */
+                    // The CLR is allowed to resume/quit now; we have all data we need.
                     try
                     {
                         _engine.ResumeExecution();
                     }
                     catch { }
 
-                    /*We've been disconnected -- shutdown thread. */
-                    if (OnDisconnect != null) { OnDisconnect(this, EventArgs.Empty); }
+                    // We've been disconnected -- shutdown thread.
+                    if (OnDisconnect != null) 
+                    { 
+                        OnDisconnect(this, EventArgs.Empty); 
+                    }
+
                     return;
                 }
             }

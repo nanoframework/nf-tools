@@ -11,6 +11,7 @@ using nanoFramework.Tools.Debugger.Extensions;
 using nanoFramework.Tools.Debugger.WireProtocol;
 using nanoFramework.Tools.NanoProfiler.Helpers;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -27,6 +28,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private const string _connectLabel = "Connect";
         private const string _connectingLabel = "Connecting...";
         private const string _disconnectLabel = "Disconnect";
+        private const string _disconnectingLabel = "Disconnecting...";
         private const string _launchLabel = "Launch...";
         private const string _cancelLabel = "Cancel";
 
@@ -104,21 +106,18 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         ConnectComplete();
 
                         // update label
-                        ConnectButtonContent = _cancelLabel;
+                        ConnectButtonContent = _disconnectLabel;
+
+                        // enable button
+                        ConnectButtonEnabled = true;
                     }
                     else
                     {
                         LogText($"ERROR: failed to connect to device @ {ComPortName}");
 
                         Disconnect();
-
-                        // update label
-                        ConnectButtonContent = _connectLabel;
                     }
                 }
-
-                // enable button
-                ConnectButtonEnabled = true;
             });
         }
 
@@ -224,9 +223,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private void Disconnect()
         {
-            // update label
-            ConnectButtonContent = _connectLabel;
-
             if (_state == ProfilingState.Disconnected)
             {
                 goto doneHere;
@@ -250,6 +246,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 lock (_engine)
                 {
                     _engine.Stop();
+
+                    _engine.OnCommand -= new _DBG.CommandEventHandler(OnWPCommand);
+                    _engine.OnMessage -= new _DBG.MessageEventHandler(OnWPMessage);
                 }
             }
             catch
@@ -283,6 +282,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             }
 
         doneHere:
+            // update label
+            ConnectButtonContent = _connectLabel;
             // OK to enable button
             ConnectButtonEnabled = true;
         }
@@ -336,6 +337,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             if (_session != null)
             {
                 ConnectButtonEnabled = false;
+                ConnectButtonContent = _disconnectingLabel;
+
                 _session.OnDisconnect += SoftDisconnectDone;
                 _session.Disconnect();
             }
