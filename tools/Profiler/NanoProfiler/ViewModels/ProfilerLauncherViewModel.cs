@@ -101,8 +101,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         _session.SetProfilingOptions(CallsChecked, AllocationsChecked);
                         _engine.ResumeExecution();
 
-                        LogText("INFO: Using file: " + _exporter.FileName);
-
                         ConnectComplete();
 
                         // update label
@@ -281,6 +279,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 EnableDisableViewMenuItems();
             }
 
+            // clear log file name
+            OutputFileName = string.Empty;
+
         doneHere:
             // update label
             ConnectButtonContent = _connectLabel;
@@ -350,6 +351,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 #if DEBUG
             LogText($"INFO: Profiling Session Length: {((_session != null) ? _session.BitsReceived : 0)} bits.");
 #endif
+
+            LogText($"\r\nINFO: Log file was {_exporter.FileName}\r\n");
 
             Disconnect();
         }
@@ -479,7 +482,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                                     _exporter.Close();
                                 }
 
-                                _exporter = new _PRF.Exporter_CLRProfiler(_session, OutputFileName);
+                                CheckOutpuFileName();
+
+                                _exporter = new _PRF.Exporter_CLRProfiler(
+                                    _session,
+                                    OutputFileName);
                                 _session.EnableProfiling();
                             }
                             else
@@ -498,6 +505,14 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             }
 
             return Task.FromResult(false);
+        }
+
+        private void CheckOutpuFileName()
+        {
+            if (string.IsNullOrEmpty(OutputFileName))
+            {
+                OutputFileName = Path.GetTempFileName();
+            }
         }
 
         #endregion

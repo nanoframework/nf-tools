@@ -583,18 +583,24 @@ namespace nanoFramework.Tools.NanoProfiler
         protected StreamWriter _sw;
         protected string _fileName;
 
-        public Exporter(ProfilerSession ps, string file)
+        public Exporter(
+            ProfilerSession ps,
+            string file)
         {
-            if (!string.IsNullOrEmpty(file))
+            if (string.IsNullOrEmpty(file))
             {
-                _fileName = file;
+                throw new ArgumentNullException("File parameter can't be empty.");
             }
             else
             {
-                _fileName = Path.GetTempFileName();
+                _fileName = file;
             }
 
-            _fs = new FileStream(_fileName, FileMode.Create, FileAccess.Write, FileShare.Read);
+            _fs = new FileStream(
+                _fileName,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.Read);
             _sw = new StreamWriter(_fs);
         }
 
