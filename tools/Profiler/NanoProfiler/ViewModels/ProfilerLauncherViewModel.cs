@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Threading;
+using static System.Net.Mime.MediaTypeNames;
 using _DBG = nanoFramework.Tools.Debugger;
 using _PRF = nanoFramework.Tools.NanoProfiler;
 using _WP = nanoFramework.Tools.Debugger.WireProtocol;
@@ -43,7 +44,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         [RelayCommand]
         private void ClearClicked()
         {
-            TextBlockContent = string.Empty;
+            WeakReferenceMessenger.Default.Send(new ClearLogTextMessage());
         }
 
         [RelayCommand]

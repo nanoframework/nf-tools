@@ -81,7 +81,7 @@
             </Grid.RowDefinitions>
             <TextBox x:Name="textLog" Grid.Row="0"
                  TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="180" VerticalScrollBarVisibility="Auto"/>
-            <Button Content="Clear" Grid.Row="1" HorizontalAlignment="Left"   VerticalAlignment="Top" Width="91" 
+            <Button Content="Clear" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="91" 
                 Command="{Binding ClearClickedCommand}" Margin="0,20,0,0"/>
         </Grid>
         <Button x:Name="OpenLogFile" Content="Open Log File" HorizontalAlignment="Center" Grid.Column="2" Grid.Row="0"

@@ -32,6 +32,15 @@ namespace nanoFramework.Tools.NanoProfiler.Views
                     textLog.ScrollToEnd();
                 });
             });
+
+            // register message to clear log text
+            WeakReferenceMessenger.Default.Register<ClearLogTextMessage>(this, (r, m) =>
+            {
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+                {
+                    textLog.Clear();
+                });
+            });
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
