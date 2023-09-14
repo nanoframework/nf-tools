@@ -64,6 +64,7 @@ jobs:
       # set default values 
       echo "##vso[task.setvariable variable=BUILD_NANOVC;isOutput=true]false"
       echo "##vso[task.setvariable variable=BUILD_NANODU;isOutput=true]false"
+      echo "##vso[task.setvariable variable=BUILD_PROFILER;isOutput=true]false"
 
       if( ($files.where{$_.Contains('tools/VersionCop')}).Count -gt 0)
       {
@@ -79,6 +80,14 @@ jobs:
           echo "##vso[task.setvariable variable=BUILD_NANODU;isOutput=true]true"
 
           Write-host "Building DependencyUpdater"
+      }
+
+      if( ($files.where{$_.Contains('tools/Profiler')}).Count -gt 0)
+      {
+          # files at nano Profiler folder
+          echo "##vso[task.setvariable variable=BUILD_PROFILER;isOutput=true]true"
+
+          Write-host "Building Profiler"
       }
   
     name: TargetsToBuild
@@ -341,6 +350,44 @@ jobs:
       includeSymbols: true
       publishFeedCredentials: 'NuGet-$(System.TeamProject)'
 
+##############
+- job: Build_NanoProfiler
+  condition: >-
+    or(
+      eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_PROFILER'], true),
+      eq(variables['BUILD_NANOPROFILER'], 'true')
+    )
+  dependsOn:
+    Check_Build_Options
+
+  pool:
+    vmImage: 'windows-latest'
+
+  variables:
+    DOTNET_NOLOGO: true
+
+  steps:
+  
+  - checkout: self
+    persistCredentials: true
+
+  - template: azure-pipelines-templates/install-nuget.yml
+
+  - task: VSBuild@1
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['StartReleaseCandidate'], false),
+        not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      )
+    displayName: Build nanoProfiler
+    inputs:
+      solution: '$(System.DefaultWorkingDirectory)/tools/Profiler/NanoProfiler/NanoProfiler.sln'
+      platform: 'Any CPU'
+      msbuildArgs: '/p:PublicRelease=true'
+      configuration: 'Release'
+      maximumCpuCount: true
+
 ##################################
 # report build failure to Discord
 - job: Report_Build_Failure
@@ -348,11 +395,13 @@ jobs:
   - Check_Build_Options
   - Build_VersionCop
   - Build_DependencyUpdater
+  - Build_NanoProfiler
   condition: >-
     or(
       failed('Check_Build_Options'),
       failed('Build_VersionCop'),
-      failed('Build_DependencyUpdater')
+      failed('Build_DependencyUpdater'),
+      failed('Build_NanoProfiler')
     )
 
   pool:
