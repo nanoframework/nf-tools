@@ -481,7 +481,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                                 _session = new _PRF.ProfilerSession(_engine, HeapAbsoluteAddressChecked);
 
-                                if (OutputProfileTrace)
+                                if (TraceProfilesEvents)
                                 {
                                     _session.LogText = LogText;
                                 }
