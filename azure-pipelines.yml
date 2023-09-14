@@ -373,6 +373,15 @@ jobs:
 
   - template: azure-pipelines-templates/install-nuget.yml
 
+  - task: NuGetCommand@2
+    displayName: Restore NuGet packages
+    condition: succeeded()
+    retryCountOnTaskFailure: 5
+    inputs:
+      restoreSolution: $(System.DefaultWorkingDirectory)/tools/Profiler/NanoProfiler/NanoProfiler.sln
+      feedsToUse: select
+      includeNuGetOrg: true
+
   - task: VSBuild@1
     condition: succeeded()
     displayName: Build nanoProfiler
