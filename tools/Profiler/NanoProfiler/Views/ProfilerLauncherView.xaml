@@ -6,12 +6,12 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         mc:Ignorable="d"
-        Title=".NET nanoFramework Profiler Launcher" Height="536" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
+        Title=".NET nanoFramework Profiler Launcher" Height="579" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
         Unloaded="Window_Unloaded" Loaded="Window_Loaded" Icon="/Views/nanoframework.ico" Left="0" Top="0" Width="834">
     <Window.DataContext>
         <viewModel:ProfilerLauncherViewModel/>
     </Window.DataContext>
-    <Grid Background="{Binding BackgroundProfileLauncher}" Height="522" Width="847" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid Background="{Binding BackgroundProfileLauncher}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -60,14 +60,22 @@
 
         <GroupBox Header="Output"  Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Margin="20,20,0,0" >
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="77*"/>
                     <ColumnDefinition Width="44*"/>
                     <ColumnDefinition Width="441*"/>
                 </Grid.ColumnDefinitions>
-                <Label Content="File:" Margin="10,10,35,-3"/>
-                <TextBox HorizontalAlignment="Left" Margin="47,15,0,0" TextWrapping="Wrap" IsReadOnly="True" VerticalAlignment="Top" Width="399" Grid.ColumnSpan="3" Text="{Binding OutputFileName}"/>
-                <Button Content="Browse..." Command="{Binding BrowseLogFileCommand}" Grid.Column="2" Margin="354,15,10,6"></Button>
+                
+                <Label Content="File:" Margin="10,10,35,-3" Grid.Row="0"/>
+                <TextBox HorizontalAlignment="Left" Margin="47,15,0,0" TextWrapping="Wrap" IsReadOnly="True" VerticalAlignment="Top" Width="399" Grid.ColumnSpan="3" Text="{Binding OutputFileName}"  Grid.Row="0"/>
+                <Button Content="Browse..." Command="{Binding BrowseLogFileCommand}" Grid.Column="2" Margin="354,15,10,6"  Grid.Row="0"></Button>
+
+                <CheckBox Content="Trace profiler events" Grid.Row="1" Margin="20,20,0,20" IsChecked="{Binding TraceProfilesEvents}" />
             </Grid>
         </GroupBox>
 

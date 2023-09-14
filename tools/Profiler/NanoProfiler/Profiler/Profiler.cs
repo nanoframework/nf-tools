@@ -183,7 +183,7 @@ namespace nanoFramework.Tools.NanoProfiler
             {
                 try
                 {
-                    Packets.ProfilerPacket pp = ProfilerPacketFactory.Decode(_incomingStream);
+                    Packets.ProfilerPacket pp = ProfilerPacketFactory.Decode(_incomingStream, LogText);
                     pp.Process(this);
 
                     // Don't write out incomplete lines if we lose the device during processing? Insert 'safe' values instead?
@@ -246,6 +246,8 @@ namespace nanoFramework.Tools.NanoProfiler
         }
 
         public bool HeapAddressIsAbsolute => _heapAddressIsAbsolute;
+
+        public Action<string> LogText { get; internal set; }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnDeviceCommand(

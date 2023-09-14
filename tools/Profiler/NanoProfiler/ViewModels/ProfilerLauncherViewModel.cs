@@ -189,6 +189,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         [ObservableProperty]
         private string _outputFileName;
 
+        [ObservableProperty]
+        private bool _traceProfilesEvents;
+
         #endregion
 
         #region Properties
@@ -477,6 +480,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                                 _engine.OnMessage += new _DBG.MessageEventHandler(OnWPMessage);
 
                                 _session = new _PRF.ProfilerSession(_engine, HeapAbsoluteAddressChecked);
+
+                                if (OutputProfileTrace)
+                                {
+                                    _session.LogText = LogText;
+                                }
 
                                 if (_exporter != null)
                                 {
