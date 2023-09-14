@@ -11,7 +11,7 @@
     <Window.DataContext>
         <viewModel:ProfilerLauncherViewModel/>
     </Window.DataContext>
-    <Grid Background="{Binding BackgroundProfileLauncher}" >
+    <Grid Background="{Binding BackgroundProfileLauncher}" Margin="0,0,-40,0" >
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
