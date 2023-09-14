@@ -1,0 +1,128 @@
+﻿<Window
+    x:Class="nanoFramework.Tools.NanoProfiler.CLRProfiler.GraphViewForm"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="GraphViewForm"
+    Width="1016"
+    Height="644"
+    mc:Ignorable="d">
+
+    <Window.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="Filter to callers and callees" />
+            <MenuItem Header="Filter.." />
+            <MenuItem Header="Reset Filter" />
+            <MenuItem Header="Prune to callers and callees" />
+            <MenuItem Header="Select All" />
+            <MenuItem Header="Copy as text to clipboard" />
+            <MenuItem Header="Zoom to Node" />
+            <MenuItem Header="Find interesting nodes" />
+            <MenuItem Header="Find routine..." />
+            <MenuItem Header="Find again" />
+            <MenuItem Header="See Who Allocated" />
+            <MenuItem Header="Show New Objects" />
+            <MenuItem Header="Show Who Allocated New Objects" />
+            <MenuItem Header="Show Objects Allocated between..." />
+            <MenuItem Header="Show Who Allocated Objects between..." />
+            <MenuItem Header="Show Individual Instances" />
+            <MenuItem Header="Show Histogram" />
+            <MenuItem Header="Show References" />
+        </ContextMenu>
+    </Window.ContextMenu>
+
+    <Grid > 
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height=".1*" />
+            <RowDefinition Height=".25*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Menu
+            Grid.Row="0"
+            Grid.ColumnSpan="2"
+            IsMainMenu="True">
+            <MenuItem Header="Edit">
+                <MenuItem Header="Select All" />
+                <MenuItem Header="Copy as text to clipboard" />
+                <MenuItem Header="Find routine..." />
+                <MenuItem Header="Find Again" />
+            </MenuItem>
+        </Menu>
+
+
+        <StackPanel
+            Grid.Row="1"
+            Grid.Column="0"
+            Margin="10,0,0,0"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <Label
+                Width="163"
+                Height="30"
+                HorizontalAlignment="Left"
+                Content="Scale:"
+                FontSize="16" />
+            <ComboBox
+                Name="VerticalScaleOption"
+                Width="120"
+                Margin="20,0,0,0"
+                SelectedItem="1">
+                <ComboBoxItem Content="10(tiny)" />
+                <ComboBoxItem Content="20" />
+                <ComboBoxItem Content="50" />
+                <ComboBoxItem Content="100" />
+                <ComboBoxItem Content="200" />
+                <ComboBoxItem Content="500" />
+                <ComboBoxItem Content="1000 (huge)" />
+            </ComboBox>
+        </StackPanel>
+
+        <StackPanel
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="10,0,0,0"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <Label
+                Width="163"
+                Height="30"
+                HorizontalAlignment="Left"
+                Content="Detail:"
+                FontSize="16" />
+            <ComboBox
+                Name="HorizontalScaleOption"
+                Width="120"
+                Margin="20,0,0,0"
+                HorizontalAlignment="Left"
+                SelectedItem="1">
+                <ComboBoxItem Content="0 (everything)" />
+                <ComboBoxItem Content="0.1" />
+                <ComboBoxItem Content="0.2" />
+                <ComboBoxItem Content="0.5" />
+                <ComboBoxItem Content="1" />
+                <ComboBoxItem Content="2" />
+                <ComboBoxItem Content="5" />
+                <ComboBoxItem Content="10" />
+                <ComboBoxItem Content="20 (coarse)" />
+            </ComboBox>
+        </StackPanel>
+
+        <Canvas x:Name="graphPanel" Grid.Row="1">
+            <Canvas Width="508" Height="209" />
+        </Canvas>
+
+        <Canvas
+            x:Name="typeLegendPanel"
+            Grid.Row="1"
+            Grid.Column="1" />
+    </Grid>
+</Window>

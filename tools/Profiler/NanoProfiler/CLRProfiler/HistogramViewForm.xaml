@@ -1,0 +1,112 @@
+﻿<Window
+    x:Class="nanoFramework.Tools.NanoProfiler.CLRProfiler.HistogramViewForm"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="HistogramViewForm" WindowState="Maximized"
+
+    mc:Ignorable="d">
+
+    <Window.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="Show Who Allocated" />
+            <MenuItem Header="Export Data to File.." />
+        </ContextMenu>
+    </Window.ContextMenu>
+
+    <Grid>
+
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height=".25*" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
+            Margin="10,0,0,0"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <Label
+                Width="163"
+                Height="30"
+                HorizontalAlignment="Left"
+                Content="Vertical Scale (kB/px):"
+                FontSize="16" />
+            <ComboBox
+                Name="VerticalScaleOption"
+                Width="120"
+                Margin="20,0,0,0"
+                SelectedValue="1">
+                <ComboBoxItem Content="1" />
+                <ComboBoxItem Content="2" />
+                <ComboBoxItem Content="5" />
+                <ComboBoxItem Content="10" />
+                <ComboBoxItem Content="20" />
+                <ComboBoxItem Content="50" />
+                <ComboBoxItem Content="100" />
+                <ComboBoxItem Content="200" />
+                <ComboBoxItem Content="500" />
+                <ComboBoxItem Content="1000" />
+                <ComboBoxItem Content="2000" />
+                <ComboBoxItem Content="5000" />
+                <ComboBoxItem Content="10000" />
+                <ComboBoxItem Content="20000" />
+            </ComboBox>
+        </StackPanel>
+
+            <StackPanel
+            Grid.Column="1"
+            Margin="10,0,0,0"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+            <Label
+                Width="163"
+                Height="30"
+                HorizontalAlignment="Left"
+                Content="Horizontal Scale:"
+                FontSize="16" />
+            <ComboBox
+                Name="HorizontalScaleOption"
+                Width="120"
+                Margin="20,0,0,0"
+                HorizontalAlignment="Left"
+                SelectedValue="1">
+                <ComboBoxItem Content="Coarse" IsSelected="True" />
+                <ComboBoxItem Content="Medium" />
+                <ComboBoxItem Content="Fine" />
+                <ComboBoxItem Content="Very Fine" />
+            </ComboBox>
+
+                <Button Content="Move To Grid" Click="showWhoAllocatedMenuItem_Click"
+                    Width="200" Height="70" Background="Yellow"/>
+            </StackPanel>
+        </Grid>
+
+        <!--<Canvas x:Name="graphPanel" >
+            <Canvas Width="508" Height="209" />
+        </Canvas>-->
+        <Grid Grid.Row="1" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+                <WindowsFormsHost x:Name="windowsFormsHost" Visibility="Visible"  >
+
+                </WindowsFormsHost>
+
+            <!--<Canvas
+                x:Name="typeLegendPanel" Visibility="Collapsed"
+                Grid.Column="1">
+
+            </Canvas>-->
+        </Grid>
+        
+    </Grid>
+</Window>

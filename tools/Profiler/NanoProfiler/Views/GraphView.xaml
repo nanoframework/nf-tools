@@ -1,0 +1,145 @@
+﻿<Window x:Class="nanoFramework.Tools.NanoProfiler.Views.GraphView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:gridViewer="clr-namespace:WinForms.CLRProfiler"
+        xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf" 
+        xmlns:clrprofiler="clr-namespace:WinForms.CLRProfiler"
+        xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
+        mc:Ignorable="d"
+        Title="Graph View" MinHeight="800" MinWidth="1200" Icon="/Views/nanoframework.ico">
+    
+    <Window.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="Filter to callers and callees" />
+            <MenuItem Header="Filter.." />
+            <MenuItem Header="Reset Filter" />
+            <MenuItem Header="Prune to callers and callees" />
+            <MenuItem Header="Select All" />
+            <MenuItem Header="Copy as text to clipboard" />
+            <MenuItem Header="Zoom to Node" />
+            <MenuItem Header="Find interesting nodes" />
+            <MenuItem Header="Find routine..." />
+            <MenuItem Header="Find again" />
+            <MenuItem Header="See Who Allocated" />
+            <MenuItem Header="Show New Objects" />
+            <MenuItem Header="Show Who Allocated New Objects" />
+            <MenuItem Header="Show Objects Allocated between..." />
+            <MenuItem Header="Show Who Allocated Objects between..." />
+            <MenuItem Header="Show Individual Instances" />
+            <MenuItem Header="Show Histogram" />
+            <MenuItem Header="Show References" />
+        </ContextMenu>
+    </Window.ContextMenu>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height=".1*" />
+            <RowDefinition Height=".25*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Menu
+            Grid.Row="0"
+            IsMainMenu="True">
+            <MenuItem Header="Edit">
+                <MenuItem Header="Select All" />
+                <MenuItem Header="Copy as text to clipboard" />
+                <MenuItem Header="Find routine..." />
+                <MenuItem Header="Find Again" />
+            </MenuItem>
+        </Menu>
+
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
+                <Label Width="163" Height="30" HorizontalAlignment="Left"
+                       Content="Scale:" FontSize="16" />
+                <ComboBox   Name="VerticalScaleOption" Width="120" Margin="20,0,0,0"
+                            SelectedItem="{Binding ScaleSelectedValue, Mode=TwoWay}" 
+                            ItemsSource="{Binding ScaleList}">
+
+                </ComboBox>
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="1"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                    <Label
+                    Width="163"
+                    Height="30"
+                    HorizontalAlignment="Left"
+                    Content="Detail:"
+                    FontSize="16" />
+                    <ComboBox   Name="HorizontalScaleOption" Width="120" Margin="20,0,0,0" HorizontalAlignment="Left"
+                                SelectedValue="{Binding DetailsSelectedValue, Mode=TwoWay}" 
+                                ItemsSource="{Binding DetailsList}">
+
+                    </ComboBox>
+            </StackPanel>
+        </Grid>
+
+        <!--<Canvas x:Name="graphPanel" >
+            <Canvas Width="508" Height="209" />
+        </Canvas>-->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <!--<WindowsFormsHost x:Name="windowsFormsHost" Visibility="Collapsed" />-->
+
+            <Grid Grid.Column="0">
+                <lvc:PieChart Series="{Binding PieSeriesCollection}" Foreground="Black"
+                               Hoverable="True" >
+                    <lvc:PieChart.DataTooltip>
+                        <controls:MyTooltip  SelectionMode="OnlySender" />
+                    </lvc:PieChart.DataTooltip>
+                </lvc:PieChart>
+            </Grid>
+            <Grid Grid.Column="1" Margin="10">
+                <ListBox Name="ItemListBox" ItemsSource="{Binding ChartValues}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         BorderThickness="2" BorderBrush="Blue" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>                                
+                                <Button HorizontalAlignment="Stretch" 
+                                        HorizontalContentAlignment="Stretch"
+                                        Height="50" Padding="5" FontSize="14"
+                                        Command="{Binding DataContext.ListButtonSelectedCommand,RelativeSource={RelativeSource Mode=FindAncestor,AncestorType={x:Type ListBox}}}"                                   
+                                        CommandParameter="{Binding .}"
+                                        >
+                                <Button.Content>
+                                    <Grid >
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="50"/>
+                                        </Grid.ColumnDefinitions>
+                                            <Label Grid.Column="0"  FontWeight="DemiBold" Padding="0">
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </Label>
+                                            <Label Content="{Binding GraphBytes}" Grid.Column="1" Padding="0"/>
+                                            <Label Content="{Binding GraphPercentage}" Grid.Column="2" ContentStringFormat=" {0} %"  Padding="0" />
+                                    </Grid>                               
+                                </Button.Content>
+
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+</Window>

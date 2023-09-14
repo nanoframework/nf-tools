@@ -1,0 +1,72 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>nanoFramework.Tools.NanoProfiler</RootNamespace>
+    <ApplicationIcon>Views\nanoframework.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);PACKET_TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="CLRProfiler\AgeHistogram.xaml.cs" />
+    <Compile Remove="CLRProfiler\AllocationDiff.cs" />
+    <Compile Remove="CLRProfiler\DiffCallTreeForm.xaml.cs" />
+    <Compile Remove="CLRProfiler\DiffDataNode.cs" />
+    <Compile Remove="CLRProfiler\DiffTreeListView.cs" />
+    <Compile Remove="CLRProfiler\NamedManualResetEvent.cs" />
+    <Compile Remove="CLRProfiler\Readers.cs" />
+    <Compile Remove="CLRProfiler\RegisterDLL.cs" />
+    <Compile Remove="CLRProfiler\Reports.cs" />
+    <Compile Remove="CLRProfiler\ViewByAddressForm.xaml.cs" />
+    <Compile Remove="CLRProfiler\ViewCommentsForm.xaml.cs" />
+    <Compile Remove="CLRProfiler\ViewFilter.xaml.cs" />
+    <Compile Remove="CLRProfiler\WaitingForConnectionForm.xaml.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Views\nanoframework.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="CLRProfiler\AgeHistogram.xaml" />
+    <Page Remove="CLRProfiler\DiffCallTreeForm.xaml" />
+    <Page Remove="CLRProfiler\ViewByAddressForm.xaml" />
+    <Page Remove="CLRProfiler\ViewCommentsForm.xaml" />
+    <Page Remove="CLRProfiler\ViewFilter.xaml" />
+    <Page Remove="CLRProfiler\WaitingForConnectionForm.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Views\nanoframework.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+    <PackageReference Include="LiveCharts.Wpf" Version="0.9.7" />
+    <PackageReference Include="nanoFramework.Tools.Debugger.Net" Version="2.4.34" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Views\nanoframework.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\Controls\HistogramTooltip.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\GraphViewWinForm.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+</Project>
