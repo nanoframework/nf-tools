@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         mc:Ignorable="d"
-        Title="Profiler Launcher" Height="520" Width="800" 
-        Unloaded="Window_Unloaded" Loaded="Window_Loaded">
+        Title=".NET nanoFramework Profiler Launcher" Height="520" Width="800" 
+        Unloaded="Window_Unloaded" Loaded="Window_Loaded" Icon="/Views/nanoframework.ico">
     <Window.DataContext>
         <viewModel:ProfilerLauncherViewModel/>
     </Window.DataContext>

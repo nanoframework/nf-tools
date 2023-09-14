@@ -9,7 +9,7 @@
         xmlns:clrprofiler="clr-namespace:WinForms.CLRProfiler"
         xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
         mc:Ignorable="d"
-        Title="GraphView" MinHeight="800" MinWidth="1200">
+        Title="Graph View" MinHeight="800" MinWidth="1200" Icon="/Views/nanoframework.ico">
     
     <Window.ContextMenu>
         <ContextMenu>

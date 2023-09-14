@@ -30,6 +30,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Views\nanoframework.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Page Remove="CLRProfiler\AgeHistogram.xaml" />
     <Page Remove="CLRProfiler\DiffCallTreeForm.xaml" />
     <Page Remove="CLRProfiler\ViewByAddressForm.xaml" />
@@ -43,6 +47,10 @@
     <PackageReference Include="LiveCharts.Wpf" Version="0.9.7" />
     <PackageReference Include="nanoFramework.Tools.Debugger.Net" Version="2.4.34" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Views\nanoframework.ico" />
   </ItemGroup>
 
   <ItemGroup>

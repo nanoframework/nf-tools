@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModels="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         mc:Ignorable="d"        
-        Title="SummaryView" Height="450" Width="800">
+        Title="Summary View" Height="450" Width="800" Icon="/Views/nanoframework.ico">
     <Grid>
         
     </Grid>
