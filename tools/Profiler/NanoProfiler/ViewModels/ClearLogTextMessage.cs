@@ -3,12 +3,11 @@
 // See LICENSE file in the project root for full license information.
 ////
 
-namespace nanoFramework.Tools.NanoProfiler.ViewModels
+namespace nanoFramework.Tools.NanoProfiler.ViewModels;
+
+public class ClearLogTextMessage
 {
-    public class ClearLogTextMessage
+    public ClearLogTextMessage()
     {
-        public ClearLogTextMessage()
-        {
-        }
     }
 }

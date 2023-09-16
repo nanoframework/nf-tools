@@ -15,8 +15,8 @@ namespace nanoFramework.Tools.NanoProfiler
     {
         public App()
         {
-            MainWindow = new ProfilerLauncherView();
-            MainWindow.Show();
+            //MainWindow = new ShellWindow();
+            //MainWindow.Show();
         }
     }
 }
