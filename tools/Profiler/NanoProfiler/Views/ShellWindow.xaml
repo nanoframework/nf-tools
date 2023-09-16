@@ -59,7 +59,7 @@
                                       Grid.RowSpan="2"
                                       VerticalAlignment="Stretch"
                                       CornerRadius="15,0,0,15"
-                                      Background="White">
+                                      >
             
                 <StackPanel Margin="15" >
                     <!--Logo&Title-->
