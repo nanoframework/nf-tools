@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         mc:Ignorable="d"
-        Title=".NET nanoFramework Profiler Launcher" Height="579" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
+        Title=".NET nanoFramework Profiler Launcher" Height="714" 
         Unloaded="Window_Unloaded" Loaded="Window_Loaded" Icon="/Views/nanoframework.ico" Left="0" Top="0" Width="834">
     <Window.DataContext>
         <viewModel:ProfilerLauncherViewModel/>
@@ -16,7 +16,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
@@ -79,14 +79,13 @@
             </Grid>
         </GroupBox>
 
-        <Grid Grid.Row="2" Grid.ColumnSpan="2" Grid.Column="0" Margin="20,20,0,0" VerticalAlignment="Top" Grid.RowSpan="2">
+        <Grid Grid.Row="2" Grid.ColumnSpan="3" Grid.Column="0" Margin="20,20,20,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <TextBox x:Name="textLog" Grid.Row="0"
-                 TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="180" VerticalScrollBarVisibility="Auto"/>
+                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
             <Button Content="Clear" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="91" 
                 Command="{Binding ClearClickedCommand}" Margin="0,20,0,20"/>
         </Grid>
