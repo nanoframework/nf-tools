@@ -35,6 +35,8 @@ namespace nanoFramework.Tools.NanoProfiler.Views
         {
             InitializeComponent();
 
+            txtOutputHelp.Text = txtOutputHelp.Text.Replace("@MAX_LINES@", maxLogMessages.ToString());
+
             // A timer is used to update the on-screen trace logger every 500msec: otherwise
             // impossible to keep up
             logGUIUpdateTimer = new System.Timers.Timer(500);
