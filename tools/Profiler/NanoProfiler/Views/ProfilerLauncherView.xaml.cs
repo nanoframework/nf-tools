@@ -24,25 +24,25 @@ namespace nanoFramework.Tools.NanoProfiler.Views
         private ProfilerLauncherViewModel _viewModel;
 
         // Trace logging (in GUI) related
-        private const int maxLogMessages = 1000;
-        private Queue<string> logMessages = new Queue<string>();
-        private bool logTruncated = false;
-        private System.Timers.Timer logGUIUpdateTimer;
-        private Guid logMessagesFingerprint = new Guid();
-        private Guid lastDisplayedLogMessagesFingerprint = new Guid();
+        private const int _maxLogMessages = 1000;
+        private Queue<string> _logMessages = new Queue<string>();
+        private bool _logTruncated = false;
+        private System.Timers.Timer _logGUIUpdateTimer;
+        private Guid _logMessagesFingerprint = new Guid();
+        private Guid _lastDisplayedLogMessagesFingerprint = new Guid();
 
         public ProfilerLauncherView()
         {
             InitializeComponent();
 
-            txtOutputHelp.Text = txtOutputHelp.Text.Replace("@MAX_LINES@", maxLogMessages.ToString());
+            txtOutputHelp.Text = txtOutputHelp.Text.Replace("@MAX_LINES@", _maxLogMessages.ToString());
 
             // A timer is used to update the on-screen trace logger every 500msec: otherwise
             // impossible to keep up
-            logGUIUpdateTimer = new System.Timers.Timer(500);
-            logGUIUpdateTimer.AutoReset = true;
-            logGUIUpdateTimer.Elapsed += LogGUIUpdateTimer_Elapsed;
-            logGUIUpdateTimer.Start();
+            _logGUIUpdateTimer = new System.Timers.Timer(500);
+            _logGUIUpdateTimer.AutoReset = true;
+            _logGUIUpdateTimer.Elapsed += LogGUIUpdateTimer_Elapsed;
+            _logGUIUpdateTimer.Start();
 
             clearLog();
 
@@ -51,13 +51,13 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             {
                 lock(this)
                 {
-                    if (logMessages.Count >= maxLogMessages)
+                    if (_logMessages.Count >= _maxLogMessages)
                     {
-                        logTruncated = true;
-                        logMessages.Dequeue();
+                        _logTruncated = true;
+                        _logMessages.Dequeue();
                     }
-                    logMessages.Enqueue(m.Value);
-                    logMessagesFingerprint = Guid.NewGuid();
+                    _logMessages.Enqueue(m.Value);
+                    _logMessagesFingerprint = Guid.NewGuid();
                 }
             });
 
@@ -72,7 +72,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
 
         private void ProfilerLauncherView_Closed(object? sender, EventArgs e)
         {
-            logGUIUpdateTimer.Elapsed -= LogGUIUpdateTimer_Elapsed;
+            _logGUIUpdateTimer.Elapsed -= LogGUIUpdateTimer_Elapsed;
 
             // TODO: shouldn't something like _viewModel.Cancel() be called here?
             // Something to immediately stop executing threads and ensure EXE exits fairly quickly
@@ -83,13 +83,13 @@ namespace nanoFramework.Tools.NanoProfiler.Views
         {
             lock(this)
             {
-                if (lastDisplayedLogMessagesFingerprint != logMessagesFingerprint)
+                if (_lastDisplayedLogMessagesFingerprint != _logMessagesFingerprint)
                 {
-                    lastDisplayedLogMessagesFingerprint = logMessagesFingerprint;
-                    string messages = String.Join(Environment.NewLine, logMessages);
-                    if (logTruncated)
+                    _lastDisplayedLogMessagesFingerprint = _logMessagesFingerprint;
+                    string messages = String.Join(Environment.NewLine, _logMessages);
+                    if (_logTruncated)
                     {
-                        messages = $"[ truncated; only last {maxLogMessages} messages shown ]" + Environment.NewLine + messages;
+                        messages = $"[ truncated; only last {_maxLogMessages} messages shown ]" + Environment.NewLine + messages;
                     }
 
                     Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
@@ -105,8 +105,8 @@ namespace nanoFramework.Tools.NanoProfiler.Views
         {
             lock (this)
             {
-                logTruncated = false;
-                logMessages.Clear();
+                _logTruncated = false;
+                _logMessages.Clear();
             }
         }
 

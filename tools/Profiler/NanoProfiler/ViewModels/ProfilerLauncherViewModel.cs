@@ -211,7 +211,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private _DBG.Engine _engine = null;
 
         private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
-        private StreamWriter debugLogWriter;
+        private StreamWriter _debugLogWriter;
 
         #endregion
 
@@ -374,7 +374,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         public void LogText(string text)
         {
             // update log text
-            debugLogWriter?.WriteLine(text);
+            _debugLogWriter?.WriteLine(text);
             WeakReferenceMessenger.Default.Send(new UpdateLogTextMessage(text));
         }
 
@@ -511,7 +511,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                                 CloseDebugLog();
                                 LogText($"Saving profile data to {OutputFileName}");
                                 LogText($"Saving device log to {DebugOutputFileName}");
-                                debugLogWriter = File.CreateText(DebugOutputFileName);
+                                _debugLogWriter = File.CreateText(DebugOutputFileName);
                                 _session.EnableProfiling();
                             }
                             else
@@ -546,11 +546,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private void CloseDebugLog()
         {
-            if (debugLogWriter != null)
+            if (_debugLogWriter != null)
             {
-                debugLogWriter.Close();
-                debugLogWriter.Dispose();
-                debugLogWriter = null;
+                _debugLogWriter.Close();
+                _debugLogWriter.Dispose();
+                _debugLogWriter = null;
             }
         }
 
