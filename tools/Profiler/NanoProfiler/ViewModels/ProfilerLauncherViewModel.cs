@@ -520,7 +520,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             if (string.IsNullOrEmpty(OutputFileName))
             {
-                OutputFileName = Path.GetTempFileName();
+                OutputFileName = Path.GetTempFileName().Replace(".tmp", ".log");
             }
         }
 
