@@ -6,26 +6,27 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         mc:Ignorable="d"
-        Title=".NET nanoFramework Profiler Launcher" Height="579" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
-        Unloaded="Window_Unloaded" Loaded="Window_Loaded" Icon="/Views/nanoframework.ico" Left="0" Top="0" Width="834">
+        Background="{Binding BackgroundProfileLauncher}" 
+        Title=".NET nanoFramework Profiler Launcher" Width="900" Height="714" 
+        Unloaded="Window_Unloaded" Loaded="Window_Loaded" Icon="/Views/nanoframework.ico" Left="0" Top="0">
     <Window.DataContext>
         <viewModel:ProfilerLauncherViewModel/>
     </Window.DataContext>
-    <Grid Background="{Binding BackgroundProfileLauncher}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <GroupBox Header="Device" Grid.Row="0" Grid.Column="0" Width="300" Margin="20,20,0,0" >
+        <GroupBox Header="Device" Grid.Row="0" Grid.Column="0" Width="300" >
             <Grid>
                 <Label Content="nanoDevice to connect to:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
                 <TextBox HorizontalAlignment="Left" Margin="18,41,0,0" TextWrapping="Wrap" Text="{Binding ComPortName}" VerticalAlignment="Top" Width="120"/>
@@ -35,7 +36,7 @@
             </Grid>
         </GroupBox>
 
-        <GroupBox Header="Profiling Options" Grid.Row="0" Grid.Column="1" Width="300" Margin="20,20,0,0" >
+        <GroupBox Header="Profiling Options" Grid.Row="0" Grid.Column="1" Width="300" Margin="20,0,0,0" >
             <Grid >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -58,37 +59,33 @@
             </Grid>
         </GroupBox>
 
-        <GroupBox Header="Output"  Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Margin="20,20,0,0" >
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="77*"/>
-                    <ColumnDefinition Width="44*"/>
-                    <ColumnDefinition Width="441*"/>
-                </Grid.ColumnDefinitions>
-                
-                <Label Content="File:" Margin="10,10,35,-3" Grid.Row="0"/>
-                <TextBox HorizontalAlignment="Left" Margin="47,15,0,0" TextWrapping="Wrap" IsReadOnly="True" VerticalAlignment="Top" Width="399" Grid.ColumnSpan="3" Text="{Binding OutputFileName}"  Grid.Row="0"/>
-                <Button Content="Browse..." Command="{Binding BrowseLogFileCommand}" Grid.Column="2" Margin="354,15,10,6"  Grid.Row="0"></Button>
+        <GroupBox Header="Output"  Grid.Row="1" Grid.ColumnSpan="3" Grid.Column="0" Margin="0,20,0,0" >
+            <StackPanel Margin="0,5,5,5">
+                <TextBlock x:Name="txtOutputHelp" Text="Select an output file to save profile data to below. For example profile.log. If not specified, profile data will be saved to a temporary file. Debugger and optional profiler event messages will be logged in the window below. While only the last @MAX_LINES@ lines will be shown, all lines will be saved to a second logfile that is created based on the data file name. For example, profile.debug.txt." TextWrapping="Wrap" Margin="5,5,0,0"/>
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Content="File:"/>
+                    <TextBox TextWrapping="Wrap" IsReadOnly="True" Text="{Binding OutputFileName}" Grid.Column="1"   />
+                    <Button Content="Browse..." Command="{Binding BrowseLogFileCommand}" Grid.Column="2" Margin="10,0,0,0" Padding="10,1,10,1"></Button>
+                </Grid>
 
-                <CheckBox Content="Trace profiler events" Grid.Row="1" Margin="20,20,0,20" IsChecked="{Binding TraceProfilesEvents}" />
-            </Grid>
+                <CheckBox Content="Trace profiler events" IsChecked="{Binding TraceProfilesEvents}" Margin="5,10,0,0" />
+            </StackPanel>
         </GroupBox>
 
-        <Grid Grid.Row="2" Grid.ColumnSpan="2" Grid.Column="0" Margin="20,20,0,0" VerticalAlignment="Top" Grid.RowSpan="2">
+        <Grid Grid.Row="2" Grid.ColumnSpan="3" Grid.Column="0" Margin="0,20,0,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <TextBox x:Name="textLog" Grid.Row="0"
-                 TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="180" VerticalScrollBarVisibility="Auto"/>
+                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
             <Button Content="Clear" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="91" 
-                Command="{Binding ClearClickedCommand}" Margin="0,20,0,20"/>
+                Command="{Binding ClearClickedCommand}" Margin="0,20,0,0"/>
         </Grid>
         
         <Button x:Name="OpenLogFile" Content="Open Log File" HorizontalAlignment="Center" Grid.Column="2" Grid.Row="0"

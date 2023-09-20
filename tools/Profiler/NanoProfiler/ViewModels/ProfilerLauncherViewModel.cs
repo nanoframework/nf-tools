@@ -10,6 +10,7 @@ using nanoFramework.Tools.Debugger;
 using nanoFramework.Tools.Debugger.Extensions;
 using nanoFramework.Tools.Debugger.WireProtocol;
 using nanoFramework.Tools.NanoProfiler.Helpers;
+using Polly;
 using System;
 using System.IO;
 using System.Linq;
@@ -190,6 +191,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private string _outputFileName;
 
         [ObservableProperty]
+        private string _debugOutputFileName;
+
+        [ObservableProperty]
         private bool _traceProfilesEvents;
 
         #endregion
@@ -207,7 +211,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private _DBG.Engine _engine = null;
 
         private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
-
+        private StreamWriter _debugLogWriter;
 
         #endregion
 
@@ -285,6 +289,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             // clear log file name
             OutputFileName = string.Empty;
+            DebugOutputFileName = string.Empty;
 
         doneHere:
             // update label
@@ -356,7 +361,12 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             LogText($"INFO: Profiling Session Length: {((_session != null) ? _session.BitsReceived : 0)} bits.");
 #endif
 
-            LogText($"\r\nINFO: Log file was {_exporter.FileName}\r\n");
+            LogText("");
+            LogText($"INFO: Profile data saved to {OutputFileName}");
+            
+            CloseDebugLog();
+            LogText($"INFO: Device log saved to {DebugOutputFileName}");
+            LogText("");
 
             Disconnect();
         }
@@ -364,6 +374,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         public void LogText(string text)
         {
             // update log text
+            _debugLogWriter?.WriteLine(text);
             WeakReferenceMessenger.Default.Send(new UpdateLogTextMessage(text));
         }
 
@@ -496,6 +507,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                                 _exporter = new _PRF.Exporter_CLRProfiler(
                                     _session,
                                     OutputFileName);
+
+                                CloseDebugLog();
+                                LogText($"Saving profile data to {OutputFileName}");
+                                LogText($"Saving device log to {DebugOutputFileName}");
+                                _debugLogWriter = File.CreateText(DebugOutputFileName);
                                 _session.EnableProfiling();
                             }
                             else
@@ -521,6 +537,20 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             if (string.IsNullOrEmpty(OutputFileName))
             {
                 OutputFileName = Path.GetTempFileName().Replace(".tmp", ".log");
+            }
+
+            string outputDirectory = Path.GetDirectoryName(OutputFileName);
+            string outputBasename = Path.GetFileNameWithoutExtension(OutputFileName);
+            DebugOutputFileName = Path.Combine(outputDirectory, outputBasename + ".debug.txt");
+        }
+
+        private void CloseDebugLog()
+        {
+            if (_debugLogWriter != null)
+            {
+                _debugLogWriter.Close();
+                _debugLogWriter.Dispose();
+                _debugLogWriter = null;
             }
         }
 
