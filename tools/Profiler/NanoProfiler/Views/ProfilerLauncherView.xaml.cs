@@ -44,7 +44,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             _logGUIUpdateTimer.Elapsed += LogGUIUpdateTimer_Elapsed;
             _logGUIUpdateTimer.Start();
 
-            clearLog();
+            ClearLog();
 
             // register message to update log text
             WeakReferenceMessenger.Default.Register<UpdateLogTextMessage>(this, (r, m) =>
@@ -64,7 +64,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             // register message to clear log text
             WeakReferenceMessenger.Default.Register<ClearLogTextMessage>(this, (r, m) =>
             {
-                clearLog();
+                ClearLog();
             });
 
             Closed += ProfilerLauncherView_Closed;
@@ -101,7 +101,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             }
         }
 
-        private void clearLog()
+        private void ClearLog()
         {
             lock (this)
             {
