@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         mc:Ignorable="d"             
-        Unloaded="Window_Unloaded" Loaded="Window_Loaded" >
+        >
  
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20">
 

@@ -68,7 +68,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
                 ClearLog();
             });
 
-           
+            this.Loaded += ProfilerLauncherView_Loaded;
         }
 
         private void ProfilerLauncherView_Closed(object? sender, EventArgs e)
@@ -111,19 +111,22 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             }
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void ProfilerLauncherView_Loaded(object sender, RoutedEventArgs e)
         {
-            //_viewModel = DataContext as ProfilerLauncherViewModel;
-            //if (_viewModel != null)
-            //{
-            //    ViewUnLoaded = _viewModel.ViewLoadedCommand;
-            //}
+            _viewModel = DataContext as ProfilerLauncherViewModel;
+            if (_viewModel != null)
+            {
+                ViewUnLoaded = _viewModel.ViewLoadedCommand;
+                this.Loaded-=this.ProfilerLauncherView_Loaded;
+            }
         }
 
-        private void Window_Unloaded(object sender, RoutedEventArgs e)
+        private void ProfilerLauncherView_Unloaded(object sender, RoutedEventArgs e)
         {
-            //if (ViewUnLoaded != null)
-            //    ViewUnLoaded.Execute(true);
+          
+                ViewUnLoaded?.Execute(true);
+            
+               
         }
     }
 }
