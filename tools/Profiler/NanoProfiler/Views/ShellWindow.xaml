@@ -4,8 +4,7 @@
             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
           xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
           xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-            xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
-            xmlns:Launcher="clr-namespace:nanoFramework.Tools.NanoProfiler.Launcher"
+            xmlns:views="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"             
             xmlns:Settings="clr-namespace:nanoFramework.Tools.NanoProfiler.Settings"
             xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
             mc:Ignorable="d"
@@ -30,8 +29,8 @@
         </Window.DataContext>
 
     <Window.Resources>
-        <DataTemplate DataType="{x:Type Launcher:ProfilerLauncherViewModel}">
-            <Launcher:ProfilerLauncherView />
+        <DataTemplate DataType="{x:Type viewModel:ProfilerLauncherViewModel}">
+            <views:ProfilerLauncherView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type Settings:SettingsViewModel}">
             <Settings:SettingsView />

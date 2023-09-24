@@ -25,7 +25,7 @@ using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
-    public partial class ProfilerLauncherViewModel : ObservableObject
+    public partial class ProfilerLauncherViewModel : ObservableObject , IDisplayableObject
     {
         private const string _connectLabel = "Connect";
         private const string _connectingLabel = "Connecting...";
@@ -161,6 +161,10 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         [ObservableProperty]
         private string _textBlockContent = string.Empty;
+        [ObservableProperty]
+        private string _header = "Profiler";
+        [ObservableProperty]
+        private string _iconName = "Profiler";
 
 
         [ObservableProperty]
@@ -212,6 +216,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
         private StreamWriter _debugLogWriter;
+
+ 
 
         #endregion
 

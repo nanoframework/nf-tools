@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using nanoFramework.Tools.NanoProfiler.Launcher;
 using nanoFramework.Tools.NanoProfiler.Settings;
 using System;
 using System.Collections.Generic;

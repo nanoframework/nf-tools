@@ -4,7 +4,7 @@ using System;
 
 namespace nanoFramework.Tools.NanoProfiler.Settings;
 
-public partial class SettingsViewModel: ObservableObject
+public partial class SettingsViewModel: ObservableObject, IDisplayableObject
 {
     [ObservableProperty]
     private string _header = "Settings";

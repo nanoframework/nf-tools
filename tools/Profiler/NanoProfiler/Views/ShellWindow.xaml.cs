@@ -1,4 +1,4 @@
-﻿using nanoFramework.Tools.NanoProfiler.Launcher;
+﻿
 using nanoFramework.Tools.NanoProfiler.ViewModels;
 using System;
 using System.Collections.Generic;
