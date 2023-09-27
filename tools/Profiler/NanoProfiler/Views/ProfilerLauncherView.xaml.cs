@@ -87,7 +87,9 @@ namespace nanoFramework.Tools.NanoProfiler.Views
                 if (_lastDisplayedLogMessagesFingerprint != _logMessagesFingerprint)
                 {
                     _lastDisplayedLogMessagesFingerprint = _logMessagesFingerprint;
+
                     string messages = String.Join(Environment.NewLine, _logMessages);
+
                     if (_logTruncated)
                     {
                         messages = $"[ truncated; only last {_maxLogMessages} messages shown ]" + Environment.NewLine + messages;
@@ -108,6 +110,8 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             {
                 _logTruncated = false;
                 _logMessages.Clear();
+
+                _logMessagesFingerprint = Guid.NewGuid();
             }
         }
 
