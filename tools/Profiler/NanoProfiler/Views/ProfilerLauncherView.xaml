@@ -1,17 +1,13 @@
-﻿<Window x:Class="nanoFramework.Tools.NanoProfiler.Views.ProfilerLauncherView"
+﻿<UserControl x:Class="nanoFramework.Tools.NanoProfiler.Views.ProfilerLauncherView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
-        mc:Ignorable="d"
-        Background="{Binding BackgroundProfileLauncher}" 
-        Title=".NET nanoFramework Profiler Launcher" Width="900" Height="714" 
-        Unloaded="Window_Unloaded" Loaded="Window_Loaded" Icon="/Views/nanoframework.ico" Left="0" Top="0">
-    <Window.DataContext>
-        <viewModel:ProfilerLauncherViewModel/>
-    </Window.DataContext>
+        mc:Ignorable="d"             
+        >
+ 
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20">
 
         <Grid.RowDefinitions>
@@ -92,4 +88,4 @@
             VerticalAlignment="Center" Width="103" Command="{Binding OpenLogFileCommand}" Margin="40,0,40,0" />
 
     </Grid>
-</Window>
+</UserControl>

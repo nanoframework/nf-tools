@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -18,7 +19,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
     /// <summary>
     /// Interaction logic for ProfileLauncherView.xaml
     /// </summary>
-    public partial class ProfilerLauncherView : Window
+    public partial class ProfilerLauncherView : UserControl
     {
         private ICommand ViewUnLoaded { get; set; }
         private ProfilerLauncherViewModel _viewModel;
@@ -67,7 +68,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
                 ClearLog();
             });
 
-            Closed += ProfilerLauncherView_Closed;
+            this.Loaded += ProfilerLauncherView_Loaded;
         }
 
         private void ProfilerLauncherView_Closed(object? sender, EventArgs e)
@@ -114,19 +115,22 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             }
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void ProfilerLauncherView_Loaded(object sender, RoutedEventArgs e)
         {
             _viewModel = DataContext as ProfilerLauncherViewModel;
             if (_viewModel != null)
             {
                 ViewUnLoaded = _viewModel.ViewLoadedCommand;
+                this.Loaded-=this.ProfilerLauncherView_Loaded;
             }
         }
 
-        private void Window_Unloaded(object sender, RoutedEventArgs e)
+        private void ProfilerLauncherView_Unloaded(object sender, RoutedEventArgs e)
         {
-            if (ViewUnLoaded != null)
-                ViewUnLoaded.Execute(true);
+          
+                ViewUnLoaded?.Execute(true);
+            
+               
         }
     }
 }
