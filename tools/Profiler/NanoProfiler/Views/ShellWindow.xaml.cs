@@ -60,23 +60,17 @@ public partial class ShellWindow : Window
     /// Raises the System.Windows.Window.Closed event.
     /// </summary>
     /// <param name="e"></param>
-    protected override void OnClosed(EventArgs e)
-    {
-        base.OnClosed(e);       
-    }
+    protected override void OnClosed(EventArgs e) => base.OnClosed(e);
 
-    private void OnCanResizeWindow(object sender, CanExecuteRoutedEventArgs e)
-    {
-        e.CanExecute = this.ResizeMode == ResizeMode.CanResize || this.ResizeMode == ResizeMode.CanResizeWithGrip;
-    }
 
-    private void OnCanMinimizeWindow(object sender, CanExecuteRoutedEventArgs e)
-    {
-        e.CanExecute = this.ResizeMode != ResizeMode.NoResize;
-    }
+    private void OnCanResizeWindow(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = this.ResizeMode == ResizeMode.CanResize || this.ResizeMode == ResizeMode.CanResizeWithGrip;
+
+
+    private void OnCanMinimizeWindow(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = this.ResizeMode != ResizeMode.NoResize;
+
     private void OnMaximizeWindow(object target, ExecutedRoutedEventArgs e)
     {
- 
+
         SystemCommands.MaximizeWindow(this);
         this.RestoreButton.Visibility=Visibility.Visible;
         this.MaximizeButton.Visibility=Visibility.Collapsed;
@@ -84,26 +78,20 @@ public partial class ShellWindow : Window
 
     }
 
-    private void OnMinimizeWindow(object target, ExecutedRoutedEventArgs e)
-    {
- 
-        SystemCommands.MinimizeWindow(this);
-        
- 
-    }
+    private void OnMinimizeWindow(object target, ExecutedRoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
+
+
+
 
     private void OnRestoreWindow(object target, ExecutedRoutedEventArgs e)
     {
         SystemCommands.RestoreWindow(this);
-        this.RestoreButton.Visibility=Visibility.Visible;
-        this.MaximizeButton.Visibility=Visibility.Collapsed;
+        this.RestoreButton.Visibility=Visibility.Collapsed;
+        this.MaximizeButton.Visibility=Visibility.Visible;
     }
- 
-    
-    private void OnCloseWindow(object target, ExecutedRoutedEventArgs e)
-    {
- 
-        SystemCommands.CloseWindow(this);
- 
-    }
+
+
+    private void OnCloseWindow(object target, ExecutedRoutedEventArgs e) => SystemCommands.CloseWindow(this);
+
+
 }

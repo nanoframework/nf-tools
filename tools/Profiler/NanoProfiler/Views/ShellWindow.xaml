@@ -164,27 +164,24 @@
                                 Command="{Binding Source={x:Static SystemCommands.RestoreWindowCommand}}"
                                 ToolTip="Restore">
                             <materialDesign:PackIcon Kind="WindowRestore" />
-                          
+
                         </Button>
                         <Button x:Name="MaximizeButton"
                                 materialDesign:RippleAssist.Feedback="Pink"
                                 Style="{DynamicResource MaterialDesignIconButton}"
-                                Height="40"
-                                Width="40"
                                 Visibility="Visible"
                                 Command="{Binding Source={x:Static SystemCommands.MaximizeWindowCommand}}"
                                 ToolTip="Maximize">
-                            <materialDesign:PackIcon x:Name="Border" Kind="Maximize" />
-                       
+                            <materialDesign:PackIcon x:Name="Border"
+                                                     Kind="Maximize" />
+
                         </Button>
-                   
+
                     </Grid>
                     <Button Style="{DynamicResource MaterialDesignIconButton}"
                             materialDesign:RippleAssist.Feedback="Red"
                             Command="{Binding CloseAppCommand}"
-                            CommandParameter="{Binding ElementName=ShellWindowApp}"
-                            Height="40"
-                            Width="40">
+                            CommandParameter="{Binding ElementName=ShellWindowApp}">
                         <materialDesign:PackIcon Kind="Close" />
                     </Button>
 
