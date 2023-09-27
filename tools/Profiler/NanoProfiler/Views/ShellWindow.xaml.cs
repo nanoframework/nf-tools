@@ -78,17 +78,26 @@ public partial class ShellWindow : Window
     {
  
         SystemCommands.MaximizeWindow(this);
- 
+        this.RestoreButton.Visibility=Visibility.Visible;
+        this.MaximizeButton.Visibility=Visibility.Collapsed;
+
+
     }
 
     private void OnMinimizeWindow(object target, ExecutedRoutedEventArgs e)
     {
  
         SystemCommands.MinimizeWindow(this);
+        
  
     }
 
-    private void OnRestoreWindow(object target, ExecutedRoutedEventArgs e)=>SystemCommands.RestoreWindow(this);
+    private void OnRestoreWindow(object target, ExecutedRoutedEventArgs e)
+    {
+        SystemCommands.RestoreWindow(this);
+        this.RestoreButton.Visibility=Visibility.Visible;
+        this.MaximizeButton.Visibility=Visibility.Collapsed;
+    }
  
     
     private void OnCloseWindow(object target, ExecutedRoutedEventArgs e)
