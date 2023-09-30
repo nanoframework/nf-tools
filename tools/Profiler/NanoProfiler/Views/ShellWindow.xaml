@@ -26,12 +26,14 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         x:Name="ShellWindowApp"
+        UseLayoutRounding="True"
         Left="0"
         Top="0"
         Width="834">
     <WindowChrome.WindowChrome>
         <WindowChrome GlassFrameThickness="0"
                       CornerRadius="0"
+                      UseAeroCaptionButtons="False"
                       CaptionHeight="0" />
     </WindowChrome.WindowChrome>
     <Window.DataContext>
@@ -45,175 +47,208 @@
             <Settings:SettingsView />
         </DataTemplate>
     </Window.Resources>
-    <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}"
-                         UniformCornerRadius="15"
-                         Margin="25"
-                         VerticalAlignment="Stretch"
-                         materialDesign:ElevationAssist.Elevation="Dp4">
-        <Grid ShowGridLines="False">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="290" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"></RowDefinition>
-                <RowDefinition Height="*"></RowDefinition>
-                <RowDefinition Height="Auto"></RowDefinition>
-            </Grid.RowDefinitions>
-            <!--Side content -->
-            <materialDesign:ColorZone Grid.Column="0"
-                                      Grid.Row="0"
-                                      Grid.RowSpan="2"
-                                      VerticalAlignment="Stretch"
-                                      CornerRadius="15,0,0,15">
-                <StackPanel Margin="15">
-                    <!--Logo&Title-->
-                    <WrapPanel Margin="0 10 5 60"
-                               HorizontalAlignment="Center">
-                        <Image RenderOptions.BitmapScalingMode="HighQuality"
-                               Source="/Views/nanoframework.ico"
-                               Height="30"
-                               Width="30" />
-                        <TextBlock Text=".NET nanoFramework"
-                                   FontSize="20"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center"></TextBlock>
-                        <TextBlock Text="Profiler Launcher"
-                                   FontWeight="Bold"
-                                   Margin="35,0,0,0"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center"></TextBlock>
-                    </WrapPanel>
-                    <ListBox Grid.Column="0"
-                             Grid.Row="1"
-                             ItemsSource="{Binding Items}"
-                             SelectedItem="{Binding SelectedItem}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <WrapPanel>
-                                    <Border x:Name="Highlighter"
-                                            VerticalAlignment="Stretch"
-                                            Width="4"
-                                            CornerRadius="2"
-                                            HorizontalAlignment="Left"
-                                            Margin="-6,0,5,0"
-                                            Visibility="Collapsed">
-                                        <Border.Background>
-                                            <SolidColorBrush Color="Lime"></SolidColorBrush>
-                                        </Border.Background>
-                                    </Border>
-                                    <materialDesign:PackIcon Kind="{Binding IconName}"
-                                                             VerticalAlignment="Center"
-                                                             Margin="0,0,10,0"></materialDesign:PackIcon>
-                                    <TextBlock Text="{Binding Header}" />
-                                </WrapPanel>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger  Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsSelected}"
-                                                  Value="true">
-                                        <Setter Value="Visible"
-                                                Property="Visibility"
-                                                TargetName="Highlighter"></Setter>
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </StackPanel>
-            </materialDesign:ColorZone>
-            <!--Main Content-->
-            <Grid Grid.Column="1"
-                  Grid.Row="0"
-                  Grid.RowSpan="3">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="auto" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"></RowDefinition>
-                    <RowDefinition Height="*"></RowDefinition>
-                    <RowDefinition Height="Auto"></RowDefinition>
-                </Grid.RowDefinitions>
-
-                <TextBlock   Grid.Row="0"
-                             Grid.Column="0"
-                             Text="{Binding SelectedItem.Header}"
-                             materialDesign:TextBlockAssist.AutoToolTip="True"
-                             Margin="8,16,0,0"
-                             FontWeight="ExtraBold"
-                             Style="{DynamicResource MaterialDesignHeadline4TextBlock}"></TextBlock>
-
-                <StackPanel      Grid.Row="0"
-                                 Grid.Column="2"
-                                 Orientation="Horizontal"
-                                 DockPanel.Dock="Right"
-                                 HorizontalAlignment="Right">
-                    <Button Style="{DynamicResource MaterialDesignIconButton}"
-                            materialDesign:RippleAssist.Feedback="LightPink"
-                            Command="{Binding Source={x:Static SystemCommands.MinimizeWindowCommand}}"
-                            Height="40"
-                            Width="40">
-                        <materialDesign:PackIcon Kind="Minimize" />
-                    </Button>
-                    <!--Restore || Maximize-->
+    <Border x:Name="WindowBorder"
+            Margin="0">
+        <Border.Background>
+            <SolidColorBrush x:Name="WindowBorderBackground"
+                             Color="Transparent" />
+        </Border.Background>
+        <Border.Resources>
+            <Storyboard x:Key="BackgroundAnimation">
+                <ColorAnimation Storyboard.TargetName="WindowBorderBackground"
+                                Storyboard.TargetProperty="Color"
+                                To="Yellow"
+                                Duration="0:0:.6" />
+            </Storyboard>
+        </Border.Resources>
+        <Border BorderBrush="Green"
+                Background="{DynamicResource MaterialDesignPaper}"
+                BorderThickness="1">
+            <AdornerDecorator>
+                <Grid x:Name="LayoutRoot">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <!-- title bar -->
                     <Grid>
-                        <Button x:Name="RestoreButton"
-                                Visibility="Collapsed"
-                                Style="{DynamicResource MaterialDesignIconButton}"
-                                Command="{Binding Source={x:Static SystemCommands.RestoreWindowCommand}}"
-                                ToolTip="Restore">
-                            <materialDesign:PackIcon Kind="WindowRestore" />
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="250" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <!--Logo&Title-->
+                        <WrapPanel Margin="10,10,0,0"
+                                   Grid.Row="0"
+                                   Grid.Column="0"
+                                   HorizontalAlignment="Left">
+                            <Image RenderOptions.BitmapScalingMode="HighQuality"
+                                   Source="/Views/nanoframework.ico"
+                                   Height="30"
+                                   Width="30" />
+                            <TextBlock Text=".NET nanoFramework"
+                                       FontSize="20"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Center"></TextBlock>
+                            <TextBlock Text="Profiler Launcher"
+                                       FontWeight="Bold"
+                                       Margin="3,0,0,0"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Center"></TextBlock>
+                        </WrapPanel>
+                        <!-- window system buttons-->
+                        <StackPanel      Grid.Row="0"
+                                         Grid.Column="2"
+                                         Orientation="Horizontal"
+                                         HorizontalAlignment="Right">
+                            <Button Style="{DynamicResource MaterialDesignIconButton}"
+                                    materialDesign:RippleAssist.Feedback="LightPink"
+                                    Command="{Binding Source={x:Static SystemCommands.MinimizeWindowCommand}}"
+                                    Height="40"
+                                    Width="40">
+                                <materialDesign:PackIcon Kind="Minimize" />
+                            </Button>
+                            <!--Restore || Maximize-->
+                            <Grid>
+                                <Button x:Name="RestoreButton"
+                                        Visibility="Collapsed"
+                                        Style="{DynamicResource MaterialDesignIconButton}"
+                                        Command="{Binding Source={x:Static SystemCommands.RestoreWindowCommand}}"
+                                        ToolTip="Restore">
+                                    <materialDesign:PackIcon Kind="WindowRestore" />
 
-                        </Button>
-                        <Button x:Name="MaximizeButton"
-                                materialDesign:RippleAssist.Feedback="Pink"
-                                Style="{DynamicResource MaterialDesignIconButton}"
-                                Visibility="Visible"
-                                Command="{Binding Source={x:Static SystemCommands.MaximizeWindowCommand}}"
-                                ToolTip="Maximize">
-                            <materialDesign:PackIcon x:Name="Border"
-                                                     Kind="Maximize" />
+                                </Button>
+                                <Button x:Name="MaximizeButton"
+                                        materialDesign:RippleAssist.Feedback="Pink"
+                                        Style="{DynamicResource MaterialDesignIconButton}"
+                                        Visibility="Visible"
+                                        Command="{Binding Source={x:Static SystemCommands.MaximizeWindowCommand}}"
+                                        ToolTip="Maximize">
+                                    <materialDesign:PackIcon x:Name="Border"
+                                                             Kind="Maximize" />
 
-                        </Button>
+                                </Button>
 
+                            </Grid>
+                            <Button Style="{DynamicResource MaterialDesignIconButton}"
+                                    materialDesign:RippleAssist.Feedback="Red"
+                                    Command="{Binding CloseAppCommand}"
+                                    CommandParameter="{Binding ElementName=ShellWindowApp}">
+                                <materialDesign:PackIcon Kind="Close" />
+                            </Button>
+                        </StackPanel>
                     </Grid>
-                    <Button Style="{DynamicResource MaterialDesignIconButton}"
-                            materialDesign:RippleAssist.Feedback="Red"
-                            Command="{Binding CloseAppCommand}"
-                            CommandParameter="{Binding ElementName=ShellWindowApp}">
-                        <materialDesign:PackIcon Kind="Close" />
-                    </Button>
+                    <Grid ShowGridLines="False"
+                          Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="290" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"></RowDefinition>
+                            <RowDefinition Height="*"></RowDefinition>
+                            <RowDefinition Height="Auto"></RowDefinition>
+                        </Grid.RowDefinitions>
+                        <!--Side content -->
+                        <materialDesign:ColorZone Grid.Column="0"
+                                                  Grid.Row="0"
+                                                  Grid.RowSpan="2"
+                                                  VerticalAlignment="Stretch"
+                                                  CornerRadius="15,0,0,15">
+                            <StackPanel Margin="15">
 
-                </StackPanel>
+                                <ListBox Grid.Column="0"
+                                         Grid.Row="1"
+                                         ItemsSource="{Binding Items}"
+                                         SelectedItem="{Binding SelectedItem}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <WrapPanel>
+                                                <Border x:Name="Highlighter"
+                                                        VerticalAlignment="Stretch"
+                                                        Width="4"
+                                                        CornerRadius="2"
+                                                        HorizontalAlignment="Left"
+                                                        Margin="-6,0,5,0"
+                                                        Visibility="Collapsed">
+                                                    <Border.Background>
+                                                        <SolidColorBrush Color="Lime"></SolidColorBrush>
+                                                    </Border.Background>
+                                                </Border>
+                                                <materialDesign:PackIcon Kind="{Binding IconName}"
+                                                                         VerticalAlignment="Center"
+                                                                         Margin="0,0,10,0"></materialDesign:PackIcon>
+                                                <TextBlock Text="{Binding Header}" />
+                                            </WrapPanel>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger  Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsSelected}"
+                                                              Value="true">
+                                                    <Setter Value="Visible"
+                                                            Property="Visibility"
+                                                            TargetName="Highlighter"></Setter>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </materialDesign:ColorZone>
+                        <!--Main Content-->
+                        <Grid Grid.Column="1"
+                              Grid.Row="0"
+                              Grid.RowSpan="3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"></RowDefinition>
+                                <RowDefinition Height="*"></RowDefinition>
+                                <RowDefinition Height="Auto"></RowDefinition>
+                            </Grid.RowDefinitions>
 
-                <!--Content Background-->
-                <Border    Grid.Row="1"
-                           Grid.Column="0"
-                           Grid.ColumnSpan="3"
-                           BorderBrush="Green"
-                           BorderThickness="0,5,0,5"
-                           Margin="0,0,10,0"
-                           CornerRadius="25">
-                    <ContentControl Content="{Binding SelectedItem}" />
+                            <TextBlock   Grid.Row="0"
+                                         Grid.Column="0"
+                                         Text="{Binding SelectedItem.Header}"
+                                         materialDesign:TextBlockAssist.AutoToolTip="True"
+                                         Margin="8,16,0,0"
+                                         FontWeight="ExtraBold"
+                                         Style="{DynamicResource MaterialDesignHeadline4TextBlock}"></TextBlock>
+                            <!--Content Background-->
+                            <Border    Grid.Row="1"
+                                       Grid.Column="0"
+                                       Grid.ColumnSpan="3"
+                                       BorderBrush="Green"
+                                       BorderThickness="0,5,0,5"
+                                       Margin="0,0,10,0"
+                                       CornerRadius="25">
+                                <ContentControl Content="{Binding SelectedItem}" />
 
-                </Border>
+                            </Border>
 
-
-                <TextBlock  Grid.Row="2"
-                            Grid.Column="0"
-                            HorizontalAlignment="Right"
-                            Grid.ColumnSpan="3"
-                            FontFamily="Italic"
-                            Text="{Binding SelectedItem.Header}"
-                            Margin="0,4,18,8"
-                            Style="{DynamicResource MaterialDesignSubtitle1TextBlock}"
-                            FontWeight="ExtraBold"></TextBlock>
-
-
-
-
-            </Grid>
-        </Grid>
-    </materialDesign:Card>
+                        </Grid>
+                    </Grid>
+                    <!-- resize grip -->
+                    <Grid Grid.Row="2"
+                          x:Name="ResizeGrip"
+                          Background="Transparent"
+                          Visibility="Visible"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Bottom"
+                          WindowChrome.ResizeGripDirection="BottomRight">
+                        <Path Width="12"
+                              Height="12"
+                              Margin="1"
+                              Stroke="{DynamicResource MaterialDesignBody}"
+                              StrokeThickness="1"
+                              Stretch="None"
+                              Data="F1 M1,10 L3,10 M5,10 L7,10 M9,10 L11,10 M2,9 L2,11 M6,9 L6,11 M10,9 L10,11 M5,6 L7,6 M9,6 L11,6 M6,5 L6,7 M10,5 L10,7 M9,2 L11,2 M10,1 L10,3" />
+                    </Grid>
+                </Grid>
+            </AdornerDecorator>
+        </Border>
+    </Border>
 </Window>
