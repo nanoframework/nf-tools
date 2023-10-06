@@ -64,7 +64,6 @@
             </Storyboard>
         </Border.Resources>
         <Border BorderBrush="Green"
-                Background="{DynamicResource MaterialDesignPaper}"
                 BorderThickness="1">
             <AdornerDecorator>
                 <Grid x:Name="LayoutRoot">
@@ -74,7 +73,7 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <!-- title bar -->
-                    <Grid>
+                    <Grid Background="{DynamicResource MaterialDesignBackground}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -84,9 +83,9 @@
                         <StackPanel 
                                    Grid.Row="0"
                                     Width="{Binding ElementName=SideboardColorZone,Path=ActualWidth}"
-                                    Panel.ZIndex="2"
-                                   Background="{StaticResource SideboardBackground}"
-                                   Grid.Column="0"                                   
+                                    Panel.ZIndex="2"                                      
+                                    Background="{DynamicResource MaterialDesignPaper}"
+                                    Grid.Column="0"                                   
                                    HorizontalAlignment="Left">
                             <StackPanel Margin="10,10,0,0" Orientation="Horizontal">
                                 <Image RenderOptions.BitmapScalingMode="HighQuality"
@@ -149,6 +148,7 @@
                     </Grid>
                     <Grid ShowGridLines="False"
                           Grid.Column="0"
+                          Grid.RowSpan="2"
                           Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="290" />
@@ -163,10 +163,10 @@
                         <materialDesign:ColorZone Grid.Column="0"
                                                   x:Name="SideboardColorZone"
                                                   Grid.Row="0"
-                                                  Background="{StaticResource SideboardBackground}"
+                                                  Background="{DynamicResource MaterialDesignPaper}"
                                                   Grid.RowSpan="2"
                                                   VerticalAlignment="Stretch"
-                                                  CornerRadius="15,0,0,15">
+                                                  CornerRadius="0">
                             <StackPanel Margin="15">
 
                                 <ListBox Grid.Column="0"
@@ -208,6 +208,7 @@
                         <!--Main Content-->
                         <Grid Grid.Column="1"
                               Grid.Row="0"
+                              Background="{DynamicResource MaterialDesignBackground}"
                               Grid.RowSpan="3">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
