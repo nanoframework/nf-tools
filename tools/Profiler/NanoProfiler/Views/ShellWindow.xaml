@@ -168,7 +168,6 @@
                                                   VerticalAlignment="Stretch"
                                                   CornerRadius="0">
                             <StackPanel Margin="15">
-
                                 <ListBox Grid.Column="0"
                                          Grid.Row="1"
                                          ItemsSource="{Binding Items}"
@@ -182,10 +181,9 @@
                                                         CornerRadius="2"
                                                         HorizontalAlignment="Left"
                                                         Margin="-6,0,5,0"
+                                                        Background="{DynamicResource PrimaryHueLightBrush}"
                                                         Visibility="Collapsed">
-                                                    <Border.Background>
-                                                        <SolidColorBrush Color="Lime"></SolidColorBrush>
-                                                    </Border.Background>
+                                                
                                                 </Border>
                                                 <materialDesign:PackIcon Kind="{Binding IconName}"
                                                                          VerticalAlignment="Center"
