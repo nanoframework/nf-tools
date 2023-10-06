@@ -40,6 +40,8 @@
         <viewModel:ShellWindowViewModel />
     </Window.DataContext>
     <Window.Resources>
+        <SolidColorBrush x:Key="SideboardBackground"
+                         Color="WhiteSmoke" />
         <DataTemplate DataType="{x:Type viewModel:ProfilerLauncherViewModel}">
             <views:ProfilerLauncherView />
         </DataTemplate>
@@ -74,30 +76,35 @@
                     <!-- title bar -->
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="250" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <!--Logo&Title-->
-                        <WrapPanel Margin="10,10,0,0"
+                        <StackPanel 
                                    Grid.Row="0"
-                                   Grid.Column="0"
+                                    Width="{Binding ElementName=SideboardColorZone,Path=ActualWidth}"
+                                    Panel.ZIndex="2"
+                                   Background="{StaticResource SideboardBackground}"
+                                   Grid.Column="0"                                   
                                    HorizontalAlignment="Left">
-                            <Image RenderOptions.BitmapScalingMode="HighQuality"
-                                   Source="/Views/nanoframework.ico"
-                                   Height="30"
-                                   Width="30" />
-                            <TextBlock Text=".NET nanoFramework"
-                                       FontSize="20"
-                                       FontWeight="Bold"
-                                       HorizontalAlignment="Left"
-                                       VerticalAlignment="Center"></TextBlock>
+                            <StackPanel Margin="10,10,0,0" Orientation="Horizontal">
+                                <Image RenderOptions.BitmapScalingMode="HighQuality"
+                                       Source="/Views/nanoframework.ico"
+                                       Height="30"
+                                       Width="30" />
+                                <TextBlock Text=".NET nanoFramework"
+                                           FontSize="20"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>                             
                             <TextBlock Text="Profiler Launcher"
                                        FontWeight="Bold"
-                                       Margin="3,0,0,0"
+                                       Margin="12,0,0,0"
                                        HorizontalAlignment="Left"
                                        VerticalAlignment="Center"></TextBlock>
-                        </WrapPanel>
+                        </StackPanel>
                         <!-- window system buttons-->
                         <StackPanel      Grid.Row="0"
                                          Grid.Column="2"
@@ -141,6 +148,7 @@
                         </StackPanel>
                     </Grid>
                     <Grid ShowGridLines="False"
+                          Grid.Column="0"
                           Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="290" />
@@ -153,7 +161,9 @@
                         </Grid.RowDefinitions>
                         <!--Side content -->
                         <materialDesign:ColorZone Grid.Column="0"
+                                                  x:Name="SideboardColorZone"
                                                   Grid.Row="0"
+                                                  Background="{StaticResource SideboardBackground}"
                                                   Grid.RowSpan="2"
                                                   VerticalAlignment="Stretch"
                                                   CornerRadius="15,0,0,15">
@@ -209,26 +219,19 @@
                                 <RowDefinition Height="*"></RowDefinition>
                                 <RowDefinition Height="Auto"></RowDefinition>
                             </Grid.RowDefinitions>
-
                             <TextBlock   Grid.Row="0"
                                          Grid.Column="0"
                                          Text="{Binding SelectedItem.Header}"
                                          materialDesign:TextBlockAssist.AutoToolTip="True"
-                                         Margin="8,16,0,0"
-                                         FontWeight="ExtraBold"
-                                         Style="{DynamicResource MaterialDesignHeadline4TextBlock}"></TextBlock>
+                                         Margin="18,0,0,4"                                         
+                                         Style="{DynamicResource MaterialDesignHeadline5TextBlock}" />
                             <!--Content Background-->
                             <Border    Grid.Row="1"
                                        Grid.Column="0"
-                                       Grid.ColumnSpan="3"
-                                       BorderBrush="Green"
-                                       BorderThickness="0,5,0,5"
-                                       Margin="0,0,10,0"
-                                       CornerRadius="25">
+                                       Grid.ColumnSpan="3"                                          
+                                       Margin="0,0,10,0" >
                                 <ContentControl Content="{Binding SelectedItem}" />
-
                             </Border>
-
                         </Grid>
                     </Grid>
                     <!-- resize grip -->
