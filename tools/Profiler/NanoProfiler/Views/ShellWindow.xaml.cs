@@ -1,19 +1,8 @@
 ﻿
 using nanoFramework.Tools.NanoProfiler.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
+using System; 
+using System.Windows; 
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-
 namespace nanoFramework.Tools.NanoProfiler.Views;
 
 /// <summary>
@@ -74,8 +63,7 @@ public partial class ShellWindow : Window
         SystemCommands.MaximizeWindow(this);
         this.RestoreButton.Visibility=Visibility.Visible;
         this.MaximizeButton.Visibility=Visibility.Collapsed;
-
-
+        this.WindowBorder.Margin= new(0,0,0,17);
     }
 
     private void OnMinimizeWindow(object target, ExecutedRoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
