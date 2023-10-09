@@ -5,23 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:viewModel="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
-        mc:Ignorable="d"             
-        >
- 
+        mc:Ignorable="d"            
+        >    
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20">
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-
         <GroupBox Header="Device" Grid.Row="0" Grid.Column="0" Width="300" >
             <Grid>
                 <Label Content="nanoDevice to connect to:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
@@ -31,7 +27,6 @@
                 Command="{Binding ConnectClickedCommand}"/>
             </Grid>
         </GroupBox>
-
         <GroupBox Header="Profiling Options" Grid.Row="0" Grid.Column="1" Width="300" Margin="20,0,0,0" >
             <Grid >
                 <Grid.RowDefinitions>
@@ -54,7 +49,6 @@
                           Name="HeapAbsoluteAddress" Height="23" IsChecked="{Binding HeapAbsoluteAddressChecked}"/>
             </Grid>
         </GroupBox>
-
         <GroupBox Header="Output"  Grid.Row="1" Grid.ColumnSpan="3" Grid.Column="0" Margin="0,20,0,0" >
             <StackPanel Margin="0,5,5,5">
                 <TextBlock x:Name="txtOutputHelp" Text="Select an output file to save profile data to below. For example profile.log. If not specified, profile data will be saved to a temporary file. Debugger and optional profiler event messages will be logged in the window below. While only the last @MAX_LINES@ lines will be shown, all lines will be saved to a second logfile that is created based on the data file name. For example, profile.debug.txt." TextWrapping="Wrap" Margin="5,5,0,0"/>
@@ -72,7 +66,6 @@
                 <CheckBox Content="Trace profiler events" IsChecked="{Binding TraceProfilesEvents}" Margin="5,10,0,0" />
             </StackPanel>
         </GroupBox>
-
         <Grid Grid.Row="2" Grid.ColumnSpan="3" Grid.Column="0" Margin="0,20,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
@@ -82,10 +75,8 @@
                  TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
             <Button Content="Clear" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="91" 
                 Command="{Binding ClearClickedCommand}" Margin="0,20,0,0"/>
-        </Grid>
-        
+        </Grid>                  
         <Button x:Name="OpenLogFile" Content="Open Log File" HorizontalAlignment="Center" Grid.Column="2" Grid.Row="0"
-            VerticalAlignment="Center" Width="103" Command="{Binding OpenLogFileCommand}" Margin="40,0,40,0" />
-
+            VerticalAlignment="Center"  Command="{Binding OpenLogFileCommand}" Margin="40,0,40,0" />
     </Grid>
 </UserControl>
