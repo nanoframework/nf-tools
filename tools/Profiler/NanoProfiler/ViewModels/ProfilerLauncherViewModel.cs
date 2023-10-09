@@ -410,7 +410,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             // connect to specified serial port
             try
             {
-                await Task.Run(()=>   _serialDebuggerPort.AddDevice(ComPortName));
+                await Task.Run(() =>  _serialDebuggerPort.AddDevice(ComPortName));
             }
 #if DEBUG
             catch (Exception ex)
