@@ -10,7 +10,6 @@ using nanoFramework.Tools.Debugger;
 using nanoFramework.Tools.Debugger.Extensions;
 using nanoFramework.Tools.Debugger.WireProtocol;
 using nanoFramework.Tools.NanoProfiler.Helpers;
-using Polly;
 using System;
 using System.IO;
 using System.Linq;
@@ -18,7 +17,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Threading;
-using static System.Net.Mime.MediaTypeNames;
 using _DBG = nanoFramework.Tools.Debugger;
 using _PRF = nanoFramework.Tools.NanoProfiler;
 using _WP = nanoFramework.Tools.Debugger.WireProtocol;
@@ -221,7 +219,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         #endregion
 
-
         #region Constructor
         public ProfilerLauncherViewModel()
         {
@@ -406,26 +403,26 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             SoftDisconnect();
         }
 
-        public Task<bool> Connect()
+        public async Task<bool> Connect()
         {
             // string outputFileName = $"E:\\temp\\nano\\profile-{DateTime.UtcNow.ToString("yyyyMMddHHmmss")}.log";
 
             // connect to specified serial port
             try
             {
-                _serialDebuggerPort.AddDevice(ComPortName);
+                await Task.Run(() =>  _serialDebuggerPort.AddDevice(ComPortName));
             }
 #if DEBUG
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to add device: {ex.Message}");
 
-                return Task.FromResult(false);
+                return false;
             }
 #else
             catch
             {
-                return Task.FromResult(false);
+                return false;
 
             }
 #endif
@@ -478,7 +475,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         {
                             Disconnect();
 
-                            return Task.FromResult(false);
+                            return false;
                         }
 
                     checInitState:
@@ -529,13 +526,13 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                             }
 
                             // done here
-                            return Task.FromResult(true);
+                            return true;
                         }
                     }
                 }
             }
 
-            return Task.FromResult(false);
+            return false;
         }
 
         private void CheckOutpuFileName()
