@@ -21,13 +21,16 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         private ReadNewLog _log;
         private ReadLogResult _logResult;
         private string _scenario = "";
-
+        internal SummaryForm()
+        {
+            InitializeComponent();
+        }
         internal SummaryForm(
             ReadNewLog log,
             ReadLogResult logResult,
             string scenario)
         {
-            InitializeComponent();
+           
 
             _log = log;
             _logResult = logResult;
@@ -240,18 +243,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         //  Here start histogram
         private void AllocatedHistogramButton_Click(object sender, RoutedEventArgs e)
         {
-            string title = "Histogram by Size for Allocated Objects for: " + _scenario;
-
-            ////WinFrom option
-            //HistogramViewForm histogramViewForm = new HistogramViewForm(_logResult.allocatedHistogram, title);
-            //histogramViewForm.Show();
-
-
-
-            HistogramViewModel viewModel = new HistogramViewModel(_logResult.allocatedHistogram, title);
-            HistogramView histogramView = new HistogramView();
-            histogramView.DataContext = viewModel;
-            histogramView.Show();
+           
 
         }
     }

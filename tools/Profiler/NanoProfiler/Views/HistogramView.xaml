@@ -4,11 +4,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
-        xmlns:viewModels="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
+        xmlns:viewModels="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"    
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"             
         mc:Ignorable="d" MinWidth="1000" MinHeight="700"
         xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
-        Title="Histogram View" Icon="/Views/nanoframework.ico" >
+        Title="Histogram View"
+        Icon="/Views/nanoframework.ico"
+        d:DataContext="{d:DesignInstance viewModels:HistogramViewModel}"
+        >
 
     <Window.ContextMenu>
         <ContextMenu>
