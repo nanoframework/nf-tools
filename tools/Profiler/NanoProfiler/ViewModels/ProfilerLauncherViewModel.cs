@@ -9,7 +9,9 @@ using CommunityToolkit.Mvvm.Messaging;
 using nanoFramework.Tools.Debugger;
 using nanoFramework.Tools.Debugger.Extensions;
 using nanoFramework.Tools.Debugger.WireProtocol;
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.Helpers;
+using nanoFramework.Tools.NanoProfiler.Views;
 using System;
 using System.IO;
 using System.Linq;
@@ -63,7 +65,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             {
                 // looks like we have a valid path
 
-                _clrProfiler.LoadLogFile(openFileDialog.FileName);
+                // TODO@Ghis: _clrProfiler.LoadLogFile(openFileDialog.FileName);
+                _summaryForm.DataContext= new SummaryFormViewModel(new FileInfo(openFileDialog.FileName));
+                _summaryForm.Show();
 
                 EnableDisableViewMenuItems();
 
@@ -212,7 +216,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private _PRF.Exporter _exporter = null;
         private _DBG.Engine _engine = null;
 
-        private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
+       // private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
+         private SummaryForm _summaryForm = new SummaryForm();
         private StreamWriter _debugLogWriter;
 
  
@@ -285,8 +290,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             if (!_closing && oldstate == ProfilingState.Connected && _exporter is _PRF.Exporter_CLRProfiler)
             {
-                _clrProfiler.LoadLogFile(_exporter.FileName);
-
+               // _clrProfiler.LoadLogFile(_exporter.FileName);
+                _summaryForm.Activate();    
                 EnableDisableViewMenuItems();
             }
 
