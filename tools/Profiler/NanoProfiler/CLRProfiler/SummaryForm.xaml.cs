@@ -246,5 +246,10 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
            
 
         }
+
+        private void allocationGraphButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

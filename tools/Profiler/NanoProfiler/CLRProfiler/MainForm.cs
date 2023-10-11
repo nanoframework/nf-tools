@@ -11,6 +11,7 @@ using System.Drawing;
 
 namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 {
+    [Obsolete("Has been replaced by SummaryView")]
     public class MainForm
     {
         internal Font font;

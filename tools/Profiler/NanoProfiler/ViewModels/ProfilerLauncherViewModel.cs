@@ -24,7 +24,7 @@ using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 
 namespace nanoFramework.Tools.NanoProfiler.ViewModels
 {
-    public partial class ProfilerLauncherViewModel : ObservableObject , IDisplayableObject
+    public partial class ProfilerLauncherViewModel : ObservableObject, IDisplayableObject
     {
         private const string _connectLabel = "Connect";
         private const string _connectingLabel = "Connecting...";
@@ -129,7 +129,6 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             Disconnect();
         }
 
-
         [RelayCommand]
         private void BrowseLogFile()
         {
@@ -166,38 +165,26 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private string _header = "Profiler";
         [ObservableProperty]
         private string _iconName = "Profiler";
-
-
         [ObservableProperty]
         private string _connectButtonContent = _connectLabel;
-
         [ObservableProperty]
         private SolidColorBrush _backgroundProfileLauncher = Brushes.AliceBlue;
-
         [ObservableProperty]
         bool _rebootChecked = true;
-
         [ObservableProperty]
         private bool _callsChecked = false;
-
         [ObservableProperty]
         private bool _allocationsChecked = true;
-
         [ObservableProperty]
         private bool _heapAbsoluteAddressChecked = true;
-
         [ObservableProperty]
         private bool _connectButtonEnabled = true;
-
         [ObservableProperty]
         private string _comPortName = "COM1";
-
         [ObservableProperty]
         private string _outputFileName;
-
         [ObservableProperty]
         private string _debugOutputFileName;
-
         [ObservableProperty]
         private bool _traceProfilesEvents;
 
@@ -215,11 +202,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private _PRF.Exporter _exporter = null;
         private _DBG.Engine _engine = null;
 
-       // private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
-         private SummaryForm _summaryForm = new SummaryForm();
+        // private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
+        private SummaryForm _summaryForm = new SummaryForm();
         private StreamWriter _debugLogWriter;
 
- 
+
 
         #endregion
 
@@ -289,8 +276,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             if (!_closing && oldstate == ProfilingState.Connected && _exporter is _PRF.Exporter_CLRProfiler)
             {
-               // _clrProfiler.LoadLogFile(_exporter.FileName);
-                _summaryForm.Activate();    
+                // _clrProfiler.LoadLogFile(_exporter.FileName);
+                _summaryForm.Activate();
                 EnableDisableViewMenuItems();
             }
 
@@ -298,8 +285,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             OutputFileName = string.Empty;
             DebugOutputFileName = string.Empty;
 
-        doneHere:
-            // update label
+doneHere:
+// update label
             ConnectButtonContent = _connectLabel;
             // OK to enable button
             ConnectButtonEnabled = true;
@@ -370,7 +357,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             LogText("");
             LogText($"INFO: Profile data saved to {OutputFileName}");
-            
+
             CloseDebugLog();
             LogText($"INFO: Device log saved to {DebugOutputFileName}");
             LogText("");
@@ -414,7 +401,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             // connect to specified serial port
             try
             {
-                await Task.Run(() =>  _serialDebuggerPort.AddDevice(ComPortName));
+                await Task.Run(() => _serialDebuggerPort.AddDevice(ComPortName));
             }
 #if DEBUG
             catch (Exception ex)
@@ -482,7 +469,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                             return false;
                         }
 
-                    checInitState:
+checInitState:
 
                         if (_engine.SetExecutionMode(0, 0))
                         {

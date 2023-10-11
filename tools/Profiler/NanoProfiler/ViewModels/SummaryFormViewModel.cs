@@ -34,7 +34,6 @@ public partial class SummaryFormViewModel : ObservableObject
     {
         logFileInfo = logFileInfoInstance;
         LoadLogFile();
-
     }
 
     private void LoadLogFile()
