@@ -2082,7 +2082,7 @@ namespace CLRProfiler
         }
     }
 
-    internal class ReadLogResult
+    public class ReadLogResult
     {
         internal Histogram allocatedHistogram;
         internal Histogram relocatedHistogram;

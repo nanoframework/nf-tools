@@ -1,23 +1,17 @@
-﻿////
-// Copyright (c) .NET Foundation and Contributors.
-// See LICENSE file in the project root for full license information.
-////
-
-using CLRProfiler;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CLRProfiler;
+using Microsoft.VisualBasic.Logging;
 using nanoFramework.Tools.NanoProfiler.CLRProfiler;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
-using nanoFramework.Tools.NanoProfiler.Views;
-using CommunityToolkit.Mvvm.Input;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace nanoFramework.Tools.NanoProfiler.ViewModels;
+namespace nanoFramework.Tools.NanoProfiler.Services;
 
-public partial class SummaryFormViewModel : ObservableObject
+public class ReadLogResultService
 {
-    internal FileInfo logFileInfo;
     internal Font font;
     private string logFileName;
     private long logFileStartOffset;
@@ -29,33 +23,9 @@ public partial class SummaryFormViewModel : ObservableObject
     internal string currlogFileName;
     internal Graph.GraphType graphtype = Graph.GraphType.Invalid;
     internal bool runaswindow = false;
-    private string _scenario;
-    public SummaryFormViewModel(FileInfo logFileInfoInstance)
-    {
-        logFileInfo = logFileInfoInstance;
-        LoadLogFile();
-    }
-
-    private void LoadLogFile()
-    {
-        if (!logFileInfo.Exists)
-        {
-            return;
-        }
-        _scenario = logFileInfo.Name;
-        logFileStartOffset = 0;
-        logFileEndOffset = long.MaxValue;
-
-        log = new ReadNewLog(logFileInfo.FullName);
-        lastLogResult = null;
-        ObjectGraph.cachedGraph = null;
-        ReadLogResult readLogResult = GetLogResult();
-        log.ReadFile(logFileStartOffset, logFileEndOffset, readLogResult);
-        lastLogResult = readLogResult;
-    }
 
     private ReadLogResult GetLogResult()
-    {
+    {      
         ReadLogResult readLogResult = lastLogResult;
         if (readLogResult == null)
         {
@@ -72,7 +42,9 @@ public partial class SummaryFormViewModel : ObservableObject
         readLogResult.destroyedHandlesHistogram = new Histogram(log);
 
         if (readLogResult.objectGraph != null)
+        {
             readLogResult.objectGraph.Neuter();
+        }
 
         readLogResult.objectGraph = new ObjectGraph(log, 0);
         readLogResult.functionList = new FunctionList(log);
@@ -85,20 +57,16 @@ public partial class SummaryFormViewModel : ObservableObject
         return readLogResult;
     }
 
-    [RelayCommand]
-    private void AllocatedHistogram()
+    public ReadLogResult LoadLogFile(string logFileName)
     {
-        string title = "Histogram by Size for Allocated Objects for: " + _scenario;
-
-        ////WinFrom option
-        //HistogramViewForm histogramViewForm = new HistogramViewForm(_logResult.allocatedHistogram, title);
-        //histogramViewForm.Show();
-
-        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult.allocatedHistogram, title);
-        HistogramView histogramView = new HistogramView();
-        histogramView.DataContext = viewModel;
-        histogramView.Show();
-
-
+        this.logFileName = logFileName;
+        logFileStartOffset = 0;
+        logFileEndOffset = long.MaxValue;
+        log = new ReadNewLog(logFileName);     
+        ObjectGraph.cachedGraph = null;
+        ReadLogResult readLogResult = GetLogResult();
+        log.ReadFile(logFileStartOffset, logFileEndOffset, readLogResult);
+        lastLogResult = readLogResult;
+        return lastLogResult;        
     }
 }

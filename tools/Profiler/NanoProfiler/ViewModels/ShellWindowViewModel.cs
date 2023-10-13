@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using nanoFramework.Tools.NanoProfiler.Services;
 using nanoFramework.Tools.NanoProfiler.Settings;
 using nanoFramework.Tools.NanoProfiler.Views;
 using System.Linq;
@@ -16,7 +17,7 @@ internal partial class ShellWindowViewModel : ObservableObject
         this.SelectedItem = this.Items.First();
     }
      [ObservableProperty]
-     private ObservableObject [] _items = new ObservableObject [] { new ProfilerLauncherViewModel(), new SettingsViewModel() };
+     private ObservableObject [] _items = new ObservableObject [] { new ProfilerLauncherViewModel(new ReadLogResultService()), new SettingsViewModel() };
   
 
     [RelayCommand]
