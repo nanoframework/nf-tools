@@ -32,7 +32,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="controls:ChildWindow">
-                            <Border x:Name="WindowBorder" BorderBrush="Green" BorderThickness="1"  Margin="0" Background="{DynamicResource MaterialDesignBackground}">
+                            <Border x:Name="WindowBorder" BorderBrush="Orange" BorderThickness="1"  Margin="0" Background="{DynamicResource MaterialDesignBackground}">
                                 <AdornerDecorator>
                                     <Grid x:Name="LayoutRoot">
                                         <Grid.RowDefinitions>
@@ -133,13 +133,13 @@
 
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsActive" Value="True">
-                                    <Setter  TargetName="WindowBorder" Property="BorderBrush" Value="YellowGreen" />
-                                    <Setter TargetName="WindowBorder" Property="BorderThickness" Value="2" />
+                                    <Setter  TargetName="WindowBorder" Property="BorderBrush" Value="Green" />
+                                    <Setter TargetName="WindowBorder" Property="BorderThickness" Value="1" />
                                 </Trigger>
                                 <Trigger Property="WindowState" Value="Maximized">
                                     <Setter TargetName="MaximizeButton" Property="Visibility" Value="Collapsed" />
                                     <Setter TargetName="RestoreButton" Property="Visibility" Value="Visible" />
-                                    <Setter TargetName="LayoutRoot" Property="Margin" Value="7" />
+                                    <Setter TargetName="LayoutRoot" Property="Margin" Value="12" />
                                 </Trigger>
                                 <Trigger Property="WindowState" Value="Normal">
                                     <Setter TargetName="MaximizeButton" Property="Visibility" Value="Visible" />
