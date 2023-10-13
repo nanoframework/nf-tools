@@ -7,7 +7,8 @@
          xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:viewModels="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
         mc:Ignorable="d"        
-        Title="Summary View" 
+        Title="{Binding Title}" 
+        x:Name="SummaryViewWin"
         AllowsTransparency="True"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -59,8 +60,9 @@
                       FontWeight="Bold"
                       Margin="12,0,0,0"
                       HorizontalAlignment="Left"
-                      VerticalAlignment="Center"></TextBlock>
+                      VerticalAlignment="Center"/>                     
                     </StackPanel>
+                    <TextBlock  Grid.Row="0" Style="{DynamicResource MaterialDesignSubtitle1TextBlock}" Margin="4,20,0,0"  VerticalAlignment="Stretch"  HorizontalAlignment="Center" Grid.Column="1"   Text="{Binding ElementName=SummaryViewWin, Path=Title}"  />
                     <!-- window system buttons-->
                     <StackPanel      Grid.Row="0"
                         Grid.Column="2"

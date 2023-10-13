@@ -65,16 +65,23 @@ public partial class ProfilerLauncherViewModel : ObservableObject, IDisplayableO
 
         if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(openFileDialog.FileName))
         {
-            if (_summaryView.IsActive)
-            {
-                _summaryView.Close();
-            }
+            
             // looks like we have a valid path        
             var readLogResult = _readLogResultService.LoadLogFile(openFileDialog.FileName);
             var currentLog = _readLogResultService.GetReadNewLog();
-            _summaryView.DataContext= new SummaryViewModel(currentLog,readLogResult);
-            _summaryView.Show();
-            
+            var pre = _readLogResultService.GetPreviousLogFileName();
+            if (openFileDialog.FileName.Equals(pre) || string.IsNullOrWhiteSpace(pre))
+            {
+                _summaryView.DataContext= new SummaryViewModel(currentLog, readLogResult);
+                _summaryView.Show();
+            }
+            else
+            {
+                var newView = new SummaryView();
+                newView.DataContext= new SummaryViewModel(currentLog, readLogResult);
+                newView.Show();
+            }
+           
 
             EnableDisableViewMenuItems();
 

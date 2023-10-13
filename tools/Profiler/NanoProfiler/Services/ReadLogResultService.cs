@@ -58,7 +58,15 @@ public class ReadLogResultService
 
     public ReadLogResult LoadLogFile(string logFileName)
     {
-        currlogFileName = logFileName;
+        if (!string.IsNullOrWhiteSpace(currlogFileName)  )
+        {
+            (prevlogFileName, currlogFileName) = (currlogFileName, logFileName);
+        }
+        else
+        {
+            currlogFileName = logFileName;
+        }
+       
         logFileStartOffset = 0;
         logFileEndOffset = long.MaxValue;
         log = new ReadNewLog(logFileName);     
@@ -66,9 +74,13 @@ public class ReadLogResultService
         ReadLogResult readLogResult = GetLogResult();
         log.ReadFile(logFileStartOffset, logFileEndOffset, readLogResult);
         lastLogResult = readLogResult;
+
+      
         return lastLogResult;        
     }
 
     public ReadNewLog GetReadNewLog() => log;
-    
+
+    public string GetPreviousLogFileName() => prevlogFileName;
+
 }

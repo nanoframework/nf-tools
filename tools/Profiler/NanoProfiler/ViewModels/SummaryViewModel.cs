@@ -65,6 +65,8 @@ public partial class SummaryViewModel : ObservableObject
     private string _commentsValueLabel = Unknown;
     [ObservableProperty]
     private string _heapDumpsValueLabel = Unknown;
+    [ObservableProperty]
+    private string _title = Unknown;
     #endregion
 
     public SummaryViewModel(ReadNewLog? readNewLog, ReadLogResult? readLogResultModel)
@@ -72,6 +74,7 @@ public partial class SummaryViewModel : ObservableObject
         log =  readNewLog;
         lastLogResult = readLogResultModel;
         _scenario = log.fileName;
+        Title= $"Summary for {_scenario}";
         FillInNumbers();
     }
 
