@@ -21,12 +21,12 @@ public partial class SummaryViewModel : ObservableObject
     private string _scenario = Unknown;
 
     //internal Font font;
-    internal ReadNewLog ?log;
-    internal ReadLogResult? lastLogResult;  
+    internal ReadNewLog? log;
+    internal ReadLogResult? lastLogResult;
     internal string prevlogFileName = Unknown;
     internal string currlogFileName = Unknown;
     internal Graph.GraphType graphtype = Graph.GraphType.Invalid;
-    internal bool runaswindow = false;  
+    internal bool runaswindow = false;
 
     #region  Observable Properties
     [ObservableProperty]
@@ -81,8 +81,8 @@ public partial class SummaryViewModel : ObservableObject
     #region  Private Methods
     private void FillInNumbers()
     {
-        AllocatedBytesValueLabel  = CalculateTotalSize(lastLogResult?.allocatedHistogram);
-        RelocatedBytesValueLabel  = CalculateTotalSize(lastLogResult.relocatedHistogram);
+        AllocatedBytesValueLabel  = CalculateTotalSize(lastLogResult!.allocatedHistogram);
+        RelocatedBytesValueLabel  = CalculateTotalSize(lastLogResult!.relocatedHistogram);
         FinalHeapBytesValueLabel  = CalculateTotalSize(GetFinalHeapHistogram());
 
         Gen0CollectionsValueLabel  = FormatNumber(lastLogResult.liveObjectTable.lastGcGen0Count);
@@ -220,37 +220,57 @@ public partial class SummaryViewModel : ObservableObject
     private void AllocatedHistogram()
     {
         string title = "Histogram by Size for Allocated Objects for: " + _scenario;
-        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult.allocatedHistogram, title);
+        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult!.allocatedHistogram, title);
         HistogramView histogramView = new HistogramView();
         histogramView.DataContext = viewModel;
         histogramView.Show();
 
     }
     [RelayCommand]
-    private void AllocationGraph( )
+    private void RelocatedHistogram()
     {
- 
-
-
+        string title = "Histogram by Size for Relocated Objects for: " + _scenario;
+        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult!.relocatedHistogram, title);
+        HistogramView histogramView = new HistogramView();
+        histogramView.DataContext = viewModel;
+        histogramView.Show();
     }
     [RelayCommand]
     private void FinalHeapHistogram()
     {
         string title = "Histogram by Size for Final Heap Objects for: " + _scenario;
-        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult.finalizerHistogram, title);
+        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult!.callstackHistogram, title);
+        HistogramView histogramView = new HistogramView();
+        histogramView.DataContext = viewModel;
+        histogramView.Show();
+    }
+    [RelayCommand]
+    private void FinalizedHistogram()
+    {
+        string title = "Histogram by Size for Final Heap Objects for: " + _scenario;
+        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult!.finalizerHistogram, title);
+        HistogramView histogramView = new HistogramView();
+        histogramView.DataContext = viewModel;
+        histogramView.Show();
+    }
+    [RelayCommand]
+    private void CriticalFinalizedHistogram()
+    {
+        string title = "Histogram by Size for critical Objects finalized for: " + _scenario;
+        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult!.criticalFinalizerHistogram, title);
         HistogramView histogramView = new HistogramView();
         histogramView.DataContext = viewModel;
         histogramView.Show();
     }
 
     [RelayCommand]
-    private void RelocatedHistogram()
+    private void AllocationGraph()
     {
-        string title = "Histogram by Size for Relocated Objects for: " + _scenario;
-        HistogramViewModel viewModel = new HistogramViewModel(lastLogResult.relocatedHistogram, title);
-        HistogramView histogramView = new HistogramView();
-        histogramView.DataContext = viewModel;
-        histogramView.Show();
+        string title = "Histogram by Size for Final Heap Objects for: " + _scenario;
+        var viewModel = new GraphViewModel(lastLogResult!.allocatedHistogram.BuildAllocationGraph(new FilterForm()));
+        var view = new GraphView();
+        view.DataContext = viewModel;
+        view.Show();
     }
     #endregion
 }
