@@ -29,6 +29,7 @@
         UseLayoutRounding="True"
         Left="0"
         Top="0"
+        d:DataContext="{d:DesignInstance viewModel:ShellWindowViewModel}"
         Width="834">
     <WindowChrome.WindowChrome>
         <WindowChrome GlassFrameThickness="0"

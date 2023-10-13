@@ -4,28 +4,27 @@ using System;
 
 namespace nanoFramework.Tools.NanoProfiler.Settings;
 
-public partial class SettingsViewModel: ObservableObject, IDisplayableObject
+public partial class SettingsViewModel : ObservableObject, IDisplayableObject
 {
     [ObservableProperty]
     private string _header = "Settings";
     [ObservableProperty]
     private string _iconName = "Settings";
     [ObservableProperty]
-    private bool _isDarkTheme =false;
+    private bool _isDarkTheme = false;
 
     public SettingsViewModel()
     {
         var paletteHelper = new PaletteHelper();
         var theme = paletteHelper.GetTheme();
         var baseTheme = theme.GetBaseTheme();
+        _isDarkTheme = baseTheme == BaseTheme.Dark;
 
-        _isDarkTheme = baseTheme == BaseTheme.Dark;          
-       // ModifyTheme();
-     }
+    }
 
     partial void OnIsDarkThemeChanged(bool value) => this.ModifyTheme();
-   
-    private   void ModifyTheme( )
+
+    private void ModifyTheme()
     {
         var paletteHelper = new PaletteHelper();
         ITheme theme = paletteHelper.GetTheme();

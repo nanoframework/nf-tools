@@ -12,8 +12,7 @@ namespace nanoFramework.Tools.NanoProfiler.Services;
 
 public class ReadLogResultService
 {
-    internal Font font;
-    private string logFileName;
+    internal Font font;    
     private long logFileStartOffset;
     private long logFileEndOffset;
     internal ReadNewLog log;
@@ -59,7 +58,7 @@ public class ReadLogResultService
 
     public ReadLogResult LoadLogFile(string logFileName)
     {
-        this.logFileName = logFileName;
+        currlogFileName = logFileName;
         logFileStartOffset = 0;
         logFileEndOffset = long.MaxValue;
         log = new ReadNewLog(logFileName);     
@@ -69,4 +68,7 @@ public class ReadLogResultService
         lastLogResult = readLogResult;
         return lastLogResult;        
     }
+
+    public ReadNewLog GetReadNewLog() => log;
+    
 }

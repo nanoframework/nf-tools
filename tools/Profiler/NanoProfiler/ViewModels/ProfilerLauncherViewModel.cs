@@ -12,6 +12,7 @@ using nanoFramework.Tools.Debugger.WireProtocol;
 using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.Helpers;
 using nanoFramework.Tools.NanoProfiler.Services;
+using nanoFramework.Tools.NanoProfiler.Views;
 using System;
 using System.IO;
 using System.Linq;
@@ -70,7 +71,8 @@ public partial class ProfilerLauncherViewModel : ObservableObject, IDisplayableO
             }
             // looks like we have a valid path        
             var readLogResult = _readLogResultService.LoadLogFile(openFileDialog.FileName);
-            _summaryView.DataContext= new SummaryViewModel(readLogResult);
+            var currentLog = _readLogResultService.GetReadNewLog();
+            _summaryView.DataContext= new SummaryViewModel(currentLog,readLogResult);
             _summaryView.Show();
             
 

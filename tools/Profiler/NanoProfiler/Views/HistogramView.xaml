@@ -8,7 +8,7 @@
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"             
         mc:Ignorable="d" MinWidth="1000" MinHeight="700"
         xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
-        Title="Histogram View"
+        Title="{Binding Title}"
         Icon="/Views/nanoframework.ico"
         d:DataContext="{d:DesignInstance viewModels:HistogramViewModel}"
         >

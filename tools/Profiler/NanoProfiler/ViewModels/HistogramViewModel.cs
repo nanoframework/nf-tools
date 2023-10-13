@@ -48,6 +48,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         [ObservableProperty]
         private ChartPoint _selectedChartPoint = new();
+
+        [ObservableProperty]
+        private string _title;
         #endregion
 
 
@@ -60,7 +63,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         double currentScaleFactor;
         public Histogram histogram { get; set; }
         private string[] typeName;
-        public string _title { get; set; }
+    
 
         ulong totalSize;
         int totalCount;
@@ -77,7 +80,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         public HistogramViewModel(Histogram histogram, string title)
         {
             this.histogram = histogram;
-            _title = title;
+            Title = title;
             typeName = this.histogram.readNewLog.typeName;
 
             SetComboValues();

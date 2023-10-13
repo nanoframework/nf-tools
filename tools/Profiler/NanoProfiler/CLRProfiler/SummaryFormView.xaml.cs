@@ -7,25 +7,26 @@
 using CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.ViewModels;
 using nanoFramework.Tools.NanoProfiler.Views;
+using System;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace nanoFramework.Tools.NanoProfiler.CLRProfiler;
-
+[Obsolete("Should be removed later")]
 /// <summary>
 /// Interaction logic for SummaryView.xaml
 /// </summary>
-public partial class SummaryView : Window
+public partial class SummaryFormView : Window
 {
     private ReadNewLog _log;
     private ReadLogResult _logResult;
     private string _scenario = "";
-    internal SummaryView()
+    internal SummaryFormView()
     {
         InitializeComponent();
     }
-    internal SummaryView(
+    internal SummaryFormView(
         ReadNewLog log,
         ReadLogResult logResult,
         string scenario)
