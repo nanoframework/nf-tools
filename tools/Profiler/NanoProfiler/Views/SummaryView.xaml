@@ -6,15 +6,13 @@
         xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:viewModels="clr-namespace:nanoFramework.Tools.NanoProfiler.ViewModels"
-        xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Controls"          
+        xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"          
         mc:Ignorable="d"        
         Title="{Binding Title}" 
         Style="{DynamicResource ChildWindowStyle}"
         x:Name="SummaryViewWin"       
         d:DataContext="{d:DesignInstance viewModels:SummaryViewModel}"
-        Width="800"           >
-    <Border   Background="{DynamicResource MaterialDesignBackground}"           Margin="0">
- 
+        Width="800">    
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -212,6 +210,6 @@
                 Command="{Binding CopyCommand}"/>
 
         </Grid>
-    </Border>
+
 
 </controls:ChildWindow>

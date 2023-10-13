@@ -1,17 +1,15 @@
-﻿<Window x:Class="nanoFramework.Tools.NanoProfiler.Views.GraphView"
+﻿<controls:ChildWindow x:Class="nanoFramework.Tools.NanoProfiler.Views.GraphView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:gridViewer="clr-namespace:WinForms.CLRProfiler"
-        xmlns:local="clr-namespace:nanoFramework.Tools.NanoProfiler.Views"
-        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf" 
-        xmlns:clrprofiler="clr-namespace:WinForms.CLRProfiler"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"        
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"             
         xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
+        Style="{DynamicResource ChildWindowStyle}"
         mc:Ignorable="d"
-        Title="Graph View" MinHeight="800" MinWidth="1200" Icon="/Views/nanoframework.ico">
+        Title="Graph View" MinHeight="800" MinWidth="1200" >
     
-    <Window.ContextMenu>
+    <controls:ChildWindow.ContextMenu>
         <ContextMenu>
             <MenuItem Header="Filter to callers and callees" />
             <MenuItem Header="Filter.." />
@@ -32,7 +30,7 @@
             <MenuItem Header="Show Histogram" />
             <MenuItem Header="Show References" />
         </ContextMenu>
-    </Window.ContextMenu>
+    </controls:ChildWindow.ContextMenu>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -142,4 +140,4 @@
         </Grid>
 
     </Grid>
-</Window>
+</controls:ChildWindow>

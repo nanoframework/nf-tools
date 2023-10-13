@@ -2,7 +2,7 @@
     x:Class="nanoFramework.Tools.NanoProfiler.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-    xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Controls"
+    xmlns:controls="clr-namespace:nanoFramework.Tools.NanoProfiler.Views.Controls"
     StartupUri="Views/ShellWindow.xaml"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" >
     <Application.Resources>
@@ -32,7 +32,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="controls:ChildWindow">
-                            <Border x:Name="WindowBorder"  Margin="0">
+                            <Border x:Name="WindowBorder" BorderBrush="Green" BorderThickness="1"  Margin="0" Background="{DynamicResource MaterialDesignBackground}">
                                 <AdornerDecorator>
                                     <Grid x:Name="LayoutRoot">
                                         <Grid.RowDefinitions>
@@ -73,10 +73,7 @@
                                             </StackPanel>
                                             <TextBlock  Grid.Row="0" Style="{DynamicResource MaterialDesignSubtitle1TextBlock}" Margin="4,20,0,0"  VerticalAlignment="Stretch"  HorizontalAlignment="Center" Grid.Column="1"   Text="{TemplateBinding Title}"  />
                                             <!-- window system buttons-->
-                                            <StackPanel      Grid.Row="0"
-                                 Grid.Column="2"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right">
+                                            <StackPanel      Grid.Row="0"                           Grid.Column="2"                          Orientation="Horizontal"                               HorizontalAlignment="Right">
                                                 <Button Style="{DynamicResource MaterialDesignIconButton}"
                    materialDesign:RippleAssist.Feedback="LightPink"
                    Command="{Binding Source={x:Static SystemCommands.MinimizeWindowCommand}}"   
@@ -104,7 +101,6 @@
                                             Kind="Maximize" />
 
                                                     </Button>
-
                                                 </Grid>
                                                 <Button Style="{DynamicResource MaterialDesignIconButton}"    
                                 materialDesign:RippleAssist.Feedback="Red"     
@@ -137,7 +133,8 @@
 
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsActive" Value="True">
-                                    <Setter Property="BorderBrush" Value="YellowGreen" />
+                                    <Setter  TargetName="WindowBorder" Property="BorderBrush" Value="YellowGreen" />
+                                    <Setter TargetName="WindowBorder" Property="BorderThickness" Value="2" />
                                 </Trigger>
                                 <Trigger Property="WindowState" Value="Maximized">
                                     <Setter TargetName="MaximizeButton" Property="Visibility" Value="Collapsed" />

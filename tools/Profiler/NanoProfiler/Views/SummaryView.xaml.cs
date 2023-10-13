@@ -3,8 +3,8 @@
 // See LICENSE file in the project root for full license information.
 ////
 
-using nanoFramework.Tools.NanoProfiler.Controls;
 using nanoFramework.Tools.NanoProfiler.ViewModels;
+using nanoFramework.Tools.NanoProfiler.Views.Controls;
 using System;
 using System.Windows;
 using System.Windows.Input;

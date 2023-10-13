@@ -3,18 +3,16 @@
 // See LICENSE file in the project root for full license information.
 ////
 
-using System.Windows;
+using nanoFramework.Tools.NanoProfiler.Views.Controls;
 
-namespace nanoFramework.Tools.NanoProfiler.Views
+
+namespace nanoFramework.Tools.NanoProfiler.Views;
+
+/// <summary>
+/// Interaction logic for GraphView.xaml
+/// </summary>
+public partial class GraphView : ChildWindow
 {
-    /// <summary>
-    /// Interaction logic for GraphView.xaml
-    /// </summary>
-    public partial class GraphView : Window
-    {
-        public GraphView()
-        {
-            InitializeComponent();
-        }
-    }
+    public GraphView() => InitializeComponent();
+
 }
