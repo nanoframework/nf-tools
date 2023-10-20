@@ -247,7 +247,7 @@ public partial class SummaryViewModel : ObservableObject
     [RelayCommand]
     private void FinalizedHistogram()
     {
-        string title = "Histogram by Size for Final Heap Objects for: " + _scenario;
+        string title = "Histogram by Size for Final Objects for: " + _scenario;
         HistogramViewModel viewModel = new HistogramViewModel(lastLogResult!.finalizerHistogram, title);
         HistogramView histogramView = new HistogramView();
         histogramView.DataContext = viewModel;
