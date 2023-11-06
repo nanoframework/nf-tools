@@ -9,7 +9,10 @@ using CommunityToolkit.Mvvm.Messaging;
 using nanoFramework.Tools.Debugger;
 using nanoFramework.Tools.Debugger.Extensions;
 using nanoFramework.Tools.Debugger.WireProtocol;
+using nanoFramework.Tools.NanoProfiler.CLRProfiler;
 using nanoFramework.Tools.NanoProfiler.Helpers;
+using nanoFramework.Tools.NanoProfiler.Services;
+using nanoFramework.Tools.NanoProfiler.Views;
 using System;
 using System.IO;
 using System.Linq;
@@ -21,542 +24,543 @@ using _DBG = nanoFramework.Tools.Debugger;
 using _PRF = nanoFramework.Tools.NanoProfiler;
 using _WP = nanoFramework.Tools.Debugger.WireProtocol;
 
-namespace nanoFramework.Tools.NanoProfiler.ViewModels
+namespace nanoFramework.Tools.NanoProfiler.ViewModels;
+
+public partial class ProfilerLauncherViewModel : ObservableObject, IDisplayableObject
 {
-    public partial class ProfilerLauncherViewModel : ObservableObject , IDisplayableObject
+    private readonly ReadLogResultService _readLogResultService;
+    private const string _connectLabel = "Connect";
+    private const string _connectingLabel = "Connecting...";
+    private const string _disconnectLabel = "Disconnect";
+    private const string _disconnectingLabel = "Disconnecting...";
+    private const string _launchLabel = "Launch...";
+    private const string _cancelLabel = "Cancel";
+
+    #region Events
+
+    public event NotifyDelegate<bool> EventViewLoaded;
+
+    #endregion
+
+    #region Commands
+
+    [RelayCommand]
+    private void ClearClicked()
     {
-        private const string _connectLabel = "Connect";
-        private const string _connectingLabel = "Connecting...";
-        private const string _disconnectLabel = "Disconnect";
-        private const string _disconnectingLabel = "Disconnecting...";
-        private const string _launchLabel = "Launch...";
-        private const string _cancelLabel = "Cancel";
+        WeakReferenceMessenger.Default.Send(new ClearLogTextMessage());
+    }
 
-        #region Events
-
-        public event NotifyDelegate<bool> EventViewLoaded;
-
-        #endregion
-
-        #region Commands
-
-        [RelayCommand]
-        private void ClearClicked()
+    [RelayCommand]
+    private void OpenLogFile()
+    {
+        var openFileDialog = new OpenFileDialog
         {
-            WeakReferenceMessenger.Default.Send(new ClearLogTextMessage());
-        }
+            Filter = "nanoProfiler log files (*.log)|*.log",
+            FilterIndex = 1,
+            RestoreDirectory = true
+        };
 
-        [RelayCommand]
-        private void OpenLogFile()
+        // show dialog - THIS IS WINFORMS!!!!
+        DialogResult result = openFileDialog.ShowDialog();
+
+        if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(openFileDialog.FileName))
         {
-            var openFileDialog = new OpenFileDialog
+            
+            // looks like we have a valid path        
+            var readLogResult = _readLogResultService.LoadLogFile(openFileDialog.FileName);
+            var currentLog = _readLogResultService.GetReadNewLog();
+            var pre = _readLogResultService.GetPreviousLogFileName();
+            if (openFileDialog.FileName.Equals(pre) || string.IsNullOrWhiteSpace(pre))
             {
-                Filter = "nanoProfiler log files (*.log)|*.log",
-                FilterIndex = 1,
-                RestoreDirectory = true
-            };
-
-            // show dialog - THIS IS WINFORMS!!!!
-            DialogResult result = openFileDialog.ShowDialog();
-
-            if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(openFileDialog.FileName))
-            {
-                // looks like we have a valid path
-
-                _clrProfiler.LoadLogFile(openFileDialog.FileName);
-
-                EnableDisableViewMenuItems();
-
+                _summaryView.DataContext= new SummaryViewModel(currentLog, readLogResult);
+                _summaryView.Show();
             }
             else
             {
-                // any other outcome from folder browser dialog doesn't require processing
+                var newView = new SummaryView();
+                newView.DataContext= new SummaryViewModel(currentLog, readLogResult);
+                newView.Show();
             }
-        }
+           
 
-        [RelayCommand]
-        private async Task ConnectClicked()
+            EnableDisableViewMenuItems();
+
+        }
+        else
         {
-            await Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, async () =>
+            // any other outcome from folder browser dialog doesn't require processing
+        }
+    }
+
+    [RelayCommand]
+    private async Task ConnectClicked()
+    {
+        await Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, async () =>
+        {
+            //if (Connecter.IsBusy && !Connecter.CancellationPending)
+            //{
+            //    ConnectButton.IsEnabled = false;
+            //}
+            //else 
+            if (_state == ProfilingState.Connected)
             {
-                //if (Connecter.IsBusy && !Connecter.CancellationPending)
-                //{
-                //    ConnectButton.IsEnabled = false;
-                //}
-                //else 
-                if (_state == ProfilingState.Connected)
+                UserDisconnect();
+            }
+            else
+            {
+                // disable button
+                ConnectButtonEnabled = false;
+
+                // update label
+                ConnectButtonContent = _connectingLabel;
+
+                if (await Connect())
                 {
-                    UserDisconnect();
+                    _session.SetProfilingOptions(CallsChecked, AllocationsChecked);
+                    _engine.ResumeExecution();
+
+                    ConnectComplete();
+
+                    // update label
+                    ConnectButtonContent = _disconnectLabel;
+
+                    // enable button
+                    ConnectButtonEnabled = true;
                 }
                 else
                 {
-                    // disable button
-                    ConnectButtonEnabled = false;
+                    LogText($"ERROR: failed to connect to device @ {ComPortName}");
 
-                    // update label
-                    ConnectButtonContent = _connectingLabel;
-
-                    if (await Connect())
-                    {
-                        _session.SetProfilingOptions(CallsChecked, AllocationsChecked);
-                        _engine.ResumeExecution();
-
-                        ConnectComplete();
-
-                        // update label
-                        ConnectButtonContent = _disconnectLabel;
-
-                        // enable button
-                        ConnectButtonEnabled = true;
-                    }
-                    else
-                    {
-                        LogText($"ERROR: failed to connect to device @ {ComPortName}");
-
-                        Disconnect();
-                    }
-                }
-            });
-        }
-
-        [RelayCommand]
-        private void ViewLoaded(object item)
-        {
-            _closing = true;
-            Disconnect();
-        }
-
-
-        [RelayCommand]
-        private void BrowseLogFile()
-        {
-            var saveFileDialog = new SaveFileDialog
-            {
-                Filter = "nanoProfiler log files (*.log)|*.log",
-                AddExtension = true,
-                DefaultExt = "log",
-                FilterIndex = 1,
-                RestoreDirectory = true
-            };
-
-            // show dialog
-            DialogResult result = saveFileDialog.ShowDialog();
-
-            if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(saveFileDialog.FileName))
-            {
-                // looks like we have a valid path
-                OutputFileName = saveFileDialog.FileName;
-            }
-            else
-            {
-                // any other outcome from save file dialog doesn't require processing
-            }
-        }
-
-        #endregion
-
-        #region Observable Properties
-
-        [ObservableProperty]
-        private string _textBlockContent = string.Empty;
-        [ObservableProperty]
-        private string _header = "Profiler";
-        [ObservableProperty]
-        private string _iconName = "Profiler";
-
-
-        [ObservableProperty]
-        private string _connectButtonContent = _connectLabel;
-
-        [ObservableProperty]
-        private SolidColorBrush _backgroundProfileLauncher = Brushes.AliceBlue;
-
-        [ObservableProperty]
-        bool _rebootChecked = true;
-
-        [ObservableProperty]
-        private bool _callsChecked = false;
-
-        [ObservableProperty]
-        private bool _allocationsChecked = true;
-
-        [ObservableProperty]
-        private bool _heapAbsoluteAddressChecked = true;
-
-        [ObservableProperty]
-        private bool _connectButtonEnabled = true;
-
-        [ObservableProperty]
-        private string _comPortName = "COM1";
-
-        [ObservableProperty]
-        private string _outputFileName;
-
-        [ObservableProperty]
-        private string _debugOutputFileName;
-
-        [ObservableProperty]
-        private bool _traceProfilesEvents;
-
-        #endregion
-
-        #region Properties
-
-        private bool _closing = true;
-        private ProfilingState _state;
-
-        private NanoDeviceBase _nanoDevice;
-        private readonly PortBase _serialDebuggerPort;
-
-        private _PRF.ProfilerSession _session = null;
-        private _PRF.Exporter _exporter = null;
-        private _DBG.Engine _engine = null;
-
-        private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
-        private StreamWriter _debugLogWriter;
-
- 
-
-        #endregion
-
-        #region Constructor
-        public ProfilerLauncherViewModel()
-        {
-            _serialDebuggerPort = PortBase.CreateInstanceForSerial(false);
-        }
-        #endregion
-
-        #region Funcs
-
-        //partial void OnRebootCheckedChanged(bool value){}
-
-        private void Disconnect()
-        {
-            if (_state == ProfilingState.Disconnected)
-            {
-                goto doneHere;
-            }
-
-            if (_state == ProfilingState.Connected)
-            {
-                if (_session != null)
-                {
-                    _session.Disconnect();
-                }
-
-                if (_exporter != null)
-                {
-                    _exporter.Close();
+                    Disconnect();
                 }
             }
+        });
+    }
 
-            try
-            {
-                lock (_engine)
-                {
-                    _engine.Stop();
+    [RelayCommand]
+    private void ViewLoaded(object item)
+    {
+        _closing = true;
+        Disconnect();
+    }
 
-                    _engine.OnCommand -= new _DBG.CommandEventHandler(OnWPCommand);
-                    _engine.OnMessage -= new _DBG.MessageEventHandler(OnWPMessage);
-                }
-            }
-            catch
-            {
-                //Depending on when we get called, stopping the engine throws anything from NullReferenceException, ArgumentNullException, IOException, etc.
-            }
+    [RelayCommand]
+    private void BrowseLogFile()
+    {
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = "nanoProfiler log files (*.log)|*.log",
+            AddExtension = true,
+            DefaultExt = "log",
+            FilterIndex = 1,
+            RestoreDirectory = true
+        };
 
-            _engine = null;
+        // show dialog
+        DialogResult result = saveFileDialog.ShowDialog();
 
-            if (_state == ProfilingState.Connected)
-            {
-#if DEBUG
-                LogText($"INFO: Max Profiler packet length: {_session.MaxProfilePayloadLength}");
-#endif 
+        if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(saveFileDialog.FileName))
+        {
+            // looks like we have a valid path
+            OutputFileName = saveFileDialog.FileName;
+        }
+        else
+        {
+            // any other outcome from save file dialog doesn't require processing
+        }
+    }
 
-                LogText("INFO: Disconnected from nanoCLR.");
-            }
+    #endregion
 
-            KillEmulator();
+    #region Observable Properties
 
-            ProfilingState oldstate = _state;
-            _state = ProfilingState.Disconnected;
+    [ObservableProperty]
+    private string _textBlockContent = string.Empty;
+    [ObservableProperty]
+    private string _header = "Profiler";
+    [ObservableProperty]
+    private string _iconName = "Profiler";
+    [ObservableProperty]
+    private string _connectButtonContent = _connectLabel;
+    [ObservableProperty]
+    private SolidColorBrush _backgroundProfileLauncher = Brushes.AliceBlue;
+    [ObservableProperty]
+    bool _rebootChecked = true;
+    [ObservableProperty]
+    private bool _callsChecked = false;
+    [ObservableProperty]
+    private bool _allocationsChecked = true;
+    [ObservableProperty]
+    private bool _heapAbsoluteAddressChecked = true;
+    [ObservableProperty]
+    private bool _connectButtonEnabled = true;
+    [ObservableProperty]
+    private string _comPortName = "COM1";
+    [ObservableProperty]
+    private string _outputFileName;
+    [ObservableProperty]
+    private string _debugOutputFileName;
+    [ObservableProperty]
+    private bool _traceProfilesEvents;
 
-            EnableUI();
+    #endregion
 
-            if (!_closing && oldstate == ProfilingState.Connected && _exporter is _PRF.Exporter_CLRProfiler)
-            {
-                _clrProfiler.LoadLogFile(_exporter.FileName);
+    #region Properties
 
-                EnableDisableViewMenuItems();
-            }
+    private bool _closing = true;
+    private ProfilingState _state;
 
-            // clear log file name
-            OutputFileName = string.Empty;
-            DebugOutputFileName = string.Empty;
+    private NanoDeviceBase _nanoDevice;
+    private readonly PortBase _serialDebuggerPort;
 
-        doneHere:
-            // update label
-            ConnectButtonContent = _connectLabel;
-            // OK to enable button
-            ConnectButtonEnabled = true;
+    private _PRF.ProfilerSession _session = null;
+    private _PRF.Exporter _exporter = null;
+    private _DBG.Engine _engine = null;
+
+    // private CLRProfiler.MainForm _clrProfiler = new CLRProfiler.MainForm();
+    private SummaryView _summaryView = new SummaryView();
+    private StreamWriter _debugLogWriter;
+
+
+
+    #endregion
+
+    #region Constructor
+    public ProfilerLauncherViewModel(ReadLogResultService? logFileService)
+    {
+        _readLogResultService = logFileService?? new ReadLogResultService();
+        _serialDebuggerPort = PortBase.CreateInstanceForSerial(false);
+    }
+    #endregion
+
+    #region Funcs
+
+    //partial void OnRebootCheckedChanged(bool value){}
+
+    private void Disconnect()
+    {
+        if (_state == ProfilingState.Disconnected)
+        {
+            goto doneHere;
         }
 
-
-        private void EnableUI()
+        if (_state == ProfilingState.Connected)
         {
-            // TODO
-        }
-
-        private void KillEmulator()
-        {
-            // TODO
-        }
-
-        private void EnableDisableViewMenuItems()
-        {
-            // TODO
-        }
-
-        private void OnWPMessage(IncomingMessage message, string text)
-        {
-            char[] NEWLINE_CHARS = { '\r', '\n' };
-            text = text.TrimEnd(NEWLINE_CHARS);
-
-            if (string.IsNullOrEmpty(text))
-            {
-                LogText("");
-            }
-            else
-            {
-                LogText(text);
-            }
-        }
-
-        private void OnWPCommand(IncomingMessage message, bool reply)
-        {
-            switch (message.Header.Cmd)
-            {
-                case _WP.Commands.c_Monitor_ProgramExit:
-                    SoftDisconnect();
-                    break;
-            }
-        }
-
-        private void SoftDisconnect()
-        {
-            /* A 'soft disconnect' is where we don't want to record any more events, but we do want to
-             * finish decoding as much of the data as possible before pulling the plug to the device. */
-
             if (_session != null)
             {
-                ConnectButtonEnabled = false;
-                ConnectButtonContent = _disconnectingLabel;
-
-                _session.OnDisconnect += SoftDisconnectDone;
                 _session.Disconnect();
             }
 
+            if (_exporter != null)
+            {
+                _exporter.Close();
+            }
         }
 
-        private void SoftDisconnectDone(object sender, EventArgs args)
+        try
+        {
+            lock (_engine)
+            {
+                _engine.Stop();
+
+                _engine.OnCommand -= new _DBG.CommandEventHandler(OnWPCommand);
+                _engine.OnMessage -= new _DBG.MessageEventHandler(OnWPMessage);
+            }
+        }
+        catch
+        {
+            //Depending on when we get called, stopping the engine throws anything from NullReferenceException, ArgumentNullException, IOException, etc.
+        }
+
+        _engine = null;
+
+        if (_state == ProfilingState.Connected)
         {
 #if DEBUG
-            LogText($"INFO: Profiling Session Length: {((_session != null) ? _session.BitsReceived : 0)} bits.");
-#endif
+            LogText($"INFO: Max Profiler packet length: {_session.MaxProfilePayloadLength}");
+#endif 
 
+            LogText("INFO: Disconnected from nanoCLR.");
+        }
+
+        KillEmulator();
+
+        ProfilingState oldstate = _state;
+        _state = ProfilingState.Disconnected;
+
+        EnableUI();
+
+        if (!_closing && oldstate == ProfilingState.Connected && _exporter is _PRF.Exporter_CLRProfiler)
+        {
+            // _clrProfiler.LoadLogFile(_exporter.FileName);
+            _summaryView.Activate();
+            EnableDisableViewMenuItems();
+        }
+
+        // clear log file name
+        OutputFileName = string.Empty;
+        DebugOutputFileName = string.Empty;
+
+doneHere:
+// update label
+        ConnectButtonContent = _connectLabel;
+        // OK to enable button
+        ConnectButtonEnabled = true;
+    }
+    private void EnableUI()
+    {
+        // TODO
+    }
+
+    private void KillEmulator()
+    {
+        // TODO
+    }
+
+    private void EnableDisableViewMenuItems()
+    {
+        // TODO
+    }
+
+    private void OnWPMessage(IncomingMessage message, string text)
+    {
+        char[] NEWLINE_CHARS = { '\r', '\n' };
+        text = text.TrimEnd(NEWLINE_CHARS);
+
+        if (string.IsNullOrEmpty(text))
+        {
             LogText("");
-            LogText($"INFO: Profile data saved to {OutputFileName}");
-            
-            CloseDebugLog();
-            LogText($"INFO: Device log saved to {DebugOutputFileName}");
-            LogText("");
+        }
+        else
+        {
+            LogText(text);
+        }
+    }
 
-            Disconnect();
+    private void OnWPCommand(IncomingMessage message, bool reply)
+    {
+        switch (message.Header.Cmd)
+        {
+            case _WP.Commands.c_Monitor_ProgramExit:
+                SoftDisconnect();
+                break;
+        }
+    }
+
+    private void SoftDisconnect()
+    {
+        /* A 'soft disconnect' is where we don't want to record any more events, but we do want to
+         * finish decoding as much of the data as possible before pulling the plug to the device. */
+
+        if (_session != null)
+        {
+            ConnectButtonEnabled = false;
+            ConnectButtonContent = _disconnectingLabel;
+
+            _session.OnDisconnect += SoftDisconnectDone;
+            _session.Disconnect();
         }
 
-        public void LogText(string text)
-        {
-            // update log text
-            _debugLogWriter?.WriteLine(text);
-            WeakReferenceMessenger.Default.Send(new UpdateLogTextMessage(text));
-        }
+    }
 
-        private void ConnectComplete()
-        {
-            _state = ProfilingState.Connected;
-            ConnectButtonContent = _disconnectLabel;
-
-            AllocationsChecked = AllocationsChecked && _engine.Capabilities.ProfilingAllocations;
-            CallsChecked = CallsChecked && _engine.Capabilities.ProfilingCalls;
-        }
-
-        private void UserDisconnect()
-        {
-            // TODO
-
-            //if (m_emuProcess != null && m_emuLaunched && !m_emuProcess.HasExited)
-            //{
-            //    m_killEmulator = (MessageBox.Show(string.Format("Emulator process {0} is still running. Do you wish to have it terminated?", m_emuProcess.Id),
-            //        "Kill emulator?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes);
-            //}
-
-            SoftDisconnect();
-        }
-
-        public async Task<bool> Connect()
-        {
-            // string outputFileName = $"E:\\temp\\nano\\profile-{DateTime.UtcNow.ToString("yyyyMMddHHmmss")}.log";
-
-            // connect to specified serial port
-            try
-            {
-                await Task.Run(() =>  _serialDebuggerPort.AddDevice(ComPortName));
-            }
+    private void SoftDisconnectDone(object sender, EventArgs args)
+    {
 #if DEBUG
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to add device: {ex.Message}");
-
-                return false;
-            }
-#else
-            catch
-            {
-                return false;
-
-            }
+        LogText($"INFO: Profiling Session Length: {((_session != null) ? _session.BitsReceived : 0)} bits.");
 #endif
-            // get nano device (there should be only one)
-            _nanoDevice = _serialDebuggerPort.NanoFrameworkDevices.FirstOrDefault();
 
-            if (_nanoDevice != null)
-            {
-                // check if debugger engine exists
-                if (_nanoDevice.DebugEngine == null)
-                {
-                    _nanoDevice.CreateDebugEngine();
-                }
+        LogText("");
+        LogText($"INFO: Profile data saved to {OutputFileName}");
 
-                _engine = _nanoDevice.DebugEngine;
-                _engine.StopDebuggerOnConnect = true;
+        CloseDebugLog();
+        LogText($"INFO: Device log saved to {DebugOutputFileName}");
+        LogText("");
 
-                bool failure = false;
+        Disconnect();
+    }
 
-                // connect to the device
-                if (_engine.Connect(
-                    false,
-                    true))
-                {
-                    LogText("INFO: Successfully connected to nanoCLR.");
+    public void LogText(string text)
+    {
+        // update log text
+        _debugLogWriter?.WriteLine(text);
+        WeakReferenceMessenger.Default.Send(new UpdateLogTextMessage(text));
+    }
 
-                    // check that we are in CLR
-                    if (_engine.IsConnectedTonanoCLR)
-                    {
-                        // sanity checks against desired options
+    private void ConnectComplete()
+    {
+        _state = ProfilingState.Connected;
+        ConnectButtonContent = _disconnectLabel;
 
-                        if (_engine.Capabilities.Profiling == false)
-                        {
-                            LogText("ERROR: This device is running a nanoCLR build that does not support profiling.");
-                            failure = true;
-                        }
-                        if (CallsChecked && _engine.Capabilities.ProfilingCalls == false)
-                        {
-                            LogText("ERROR: This device is running a nanoCLR build that does not support profiling function calls.");
-                            failure = true;
-                        }
-                        if (AllocationsChecked && _engine.Capabilities.ProfilingAllocations == false)
-                        {
-                            LogText("ERROR: This device is running a nanoCLR build that does not support profiling allocations.");
-                            failure = true;
-                        }
+        AllocationsChecked = AllocationsChecked && _engine.Capabilities.ProfilingAllocations;
+        CallsChecked = CallsChecked && _engine.Capabilities.ProfilingCalls;
+    }
 
-                        // check if we're good to go
-                        if (failure)
-                        {
-                            Disconnect();
+    private void UserDisconnect()
+    {
+        // TODO
 
-                            return false;
-                        }
+        //if (m_emuProcess != null && m_emuLaunched && !m_emuProcess.HasExited)
+        //{
+        //    m_killEmulator = (MessageBox.Show(string.Format("Emulator process {0} is still running. Do you wish to have it terminated?", m_emuProcess.Id),
+        //        "Kill emulator?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes);
+        //}
 
-                    checInitState:
+        SoftDisconnect();
+    }
 
-                        if (_engine.SetExecutionMode(0, 0))
-                        {
-                            var currentExecutionMode = _engine.GetExecutionMode();
+    public async Task<bool> Connect()
+    {
+        // string outputFileName = $"E:\\temp\\nano\\profile-{DateTime.UtcNow.ToString("yyyyMMddHHmmss")}.log";
 
-                            if (currentExecutionMode.IsDeviceInInitializeState())
-                            {
-                                _engine.ThrowOnCommunicationFailure = true;
-
-                                _engine.OnCommand -= new _DBG.CommandEventHandler(OnWPCommand);
-                                _engine.OnCommand += new _DBG.CommandEventHandler(OnWPCommand);
-                                _engine.OnMessage -= new _DBG.MessageEventHandler(OnWPMessage);
-                                _engine.OnMessage += new _DBG.MessageEventHandler(OnWPMessage);
-
-                                _session = new _PRF.ProfilerSession(_engine, HeapAbsoluteAddressChecked);
-
-                                if (TraceProfilesEvents)
-                                {
-                                    _session.LogText = LogText;
-                                }
-
-                                if (_exporter != null)
-                                {
-                                    _exporter.Close();
-                                }
-
-                                CheckOutpuFileName();
-
-                                _exporter = new _PRF.Exporter_CLRProfiler(
-                                    _session,
-                                    OutputFileName);
-
-                                CloseDebugLog();
-                                LogText($"Saving profile data to {OutputFileName}");
-                                LogText($"Saving device log to {DebugOutputFileName}");
-                                _debugLogWriter = File.CreateText(DebugOutputFileName);
-                                _session.EnableProfiling();
-                            }
-                            else
-                            {
-                                bool rebootSuccessful = _engine.RebootDevice(RebootOptions.ClrOnly | RebootOptions.WaitForDebugger);
-
-                                goto checInitState;
-
-                            }
-
-                            // done here
-                            return true;
-                        }
-                    }
-                }
-            }
+        // connect to specified serial port
+        try
+        {
+            await Task.Run(() => _serialDebuggerPort.AddDevice(ComPortName));
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to add device: {ex.Message}");
 
             return false;
         }
-
-        private void CheckOutpuFileName()
+#else
+        catch
         {
-            if (string.IsNullOrEmpty(OutputFileName))
+            return false;
+
+        }
+#endif
+        // get nano device (there should be only one)
+        _nanoDevice = _serialDebuggerPort.NanoFrameworkDevices.FirstOrDefault();
+
+        if (_nanoDevice != null)
+        {
+            // check if debugger engine exists
+            if (_nanoDevice.DebugEngine == null)
             {
-                OutputFileName = Path.GetTempFileName().Replace(".tmp", ".log");
+                _nanoDevice.CreateDebugEngine();
             }
 
-            string outputDirectory = Path.GetDirectoryName(OutputFileName);
-            string outputBasename = Path.GetFileNameWithoutExtension(OutputFileName);
-            DebugOutputFileName = Path.Combine(outputDirectory, outputBasename + ".debug.txt");
-        }
+            _engine = _nanoDevice.DebugEngine;
+            _engine.StopDebuggerOnConnect = true;
 
-        private void CloseDebugLog()
-        {
-            if (_debugLogWriter != null)
+            bool failure = false;
+
+            // connect to the device
+            if (_engine.Connect(
+                false,
+                true))
             {
-                _debugLogWriter.Close();
-                _debugLogWriter.Dispose();
-                _debugLogWriter = null;
+                LogText("INFO: Successfully connected to nanoCLR.");
+
+                // check that we are in CLR
+                if (_engine.IsConnectedTonanoCLR)
+                {
+                    // sanity checks against desired options
+
+                    if (_engine.Capabilities.Profiling == false)
+                    {
+                        LogText("ERROR: This device is running a nanoCLR build that does not support profiling.");
+                        failure = true;
+                    }
+                    if (CallsChecked && _engine.Capabilities.ProfilingCalls == false)
+                    {
+                        LogText("ERROR: This device is running a nanoCLR build that does not support profiling function calls.");
+                        failure = true;
+                    }
+                    if (AllocationsChecked && _engine.Capabilities.ProfilingAllocations == false)
+                    {
+                        LogText("ERROR: This device is running a nanoCLR build that does not support profiling allocations.");
+                        failure = true;
+                    }
+
+                    // check if we're good to go
+                    if (failure)
+                    {
+                        Disconnect();
+
+                        return false;
+                    }
+
+checInitState:
+
+                    if (_engine.SetExecutionMode(0, 0))
+                    {
+                        var currentExecutionMode = _engine.GetExecutionMode();
+
+                        if (currentExecutionMode.IsDeviceInInitializeState())
+                        {
+                            _engine.ThrowOnCommunicationFailure = true;
+
+                            _engine.OnCommand -= new _DBG.CommandEventHandler(OnWPCommand);
+                            _engine.OnCommand += new _DBG.CommandEventHandler(OnWPCommand);
+                            _engine.OnMessage -= new _DBG.MessageEventHandler(OnWPMessage);
+                            _engine.OnMessage += new _DBG.MessageEventHandler(OnWPMessage);
+
+                            _session = new _PRF.ProfilerSession(_engine, HeapAbsoluteAddressChecked);
+
+                            if (TraceProfilesEvents)
+                            {
+                                _session.LogText = LogText;
+                            }
+
+                            if (_exporter != null)
+                            {
+                                _exporter.Close();
+                            }
+
+                            CheckOutpuFileName();
+
+                            _exporter = new _PRF.Exporter_CLRProfiler(
+                                _session,
+                                OutputFileName);
+
+                            CloseDebugLog();
+                            LogText($"Saving profile data to {OutputFileName}");
+                            LogText($"Saving device log to {DebugOutputFileName}");
+                            _debugLogWriter = File.CreateText(DebugOutputFileName);
+                            _session.EnableProfiling();
+                        }
+                        else
+                        {
+                            bool rebootSuccessful = _engine.RebootDevice(RebootOptions.ClrOnly | RebootOptions.WaitForDebugger);
+
+                            goto checInitState;
+
+                        }
+
+                        // done here
+                        return true;
+                    }
+                }
             }
         }
 
-        #endregion
+        return false;
     }
+
+    private void CheckOutpuFileName()
+    {
+        if (string.IsNullOrEmpty(OutputFileName))
+        {
+            OutputFileName = Path.GetTempFileName().Replace(".tmp", ".log");
+        }
+
+        string outputDirectory = Path.GetDirectoryName(OutputFileName);
+        string outputBasename = Path.GetFileNameWithoutExtension(OutputFileName);
+        DebugOutputFileName = Path.Combine(outputDirectory, outputBasename + ".debug.txt");
+    }
+
+    private void CloseDebugLog()
+    {
+        if (_debugLogWriter != null)
+        {
+            _debugLogWriter.Close();
+            _debugLogWriter.Dispose();
+            _debugLogWriter = null;
+        }
+    }
+
+    #endregion
 }

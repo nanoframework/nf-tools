@@ -457,7 +457,7 @@ namespace CLRProfiler
 
     }
 
-    internal class SampleObjectTable
+    public class SampleObjectTable
     {
         internal class SampleObject
         {
@@ -583,7 +583,7 @@ namespace CLRProfiler
         }
     }
 
-    internal class LiveObjectTable
+    public class LiveObjectTable
     {
         internal struct LiveObject
         {
@@ -1561,7 +1561,7 @@ namespace CLRProfiler
         }
     }
 
-    internal class StacktraceTable
+    public class StacktraceTable
     {
         private int[][] stacktraceTable;
         private int[] mappingTable;
@@ -1755,7 +1755,7 @@ namespace CLRProfiler
         }
     }
 
-    internal struct TimePos
+    public struct TimePos
     {
         internal double time;
         internal long pos;
@@ -1767,9 +1767,9 @@ namespace CLRProfiler
         }
     }
 
-    internal class FunctionList
+    public class FunctionList
     {
-        internal class FunctionDescriptor
+        public class FunctionDescriptor
         {
             internal FunctionDescriptor(int functionId, int funcCallStack, uint funcSize, int funcModule)
             {
@@ -2082,7 +2082,7 @@ namespace CLRProfiler
         }
     }
 
-    internal class ReadLogResult
+    public class ReadLogResult
     {
         internal Histogram allocatedHistogram;
         internal Histogram relocatedHistogram;
@@ -2119,7 +2119,7 @@ namespace CLRProfiler
         internal int allocStacktraceId;
     };
 
-    internal class ReadNewLog
+    public class ReadNewLog
     {
         // helper class to keep track of events like log file comments, garbage collections, and heap dumps
         internal class EventList

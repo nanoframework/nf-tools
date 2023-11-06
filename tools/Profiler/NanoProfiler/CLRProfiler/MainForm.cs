@@ -5,12 +5,14 @@
 ////
 
 using CLRProfiler;
+using nanoFramework.Tools.NanoProfiler.Views;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 
 namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
 {
+    [Obsolete("Should be removed later")]
     public class MainForm
     {
         internal Font font;
@@ -85,8 +87,8 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             {
                 string scenario = log.fileName;
 
-                SummaryForm summaryForm = new SummaryForm(log, lastLogResult, scenario);
-                summaryForm.Show();
+              //  SummaryView summaryForm = new SummaryView(log, lastLogResult, scenario);
+             //   summaryForm.Show();
             }
         }
     }
