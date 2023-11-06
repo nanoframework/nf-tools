@@ -32,10 +32,10 @@
                         <ColumnDefinition Width="4"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="28"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="28"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
@@ -55,30 +55,30 @@
                     <!--Row 0 elements-->
                     <Label Grid.Column="0" Grid.Row="0" Name="AllocatedBytesLabel" Content="Allocated bytes:" VerticalAlignment="Center"/>
                     <Label Grid.Column="2" Grid.Row="0" Name="AllocatedBytesValueLabel" Content="{Binding AllocatedBytesValueLabel}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                    <Button Grid.Column="4" Grid.Row="0"     Name="AllocatedHistogramButton"      Content="Histogram"                   Command="{Binding AllocatedHistogramCommand}"  />
-                    <Button Grid.Column="6" Grid.Row="0" Name="AllocationGraphButton"   Command="{Binding AllocationGraphCommand}"  Content="Allocation Graph"  />
+                    <Button Grid.Column="4" Grid.Row="0"     Name="AllocatedHistogramButton" Content="Histogram" Command="{Binding AllocatedHistogramCommand}" HorizontalAlignment="Right" />
+                    <Button Grid.Column="6" Grid.Row="0" Name="AllocationGraphButton" Command="{Binding AllocationGraphCommand}"  Content="Allocation Graph" HorizontalAlignment="Right" />
 
                     <!--Row 1 elements-->
                     <Label Grid.Column="0" Grid.Row="2" Name="RelocatedBytesLabel" Content="Relocated bytes:"   VerticalAlignment="Center"/>
-                    <Label Grid.Column="2" Grid.Row="2" Name="RelocatedBytesValueLabel"  Content="{Binding RelocatedBytesValueLabel}"   HorizontalAlignment="Right"  VerticalAlignment="Center"/>
-                    <Button Grid.Column="4" Grid.Row="2" Name="RelocatedHistogramButton" Command="{Binding RelocatedHistogramCommand}"  Content="Histogram" VerticalAlignment="Top" />
+                    <Label Grid.Column="2" Grid.Row="2" Name="RelocatedBytesValueLabel"  Content="{Binding RelocatedBytesValueLabel}" HorizontalAlignment="Right"  VerticalAlignment="Center"/>
+                    <Button Grid.Column="4" Grid.Row="2" Name="RelocatedHistogramButton" Command="{Binding RelocatedHistogramCommand}" Content="Histogram" VerticalAlignment="Top" HorizontalAlignment="Right" />
 
                     <!--Row 2 elements-->
                     <Label Grid.Column="0" Grid.Row="4" Name="FinalHeapBytesLabel"  Content="Final Heap bytes:"  VerticalAlignment="Center"/>
                     <Label Grid.Column="2" Grid.Row="4" Name="FinalHeapBytesValueLabel" Content="{Binding FinalHeapBytesValueLabel}"   HorizontalAlignment="Right" VerticalAlignment="Center" />
-                    <Button Grid.Column="4" Grid.Row="4" Name="FinalHeapHistogramButton" Command="{Binding FinalHeapHistogramCommand}" Content="Histogram"  />
+                    <Button Grid.Column="4" Grid.Row="4" Name="FinalHeapHistogramButton" Command="{Binding FinalHeapHistogramCommand}" Content="Histogram" HorizontalAlignment="Right" />
                     <Button Grid.Column="6" Grid.Row="4" Name="FinalHeapHistogramByAgeButton" Content="Allocation Graph"  />
-                    <Button Grid.Column="8" Grid.Row="4" Name="FinalHeapObjectsByAddressButton" Content="Objects by Address"    />
+                    <Button Grid.Column="8" Grid.Row="4" Name="FinalHeapObjectsByAddressButton" Content="Objects by Address" HorizontalAlignment="Right" />
 
                     <!--Row 3 elements-->
                     <Label Grid.Column="0" Grid.Row="6" Name="ObjectsFinalizedLabel" Content="Objects finalized:"  VerticalAlignment="Center" />
                     <Label Grid.Column="2" Grid.Row="6" Name="ObjectsFinalizedValueLabel"  Content="{Binding ObjectsFinalizedValueLabel}"   HorizontalAlignment="Right" VerticalAlignment="Center" />
-                    <Button Grid.Column="4" Grid.Row="6" Name="FinalizedHistogramButton" Command="{Binding FinalizedHistogramCommand}" Content="Histogram"     />
+                    <Button Grid.Column="4" Grid.Row="6" Name="FinalizedHistogramButton" Command="{Binding FinalizedHistogramCommand}" Content="Histogram" HorizontalAlignment="Right" />
 
                     <!--Row 4 elements-->
                     <Label Grid.Column="0" Grid.Row="8" Name="CriticalObjectsFinalizedLabel" Content="Critical objects finalized:"  VerticalAlignment="Center"/>
                     <Label Grid.Column="2" Grid.Row="8" Name="CriticalObjectsFinalizedValueLabel"  Content="{Binding CriticalObjectsFinalizedValueLabel}"    HorizontalAlignment="Right" VerticalAlignment="Center" />
-                    <Button Grid.Column="4" Grid.Row="8" Name="CriticalFinalizedHistogramButton" Command="{Binding CriticalFinalizedHistogramCommand}" Content="Histogram"/>
+                <Button Grid.Column="4" Grid.Row="8" Name="CriticalFinalizedHistogramButton" Command="{Binding CriticalFinalizedHistogramCommand}" Content="Histogram" HorizontalAlignment="Right" />
 
                   
                 </Grid>
@@ -91,7 +91,7 @@
                         <ColumnDefinition Width="4"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="Auto"/>                                                 
+                        <ColumnDefinition Width="150"/>                                                 
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -109,7 +109,7 @@
                     <!--Gen 0 collections elements-->
                     <Label Grid.Column="0" Grid.Row="0" Name="Gen0CollectionsLabel" Content="Gen 0 collections:" VerticalAlignment="Center" />
                     <Label Grid.Column="2" Grid.Row="0" Name="Gen0CollectionsValueLabel" Content="N/A"   HorizontalAlignment="Right"  VerticalAlignment="Center" />
-                    <Button Grid.Column="4" Grid.Row="0" Name="TimeLineButton" Content="Time Line"  />
+                    <Button Grid.Column="4" Grid.Row="0" Name="TimeLineButton" Content="Time Line"  HorizontalAlignment="Right" />
 
                     <!--"Gen 1 collections elements-->
                     <Label Grid.Column="0" Grid.Row="2" Name="Gen1CollectionsLabel" Content="Gen 1 collections:"  VerticalAlignment="Center" />
@@ -173,7 +173,7 @@
                         <ColumnDefinition Width="4"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="150"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -186,7 +186,7 @@
                     <!--Handles created elements-->
                     <Label Grid.Column="0" Grid.Row="0" Name="HandlesCreatedLabel" Content="Handles created:"  VerticalAlignment="Center" />
                     <Label Grid.Column="2" Grid.Row="0" Name="HandlesCreatedValueLabel" Content="N/A"   HorizontalAlignment="Right"  VerticalAlignment="Center" />
-                    <Button Grid.Column="4" Grid.Row="0" Name="HandleAllocationGraphButton" Content="Allocation Graph"  />
+                    <Button Grid.Column="4" Grid.Row="0" Name="HandleAllocationGraphButton" Content="Allocation Graph" HorizontalAlignment="Right" />
 
                     <!--"Handles destroyed elements-->
                    <Label Grid.Column="0" Grid.Row="2" Name="HandlesDestroyedLabel" Content="Handles destroyed:"  VerticalAlignment="Center"/>
@@ -195,7 +195,7 @@
                     <!--Handles surviving elements-->
                     <Label Grid.Column="0" Grid.Row="4" Name="HandlesSurvivingLabel" Content="Handles surviving:"  VerticalAlignment="Center" />
                     <Label Grid.Column="2" Grid.Row="4" Name="HandlesSurvivingValueLabel" Content="N/A"    HorizontalAlignment="Right"   VerticalAlignment="Center"/>
-                    <Button Grid.Column="4" Grid.Row="4" Name="SurvingHandlesAllocationGraphButton" Content="Allocation Graph" />
+                <Button Grid.Column="4" Grid.Row="4" Name="SurvingHandlesAllocationGraphButton" Content="Allocation Graph"  HorizontalAlignment="Right"/>
 
                 </Grid>
             </GroupBox>
