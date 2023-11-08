@@ -2,15 +2,9 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  - name: skipNuGetRestore
-    type: boolean
-    default: false
-  - name: gitUser
+  - name: baseBranch
     type: string
-    default: nfbot
-  - name: gitEmail
-    type: string
-    default: nanoframework@outlook.com 
+    default: 'refs/heads/main'
 
 steps:
 
@@ -20,8 +14,9 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      eq( variables['StartReleaseCandidate'], false ),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      eq(variables['StartReleaseCandidate'], false ),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
     )
   inputs:
     command: custom
@@ -46,10 +41,11 @@ steps:
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
       eq( variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
     )
 
-# publish artifacts (only possible if this is not a PR originated on a fork)
+# publish artifacts
 - task: PublishPipelineArtifact@1
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)'
@@ -58,9 +54,10 @@ steps:
   condition: >-
     and(
       succeeded(),
-      ne(variables['system.pullrequest.isfork'], true),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
       eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
     )
   displayName: Publish deployables artifacts
 
@@ -71,7 +68,8 @@ steps:
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
       eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
     )
   continueOnError: true
   displayName: Push NuGet packages to Azure Artifacts
@@ -82,14 +80,15 @@ steps:
     publishFeedCredentials: 'AzureArtifacts-$(System.TeamProject)'
     allowPackageConflicts: true
 
-# push NuGet class lib package to NuGet (always happens except on PR builds)
+# push NuGet class lib package to NuGet (happens when building against main branch - or other specified in the parameter))
 - task: NuGetCommand@2
   condition: >-
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
       eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
     )
   continueOnError: true
   displayName: Push NuGet packages to NuGet
