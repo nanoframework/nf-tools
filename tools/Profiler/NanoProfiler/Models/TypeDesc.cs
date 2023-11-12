@@ -12,19 +12,19 @@ namespace nanoFramework.Tools.NanoProfiler.Models
         internal ulong TotalSize { get; set; }
         internal int Count { get; set; }
         internal System.Drawing.Color Color { get; set; }
-        internal System.Drawing.Brush ?Brush { get; set; }
-        internal System.Drawing.Pen ?Pen { get; set; }
+        internal System.Drawing.Brush? Brush { get; set; }
+        internal System.Drawing.Pen? Pen { get; set; }
         internal bool Selected { get; set; }
         internal System.Drawing.Rectangle Rect { get; set; }
 
         internal TypeDesc(string typeName)
         {
-           TypeName = typeName;
+            TypeName = typeName;
         }
 
         public int CompareTo(object? o)
-        {          
-            if( o is not TypeDesc t)
+        {
+            if (o is not TypeDesc t)
             {
                 return -1;
             }

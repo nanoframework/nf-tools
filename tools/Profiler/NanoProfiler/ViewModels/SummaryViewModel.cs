@@ -71,64 +71,64 @@ public partial class SummaryViewModel : ObservableObject
 
     public SummaryViewModel(ReadNewLog? readNewLog, ReadLogResult? readLogResultModel)
     {
-        log =  readNewLog;
+        log = readNewLog;
         lastLogResult = readLogResultModel;
         _scenario = log.fileName;
-        Title= $"Summary for {_scenario}";
+        Title = $"Summary for {_scenario}";
         FillInNumbers();
     }
 
     #region  Private Methods
     private void FillInNumbers()
     {
-        AllocatedBytesValueLabel  = CalculateTotalSize(lastLogResult!.allocatedHistogram);
-        RelocatedBytesValueLabel  = CalculateTotalSize(lastLogResult!.relocatedHistogram);
-        FinalHeapBytesValueLabel  = CalculateTotalSize(GetFinalHeapHistogram());
+        AllocatedBytesValueLabel = CalculateTotalSize(lastLogResult!.allocatedHistogram);
+        RelocatedBytesValueLabel = CalculateTotalSize(lastLogResult!.relocatedHistogram);
+        FinalHeapBytesValueLabel = CalculateTotalSize(GetFinalHeapHistogram());
 
-        Gen0CollectionsValueLabel  = FormatNumber(lastLogResult.liveObjectTable.lastGcGen0Count);
-        Gen1CollectionsValueLabel  = FormatNumber(lastLogResult.liveObjectTable.lastGcGen1Count);
-        Gen2CollectionsValueLabel  = FormatNumber(lastLogResult.liveObjectTable.lastGcGen2Count);
-        InducedCollectionsValueLabel  = Unknown;
+        Gen0CollectionsValueLabel = FormatNumber(lastLogResult.liveObjectTable.lastGcGen0Count);
+        Gen1CollectionsValueLabel = FormatNumber(lastLogResult.liveObjectTable.lastGcGen1Count);
+        Gen2CollectionsValueLabel = FormatNumber(lastLogResult.liveObjectTable.lastGcGen2Count);
+        InducedCollectionsValueLabel = Unknown;
 
-        Gen0HeapBytesValueLabel  = Unknown;
-        Gen1HeapBytesValueLabel  = Unknown;
-        Gen2HeapBytesValueLabel  = Unknown;
-        ObjectsFinalizedValueLabel  = Unknown;
-        CriticalObjectsFinalizedValueLabel  = Unknown;
-        LargeObjectHeapBytesValueLabel  = Unknown;
+        Gen0HeapBytesValueLabel = Unknown;
+        Gen1HeapBytesValueLabel = Unknown;
+        Gen2HeapBytesValueLabel = Unknown;
+        ObjectsFinalizedValueLabel = Unknown;
+        CriticalObjectsFinalizedValueLabel = Unknown;
+        LargeObjectHeapBytesValueLabel = Unknown;
 
         if (log.gcCount[0] > 0)
         {
-            ObjectsFinalizedValueLabel  = CalculateTotalCount(lastLogResult.finalizerHistogram);
-            CriticalObjectsFinalizedValueLabel  = CalculateTotalCount(lastLogResult.criticalFinalizerHistogram);
-            InducedCollectionsValueLabel  = FormatNumber(log.inducedGcCount[0]);
-            Gen0HeapBytesValueLabel  = FormatNumber(log.cumulativeGenerationSize[0] / (uint)log.gcCount[0]);
+            ObjectsFinalizedValueLabel = CalculateTotalCount(lastLogResult.finalizerHistogram);
+            CriticalObjectsFinalizedValueLabel = CalculateTotalCount(lastLogResult.criticalFinalizerHistogram);
+            InducedCollectionsValueLabel = FormatNumber(log.inducedGcCount[0]);
+            Gen0HeapBytesValueLabel = FormatNumber(log.cumulativeGenerationSize[0] / (uint)log.gcCount[0]);
 
             if (log.gcCount[1] > 0)
             {
-                Gen1HeapBytesValueLabel  = FormatNumber(log.cumulativeGenerationSize[1] / (uint)log.gcCount[1]);
+                Gen1HeapBytesValueLabel = FormatNumber(log.cumulativeGenerationSize[1] / (uint)log.gcCount[1]);
             }
             else
             {
-                Gen1HeapBytesValueLabel  = FormatNumber(log.generationSize[1]);
+                Gen1HeapBytesValueLabel = FormatNumber(log.generationSize[1]);
             }
 
             if (log.gcCount[2] > 0)
             {
-                Gen2HeapBytesValueLabel  = FormatNumber(log.cumulativeGenerationSize[2] / (uint)log.gcCount[2]);
+                Gen2HeapBytesValueLabel = FormatNumber(log.cumulativeGenerationSize[2] / (uint)log.gcCount[2]);
             }
             else
             {
-                Gen2HeapBytesValueLabel  = FormatNumber(log.generationSize[2]);
+                Gen2HeapBytesValueLabel = FormatNumber(log.generationSize[2]);
             }
 
             if (log.gcCount[3] > 0)
             {
-                LargeObjectHeapBytesValueLabel  = FormatNumber(log.cumulativeGenerationSize[3] / (uint)log.gcCount[3]);
+                LargeObjectHeapBytesValueLabel = FormatNumber(log.cumulativeGenerationSize[3] / (uint)log.gcCount[3]);
             }
             else
             {
-                LargeObjectHeapBytesValueLabel  = FormatNumber(log.generationSize[3]);
+                LargeObjectHeapBytesValueLabel = FormatNumber(log.generationSize[3]);
             }
         }
         else if (!lastLogResult.createdHandlesHistogram.Empty)
@@ -136,21 +136,21 @@ public partial class SummaryViewModel : ObservableObject
             // we know this is a new format log file
             // log.gcCount[0] was zero because there were no collections
             // in that case we know there were no induced collections and no finalized objects
-            InducedCollectionsValueLabel  = "0";
-            ObjectsFinalizedValueLabel  = "0";
-            CriticalObjectsFinalizedValueLabel  = "0";
+            InducedCollectionsValueLabel = "0";
+            ObjectsFinalizedValueLabel = "0";
+            CriticalObjectsFinalizedValueLabel = "0";
         }
 
         if (lastLogResult.createdHandlesHistogram.Empty)
         {
-            HandlesCreatedValueLabel  = Unknown;
-            HandlesDestroyedValueLabel  = Unknown;
-            HandlesSurvivingValueLabel  = Unknown;
+            HandlesCreatedValueLabel = Unknown;
+            HandlesDestroyedValueLabel = Unknown;
+            HandlesSurvivingValueLabel = Unknown;
         }
         else
         {
-            HandlesCreatedValueLabel  = CalculateTotalCount(lastLogResult.createdHandlesHistogram);
-            HandlesDestroyedValueLabel  = CalculateTotalCount(lastLogResult.destroyedHandlesHistogram);
+            HandlesCreatedValueLabel = CalculateTotalCount(lastLogResult.createdHandlesHistogram);
+            HandlesDestroyedValueLabel = CalculateTotalCount(lastLogResult.destroyedHandlesHistogram);
 
             int count = 0;
 
@@ -159,11 +159,11 @@ public partial class SummaryViewModel : ObservableObject
                 count++;
             }
 
-            HandlesSurvivingValueLabel  = FormatNumber(count);
+            HandlesSurvivingValueLabel = FormatNumber(count);
         }
 
-        CommentsValueLabel  = FormatNumber(log.commentEventList.count);
-        HeapDumpsValueLabel  = FormatNumber(log.heapDumpEventList.count);
+        CommentsValueLabel = FormatNumber(log.commentEventList.count);
+        HeapDumpsValueLabel = FormatNumber(log.heapDumpEventList.count);
     }
     private string FormatNumber(double number)
     {

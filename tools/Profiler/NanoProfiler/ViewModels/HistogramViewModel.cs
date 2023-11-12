@@ -63,7 +63,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         double currentScaleFactor;
         public Histogram histogram { get; set; }
         private string[] typeName;
-    
+
 
         ulong totalSize;
         int totalCount;

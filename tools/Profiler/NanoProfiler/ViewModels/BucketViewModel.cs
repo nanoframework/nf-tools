@@ -14,7 +14,7 @@ namespace nanoFramework.Tools.NanoProfiler.Models
         //private double _bucketValue;
 
         [ObservableProperty]
-        private SolidColorBrush ?_bucketColor;
+        private SolidColorBrush? _bucketColor;
 
         [ObservableProperty]
         private Bucket _fullBucket;

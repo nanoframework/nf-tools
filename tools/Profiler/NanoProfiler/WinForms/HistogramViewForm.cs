@@ -95,17 +95,17 @@ namespace WinForm
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
             versionTimer.Stop();
-            if( disposing )
+            if (disposing)
             {
-                if(components != null)
+                if (components != null)
                 {
                     components.Dispose();
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code
@@ -541,13 +541,13 @@ namespace WinForm
             for (minSize = startSize; minSize < int.MaxValue; minSize *= scaleFactor)
                 count++;
 
-            buckets = new Bucket[count-1];
+            buckets = new Bucket[count - 1];
             minSize = startSize;
             for (int i = 0; i < buckets.Length; i++)
             {
                 buckets[i].minSize = (int)Math.Round(minSize);
                 minSize *= scaleFactor;
-                buckets[i].maxSize = (int)Math.Round(minSize)-1;
+                buckets[i].maxSize = (int)Math.Round(minSize) - 1;
                 buckets[i].typeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
                 buckets[i].selected = false;
             }
@@ -565,7 +565,7 @@ namespace WinForm
             {
                 if (buckets[i].minSize <= size && size <= buckets[i].maxSize)
                 {
-                    ulong totalSize = (ulong)size*(ulong)count;
+                    ulong totalSize = (ulong)size * (ulong)count;
                     buckets[i].totalSize += totalSize;
                     SizeCount sizeCount;
                     if (!buckets[i].typeDescToSizeCount.TryGetValue(t, out sizeCount))
@@ -583,14 +583,14 @@ namespace WinForm
         void TrimEmptyBuckets()
         {
             int lo = 0;
-            for (int i = 0; i < buckets.Length-1; i++)
+            for (int i = 0; i < buckets.Length - 1; i++)
             {
-                if (buckets[i].totalSize != 0 || buckets[i+1].totalSize != 0)
+                if (buckets[i].totalSize != 0 || buckets[i + 1].totalSize != 0)
                     break;
                 lo++;
             }
-            int hi = buckets.Length-1;
-            for (int i = buckets.Length-1; i >= 0; i--)
+            int hi = buckets.Length - 1;
+            for (int i = buckets.Length - 1; i >= 0; i--)
             {
                 if (buckets[i].totalSize != 0)
                     break;
@@ -598,9 +598,9 @@ namespace WinForm
             }
             if (lo <= hi)
             {
-                Bucket[] newBuckets = new Bucket[hi-lo+1];
+                Bucket[] newBuckets = new Bucket[hi - lo + 1];
                 for (int i = lo; i <= hi; i++)
-                    newBuckets[i-lo] = buckets[i];
+                    newBuckets[i - lo] = buckets[i];
                 buckets = newBuckets;
             }
         }
@@ -645,7 +645,7 @@ namespace WinForm
                     t = new TypeDesc(typeName[typeIndex]);
                     typeIndexToTypeDesc[typeIndex] = t;
                 }
-                t.totalSize += (ulong)size*(ulong)count;
+                t.totalSize += (ulong)size * (ulong)count;
                 t.count += count;
 
                 totalSize += (ulong)size * (ulong)count;
@@ -682,16 +682,16 @@ namespace WinForm
 
         Color MixColor(Color a, Color b)
         {
-            int R = (a.R + b.R)/2;
-            int G = (a.G + b.G)/2;
-            int B = (a.B + b.B)/2;
+            int R = (a.R + b.R) / 2;
+            int G = (a.G + b.G) / 2;
+            int B = (a.B + b.B) / 2;
 
             return Color.FromArgb(R, G, B);
         }
 
         static void GrowColors()
         {
-            Color[] newColors = new Color[2*colors.Length];
+            Color[] newColors = new Color[2 * colors.Length];
             for (int i = 0; i < colors.Length; i++)
                 newColors[i] = colors[i];
             colors = newColors;
@@ -745,7 +745,7 @@ namespace WinForm
             int minHighRange = Int32.MaxValue;
             foreach (RadioButton rb in groupBox.Controls)
             {
-                int range = pixelsAvailable*Int32.Parse(rb.Text);
+                int range = pixelsAvailable * Int32.Parse(rb.Text);
                 if (range < rangeNeeded)
                 {
                     if (maxLowRange < range)
@@ -779,7 +779,7 @@ namespace WinForm
 
         int VerticalScale(int pixelsAvailable, ulong rangeNeeded, bool firstTime)
         {
-            return Scale(verticalScaleGroupBox, pixelsAvailable, (int)(rangeNeeded/1024), firstTime)*1024;
+            return Scale(verticalScaleGroupBox, pixelsAvailable, (int)(rangeNeeded / 1024), firstTime) * 1024;
         }
 
         const int leftMargin = 30;
@@ -834,13 +834,13 @@ namespace WinForm
                 int x = leftMargin;
                 foreach (Bucket b in buckets)
                 {
-                    string s = "< " + FormatSize((ulong)b.maxSize+1);
+                    string s = "< " + FormatSize((ulong)b.maxSize + 1);
                     int y = graphPanel.Height - bottomMargin;
                     g.DrawString(s, font, blackBrush, x, y + 3);
                     s = FormatSize(b.totalSize);
                     g.DrawString(s, font, blackBrush, x, y + 3 + font.Height);
-                    s = string.Format("({0:f2}%)", 100.0*b.totalSize/totalSize);
-                    g.DrawString(s, font, blackBrush, x, y + 3 + font.Height*2);
+                    s = string.Format("({0:f2}%)", 100.0 * b.totalSize / totalSize);
+                    g.DrawString(s, font, blackBrush, x, y + 3 + font.Height * 2);
                     foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
                     {
                         TypeDesc t = d.Key;
@@ -868,12 +868,12 @@ namespace WinForm
             dotSize = (int)g.MeasureString("0", font).Width;
             int maxWidth = 0;
             int x = leftMargin;
-            int y = topMargin + font.Height + typeLegendSpacing*2;
+            int y = topMargin + font.Height + typeLegendSpacing * 2;
             foreach (TypeDesc t in sortedTypeTable)
             {
                 int typeNameWidth = (int)g.MeasureString(t.typeName, font).Width;
                 int sizeWidth = (int)g.MeasureString(" (999,999,999 bytes, 100.00% - 999,999 instances, 999 bytes average size)", font).Width;
-                t.rect = new Rectangle(x, y, Math.Max(typeNameWidth, sizeWidth)+dotSize*2, font.Height*2);
+                t.rect = new Rectangle(x, y, Math.Max(typeNameWidth, sizeWidth) + dotSize * 2, font.Height * 2);
                 if (maxWidth < t.rect.Width)
                     maxWidth = t.rect.Width;
                 y = t.rect.Bottom + typeLegendSpacing;
@@ -889,21 +889,21 @@ namespace WinForm
 
             Brush blackBrush = new SolidBrush(Color.Black);
 
-            string s = string.Format("Grand total: {0:n0} bytes - {1:n0} instances, {2:n0} bytes average size", totalSize, totalCount, totalSize/(ulong)totalCount);
+            string s = string.Format("Grand total: {0:n0} bytes - {1:n0} instances, {2:n0} bytes average size", totalSize, totalCount, totalSize / (ulong)totalCount);
             g.DrawString(s, font, blackBrush, x, y);
 
-            y += font.Height + typeLegendSpacing*2;
+            y += font.Height + typeLegendSpacing * 2;
 
-            int dotOffset = (font.Height - dotSize)/2;
+            int dotOffset = (font.Height - dotSize) / 2;
             foreach (TypeDesc t in sortedTypeTable)
             {
                 Brush brush = t.brush;
                 if (t.selected)
                     brush = blackBrush;
-                g.FillRectangle(brush, t.rect.Left, t.rect.Top+dotOffset, dotSize, dotSize);
-                g.DrawString(t.typeName, font, blackBrush, t.rect.Left + dotSize*2, t.rect.Top);
-                s = string.Format(" ({0:n0} bytes, {1:f2}% - {2:n0} instances, {3:n0} bytes average size)", t.totalSize, (double)t.totalSize/totalSize*100.0, t.count, t.totalSize/(ulong)t.count);
-                g.DrawString(s, font, blackBrush, t.rect.Left + dotSize*2, t.rect.Top + font.Height);
+                g.FillRectangle(brush, t.rect.Left, t.rect.Top + dotOffset, dotSize, dotSize);
+                g.DrawString(t.typeName, font, blackBrush, t.rect.Left + dotSize * 2, t.rect.Top);
+                s = string.Format(" ({0:n0} bytes, {1:f2}% - {2:n0} instances, {3:n0} bytes average size)", t.totalSize, (double)t.totalSize / totalSize * 100.0, t.count, t.totalSize / (ulong)t.count);
+                g.DrawString(s, font, blackBrush, t.rect.Left + dotSize * 2, t.rect.Top + font.Height);
                 y = t.rect.Bottom + typeLegendSpacing;
             }
         }
@@ -923,7 +923,7 @@ namespace WinForm
 
         private int BottomMargin()
         {
-            return font.Height*3 + 10;
+            return font.Height * 3 + 10;
         }
 
         private void graphPanel_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
@@ -950,14 +950,14 @@ namespace WinForm
 
             verticalScale = VerticalScale(graphPanel.Height - topMargin - bottomMargin, maxTotalSize, verticalScale == 0);
 
-            int maxBucketHeight = (int)(maxTotalSize/(ulong)verticalScale);
+            int maxBucketHeight = (int)(maxTotalSize / (ulong)verticalScale);
             int height = topMargin + maxBucketHeight + bottomMargin;
             if (height < minHeight)
                 height = minHeight;
 
             graphPanel.Height = height;
-            
-            int width = leftMargin + buckets.Length*bucketWidth + (buckets.Length-1)*gap + rightMargin;
+
+            int width = leftMargin + buckets.Length * bucketWidth + (buckets.Length - 1) * gap + rightMargin;
             graphPanel.Width = width;
 
             DrawBuckets(g);
@@ -977,7 +977,7 @@ namespace WinForm
 
             Graphics g = e.Graphics;
 
-            DrawTypeLegend(g);      
+            DrawTypeLegend(g);
 
             initialized = true;
         }
@@ -1055,7 +1055,7 @@ namespace WinForm
                     }
 
                     x += bucketWidth + gap;
-                }       
+                }
                 graphPanel.Invalidate();
                 typeLegendPanel.Invalidate();
             }
@@ -1091,7 +1091,7 @@ namespace WinForm
                         Rectangle bucketRect = new Rectangle(x, y, bucketWidth, height);
                         if (bucketRect.Contains(e.X, e.Y))
                         {
-                            string caption = string.Format("{0} {1} ({2:f2}%) - {3:n0} instances, {4} average size", t.typeName, FormatSize(size), 100.0*size/totalSize, sizeCount.count, FormatSize(sizeCount.size/(ulong)sizeCount.count));
+                            string caption = string.Format("{0} {1} ({2:f2}%) - {3:n0} instances, {4} average size", t.typeName, FormatSize(size), 100.0 * size / totalSize, sizeCount.count, FormatSize(sizeCount.size / (ulong)sizeCount.count));
                             toolTip.Active = true;
                             toolTip.SetToolTip(graphPanel, caption);
                             return;
@@ -1186,14 +1186,14 @@ namespace WinForm
                     int[] stacktrace = histogram.readNewLog.stacktraceTable.IndexToStacktrace(i);
                     int typeIndex = stacktrace[0];
                     int size = stacktrace[1];
-                    
+
                     if (minSize <= size && size <= maxSize)
                     {
                         TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
-                
+
                         if (selectedType == null || t == selectedType)
                         {
-                            w.WriteLine("{0},{1},{2},{3}", size, count, size*count, t.typeName);
+                            w.WriteLine("{0},{1},{2},{3}", size, count, size * count, t.typeName);
                         }
                     }
                 }
@@ -1240,7 +1240,7 @@ namespace WinForm
                         if (minSize <= size && size <= maxSize)
                         {
                             TypeDesc t = (TypeDesc)typeIndexToTypeDesc[typeIndex];
-                        
+
                             if (t == selectedType)
                             {
                                 selectedHistogram.AddObject(i, count);
