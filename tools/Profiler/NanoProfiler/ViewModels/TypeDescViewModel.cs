@@ -7,13 +7,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace nanoFramework.Tools.NanoProfiler.Models
 {
-    public partial class TypeDescModel : ObservableObject
+    public partial class TypeDescViewModel : ObservableObject
     {
         [ObservableProperty]
-        private string _title;
+        private string ? _title;
 
         [ObservableProperty]
-        private TypeDesc _typeDesc;
+        private TypeDesc ? _typeDesc;
 
         [ObservableProperty]
         private double _valueSize;

@@ -107,8 +107,8 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             {
                 for (int i = 0; i < buckets.Length; i++)
                 {
-                    buckets[i].typeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
-                    buckets[i].totalSize = 0;
+                    buckets[i].TypeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
+                    buckets[i].TotalSize = 0;
                 }
                 return;
             }
@@ -127,11 +127,11 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             minSize = startSize;
             for (int i = 0; i < buckets.Length; i++)
             {
-                buckets[i].minSize = (int)Math.Round(minSize);
+                buckets[i].MinSize = (int)Math.Round(minSize);
                 minSize *= scaleFactor;
-                buckets[i].maxSize = (int)Math.Round(minSize) - 1;
-                buckets[i].typeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
-                buckets[i].selected = false;
+                buckets[i].MaxSize = (int)Math.Round(minSize) - 1;
+                buckets[i].TypeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
+                buckets[i].Selected = false;
             }
         }
 
@@ -145,18 +145,18 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         {
             for (int i = 0; i < buckets.Length; i++)
             {
-                if (buckets[i].minSize <= size && size <= buckets[i].maxSize)
+                if (buckets[i].MinSize <= size && size <= buckets[i].MaxSize)
                 {
                     ulong totalSize = (ulong)size * (ulong)count;
-                    buckets[i].totalSize += totalSize;
+                    buckets[i].TotalSize += totalSize;
                     SizeCount sizeCount;
-                    if (!buckets[i].typeDescToSizeCount.TryGetValue(t, out sizeCount))
+                    if (!buckets[i].TypeDescToSizeCount.TryGetValue(t, out sizeCount))
                     {
                         sizeCount = new SizeCount();
-                        buckets[i].typeDescToSizeCount[t] = sizeCount;
+                        buckets[i].TypeDescToSizeCount[t] = sizeCount;
                     }
-                    sizeCount.size += totalSize;
-                    sizeCount.count += count;
+                    sizeCount.Size += totalSize;
+                    sizeCount.Count += count;
                     break;
                 }
             }
@@ -167,7 +167,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             int lo = 0;
             for (int i = 0; i < buckets.Length - 1; i++)
             {
-                if (buckets[i].totalSize != 0 || buckets[i + 1].totalSize != 0)
+                if (buckets[i].TotalSize != 0 || buckets[i + 1].TotalSize != 0)
                 {
                     break;
                 }
@@ -177,7 +177,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             int hi = buckets.Length - 1;
             for (int i = buckets.Length - 1; i >= 0; i--)
             {
-                if (buckets[i].totalSize != 0)
+                if (buckets[i].TotalSize != 0)
                 {
                     break;
                 }
@@ -216,8 +216,8 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 {
                     if (t != null)
                     {
-                        t.totalSize = 0;
-                        t.count = 0;
+                        t.TotalSize = 0;
+                        t.Count = 0;
                     }
                 }
             }
@@ -240,8 +240,8 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                     t = new TypeDesc(typeName[typeIndex]);
                     typeIndexToTypeDesc[typeIndex] = t;
                 }
-                t.totalSize += (ulong)size * (ulong)count;
-                t.count += count;
+                t.TotalSize += (ulong)size * (ulong)count;
+                t.Count += count;
 
                 totalSize += (ulong)size * (ulong)count;
                 totalCount += count;
@@ -310,7 +310,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
         {
             foreach (TypeDesc t in sortedTypeTable)
             {
-                if (t.selected)
+                if (t.Selected)
                 {
                     return t;
                 }
@@ -341,14 +341,14 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                     colors[count] = MixColor(colors[count - firstColors.Length], colors[count - firstColors.Length + 1]);
                 }
 
-                t.color = colors[count];
+                t.Color = colors[count];
                 if (anyTypeSelected)
                 {
-                    t.color = MixColor(colors[count], System.Drawing.Color.White);
+                    t.Color = MixColor(colors[count], System.Drawing.Color.White);
                 }
 
-                t.brush = new SolidBrush(t.color);
-                t.pen = new System.Drawing.Pen(t.brush);
+                t.Brush = new SolidBrush(t.Color);
+                t.Pen = new System.Drawing.Pen(t.Brush);
                 count++;
             }
         }
@@ -462,7 +462,7 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             bool noBucketSelected = true;
             foreach (Bucket b in buckets)
             {
-                if (b.selected)
+                if (b.Selected)
                 {
                     noBucketSelected = false;
                     break;
@@ -474,26 +474,26 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 int x = leftMargin;
                 foreach (Bucket b in buckets)
                 {
-                    string s = "< " + FormatSize((ulong)b.maxSize + 1);
+                    string s = "< " + FormatSize((ulong)b.MaxSize + 1);
 
                     int y = (int)(graphPanel.Height - bottomMargin);
 
                     g.DrawString(s, font, blackBrush, x, y + 3);
-                    s = FormatSize(b.totalSize);
+                    s = FormatSize(b.TotalSize);
                     g.DrawString(s, font, blackBrush, x, y + 3 + font.Height);
-                    s = string.Format("({0:f2}%)", 100.0 * b.totalSize / totalSize);
+                    s = string.Format("({0:f2}%)", 100.0 * b.TotalSize / totalSize);
                     g.DrawString(s, font, blackBrush, x, y + 3 + font.Height * 2);
-                    foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
+                    foreach (KeyValuePair<TypeDesc, SizeCount> d in b.TypeDescToSizeCount)
                     {
                         TypeDesc t = d.Key;
                         SizeCount sizeCount = d.Value;
-                        ulong size = sizeCount.size;
+                        ulong size = sizeCount.Size;
                         int height = (int)(size / (ulong)verticalScale);
 
                         y -= height;
 
-                        System.Drawing.Brush brush = t.brush;
-                        if (t.selected && (b.selected || noBucketSelected))
+                        System.Drawing.Brush brush = t.Brush;
+                        if (t.Selected && (b.Selected || noBucketSelected))
                         {
                             brush = blackBrush;
                         }
@@ -516,15 +516,15 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             int y = topMargin + font.Height + typeLegendSpacing * 2;
             foreach (TypeDesc t in sortedTypeTable)
             {
-                int typeNameWidth = (int)g.MeasureString(t.typeName, font).Width;
+                int typeNameWidth = (int)g.MeasureString(t.TypeName, font).Width;
                 int sizeWidth = (int)g.MeasureString(" (999,999,999 bytes, 100.00% - 999,999 instances, 999 bytes average size)", font).Width;
-                t.rect = new System.Drawing.Rectangle(x, y, Math.Max(typeNameWidth, sizeWidth) + dotSize * 2, font.Height * 2);
-                if (maxWidth < t.rect.Width)
+                t.Rect = new System.Drawing.Rectangle(x, y, Math.Max(typeNameWidth, sizeWidth) + dotSize * 2, font.Height * 2);
+                if (maxWidth < t.Rect.Width)
                 {
-                    maxWidth = t.rect.Width;
+                    maxWidth = t.Rect.Width;
                 }
 
-                y = t.rect.Bottom + typeLegendSpacing;
+                y = t.Rect.Bottom + typeLegendSpacing;
             }
             int height = y + bottomMargin;
             //typeLegendPanel.Height = height;
@@ -545,17 +545,17 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             int dotOffset = (font.Height - dotSize) / 2;
             foreach (TypeDesc t in sortedTypeTable)
             {
-                System.Drawing.Brush brush = t.brush;
-                if (t.selected)
+                System.Drawing.Brush brush = t.Brush;
+                if (t.Selected)
                 {
                     brush = blackBrush;
                 }
 
-                g.FillRectangle(brush, t.rect.Left, t.rect.Top + dotOffset, dotSize, dotSize);
-                g.DrawString(t.typeName, font, blackBrush, t.rect.Left + dotSize * 2, t.rect.Top);
-                s = string.Format(" ({0:n0} bytes, {1:f2}% - {2:n0} instances, {3:n0} bytes average size)", t.totalSize, (double)t.totalSize / totalSize * 100.0, t.count, t.totalSize / (ulong)t.count);
-                g.DrawString(s, font, blackBrush, t.rect.Left + dotSize * 2, t.rect.Top + font.Height);
-                y = t.rect.Bottom + typeLegendSpacing;
+                g.FillRectangle(brush, t.Rect.Left, t.Rect.Top + dotOffset, dotSize, dotSize);
+                g.DrawString(t.TypeName, font, blackBrush, t.Rect.Left + dotSize * 2, t.Rect.Top);
+                s = string.Format(" ({0:n0} bytes, {1:f2}% - {2:n0} instances, {3:n0} bytes average size)", t.TotalSize, (double)t.TotalSize / totalSize * 100.0, t.Count, t.TotalSize / (ulong)t.Count);
+                g.DrawString(s, font, blackBrush, t.Rect.Left + dotSize * 2, t.Rect.Top + font.Height);
+                y = t.Rect.Bottom + typeLegendSpacing;
             }
         }
 
@@ -596,9 +596,9 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 ulong maxTotalSize = 0;
                 foreach (Bucket b in buckets)
                 {
-                    if (maxTotalSize < b.totalSize)
+                    if (maxTotalSize < b.TotalSize)
                     {
-                        maxTotalSize = b.totalSize;
+                        maxTotalSize = b.TotalSize;
                     }
                 }
 
@@ -655,21 +655,21 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             {
                 for (int i = 0; i < buckets.Length; i++)
                 {
-                    if (buckets[i].selected)
+                    if (buckets[i].Selected)
                     {
                         // TODO
                         //graphPanel.Invalidate();
                         //typeLegendPanel.Invalidate();
-                        buckets[i].selected = false;
+                        buckets[i].Selected = false;
                     }
                 }
                 if (sortedTypeTable != null)
                 {
                     foreach (TypeDesc t in sortedTypeTable)
                     {
-                        if (t.rect.Contains(e.X, e.Y) != t.selected)
+                        if (t.Rect.Contains(e.X, e.Y) != t.Selected)
                         {
-                            t.selected = !t.selected;
+                            t.Selected = !t.Selected;
 
                             // TODO
                             //graphPanel.Invalidate();
@@ -704,14 +704,14 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 {
                     foreach (TypeDesc t in sortedTypeTable)
                     {
-                        t.selected = false;
+                        t.Selected = false;
                     }
                 }
 
                 int x = leftMargin;
                 for (int i = 0; i < buckets.Length; i++)
                 {
-                    buckets[i].selected = false;
+                    buckets[i].Selected = false;
 
                     // TODO
                     //    int y = graphPanel.Height - bottomMargin;
@@ -903,13 +903,13 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
                 int maxSize = int.MaxValue;
                 foreach (Bucket b in buckets)
                 {
-                    if (b.selected)
+                    if (b.Selected)
                     {
-                        minSize = b.minSize;
-                        maxSize = b.maxSize;
+                        minSize = b.MinSize;
+                        maxSize = b.MaxSize;
                     }
                 }
-                title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
+                title = string.Format("Allocation Graph for {0} objects", selectedType.TypeName);
                 if (minSize > 0)
                 {
                     title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
