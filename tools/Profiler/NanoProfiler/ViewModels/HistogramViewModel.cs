@@ -293,11 +293,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 //int x = leftMargin;
                 foreach (Bucket b in buckets)
                 {
-                    BucketsValues.Add(new BucketViewModel()
-                    {
-                        BucketPosition = bucketPosition,
-                        FullBucket = b
-                    });
+                    BucketsValues.Add(new BucketViewModel(b, bucketPosition));
                     string label = string.Empty;
                     if (HorizontalScaleSelectedValue.Equals("Coarse"))
                     {
@@ -326,17 +322,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         {
                             brush = blackBrush;
                         }
-                        //var buckDet = new BucketDataModel1()
-                        //{
-                        //    SectionValue = d.Value.size   //t.totalSize
-                        //};
 
-                        listValues.Add(new TypeDescViewModel()
-                        {
-                            TypeDesc = t,
-                            ValueSize = d.Value.Size,
-                            BucketTotalSize = b.TotalSize
-                        });
+                        listValues.Add(new TypeDescViewModel(t, d.Value.Size, b.TotalSize));
                         totalsizeCount += d.Value.Size;
                     }
                     originalDictionary.Add(bucketPosition, listValues);
@@ -392,8 +379,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
                 var config = new CartesianMapper<TypeDescViewModel>()
                       .X((value, index) => index)
-                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d)
-                      ;
+                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d);
 
                 var stackedColumSeries = new StackedColumnSeries
                 {

@@ -20,5 +20,15 @@ namespace nanoFramework.Tools.NanoProfiler.Models
 
         [ObservableProperty]
         private double _bucketTotalSize;
+
+        public TypeDescViewModel(TypeDesc typeDesc, double valueSize, double bucketTotalSize)
+        {
+            TypeDesc = typeDesc;
+            ValueSize = valueSize;
+            BucketTotalSize = bucketTotalSize;
+        }
+        public TypeDescViewModel() { }
+
+
     }
 }

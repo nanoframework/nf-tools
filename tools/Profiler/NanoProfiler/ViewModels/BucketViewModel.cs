@@ -22,6 +22,12 @@ namespace nanoFramework.Tools.NanoProfiler.Models
         [ObservableProperty]
         private int _bucketPosition;
 
+        public BucketViewModel(Bucket fullBucket, int bucketPosition)
+        {
+            FullBucket = fullBucket;
+            BucketPosition = bucketPosition;
+        }
+
     }
     public partial class BucketDataModel1 : ObservableObject
     {
