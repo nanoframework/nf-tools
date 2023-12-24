@@ -9,7 +9,7 @@ parameters:
 steps:
 
 - task: DotNetCoreCLI@2
-  displayName: Install SignTool tool
+  displayName: Install Sign Client CLI
   condition: >-
     and(
       succeeded(),
@@ -21,19 +21,21 @@ steps:
   inputs:
     command: custom
     custom: tool
-    arguments: install --tool-path . SignClient
+    arguments: install --tool-path . sign --version 0.9.1-beta.23530.1
 
 - pwsh: |
-    .\SignClient "Sign" `
-    --baseDirectory "$(Build.ArtifactStagingDirectory)" `
-    --input "**/*.nupkg" `
-    --config "$(Build.Repository.LocalPath)\config\SignClient.json" `
-    --filelist "$(Build.Repository.LocalPath)\config\filelist.txt" `
-    --user "$(SignClientUser)" `
-    --secret '$(SignClientSecret)' `
-    --name "$(nugetPackageName)" `
+    .\sign code azure-key-vault `
+    "**/*.nupkg" `
+    --base-directory "$(Build.ArtifactStagingDirectory)" `
+    --file-list "$(Build.Repository.LocalPath)\config\filelist.txt" `
     --description "$(nugetPackageName)" `
-    --descriptionUrl "https://github.com/$env:Build_Repository_Name"
+    --description-url "https://github.com/$env:Build_Repository_Name" `
+    --azure-key-vault-tenant-id "$(SignTenantId)" `
+    --azure-key-vault-client-id "$(SignClientId)" `
+    --azure-key-vault-client-secret "$(SignClientSecret)" `
+    --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
+    --azure-key-vault-url "$(SignKeyVaultUrl)" `
+    --timestamp-url http://timestamp.digicert.com
   displayName: Sign packages
   continueOnError: true
   condition: >-
