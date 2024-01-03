@@ -17,6 +17,8 @@ jobs:
           
       - name: Find packages folder
         run: |
+          git config --global user.email "nanoframework@outlook.com"
+          git config --global user.name "nfbot"
           git commit --allow-empty --message "[Chore] empty commit\r\n[skip ci]\r\n***NO_CI***"
         
         shell: pwsh
