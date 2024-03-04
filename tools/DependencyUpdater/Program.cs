@@ -547,7 +547,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                         projectPathInSln += "\\\\";
                     }
 
-                    var match = Regex.Match(slnFileContent, $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")");
+                    var match = Regex.Match(
+                        slnFileContent,
+                        $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")",
+                        RegexOptions.IgnoreCase);
+
                     if (!match.Success)
                     {
                         Console.WriteLine($"INFO: couldn't find a project matching this packages.config. *** SKIPPING ***.");
