@@ -686,7 +686,15 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     Environment.Exit(1);
                                 }
 
-                                var unitsNetVersion = unitsNetPackageInfo.Split("\r\n")[2].Split('|')[1].Trim();
+                                string unitsNetVersion = "N/A";
+
+                                Regex regex = new Regex(@"\| ([\d\.]+)");
+                                Match unitsNetVersionFound = regex.Match(unitsNetPackageInfo);
+
+                                if (unitsNetVersionFound.Success)
+                                {
+                                    unitsNetVersion = unitsNetVersionFound.Groups[1].Value;
+                                }
 
                                 // we have to use nuget.org with UnitsNet
                                 updateParameters = $"\"{projectToUpdate}\" -Id {packageName} -Version {unitsNetVersion} {repositoryPath} -FileConflictAction Overwrite  -Source \"https://api.nuget.org/v3/index.json\"";
