@@ -107,7 +107,9 @@ jobs:
     vmImage: 'windows-latest'
 
   variables:
-    DOTNET_NOLOGO: true
+    - group: sign-client-credentials
+    - name: DOTNET_NOLOGO
+      value: true
 
   steps:
   
@@ -225,7 +227,9 @@ jobs:
     vmImage: 'windows-latest'
 
   variables:
-    DOTNET_NOLOGO: true
+    - group: sign-client-credentials
+    - name: DOTNET_NOLOGO
+      value: true
 
   steps:
   
@@ -368,7 +372,9 @@ jobs:
     vmImage: 'windows-latest'
 
   variables:
-    DOTNET_NOLOGO: true
+    - group: sign-client-credentials
+    - name: DOTNET_NOLOGO
+      value: true
 
   steps:
   

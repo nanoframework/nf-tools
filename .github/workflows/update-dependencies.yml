@@ -49,12 +49,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: '${{ github.workspace }}/${{ inputs.workingDirectory }}'
           ref: ${{ inputs.branchToPr }}
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -64,7 +64,7 @@ jobs:
       - uses: nanoframework/nanobuild@v1
         name: Install .NET nanoFramework build components
 
-      - uses: nuget/setup-nuget@v1
+      - uses: nuget/setup-nuget@v2
         with:
           nuget-version: '>=6.2'
 
