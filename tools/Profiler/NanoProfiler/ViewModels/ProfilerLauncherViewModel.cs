@@ -65,23 +65,23 @@ public partial class ProfilerLauncherViewModel : ObservableObject, IDisplayableO
 
         if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(openFileDialog.FileName))
         {
-            
+
             // looks like we have a valid path        
             var readLogResult = _readLogResultService.LoadLogFile(openFileDialog.FileName);
             var currentLog = _readLogResultService.GetReadNewLog();
             var pre = _readLogResultService.GetPreviousLogFileName();
             if (openFileDialog.FileName.Equals(pre) || string.IsNullOrWhiteSpace(pre))
             {
-                _summaryView.DataContext= new SummaryViewModel(currentLog, readLogResult);
+                _summaryView.DataContext = new SummaryViewModel(currentLog, readLogResult);
                 _summaryView.Show();
             }
             else
             {
                 var newView = new SummaryView();
-                newView.DataContext= new SummaryViewModel(currentLog, readLogResult);
+                newView.DataContext = new SummaryViewModel(currentLog, readLogResult);
                 newView.Show();
             }
-           
+
 
             EnableDisableViewMenuItems();
 
@@ -228,7 +228,7 @@ public partial class ProfilerLauncherViewModel : ObservableObject, IDisplayableO
     #region Constructor
     public ProfilerLauncherViewModel(ReadLogResultService? logFileService)
     {
-        _readLogResultService = logFileService?? new ReadLogResultService();
+        _readLogResultService = logFileService ?? new ReadLogResultService();
         _serialDebuggerPort = PortBase.CreateInstanceForSerial(false);
     }
     #endregion
@@ -301,8 +301,8 @@ public partial class ProfilerLauncherViewModel : ObservableObject, IDisplayableO
         OutputFileName = string.Empty;
         DebugOutputFileName = string.Empty;
 
-doneHere:
-// update label
+    doneHere:
+        // update label
         ConnectButtonContent = _connectLabel;
         // OK to enable button
         ConnectButtonEnabled = true;
@@ -483,7 +483,7 @@ doneHere:
                         return false;
                     }
 
-checInitState:
+                checInitState:
 
                     if (_engine.SetExecutionMode(0, 0))
                     {

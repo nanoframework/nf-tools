@@ -41,9 +41,11 @@ namespace CLRProfiler
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose(bool disposing) {
-            if (disposing) {
-                if(components != null)  
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (components != null)
                     components.Dispose();
             }
             base.Dispose(disposing);

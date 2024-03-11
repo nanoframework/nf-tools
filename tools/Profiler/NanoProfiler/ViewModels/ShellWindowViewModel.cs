@@ -16,14 +16,14 @@ internal partial class ShellWindowViewModel : ObservableObject
     {
         this.SelectedItem = this.Items.First();
     }
-     [ObservableProperty]
-     private ObservableObject [] _items = new ObservableObject [] { new ProfilerLauncherViewModel(new ReadLogResultService()), new SettingsViewModel() };
-  
+    [ObservableProperty]
+    private ObservableObject[] _items = new ObservableObject[] { new ProfilerLauncherViewModel(new ReadLogResultService()), new SettingsViewModel() };
+
 
     [RelayCommand]
     private void CloseApp(object obj)
     {
-        if(obj is not ShellWindow shellWindow)
+        if (obj is not ShellWindow shellWindow)
         {
             return;
         }

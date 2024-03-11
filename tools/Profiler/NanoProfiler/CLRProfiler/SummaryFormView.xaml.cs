@@ -31,7 +31,7 @@ public partial class SummaryFormView : Window
         ReadLogResult logResult,
         string scenario)
     {
-       
+
 
         _log = log;
         _logResult = logResult;
@@ -244,7 +244,7 @@ public partial class SummaryFormView : Window
     //  Here start histogram
     private void AllocatedHistogramButton_Click(object sender, RoutedEventArgs e)
     {
-       
+
 
     }
 

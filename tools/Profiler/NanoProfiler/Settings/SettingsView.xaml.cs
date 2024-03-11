@@ -9,6 +9,6 @@ namespace nanoFramework.Tools.NanoProfiler.Settings;
 /// </summary>
 public partial class SettingsView : UserControl
 {
-    public SettingsView()=> this.InitializeComponent();
-    
+    public SettingsView() => this.InitializeComponent();
+
 }

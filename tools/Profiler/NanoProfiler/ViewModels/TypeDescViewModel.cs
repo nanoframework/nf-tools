@@ -7,18 +7,28 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace nanoFramework.Tools.NanoProfiler.Models
 {
-    public partial class TypeDescModel : ObservableObject
+    public partial class TypeDescViewModel : ObservableObject
     {
         [ObservableProperty]
-        private string _title;
+        private string? _title;
 
         [ObservableProperty]
-        private TypeDesc _typeDesc;
+        private TypeDesc? _typeDesc;
 
         [ObservableProperty]
         private double _valueSize;
 
         [ObservableProperty]
         private double _bucketTotalSize;
+
+        public TypeDescViewModel(TypeDesc typeDesc, double valueSize, double bucketTotalSize)
+        {
+            TypeDesc = typeDesc;
+            ValueSize = valueSize;
+            BucketTotalSize = bucketTotalSize;
+        }
+        public TypeDescViewModel() { }
+
+
     }
 }

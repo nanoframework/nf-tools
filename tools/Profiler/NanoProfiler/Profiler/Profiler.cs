@@ -198,9 +198,9 @@ namespace nanoFramework.Tools.NanoProfiler
                     catch { }
 
                     // We've been disconnected -- shutdown thread.
-                    if (OnDisconnect != null) 
-                    { 
-                        OnDisconnect(this, EventArgs.Empty); 
+                    if (OnDisconnect != null)
+                    {
+                        OnDisconnect(this, EventArgs.Empty);
                     }
 
                     return;

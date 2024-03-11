@@ -117,16 +117,16 @@ namespace WinForms.CLRProfiler
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if( disposing )
+            if (disposing)
             {
-                if(components != null)
+                if (components != null)
                 {
                     components.Dispose();
                 }
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         #region Windows Form Designer generated code
@@ -648,16 +648,16 @@ namespace WinForms.CLRProfiler
             int lineCount = 2;
             if (v.signature != null)
                 lineCount = 3;
-            if (r.Height > fontHeight*lineCount)
-                stringRect = new RectangleF(r.X,r.Y,r.Width,fontHeight);
+            if (r.Height > fontHeight * lineCount)
+                stringRect = new RectangleF(r.X, r.Y, r.Width, fontHeight);
             else
             {
-                stringRect = new RectangleF(r.X,r.Y+r.Height+3,r.Width,fontHeight);
+                stringRect = new RectangleF(r.X, r.Y + r.Height + 3, r.Width, fontHeight);
                 // for these very narrow rectangle, start the selection rectangle 5 pixels above
                 // the actual rectangle, so people can hit it more easily. Even though they could click
                 // on the text below, which not everybody tries...
                 const int vTolerance = 5;
-                v.selectionRectangle = new Rectangle(r.X, r.Y - vTolerance, r.Width, vTolerance + r.Height + 3 + fontHeight*lineCount);
+                v.selectionRectangle = new Rectangle(r.X, r.Y - vTolerance, r.Width, vTolerance + r.Height + 3 + fontHeight * lineCount);
             }
 
             if (v.weightHistory != null)
@@ -666,15 +666,15 @@ namespace WinForms.CLRProfiler
                 int previousHeight = r.Height;
                 for (int i = 0; i < v.weightHistory.Length; i++)
                 {
-                    alpha = alpha*2/3;
+                    alpha = alpha * 2 / 3;
                     ulong weight = v.weightHistory[i];
-                    int height = (int)((float)r.Height/v.weight*weight);
+                    int height = (int)((float)r.Height / v.weight * weight);
                     if (height < previousHeight)
                     {
                         Color color = Color.FromArgb(alpha, Color.Red);
                         using (Brush brush = new SolidBrush(color))
                         {
-                            g.FillRectangle(brush, r.X, r.Y+height, r.Width, previousHeight - height);
+                            g.FillRectangle(brush, r.X, r.Y + height, r.Width, previousHeight - height);
                         }
                     }
                     else
@@ -682,7 +682,7 @@ namespace WinForms.CLRProfiler
                         Color color = Color.FromArgb(alpha, Color.Green);
                         using (Brush brush = new SolidBrush(color))
                         {
-                            g.FillRectangle(brush, r.X, r.Y+previousHeight, r.Width, height - previousHeight);
+                            g.FillRectangle(brush, r.X, r.Y + previousHeight, r.Width, height - previousHeight);
                         }
                     }
                     previousHeight = height;
@@ -736,8 +736,8 @@ namespace WinForms.CLRProfiler
             float f_y = y;
             foreach (Edge e in edgeList)
             {
-                float fwidth = e.weight*scale;
-                Point p = new Point(x, (int)(f_y + fwidth/2));
+                float fwidth = e.weight * scale;
+                Point p = new Point(x, (int)(f_y + fwidth / 2));
                 if (isIncoming)
                 {
                     e.toPoint = p;
@@ -755,7 +755,7 @@ namespace WinForms.CLRProfiler
             foreach (Vertex v in graph.vertices.Values)
             {
                 PlaceEdges(v.incomingEdges.Values, true, v.rectangle.X, v.rectangle.Y, scale);
-                int y = v.rectangle.Y + (int)(v.basicWeight*scale);
+                int y = v.rectangle.Y + (int)(v.basicWeight * scale);
                 PlaceEdges(v.outgoingEdges.Values, false, v.rectangle.X + v.rectangle.Width, y, scale);
             }
         }
@@ -777,7 +777,7 @@ namespace WinForms.CLRProfiler
                     if (e.ToVertex != graph.BottomVertex
                         && !e.fromPoint.IsEmpty && !e.toPoint.IsEmpty)
                     {
-                        int colorInt = r.Next(255*256*256);
+                        int colorInt = r.Next(255 * 256 * 256);
                         int red = (colorInt >> 16) & 255;
                         int green = (colorInt >> 8) & 255;
                         int blue = colorInt & 255;
@@ -806,7 +806,7 @@ namespace WinForms.CLRProfiler
                             e.brush = brush;
                         }
                         Debug.Assert(brush != null);
-                        float fWidth = e.weight*scale;
+                        float fWidth = e.weight * scale;
                         if (fWidth > minWidth && e.FromVertex.active && e.ToVertex.active)
                         {
                             int iWidth = (int)fWidth;
@@ -823,22 +823,22 @@ namespace WinForms.CLRProfiler
                             Debug.Assert(pen != null);
                             int deltaX = e.toPoint.X - e.fromPoint.X;
                             int deltaY = e.toPoint.Y - e.fromPoint.Y;
-                            deltaX = deltaX/4;
-                            deltaY = deltaY/9;
-                            int deltaY1 =   deltaY;
-                            int deltaY2 = - deltaY;
+                            deltaX = deltaX / 4;
+                            deltaY = deltaY / 9;
+                            int deltaY1 = deltaY;
+                            int deltaY2 = -deltaY;
                             if (deltaX < 0)
                             {
                                 deltaX = 20;
-                                if (Math.Abs(deltaY)*5 < iWidth*2)
+                                if (Math.Abs(deltaY) * 5 < iWidth * 2)
                                 {
-                                    deltaY1 = deltaY2 = iWidth*2;
+                                    deltaY1 = deltaY2 = iWidth * 2;
                                     deltaX = iWidth;
                                 }
                             }
                             points[0] = e.fromPoint;
                             points[1] = new Point(e.fromPoint.X + deltaX, e.fromPoint.Y + deltaY1);
-                            points[2] = new Point(e.  toPoint.X - deltaX, e.  toPoint.Y + deltaY2);
+                            points[2] = new Point(e.toPoint.X - deltaX, e.toPoint.Y + deltaY2);
                             points[3] = e.toPoint;
                             g.DrawCurve(pen, points);
                             red = (red + 17) % 256;
@@ -899,7 +899,7 @@ namespace WinForms.CLRProfiler
                 string format = "{0,4:f0} {1} ({2:f2}%)";
                 if (w < 10)
                     format = "{0,4:f1} {1} ({2:f2}%)";
-                return string.Format(format, w, byteString, weight*100.0/totalWeight);
+                return string.Format(format, w, byteString, weight * 100.0 / totalWeight);
             }
         }
 
@@ -926,7 +926,7 @@ namespace WinForms.CLRProfiler
             }
 
             ArrayList al = levelList = BuildLevels(graph);
-            scale = (float)totalHeight/totalWeight;
+            scale = (float)totalHeight / totalWeight;
             if (placeVertices)
             {
                 int x = 10;
@@ -973,7 +973,7 @@ namespace WinForms.CLRProfiler
                             else
                                 v.weightString = string.Format("{0}  ({1} objects, {2})", formatWeight(v.weight), v.count, formatWeight(v.basicWeight));
                         }
-                        if (v.weight*scale > minHeight)
+                        if (v.weight * scale > minHeight)
                         {
                             int width = (int)g.MeasureString(v.basicName, font).Width;
                             if (maxWidth < width)
@@ -988,16 +988,16 @@ namespace WinForms.CLRProfiler
                     ulong levelWeight = 0;
                     foreach (Vertex v in all)
                         levelWeight += v.weight;
-                    float levelHeight = levelWeight*scale;
-                    if (levelHeight < totalHeight*0.5)
-                        y+= (int)((totalHeight - levelHeight)*2);
+                    float levelHeight = levelWeight * scale;
+                    if (levelHeight < totalHeight * 0.5)
+                        y += (int)((totalHeight - levelHeight) * 2);
                     foreach (Vertex v in all)
                     {
                         // For the in-between vertices, sometimes it's good
                         // to shift them down a little to line them up with
                         // whatever is going into them. Unless of course
                         // we would need to shift too much...
-                        if (v.level < graph.BottomVertex.level-1)
+                        if (v.level < graph.BottomVertex.level - 1)
                         {
                             ulong highestWeight = 0;
                             int bestY = 0;
@@ -1006,21 +1006,21 @@ namespace WinForms.CLRProfiler
                                 if (e.weight > highestWeight && e.FromVertex.level < level)
                                 {
                                     highestWeight = e.weight;
-                                    bestY = e.fromPoint.Y - (int)(e.weight*scale*0.5);
+                                    bestY = e.fromPoint.Y - (int)(e.weight * scale * 0.5);
                                 }
                             }
-                            if (y < bestY && bestY < totalHeight*5)
+                            if (y < bestY && bestY < totalHeight * 5)
                                 y = bestY;
                         }
-                        float fHeight = v.weight*scale;
+                        float fHeight = v.weight * scale;
                         int iHeight = (int)fHeight;
                         if (iHeight < 1)
                             iHeight = 1;
-                        v.rectangle = new Rectangle(x, y, maxWidth+5, iHeight);
+                        v.rectangle = new Rectangle(x, y, maxWidth + 5, iHeight);
                         if (fHeight <= minHeight || !v.active)
                         {
                             v.visible = false;
-                            v.rectangle = v.selectionRectangle = new Rectangle(0,0,0,0);
+                            v.rectangle = v.selectionRectangle = new Rectangle(0, 0, 0, 0);
                         }
                         else
                         {
@@ -1029,8 +1029,8 @@ namespace WinForms.CLRProfiler
                             int lines = 2;
                             if (v.signature != null)
                                 lines = 3;
-                            if (iHeight <= fontHeight*lines)
-                                y += fontHeight*lines + 3;
+                            if (iHeight <= fontHeight * lines)
+                                y += fontHeight * lines + 3;
                             y += 30;
                             drawnVertexCount++;
                         }
@@ -1046,7 +1046,7 @@ namespace WinForms.CLRProfiler
                 //    x = Size.Width;
                 //if (maxY < Size.Height)
                 //    maxY = Size.Height;
-                graphPanel.Size = new System.Drawing.Size (x, maxY);
+                graphPanel.Size = new System.Drawing.Size(x, maxY);
             }
             if (placeEdges)
                 PlaceEdges(scale);
@@ -1172,7 +1172,7 @@ namespace WinForms.CLRProfiler
             }
 
             v.selected = true;
-            
+
             foreach (Edge e in v.incomingEdges.Values)
             {
                 e.selected = true;
@@ -1437,7 +1437,7 @@ namespace WinForms.CLRProfiler
         {
             int deltaX = p1.X - p2.X;
             int deltaY = p1.Y - p2.Y;
-            return Math.Sqrt(deltaX*deltaX + 4.0*deltaY*deltaY);
+            return Math.Sqrt(deltaX * deltaX + 4.0 * deltaY * deltaY);
         }
 
         private void edgePopup(Edge e, bool isOutgoingEdge)
@@ -1457,7 +1457,7 @@ namespace WinForms.CLRProfiler
             string caption = v.basicName + ": " + formatWeight(e.weight);
             Rectangle r = new Rectangle(p.X, p.Y, 1, 1);
             r = graphPanel.RectangleToScreen(r);
-            Point screenPoint = new Point(r.X, r.Y-20);
+            Point screenPoint = new Point(r.X, r.Y - 20);
             toolTip.Active = true;
             toolTip.SetToolTip(graphPanel, caption);
         }
@@ -1585,8 +1585,8 @@ namespace WinForms.CLRProfiler
             ArrayList foundVertices = new ArrayList();
             foreach (Vertex v in graph.vertices.Values)
             {
-                if (  v.name.IndexOf(name) >= 0
-                    &&  (v.signature == null
+                if (v.name.IndexOf(name) >= 0
+                    && (v.signature == null
                       || v.signature.IndexOf(signature) >= 0))
                 {
                     foundVertices.Add(v);
@@ -1639,7 +1639,7 @@ namespace WinForms.CLRProfiler
             if (findForm.ShowDialog() == DialogResult.OK)
             {
                 FindVertex(findForm.nameTextBox.Text, findForm.signatureTextBox.Text, false);
-            }       
+            }
         }
 
         private void versionTimer_Tick(object sender, System.EventArgs e)
@@ -1661,17 +1661,17 @@ namespace WinForms.CLRProfiler
             {
                 double dWeight = e.weight;
                 sum += dWeight;
-                sumSq += dWeight*dWeight;
+                sumSq += dWeight * dWeight;
             }
             if (sumSq <= 0.0)
                 return 0.0;
             else
-                return sum*sum/sumSq;
+                return sum * sum / sumSq;
         }
 
         private double Score(Vertex v)
         {
-            return v.weight*(Diversity(v.incomingEdges) + Diversity(v.outgoingEdges));
+            return v.weight * (Diversity(v.incomingEdges) + Diversity(v.outgoingEdges));
         }
 
         class CompareVerticesByScore : IComparer
@@ -1710,7 +1710,7 @@ namespace WinForms.CLRProfiler
 
             for (int i = Math.Min(5, verticesSortedByScore.Count); i > 0; i--)
             {
-                ZoomVertex((Vertex)verticesSortedByScore[i-1], string.Format("Interesting Node (Rank {0}): ", i));
+                ZoomVertex((Vertex)verticesSortedByScore[i - 1], string.Format("Interesting Node (Rank {0}): ", i));
             }
 
         }
@@ -1775,7 +1775,7 @@ namespace WinForms.CLRProfiler
             g.typeGraphOptions = graph.typeGraphOptions;
             if (titlePrefix == null)
                 titlePrefix = "Zoom to: ";
-            string title = titlePrefix + v.name + " " + (v.signature != null? v.signature : "");
+            string title = titlePrefix + v.name + " " + (v.signature != null ? v.signature : "");
             GraphViewForm graphViewForm = new GraphViewForm(g, title);
             graphViewForm.Visible = true;
         }
@@ -1889,7 +1889,7 @@ namespace WinForms.CLRProfiler
 
             string title = "New Live Objects";
             GraphViewForm graphViewForm = new GraphViewForm(g, title);
-            graphViewForm.Visible = true;       
+            graphViewForm.Visible = true;
         }
 
         private void zoomToNodeMenuItem_Click(object sender, System.EventArgs e)
@@ -1939,7 +1939,7 @@ namespace WinForms.CLRProfiler
             if (orgGraph.graphSource is Graph)
                 orgGraph = (Graph)orgGraph.graphSource;
             ObjectGraph objectGraph = (ObjectGraph)orgGraph.graphSource;
-            ObjectGraph.BuildTypeGraphOptions options; 
+            ObjectGraph.BuildTypeGraphOptions options;
             if (graph.typeGraphOptions == ObjectGraph.BuildTypeGraphOptions.LumpBySignature)
             {
                 options = ObjectGraph.BuildTypeGraphOptions.IndividualObjects;
@@ -1953,7 +1953,7 @@ namespace WinForms.CLRProfiler
             placeVertices = placeEdges = true;
             graphPanel.Invalidate();
             EnableDisableMenuItems();
-        }       
+        }
 
         private void showHistogramMenuItem_Click(object sender, System.EventArgs e)
         {
@@ -1961,7 +1961,7 @@ namespace WinForms.CLRProfiler
             {
                 Histogram histogram = MakeHistogram(-1, int.MaxValue);
 
-                ObjectGraph objectGraph =  GetObjectGraph();
+                ObjectGraph objectGraph = GetObjectGraph();
                 string title = string.Format("Histogram by Size for Live Objects at {0}", objectGraph.readNewLog.TickIndexToTime(objectGraph.tickIndex));
                 HistogramViewForm histogramViewForm = new HistogramViewForm(histogram, title);
                 histogramViewForm.Show();

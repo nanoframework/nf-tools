@@ -8,19 +8,25 @@ using System.Windows.Media;
 
 namespace nanoFramework.Tools.NanoProfiler.Models
 {
-    public partial class BucketDataModel : ObservableObject
+    public partial class BucketViewModel : ObservableObject
     {
         //[ObservableProperty]
         //private double _bucketValue;
 
         [ObservableProperty]
-        private SolidColorBrush _bucketColor;
+        private SolidColorBrush? _bucketColor;
 
         [ObservableProperty]
         private Bucket _fullBucket;
 
         [ObservableProperty]
         private int _bucketPosition;
+
+        public BucketViewModel(Bucket fullBucket, int bucketPosition)
+        {
+            FullBucket = fullBucket;
+            BucketPosition = bucketPosition;
+        }
 
     }
     public partial class BucketDataModel1 : ObservableObject

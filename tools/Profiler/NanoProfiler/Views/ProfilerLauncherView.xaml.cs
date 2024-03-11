@@ -50,7 +50,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             // register message to update log text
             WeakReferenceMessenger.Default.Register<UpdateLogTextMessage>(this, (r, m) =>
             {
-                lock(this)
+                lock (this)
                 {
                     if (_logMessages.Count >= _maxLogMessages)
                     {
@@ -82,7 +82,7 @@ namespace nanoFramework.Tools.NanoProfiler.Views
 
         private void LogGUIUpdateTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            lock(this)
+            lock (this)
             {
                 if (_lastDisplayedLogMessagesFingerprint != _logMessagesFingerprint)
                 {
@@ -121,16 +121,16 @@ namespace nanoFramework.Tools.NanoProfiler.Views
             if (_viewModel != null)
             {
                 ViewUnLoaded = _viewModel.ViewLoadedCommand;
-                this.Loaded-=this.ProfilerLauncherView_Loaded;
+                this.Loaded -= this.ProfilerLauncherView_Loaded;
             }
         }
 
         private void ProfilerLauncherView_Unloaded(object sender, RoutedEventArgs e)
         {
-          
-                ViewUnLoaded?.Execute(true);
-            
-               
+
+            ViewUnLoaded?.Execute(true);
+
+
         }
     }
 }
