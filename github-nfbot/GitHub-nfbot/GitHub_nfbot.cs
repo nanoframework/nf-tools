@@ -953,8 +953,8 @@ namespace nanoFramework.Tools.GitHub
                 // add comment to issue
                 _ = await _octokitClient.Issue.Comment.Create(
                     (int)payload.repository.id,
-                    (int)payload.pull_request.number,
-                    $"@{payload.pull_request.user.login} {_missingProjectToReproduceComment}.");
+                    (int)payload.issue.number,
+                    $"@{payload.issue.user.login} {_missingProjectToReproduceComment}.");
             }
             else
             {
