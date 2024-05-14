@@ -179,7 +179,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false)
     )
   displayName: Setup Ruby
@@ -199,7 +199,7 @@ steps:
         eq(variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True'),
         and(
           eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
           not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
           startsWith(variables['Build.SourceBranchName'], 'main'),
           not(contains(variables['Build.SourceBranchName'], 'update-dependencies'))
@@ -216,7 +216,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       not(contains(variables['Build.SourceBranchName'], 'update-dependencies')),
       eq(variables['StartReleaseCandidate'], false)
     )
@@ -233,7 +233,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
       not(contains(variables['Build.SourceBranchName'], 'update-dependencies')),
       eq(variables['StartReleaseCandidate'], false)
@@ -260,7 +260,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
@@ -280,7 +280,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false)
     )
   displayName: Collecting deployable artifacts
@@ -319,7 +319,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
@@ -347,7 +347,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
@@ -362,7 +362,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false)
     )
   displayName: Publish deployables artifacts
@@ -373,7 +373,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     ) 
@@ -393,7 +393,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
@@ -413,7 +413,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       startsWith(variables['Build.SourceBranch'], 'refs/heads/main'),
       not(contains(variables['Build.SourceBranch'], 'preview')),
       eq(variables['StartReleaseCandidate'], false)

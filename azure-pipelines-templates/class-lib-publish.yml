@@ -14,7 +14,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false ),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
       startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
@@ -43,7 +43,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq( variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
       startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
@@ -59,7 +59,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
       startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
@@ -72,7 +72,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
       startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
@@ -92,7 +92,7 @@ steps:
     and(
       succeeded(),
       eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/'),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
       startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
