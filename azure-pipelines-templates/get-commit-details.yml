@@ -6,15 +6,12 @@ steps:
 # get commit message
 - powershell: |
 
-    $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)")))"
-
-
     if($env:System_PullRequest_PullRequestId -ne $null)
     {
         # PR build, get PR message
         Write-Host "Build from PR"
 
-        $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:Build_Repository_Name/pulls/$env:System_PullRequest_PullRequestNumber" -Header @{"Authorization"="$auth"} -ContentType "application/json" -Method GET
+        $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:Build_Repository_Name/pulls/$env:System_PullRequest_PullRequestNumber" -ContentType "application/json" -Method GET
 
         $commitMessage = $commit.body
     }
@@ -29,7 +26,7 @@ steps:
             # get PR associate with commit
             $prUrl = "https://api.github.com/repos/$env:Build_Repository_Name/commits/$env:Build_SourceVersion/pulls"
 
-            $commit = Invoke-RestMethod -Uri $prUrl -ContentType "application/json" -Headers @{Accept = "application/vnd.github.groot-preview+json"; Authorization = "$auth"}  -Method GET
+            $commit = Invoke-RestMethod -Uri $prUrl -ContentType "application/json" -Headers @{Accept = "application/vnd.github.groot-preview+json"}  -Method GET
 
             if($commit -ne $null)
             {

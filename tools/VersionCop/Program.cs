@@ -154,7 +154,7 @@ class Program
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // use only .NET nanoFramework feed in Azure DevOps so stats in NuGet are not messed up with the versions check
-        //_dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
+        _dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // read solution file content
@@ -670,8 +670,9 @@ class Program
             return true;
         }
 
-        // 1st round on NuGet, if feed is available
-        if (_dependencyInfoResourceNuGet is not null)
+        // 1st round on NuGet, if feed is available AND this a recurring call
+        if (_dependencyInfoResourceNuGet is not null
+            && recurring)
         {
             dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
                 packageIdentity,

@@ -14,14 +14,13 @@ steps:
     inputs:
       targetType: 'inline'
       script: |
-        $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)")))"
 
         $checksFailed = $false
 
         if($env:System_PullRequest_PullRequestId -ne $null)
         {
             # get files changed in PR, if this is a PR
-            $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:Build_Repository_Name/pulls/$env:System_PullRequest_PullRequestNumber/files" -Header @{"Authorization"="$auth"} -ContentType "application/json" -Method GET
+            $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:Build_Repository_Name/pulls/$env:System_PullRequest_PullRequestNumber/files" -ContentType "application/json" -Method GET
 
             # filter removed files              
             $files = $commit.where{$_.status -ne 'removed'}
