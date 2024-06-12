@@ -48,7 +48,7 @@ steps:
 
 - template: prepare-release.yml
 
-- task: SonarCloudPrepare@1
+- task: SonarCloudPrepare@2
   condition: >-
     and(
       succeeded(),
@@ -153,7 +153,7 @@ steps:
     )
   displayName: Set release draft var
 
-- task: SonarCloudAnalyze@1
+- task: SonarCloudAnalyze@2
   condition: >-
     and(
       succeeded(),
@@ -162,7 +162,7 @@ steps:
     )
   displayName: 'Run Code Analysis'
 
-- task: SonarCloudPublish@1
+- task: SonarCloudPublish@2
   condition: >-
     and(
       succeeded(),
