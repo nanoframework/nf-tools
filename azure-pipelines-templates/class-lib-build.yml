@@ -51,7 +51,7 @@ steps:
 
 - template: prepare-release.yml
 
-- task: SonarCloudPrepare@1
+- task: SonarCloudPrepare@2
   condition: >-
     and(
       succeeded(),
@@ -164,7 +164,7 @@ steps:
   displayName: 'Run Code Analysis'
   continueOnError: true
 
-- task: SonarCloudPublish@1
+- task: SonarCloudPublish@2
   condition: >-
     and(
       succeeded(),
