@@ -1,0 +1,43 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+name: Move main version
+run-name: Move ${{ github.event.inputs.major_version }} to ${{ github.event.inputs.target }}
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      major_version:
+        required: true
+        type: string
+      user_name:
+        required: false
+        type: string
+        default: 'nfbot'
+      user_email:
+        required: false
+        type: string
+        default: 'nanoframework@outlook.com'
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Git config
+      run: |
+        git config user.name "${{ inputs.user_name }}"
+        git config user.email "${{ inputs.user_email }}"
+    - name: Tag new target
+      run: git tag -f ${{ inputs.major_version }} ${{ inputs.target }}
+    - name: Push new tag
+      run: git push origin ${{ inputs.major_version }} --force
