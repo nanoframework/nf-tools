@@ -12,7 +12,7 @@ namespace nanoFramework.Tools.NanoProfiler.Services;
 
 public class ReadLogResultService
 {
-    internal Font font;    
+    internal Font font;
     private long logFileStartOffset;
     private long logFileEndOffset;
     internal ReadNewLog log;
@@ -24,7 +24,7 @@ public class ReadLogResultService
     internal bool runaswindow = false;
 
     private ReadLogResult GetLogResult()
-    {      
+    {
         ReadLogResult readLogResult = lastLogResult;
         if (readLogResult == null)
         {
@@ -58,7 +58,7 @@ public class ReadLogResultService
 
     public ReadLogResult LoadLogFile(string logFileName)
     {
-        if (!string.IsNullOrWhiteSpace(currlogFileName)  )
+        if (!string.IsNullOrWhiteSpace(currlogFileName))
         {
             (prevlogFileName, currlogFileName) = (currlogFileName, logFileName);
         }
@@ -66,17 +66,17 @@ public class ReadLogResultService
         {
             currlogFileName = logFileName;
         }
-       
+
         logFileStartOffset = 0;
         logFileEndOffset = long.MaxValue;
-        log = new ReadNewLog(logFileName);     
+        log = new ReadNewLog(logFileName);
         ObjectGraph.cachedGraph = null;
         ReadLogResult readLogResult = GetLogResult();
         log.ReadFile(logFileStartOffset, logFileEndOffset, readLogResult);
         lastLogResult = readLogResult;
 
-      
-        return lastLogResult;        
+
+        return lastLogResult;
     }
 
     public ReadNewLog GetReadNewLog() => log;

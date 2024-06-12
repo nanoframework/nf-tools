@@ -32,7 +32,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         private SeriesCollection _seriesCollection = new SeriesCollection();
 
         [ObservableProperty]
-        private ChartValues<BucketDataModel> _bucketsValues = new ChartValues<BucketDataModel>();
+        private ChartValues<BucketViewModel> _bucketsValues = new ChartValues<BucketViewModel>();
 
         [ObservableProperty]
         private ObservableCollection<double> _verticalScaleList;
@@ -55,15 +55,15 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
 
         #region Properties
-        private List<TypeDescModel> listValues = new List<TypeDescModel>();
-        private Dictionary<int, List<TypeDescModel>> originalDictionary = new Dictionary<int, List<TypeDescModel>>();
-        private Dictionary<int, List<TypeDescModel>> convertedDictionary = new Dictionary<int, List<TypeDescModel>>();
+        private List<TypeDescViewModel> listValues = new List<TypeDescViewModel>();
+        private Dictionary<int, List<TypeDescViewModel>> originalDictionary = new Dictionary<int, List<TypeDescViewModel>>();
+        private Dictionary<int, List<TypeDescViewModel>> convertedDictionary = new Dictionary<int, List<TypeDescViewModel>>();
 
         Bucket[] buckets = new Bucket[] { };
         double currentScaleFactor;
         public Histogram histogram { get; set; }
         private string[] typeName;
-    
+
 
         ulong totalSize;
         int totalCount;
@@ -137,7 +137,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             bucketClicked = BucketsValues[selectedPositionOfTheBucket].FullBucket;
 
-            var typesInBucketClicked = bucketClicked.typeDescToSizeCount.Count;
+            var typesInBucketClicked = bucketClicked.TypeDescToSizeCount.Count;
 
             string title;
             List<TypeDesc> selectedTypes = FindSelectedTypeInSelectedBucket();
@@ -158,13 +158,13 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         int maxSize = int.MaxValue;
                         foreach (Bucket b in buckets)
                         {
-                            if (b.selected)
+                            if (b.Selected)
                             {
-                                minSize = b.minSize;
-                                maxSize = b.maxSize;
+                                minSize = b.MinSize;
+                                maxSize = b.MaxSize;
                             }
                         }
-                        title = string.Format("Allocation Graph for {0} objects", selectedType.typeName);
+                        title = string.Format("Allocation Graph for {0} objects", selectedType.TypeName);
                         if (minSize > 0)
                         {
                             title += string.Format(" of size between {0:n0} and {1:n0} bytes", minSize, maxSize);
@@ -268,9 +268,9 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
         private void DrawBuckets()
         {
-            originalDictionary = new Dictionary<int, List<TypeDescModel>>();
-            convertedDictionary = new Dictionary<int, List<TypeDescModel>>();
-            BucketsValues = new ChartValues<BucketDataModel> { };
+            originalDictionary = new Dictionary<int, List<TypeDescViewModel>>();
+            convertedDictionary = new Dictionary<int, List<TypeDescViewModel>>();
+            BucketsValues = new ChartValues<BucketViewModel> { };
             BucketsLabels = new ObservableCollection<string>();
             SeriesCollection = new();
 
@@ -279,7 +279,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             bool noBucketSelected = true;
             foreach (Bucket b in buckets)
             {
-                if (b.selected)
+                if (b.Selected)
                 {
                     noBucketSelected = false;
                     break;
@@ -293,51 +293,38 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 //int x = leftMargin;
                 foreach (Bucket b in buckets)
                 {
-                    BucketsValues.Add(new BucketDataModel()
-                    {
-                        BucketPosition = bucketPosition,
-                        FullBucket = b
-                    });
+                    BucketsValues.Add(new BucketViewModel(b, bucketPosition));
                     string label = string.Empty;
                     if (HorizontalScaleSelectedValue.Equals("Coarse"))
                     {
-                        label = "< " + FormatSize((ulong)b.maxSize + 1) + $"{Environment.NewLine}";
-                        label += FormatSize(b.totalSize) + $"{Environment.NewLine}";
+                        label = "< " + FormatSize((ulong)b.MaxSize + 1) + $"{Environment.NewLine}";
+                        label += FormatSize(b.TotalSize) + $"{Environment.NewLine}";
                         label += "(";
-                        label += string.Format("{0:f2}%", 100.0 * b.totalSize / totalSize);
+                        label += string.Format("{0:f2}%", 100.0 * b.TotalSize / totalSize);
                         label += ")";
                     }
                     else
                     {
-                        double res = Math.Round(100.0 * b.totalSize / totalSize, 2);
+                        double res = Math.Round(100.0 * b.TotalSize / totalSize, 2);
                         label += $"{res}{Environment.NewLine}";
                         label += $"%";
                     }
 
                     System.Drawing.Brush brush = new SolidBrush(System.Drawing.Color.Transparent);
 
-                    listValues = new List<TypeDescModel>();
-                    foreach (KeyValuePair<TypeDesc, SizeCount> d in b.typeDescToSizeCount)
+                    listValues = new List<TypeDescViewModel>();
+                    foreach (KeyValuePair<TypeDesc, SizeCount> d in b.TypeDescToSizeCount)
                     {
                         TypeDesc t = d.Key;
 
-                        brush = t.brush;
-                        if (t.selected && (b.selected || noBucketSelected))
+                        brush = t.Brush;
+                        if (t.Selected && (b.Selected || noBucketSelected))
                         {
                             brush = blackBrush;
                         }
-                        var buckDet = new BucketDataModel1()
-                        {
-                            SectionValue = d.Value.size   //t.totalSize
-                        };
 
-                        listValues.Add(new TypeDescModel()
-                        {
-                            TypeDesc = t,
-                            ValueSize = d.Value.size,
-                            BucketTotalSize = b.totalSize
-                        });
-                        totalsizeCount += d.Value.size;
+                        listValues.Add(new TypeDescViewModel(t, d.Value.Size, b.TotalSize));
+                        totalsizeCount += d.Value.Size;
                     }
                     originalDictionary.Add(bucketPosition, listValues);
 
@@ -356,11 +343,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
 
             for (int position = 0; position < maxLength; position++)
             {
-                List<TypeDescModel> values = new List<TypeDescModel>();
+                List<TypeDescViewModel> values = new List<TypeDescViewModel>();
 
                 foreach (var kvp in originalDictionary)
                 {
-                    List<TypeDescModel> list = kvp.Value;
+                    List<TypeDescViewModel> list = kvp.Value;
                     if (position < list.Count)
                     {
                         values.Add(list[position]);
@@ -372,12 +359,12 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 convertedDictionary[position] = values;
             }
 
-            foreach (KeyValuePair<int, List<TypeDescModel>> item in convertedDictionary)
+            foreach (KeyValuePair<int, List<TypeDescViewModel>> item in convertedDictionary)
             {
-                IChartValues values = new ChartValues<TypeDescModel>();
+                IChartValues values = new ChartValues<TypeDescViewModel>();
                 if (item.Value != null && item.Value.Count > 0)
                 {
-                    foreach (TypeDescModel typeDescModel in item.Value)
+                    foreach (TypeDescViewModel typeDescModel in item.Value)
                     {
                         if (typeDescModel != null)
                         {
@@ -385,15 +372,14 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                         }
                         else
                         {
-                            values.Add(new TypeDescModel());
+                            values.Add(new TypeDescViewModel());
                         }
                     }
                 }
 
-                var config = new CartesianMapper<TypeDescModel>()
+                var config = new CartesianMapper<TypeDescViewModel>()
                       .X((value, index) => index)
-                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d)
-                      ;
+                      .Y((value, index) => value != null ? Math.Round((100.0 * value.ValueSize / totalsizeCount), 2) : 0d);
 
                 var stackedColumSeries = new StackedColumnSeries
                 {
@@ -442,14 +428,14 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     colors[count] = MixColor(colors[count - firstColors.Length], colors[count - firstColors.Length + 1]);
                 }
 
-                t.color = colors[count];
+                t.Color = colors[count];
                 if (anyTypeSelected)
                 {
-                    t.color = MixColor(colors[count], System.Drawing.Color.White);
+                    t.Color = MixColor(colors[count], System.Drawing.Color.White);
                 }
 
-                t.brush = new SolidBrush(t.color);
-                t.pen = new System.Drawing.Pen(t.brush);
+                t.Brush = new SolidBrush(t.Color);
+                t.Pen = new System.Drawing.Pen(t.Brush);
                 count++;
             }
         }
@@ -478,7 +464,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             List<TypeDesc> listReturning = new List<TypeDesc>();
 
-            foreach (KeyValuePair<TypeDesc, SizeCount> item in bucketClicked.typeDescToSizeCount)
+            foreach (KeyValuePair<TypeDesc, SizeCount> item in bucketClicked.TypeDescToSizeCount)
             {
                 listReturning.Add(item.Key);
             }
@@ -489,7 +475,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             foreach (TypeDesc t in sortedTypeTable)
             {
-                if (t.selected)
+                if (t.Selected)
                 {
                     return t;
                 }
@@ -515,8 +501,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                 {
                     if (t != null)
                     {
-                        t.totalSize = 0;
-                        t.count = 0;
+                        t.TotalSize = 0;
+                        t.Count = 0;
                     }
                 }
             }
@@ -539,8 +525,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
                     t = new TypeDesc(typeName[typeIndex]);
                     typeIndexToTypeDesc[typeIndex] = t;
                 }
-                t.totalSize += (ulong)size * (ulong)count;
-                t.count += count;
+                t.TotalSize += (ulong)size * (ulong)count;
+                t.Count += count;
 
                 totalSize += (ulong)size * (ulong)count;
                 totalCount += count;
@@ -580,8 +566,8 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             {
                 for (int i = 0; i < buckets.Length; i++)
                 {
-                    buckets[i].typeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
-                    buckets[i].totalSize = 0;
+                    buckets[i].TypeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
+                    buckets[i].TotalSize = 0;
                 }
                 return;
             }
@@ -600,11 +586,11 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             minSize = startSize;
             for (int i = 0; i < buckets.Length; i++)
             {
-                buckets[i].minSize = (int)Math.Round(minSize);
+                buckets[i].MinSize = (int)Math.Round(minSize);
                 minSize *= scaleFactor;
-                buckets[i].maxSize = (int)Math.Round(minSize) - 1;
-                buckets[i].typeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
-                buckets[i].selected = false;
+                buckets[i].MaxSize = (int)Math.Round(minSize) - 1;
+                buckets[i].TypeDescToSizeCount = new Dictionary<TypeDesc, SizeCount>();
+                buckets[i].Selected = false;
             }
         }
 
@@ -612,18 +598,18 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
         {
             for (int i = 0; i < buckets.Length; i++)
             {
-                if (buckets[i].minSize <= size && size <= buckets[i].maxSize)
+                if (buckets[i].MinSize <= size && size <= buckets[i].MaxSize)
                 {
                     ulong totalSize = (ulong)size * (ulong)count;
-                    buckets[i].totalSize += totalSize;
+                    buckets[i].TotalSize += totalSize;
                     SizeCount sizeCount;
-                    if (!buckets[i].typeDescToSizeCount.TryGetValue(t, out sizeCount))
+                    if (!buckets[i].TypeDescToSizeCount.TryGetValue(t, out sizeCount))
                     {
                         sizeCount = new SizeCount();
-                        buckets[i].typeDescToSizeCount[t] = sizeCount;
+                        buckets[i].TypeDescToSizeCount[t] = sizeCount;
                     }
-                    sizeCount.size += totalSize;
-                    sizeCount.count += count;
+                    sizeCount.Size += totalSize;
+                    sizeCount.Count += count;
                     break;
                 }
             }
@@ -634,7 +620,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             int lo = 0;
             for (int i = 0; i < buckets.Length - 1; i++)
             {
-                if (buckets[i].totalSize != 0 || buckets[i + 1].totalSize != 0)
+                if (buckets[i].TotalSize != 0 || buckets[i + 1].TotalSize != 0)
                 {
                     break;
                 }
@@ -644,7 +630,7 @@ namespace nanoFramework.Tools.NanoProfiler.ViewModels
             int hi = buckets.Length - 1;
             for (int i = buckets.Length - 1; i >= 0; i--)
             {
-                if (buckets[i].totalSize != 0)
+                if (buckets[i].TotalSize != 0)
                 {
                     break;
                 }

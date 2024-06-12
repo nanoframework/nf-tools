@@ -87,8 +87,8 @@ namespace nanoFramework.Tools.NanoProfiler.CLRProfiler
             {
                 string scenario = log.fileName;
 
-              //  SummaryView summaryForm = new SummaryView(log, lastLogResult, scenario);
-             //   summaryForm.Show();
+                //  SummaryView summaryForm = new SummaryView(log, lastLogResult, scenario);
+                //   summaryForm.Show();
             }
         }
     }
