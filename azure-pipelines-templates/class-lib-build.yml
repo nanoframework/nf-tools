@@ -259,8 +259,6 @@ steps:
   condition: >-
     and(
       succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
@@ -269,19 +267,12 @@ steps:
     command: 'custom' 
     arguments: 'pack $(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(NF_ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NF_NATIVE_ASSEMBLY_CHECKSUM)"'
 
-# - task: NuGetCommand@2
-#   inputs:
-#     command: 'custom' 
-#     arguments: 'pack $(nugetPackageName).DELIVERABLES.nuspec -Version $(MY_NUGET_VERSION)'
-#     displayName: Pack NuGet with build deliverables class library
-
 - task: CopyFiles@1
   condition: >-
     and(
       succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      eq(variables['StartReleaseCandidate'], false)
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: Collecting deployable artifacts
   inputs:
@@ -318,8 +309,6 @@ steps:
   condition: >-
     and(
       succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
@@ -346,8 +335,6 @@ steps:
   condition: >-
     and(
       succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
@@ -361,9 +348,8 @@ steps:
   condition: >-
     and(
       succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      eq(variables['StartReleaseCandidate'], false)
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: Publish deployables artifacts
 

@@ -13,11 +13,8 @@ steps:
   condition: >-
     and(
       succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      eq(variables['StartReleaseCandidate'], false ),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
-      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   inputs:
     command: custom
@@ -42,11 +39,8 @@ steps:
   condition: >-
     and(
       succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      eq( variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
-      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
 
 # publish artifacts
@@ -58,11 +52,8 @@ steps:
   condition: >-
     and(
       succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
-      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: Publish deployables artifacts
 
