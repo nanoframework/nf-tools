@@ -65,8 +65,6 @@ jobs:
         name: Install .NET nanoFramework build components
 
       - uses: nuget/setup-nuget@v2
-        with:
-          nuget-version: '>=6.2'
 
       - name: Update dependencies
         uses: nanoframework/nanodu@v1
