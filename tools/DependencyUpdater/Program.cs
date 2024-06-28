@@ -817,7 +817,24 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                     File.WriteAllText(projectToUpdate, updatedProjContent);
                                 }
+            
+                                // Remove the <Private> elements NuGet adds to the project file
+                                // This could be async be the tool isn't using that so I'll skip it for now
+                                var projectDocument = XDocument.Load(projectToUpdate);
+                                var referenceElements = projectDocument.Root?.Descendants().Where(x => x.Name.LocalName == "Reference").ToList();
+                                
+                                foreach (var referenceElement in referenceElements)
+                                {
+                                    var privateElements = referenceElement.Descendants().Where(x => x.Name.LocalName == "Private").ToList();
+                                    foreach (var privateElement in privateElements)
+                                    {
+                                        privateElement.Remove();
+                                    }
+                                }
 
+                                using var projectFile = File.Create(projectToUpdate);
+                                projectDocument.Save(projectFile, SaveOptions.None);
+                                
                                 // load nuspec file content, if there is a nuspec file to update
                                 if (nuspecFileName is not null)
                                 {
