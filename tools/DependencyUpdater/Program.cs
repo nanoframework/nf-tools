@@ -805,19 +805,19 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
 
                                     Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
+                                    
+                                    // if this is the Test Framework, need to update the nfproj file too
+                                    if (packageName == "nanoFramework.TestFramework")
+                                    {
+                                        // read nfproj file
+                                        var nfprojFileContent = File.ReadAllText(projectToUpdate);
+
+                                        var updatedProjContent = Regex.Replace(nfprojFileContent, $"(?<=packages\\\\nanoFramework\\.TestFramework\\.)(?'version'\\d+\\.\\d+\\.\\d+)(?=\\\\build\\\\)", packageTargetVersion, RegexOptions.ExplicitCapture);
+
+                                        File.WriteAllText(projectToUpdate, updatedProjContent);
+                                    }
                                 }
-
-                                // if this is the Test Framework, need to update the nfproj file too
-                                if (packageName == "nanoFramework.TestFramework")
-                                {
-                                    // read nfproj file
-                                    var nfprojFileContent = File.ReadAllText(projectToUpdate);
-
-                                    var updatedProjContent = Regex.Replace(nfprojFileContent, $"(?<=packages\\\\nanoFramework\\.TestFramework\\.)(?'version'\\d+\\.\\d+\\.\\d+)(?=\\\\build\\\\)", packageTargetVersion, RegexOptions.ExplicitCapture);
-
-                                    File.WriteAllText(projectToUpdate, updatedProjContent);
-                                }
-            
+                                
                                 // Remove the <Private> elements NuGet adds to the project file
                                 // This could be async be the tool isn't using that so I'll skip it for now
                                 var privateElementsRemoved = false;
