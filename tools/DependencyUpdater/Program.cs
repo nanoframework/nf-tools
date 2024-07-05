@@ -817,7 +817,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                         File.WriteAllText(projectToUpdate, updatedProjContent);
                                     }
                                 }
-                                
+
                                 // Remove the <Private> elements NuGet adds to the project file
                                 // This could be async be the tool isn't using that so I'll skip it for now
                                 var privateElementsRemoved = false;
