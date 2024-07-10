@@ -187,74 +187,6 @@ steps:
     versionSpec: '= 3.0' 
     addToPath: true
 
-# generate change log
-- powershell: |
-    gem install github_changelog_generator --quiet --no-document
-    # need to call it passing both cache options with full path otherwise it won't work
-    github_changelog_generator --token $(GitHubToken) --cache-log  $env:AGENT_TEMPDIRECTORY\github-changelog-logger.log --cache-file $env:AGENT_TEMPDIRECTORY\github-changelog-http-cache --pr-wo-labels
-  condition: >-
-    and(
-      succeeded(),
-      or(
-        eq(variables['SetReleaseDraftVar.RELEASE_VERSION'], 'True'),
-        and(
-          eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-          not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
-          startsWith(variables['Build.SourceBranchName'], 'main'),
-          not(contains(variables['Build.SourceBranchName'], 'update-dependencies'))
-        )
-      ),
-      eq(variables['StartReleaseCandidate'], false)
-    )
-  displayName: Generate change log
-  continueOnError: true
-
-# copy change log to artifacts directory
-- task: CopyFiles@2
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      not(contains(variables['Build.SourceBranchName'], 'update-dependencies')),
-      eq(variables['StartReleaseCandidate'], false)
-    )
-  displayName: Copy Changelog
-  continueOnError: true
-  inputs:
-    SourceFolder: '$(System.DefaultWorkingDirectory)'
-    Contents: 'CHANGELOG.md'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
-
-# push new changelog to GitHub repo
-- task: PowerShell@2
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
-      not(contains(variables['Build.SourceBranchName'], 'update-dependencies')),
-      eq(variables['StartReleaseCandidate'], false)
-    )
-  displayName: Push changelog to GitHub
-  continueOnError: true
-  inputs:
-    targetType: 'inline'
-    script: |
-      git add CHANGELOG.md
-      git commit -m "Update CHANGELOG for v$(MY_NUGET_VERSION)" -m"***NO_CI***"
-
-      git config user.email ${{ parameters.gitEmail }}
-      git config user.name ${{ parameters.gitUser }}
-      
-      # compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
-      # 'encoded token' is the Base64 of the string "nfbot:personal-token"
-      $auth = "basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("nfbot:$(GitHubToken)")))"
-
-      git -c http.extraheader="AUTHORIZATION: $auth" push origin "HEAD:$(Build.SourceBranchName)"
-
 - task: NuGetCommand@2
   condition: >-
     and(
@@ -280,7 +212,6 @@ steps:
     Contents: |
       *$(nugetPackageName)*.nupkg
       *$(nugetPackageName)*.snupkg
-      CHANGELOG.md
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
 
@@ -393,27 +324,4 @@ steps:
     includeSymbols: true
     publishFeedCredentials: 'NuGet-$(System.TeamProject)'
 
-# create GitHub release build from main branch
-- task: GithubRelease@1
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      startsWith(variables['Build.SourceBranch'], 'refs/heads/main'),
-      not(contains(variables['Build.SourceBranch'], 'preview')),
-      eq(variables['StartReleaseCandidate'], false)
-    )
-  displayName: Create/Update GitHub release
-  inputs:
-    action: edit
-    gitHubConnection: 'github.com_nano-$(System.TeamProject)'
-    tagSource: userSpecifiedTag
-    tag: v$(MY_NUGET_VERSION)
-    title: '$(nugetPackageName) Library v$(MY_NUGET_VERSION)'
-    releaseNotesSource: inline
-    releaseNotesInline: 'Check the [changelog]($(Build.Repository.Uri)/blob/$(Build.SourceBranchName)/CHANGELOG.md).<br><br><h4>Install from NuGet</h4><br>The following NuGet packages are available for download from this release:<br>:package: [.NET](https://www.nuget.org/packages/$(nugetPackageName)/$(MY_NUGET_VERSION)) v$(MY_NUGET_VERSION).'
-    assets: '$(Build.ArtifactStagingDirectory)/*$(nugetPackageName).$(MY_NUGET_VERSION).nupkg'
-    isPreRelease: false
-    addChangeLog: false
-    
+- template: create-github-release.yml

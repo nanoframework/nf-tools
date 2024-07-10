@@ -1,0 +1,35 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+steps:
+
+  # create GitHub release build from main branch
+  - task: GithubRelease@1
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['System.PullRequest.PullRequestId'], ''),
+        not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
+        startsWith(variables['Build.SourceBranch'], 'refs/heads/main'),
+        not(contains(variables['Build.SourceBranch'], 'preview')),
+        eq(variables['StartReleaseCandidate'], false)
+      )
+    displayName: Create/Update GitHub release
+    inputs:
+      action: edit
+      gitHubConnection: "github.com_nano-$(System.TeamProject)"
+      tagSource: userSpecifiedTag
+      tag: v$(MY_NUGET_VERSION)
+      title: "$(nugetPackageName) Library v$(MY_NUGET_VERSION)"
+      assets: "$(Build.ArtifactStagingDirectory)/*$(nugetPackageName).$(MY_NUGET_VERSION).nupkg"
+      isPreRelease: false
+      addChangeLog: true
+      changeLogType: issueBased
+      changeLogLabels: |
+        [
+          { "label" : "Type: bug", "displayName" : "Bugs fixed", "state" : "closed" },
+          { "label" : "Type: enhancement", "displayName" : "Enhancements and new features", "state" : "closed" },
+          { "label" : "Breaking-Change", "displayName" : "Breaking Changes", "state" : "closed" },
+          { "label" : "Type: dependencies", "displayName" : "Dependencies updated", "state" : "closed" },
+          { "label" : "Type: documentation", "displayName" : "Documentation", "state" : "closed" }
+        ]
