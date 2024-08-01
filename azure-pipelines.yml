@@ -174,7 +174,6 @@ jobs:
       .\sign code azure-key-vault `
       "**/*.nupkg" `
       --base-directory "$(Build.ArtifactStagingDirectory)" `
-      --file-list "$(Build.Repository.LocalPath)\config\filelist.txt" `
       --description ".NET nanoFramework VersionCop" `
       --description-url "https://github.com/$env:Build_Repository_Name" `
       --azure-key-vault-tenant-id "$(SignTenantId)" `
@@ -320,7 +319,6 @@ jobs:
       .\sign code azure-key-vault `
       "**/*.nupkg" `
       --base-directory "$(Build.ArtifactStagingDirectory)" `
-      --file-list "$(Build.Repository.LocalPath)\config\filelist.txt" `
       --description ".NET nanoFramework DependencyUpdater" `
       --description-url "https://github.com/$env:Build_Repository_Name" `
       --azure-key-vault-tenant-id "$(SignTenantId)" `
