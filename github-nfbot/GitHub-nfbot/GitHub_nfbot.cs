@@ -37,7 +37,7 @@ namespace nanoFramework.Tools.GitHub
         private const string _prCommentUserIgnoringTemplateContent = "😯 I'm afraid you'll have to use the PR template like the rest of us...\r\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
         private const string _prCommentChecklistWithOpenItemsTemplateContent = ":disappointed: I'm afraid you'll left some tasks behind...\r\nMake sure you've went through all the tasks in the list. If you have questions we are here to help.";
         private const string _prCommunityTargetMissingTargetContent = ":disappointed: You need to check which targets are affected in the list...\\r\\nMake sure you follow the PR template. After doing that feel free to reopen the PR.\\r\\nIf you have questions we are here to help.";
-        private const string _fixCheckListComment = "I've fixed the checklist for you.\\r\\nFYI, the correct format is [x], no spaces inside brackets.";
+        private const string _fixCheckListComment = "I've fixed the checklist for you.\\r\\nFYI, the correct format is [x], no spaces inside brackets, no other chars.";
         private const string _missingProjectToReproduceComment = "please provide a minimal solution that reproduces the issue you’re reporting, preferably a link to a GitHub repository (or similar).\r\nWhy? Unless the code to reproduce the issue it’s just a couple of lines from the standard API, it takes time! 😯\r\nSetup a full project on Visual Studio, adding references to the required NuGets and/or whatever other projects you may be referencing, chasing the correct versions, copying, pasting, and adapting whatever code you may have provided, etc. All that takes time to the developer working on this. Just to get started. It’s not even working on the issue yet and has already wasted a lot of precious time.\r\nWe’ll help you, for sure! We want to help but, please, make our life easier, OK? 😅";
 
         // strings for issues content
@@ -574,10 +574,11 @@ namespace nanoFramework.Tools.GitHub
 
                 // DEBUG helper
 #if DEBUG
+                var prToForceTesting = 20;
                 matchingPr = await _octokitClient.PullRequest.Get(
                     _gitOwner,
                     payload.repository.name.ToString(),
-                    764);
+                    prToForceTesting);
 #endif
 
                 if (matchingPr != null)
@@ -1432,16 +1433,11 @@ namespace nanoFramework.Tools.GitHub
             var prBodyHash = prBody.GetHashCode();
 
             // fix any typos in check lists
-            string prBodyFixed = prBody.
-                Replace("[ x]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace("[x ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace("[ X]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace("[X ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace("x[ ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace("X[ ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace(" x[ ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace(" X[ ]", "[x]", StringComparison.InvariantCultureIgnoreCase).
-                Replace("[]", "[ ]", StringComparison.InvariantCultureIgnoreCase);
+            // Define a regex pattern to match any character inside the brackets, including optional spaces
+            string badCheckBoxesPattern = @"\[\s*[^\s\]]\s*\]";
+
+            // Replace all matches with "[x]"
+            string prBodyFixed = Regex.Replace(prBody, badCheckBoxesPattern, "[x]");
 
             if (prBodyHash != prBodyFixed.GetHashCode())
             {
