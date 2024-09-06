@@ -15,6 +15,9 @@ parameters:
   - name: gitEmail
     type: string
     default: nanoframework@outlook.com
+  - name: skipSonarCloudAnalysis
+    type: boolean
+    default: false
   - name: sonarCloudProject
     type: string
     default: dummy-key
@@ -56,7 +59,8 @@ steps:
     and(
       succeeded(),
       eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      not(${{ parameters.skipSonarCloudAnalysis }})
     )
   displayName: 'Prepare analysis on SonarCloud'
   inputs:
@@ -159,7 +163,8 @@ steps:
     and(
       succeeded(),
       eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      not(${{ parameters.skipSonarCloudAnalysis }})
     )
   displayName: 'Run Code Analysis'
   continueOnError: true
@@ -169,7 +174,8 @@ steps:
     and(
       succeeded(),
       eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      not(${{ parameters.skipSonarCloudAnalysis }})
     )
   displayName: 'Publish Quality Gate Result'
   continueOnError: true
