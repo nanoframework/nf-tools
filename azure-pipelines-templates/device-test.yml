@@ -38,10 +38,12 @@ stages:
           inputs:
             path: '$(System.DefaultWorkingDirectory)'
 
-        - bash: |
-            # ensure nanoff is the last version
-            dotnet tool install nanoff --tool-path /azp/tools
+        - task: DotNetCoreCLI@2
           displayName: 'Install nanoff'
+          inputs:
+            command: custom
+            custom: tool
+            arguments: 'install nanoff --tool-path /azp/tools'
 
         - ${{ each tests in parameters.unitTestRunsettings }}:
           - bash: |
