@@ -7,6 +7,10 @@ on:
       - main
     paths:
       - github-nfbot/GitHub-nfbot/**
+  pull_request:
+    paths:
+      - github-nfbot/GitHub-nfbot/**
+
 env:
   AZURE_FUNCTIONAPP_NAME: NanoFramework-GitHubBot
   AZURE_FUNCTIONAPP_PACKAGE_PATH: .\published
@@ -33,6 +37,7 @@ jobs:
         dotnet build "github-nfbot/GitHub-nfbot" --configuration ${{ env.CONFIGURATION }} --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
 
     - name: Deploy to Azure Function App
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: Azure/functions-action@v1
       with:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
