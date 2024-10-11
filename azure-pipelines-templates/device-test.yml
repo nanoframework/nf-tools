@@ -1,0 +1,156 @@
+parameters:
+  - name: appComponents
+    displayName: "Component name"
+    type: object
+  - name: unitTestRunsettings
+    displayName: |
+      Usage: unitTestRunsettings,unitTestDll
+      Example:
+        - nano.runsettings,bin/Release/NFUnitTest.dll
+        - Repo/nano.runsettings,Repo/bin/Release/NFUnitTest.dll
+      Unit test runsettings file. As default, nano.runsettings which will be represent $(System.DefaultWorkingDirectory)/Artifacts/nano.runsettings.
+      Unit test DLL. As default, bin/release/NFUnitTest.dll which will be represent $(System.DefaultWorkingDirectory)/Artifacts/bin/release/NFUnitTest.dll.
+    type: object
+    default:
+      - 'nano.runsettings,bin/Release/NFUnitTest.dll'
+  - name: MaxRetries
+    displayName: "Maximum number of retries"
+    type: number
+    default: 5
+
+stages:
+  - stage: Test_${{ replace(parameters.appComponents, '-', '_') }}
+    dependsOn: Build
+    displayName: Test for ${{ parameters.appComponents }}
+
+    pool:
+      name: TestStream
+      demands:
+        - ${{ parameters.appComponents }}
+
+    jobs:
+      - job:
+        displayName: 'Test job for ${{ parameters.appComponents }}'
+
+        steps:
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download Pipeline Artifact'
+            inputs:
+              path: '$(System.DefaultWorkingDirectory)'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Install nanoff'
+            inputs:
+              command: custom
+              custom: tool
+              arguments: 'install nanoff --tool-path /azp/tools'
+
+          - ${{ each tests in parameters.unitTestRunsettings }}:
+            - bash: |
+                # flash the device with nanoff
+                SerialPort=$(cat /azp/config/configuration.json | jq -r '.capabilities.${{ parameters.appComponents }}')
+
+                # Maximum number of retries
+                MAX_RETRIES=${{ parameters.MaxRetries }}
+                # Delay between retries in seconds
+                DELAY=2
+                # Initialize the counter
+                attempt=0
+                # Baud rates to try
+                BAUD_RATES=(1500000 1000000 500000 250000 150000)
+                # Initialize baud rate index
+                baud_index=0
+
+                # Loop to retry the function call
+                while (( attempt < MAX_RETRIES )); do
+                  nanoff --target ${{ parameters.appComponents }} --update --masserase --serialport $(echo $SerialPort) --baud ${BAUD_RATES[$baud_index]}
+                  status=$?
+                  if [ $status -eq 0 ]; then
+                      break
+                  else
+                      ((attempt++))
+                      ((baud_index++))
+                      if (( baud_index >= ${#BAUD_RATES[@]} )); then
+                          baud_index=${#BAUD_RATES[@]} # reset index to the minimum speed
+                      fi
+                      sleep $DELAY
+                  fi
+                done
+
+                if [ $attempt -eq $MAX_RETRIES ]; then
+                    echo "Flashing failed after $MAX_RETRIES attempts."
+                    exit 1
+                fi
+              displayName: 'Flash device'
+              retryCountOnTaskFailure: 3
+
+            - bash: |
+                # replace <IsRealHardware>False</IsRealHardware> by <IsRealHardware>True</IsRealHardware> in nano.runsettings
+                sed -i "s/<IsRealHardware>False<\/IsRealHardware>/<IsRealHardware>True<\/IsRealHardware>/g" $(System.DefaultWorkingDirectory)/Artifacts/${{ split(tests, ',')[0]}}
+                sed -i "s/<ResultsDirectory>.*<\/ResultsDirectory>/<ResultsDirectory>\.\/TestResults<\/ResultsDirectory>/g" $(System.DefaultWorkingDirectory)/Artifacts/${{ split(tests, ',')[0]}}
+                # replace the serial port by the one in the configuration for parameters.appComponents
+                SerialPort=$(cat /azp/config/configuration.json | jq -r '.capabilities.${{ parameters.appComponents }}')
+                sed -i "s|<RealHardwarePort>.*<\/RealHardwarePort>|<RealHardwarePort>$(echo $SerialPort)<\/RealHardwarePort>|g" $(System.DefaultWorkingDirectory)/Artifacts/${{ split(tests, ',')[0]}}
+                cat $(System.DefaultWorkingDirectory)/Artifacts/${{ split(tests, ',')[0]}}
+                exit $?
+              displayName: 'Update nano.runsettings'
+
+            - bash: |
+                # Maximum number of retries
+                MAX_RETRIES=${{ parameters.MaxRetries }}
+                # Delay between retries in seconds
+                DELAY=2
+                # Initialize the counter
+                attempt=0
+                # Define the base directory to search in
+                BASE_DIR=$(System.DefaultWorkingDirectory)/Artifacts
+
+                # Use the find command to search for paths starting with packages/nanoFramework.TestFramework
+                TESTADAPTER_PATH=$(find "$BASE_DIR" -type d -path "*/packages/nanoFramework.TestFramework*.*" | head -n 1)
+
+                # Extract the directory path from the unitTestRunsettings parameter
+                UNIT_TEST_RUNSETTINGS_DIR=$(dirname "$BASE_DIR/${{ split(tests, ',')[0] }}")
+
+                # Loop to retry the function call
+                while (( attempt < MAX_RETRIES )); do
+                    RESULT_TEST=$(mono /azp/TestPlatform/vstest.console.exe $BASE_DIR/${{ split(tests, ',')[1] }} /Settings:$BASE_DIR/${{ split(tests, ',')[0]}} /TestAdapterPath:$TESTADAPTER_PATH /Logger:trx)
+                    echo "$RESULT_TEST"
+                    if [[ "$RESULT_TEST" == *"Couldn't connect to the device"* || "$RESULT_TEST" == *"Couldn't find any valid nanoDevice"* ]]; then
+                        echo "Test failed. Retrying in $DELAY seconds..."
+                        # we need to delete the trx file to avoid confusion but we keep the last one
+                        if [ $attempt -eq $MAX_RETRIES ]; then
+                          echo "Test failed after $MAX_RETRIES attempts."
+                          exit 1
+                        else
+                          find "$UNIT_TEST_RUNSETTINGS_DIR"/TestResults -type f -name "*.trx" -exec rm -f {} \;
+                          ((attempt++))
+                          sleep $DELAY
+                        fi
+                    elif [[ "$RESULT_TEST" =~ "The argument .* is invalid." ]]; then
+                        echo "Test failed as arguments are not valid."
+                        exit 1
+                    else
+                        break
+                    fi
+                done
+              displayName: 'Run tests'
+              timeoutInMinutes: 120
+              retryCountOnTaskFailure: 3
+            
+            - task: PublishTestResults@2
+              inputs:
+                testResultsFormat: 'VSTest'
+                testResultsFiles: '**/*.trx'
+
+            - bash: |
+                # Define the base directory to search in
+                BASE_DIR=$(System.DefaultWorkingDirectory)/Artifacts
+                # Extract the directory path from the unitTestRunsettings parameter
+                UNIT_TEST_RUNSETTINGS_DIR=$(dirname "$BASE_DIR/${{ split(tests, ',')[0] }}")
+
+                # Find and remove all .trx files in the subdirectory
+                find "$UNIT_TEST_RUNSETTINGS_DIR"/TestResults -type f -name "*.trx" -exec rm -f {} \;
+
+                # Optional: Print a message indicating completion
+                echo "All .trx files have been removed from $unitTestRunsettings"
+              displayName: Cleaning tests results
