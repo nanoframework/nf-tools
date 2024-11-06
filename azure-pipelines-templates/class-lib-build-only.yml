@@ -52,7 +52,7 @@ steps:
 
 - template: prepare-release.yml
 
-- task: SonarCloudPrepare@2
+- task: SonarCloudPrepare@3
   condition: >-
     and(
       succeeded(),
@@ -64,12 +64,13 @@ steps:
   inputs:
     SonarCloud: 'sonarcloud-$(System.TeamProject)'
     organization: 'nanoframework'
-    scannerMode: 'MSBuild'
+    scannerMode: 'dotnet'
     projectKey: '${{ parameters.sonarCloudProject }}'
     extraProperties: |
      sonar.exclusions=**/obj/**,**/*.dll
      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/**/**.coverage
      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
+     sonar.scanner.skipJreProvisioning=true
 
 - task: InstallNanoMSBuildComponents@1
   condition: >-
@@ -158,7 +159,7 @@ steps:
     )
   displayName: Set release draft var
 
-- task: SonarCloudAnalyze@2
+- task: SonarCloudAnalyze@3
   condition: >-
     and(
       succeeded(),
@@ -168,7 +169,7 @@ steps:
     )
   displayName: 'Run Code Analysis'
 
-- task: SonarCloudPublish@2
+- task: SonarCloudPublish@3
   condition: >-
     and(
       succeeded(),
