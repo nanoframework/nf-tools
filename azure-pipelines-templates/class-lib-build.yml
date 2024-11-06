@@ -38,6 +38,7 @@ steps:
 # need this here in order to persist GitHub credentials 
 - checkout: self
   submodules: true
+  fetchDepth: 0
 
 - script: |
     git config --global user.email ${{ parameters.gitEmail }}
