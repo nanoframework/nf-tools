@@ -207,6 +207,9 @@ stages:
                     elif [[ "$RESULT_TEST" =~ "The argument .* is invalid." ]]; then
                         echo "Test failed as arguments are not valid."
                         exit 1
+                    elif tail -n 5 <<< "$RESULT_TEST" | grep -qE "Failed: [1-9][0-9]*"; then
+                        echo "Test failed with non-zero failures."
+                        exit 1
                     else
                         break
                     fi
