@@ -19,7 +19,7 @@ steps:
   inputs:
     command: custom
     custom: tool
-    arguments: install --tool-path . sign --version 0.9.1-beta.23530.1
+    arguments: install --tool-path . sign --version 0.9.1-beta.24529.1
 
 - pwsh: |
     .\sign code azure-key-vault `
