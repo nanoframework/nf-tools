@@ -34,7 +34,7 @@ jobs:
     
     - name: Build Azure Function
       run: |
-        dotnet build "github-nfbot/GitHub-nfbot" --configuration ${{ env.CONFIGURATION }} --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+        dotnet build "github-nfbot/GitHub-nfbot" --configuration ${{ env.CONFIGURATION }} --property:PublishDir="${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
 
     - name: Deploy to Azure Function App
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -1887,7 +1887,7 @@ namespace nanoFramework.Tools.GitHub
                 return (int)response.StatusCode;
             }
 
-            return 0;
+            //return 0;
         }
 
         public static async Task<dynamic> GetGitHubRequest(
