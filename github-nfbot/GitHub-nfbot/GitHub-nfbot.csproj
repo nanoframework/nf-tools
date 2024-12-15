@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
     <RootNamespace>GitHub_nfbot</RootNamespace>
     <UserSecretsId>eb38317d-abae-4ecf-902b-71be30f7c744</UserSecretsId>
