@@ -72,7 +72,7 @@ stages:
 
                 # Loop to retry the function call
                 while (( attempt < MAX_RETRIES )); do
-                  nanoff --target ${{ parameters.appComponents }} --update --masserase --serialport $(echo $SerialPort) --baud ${BAUD_RATES[$baud_index]}
+                  nanoff --target ${{ parameters.appComponents }} --update --masserase --serialport $(echo $SerialPort) --baud ${BAUD_RATES[$baud_index]} --verbosity m 
                   status=$?
                   if [ $status -eq 0 ]; then
                       break
@@ -116,7 +116,7 @@ stages:
 
                 # Loop to retry the function call
                 while ($attempt -lt $MAX_RETRIES) {
-                  $(Agent.HomeDirectory)\tools\nanoff --target $appComponent --update --masserase --serialport $SerialPort --baud $BAUD_RATES[$baud_index]
+                  $(Agent.HomeDirectory)\tools\nanoff --target $appComponent --update --masserase --serialport $SerialPort --baud $BAUD_RATES[$baud_index] --verbosity m 
                   $status = $LASTEXITCODE
                   if ($status -eq 0) {
                       break
