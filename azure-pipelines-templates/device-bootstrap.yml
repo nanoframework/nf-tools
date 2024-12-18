@@ -1,3 +1,6 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
 parameters:
   - name: AZURE_DEVOPS_ORG
     displayName: Azure DevOps organization
@@ -15,6 +18,11 @@ parameters:
     default: TestStream
 
 steps:
+  # need this here in order to persist GitHub credentials 
+  - checkout: self
+    submodules: true
+    fetchDepth: 0
+
   - script: |
       # Validate required environment variables
       for var in AZURE_DEVOPS_PAT BUILD_SOURCEBRANCH; do
