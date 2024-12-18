@@ -39,6 +39,9 @@ steps:
       poolName="${{ parameters.AZURE_POOL_NAME }}"
       branch="${BUILD_SOURCEBRANCH}"
 
+      # fix the branch name to trigger PR build
+      branch=$(echo "$branch" | sed 's/merge/head/')
+
       # Encode the PAT
       patEncoded=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64)
 
