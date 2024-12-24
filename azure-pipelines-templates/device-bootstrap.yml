@@ -18,10 +18,9 @@ parameters:
     default: TestStream
 
 steps:
-  # need this here in order to persist GitHub credentials 
   - checkout: self
-    submodules: true
-    fetchDepth: 0
+    clean: true
+    fetchDepth: 1
 
   - script: |
       # Validate required environment variables
@@ -39,8 +38,49 @@ steps:
       poolName="${{ parameters.AZURE_POOL_NAME }}"
       branch="${BUILD_SOURCEBRANCH}"
 
-      # fix the branch name to trigger PR build
+      # Replace 'merge' with 'head' in the $branch variable
       branch=$(echo "$branch" | sed 's/merge/head/')
+      echo "Updated branch: $branch"
+
+      # Fetch the PR details from GitHub to get the title
+      # Extract the PR ID from the branch name
+      auth=$(echo -n ":$GITHUBTOKEN" | base64)
+      auth="basic $auth"
+
+      prUrl="https://api.github.com/repos/$BUILD_REPOSITORY_NAME/pulls/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
+      response=$(curl -s -w "%{http_code}" -H "Authorization: $auth" -X GET "$prUrl")
+      http_code=${response: -3}
+      content=${response::-3}
+
+      if [ $http_code -eq 200 ]; then  
+        prDescription=$(echo "$content" | jq -r '.body')  
+        if [ "$prDescription" = "null" ]; then  
+            echo "Error: Failed to extract PR description from response"  
+            exit 1  
+        fi
+      else  
+          echo "Error: Failed to fetch PR details. Status code: $http_code"  
+          echo "Response: $content"  
+          exit 1  
+      fi  
+
+      echo "PR description: $prDescription"
+
+      # Get the PR creator
+      prCreator=$(echo "$content" | jq -r '.user.login')
+
+      echo "PR Creator: $prCreator"
+
+      # Check if the PR creator is nfbot AND description includes the version update tag, 
+      # and set skipHardwareTest accordingly
+      # This is to skip the hardware test for update PRs created by nfbot
+      if [ "$prCreator" == "nfbot" ] && [[ "$prDescription" == "[version update]"* ]]; then
+          skipHardwareTest=true
+      else
+          skipHardwareTest=false
+      fi
+
+      echo "Skip Hardware Test: $skipHardwareTest"
 
       # Encode the PAT
       patEncoded=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64)
@@ -51,29 +91,34 @@ steps:
         -H "Content-Type: application/json"
       )
 
-      # Get the pool ID
-      url="https://dev.azure.com/${organization}/_apis/distributedtask/pools?poolName=${poolName}&api-version=7.1"
-      AZP_POOL_AGENTS=$(curl -s "${headers[@]}" -X GET "$url")
-      poolId=$(echo "$AZP_POOL_AGENTS" | jq -r '.value[0].id')
-
-      echo "Pool ID: $poolId"
-
-      # Define the URL to get all agents in the pool
-      url="https://dev.azure.com/${organization}/_apis/distributedtask/pools/${poolId}/agents?includeCapabilities=true&api-version=7.1"
-
-      response=$(curl -s -w "%{http_code}" "${headers[@]}" -X GET "$url")
-      http_code=${response: -3}
-      content=${response::-3}
-
-      if [ $http_code -eq 200 ]; then
-          # Extract all userCapabilities names for online and enabled agents as a unique list
-          capabilityNames=$(echo "$content" | jq -r '[.value[] | select(.status == "online" and .enabled == true) | .userCapabilities | keys] | unique | flatten | join("\n- ")')
+      if [ "$skipHardwareTest" = "true" ]; then
+        # Set the capabilityNames to none
+        capabilityNames="none"       
       else
-          echo "Failed to retrieve agent capabilities. HTTP Status Code: $http_code"
-          echo "Response: \"$content\""
-          exit 1
+        # Get the pool ID
+        url="https://dev.azure.com/${organization}/_apis/distributedtask/pools?poolName=${poolName}&api-version=7.1"
+        AZP_POOL_AGENTS=$(curl -s "${headers[@]}" -X GET "$url")
+        poolId=$(echo "$AZP_POOL_AGENTS" | jq -r '.value[0].id')
+
+        echo "Pool ID: $poolId"
+
+        # Define the URL to get all agents in the pool
+        url="https://dev.azure.com/${organization}/_apis/distributedtask/pools/${poolId}/agents?includeCapabilities=true&api-version=7.1"
+
+        response=$(curl -s -w "%{http_code}" "${headers[@]}" -X GET "$url")
+        http_code=${response: -3}
+        content=${response::-3}
+
+        if [ $http_code -eq 200 ]; then
+            # Extract all userCapabilities names for online and enabled agents as a unique list
+            capabilityNames=$(echo "$content" | jq -r '[.value[] | select(.status == "online" and .enabled == true) | .userCapabilities | keys] | unique | flatten | join("\n- ")')
+        else
+            echo "Failed to retrieve agent capabilities. HTTP Status Code: $http_code"
+            echo "Response: \"$content\""
+            exit 1
+        fi
+        echo "Unique userCapabilities names: \"$capabilityNames\""
       fi
-      echo "Unique userCapabilities names: \"$capabilityNames\""
 
       # Prepare the parameters
       parametersJson=$(jq -n --arg appComponents "- $capabilityNames" '{templateParameters: {appComponents: $appComponents}}')
@@ -82,14 +127,13 @@ steps:
       echo "Branch for PR: \"$branch\""
 
       # Define the request body
-      bodyJson=$(jq -n --argjson parameters "$parametersJson" --arg branch "$branch" '{
+      bodyJson=$(jq -n --argjson parameters "$parametersJson" --arg branch "$branch" --arg prTitle "$prTitle" '{
         resources: {
-          repositories:
-            {
-              self: {
-                refName: $branch
-              }
+          repositories: {
+            self: {
+              refName: $branch
             }
+          }
         },
         templateParameters: $parameters.templateParameters
       }')
