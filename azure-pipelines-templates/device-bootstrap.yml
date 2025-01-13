@@ -74,7 +74,7 @@ steps:
       # Check if the PR creator is nfbot AND description includes the version update tag, 
       # and set skipHardwareTest accordingly
       # This is to skip the hardware test for update PRs created by nfbot
-      if [ "$prCreator" == "nfbot" ] && [[ "$prDescription" == "[version update]"* ]]; then
+      if [[ "$prCreator" == "nfbot" && "$prDescription" == *"[version update]"* ]]; then
           skipHardwareTest=true
       else
           skipHardwareTest=false
