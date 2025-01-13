@@ -42,13 +42,13 @@ steps:
       branch=$(echo "$branch" | sed 's/merge/head/')
       echo "Updated branch: $branch"
 
-      # Fetch the PR details from GitHub to get the title
-      # Extract the PR ID from the branch name
-      auth=$(echo -n ":$GITHUBTOKEN" | base64)
-      auth="basic $auth"
-
       # if this is a PR build, get the PR title
       if [[ $branch == refs/pull/* ]]; then
+
+        # Fetch the PR details from GitHub to get the title
+        # Extract the PR ID from the branch name
+        auth=$(echo -n ":$GITHUBTOKEN" | base64)
+        auth="basic $auth"
 
         prUrl="https://api.github.com/repos/$BUILD_REPOSITORY_NAME/pulls/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
         response=$(curl -s -w "%{http_code}" -H "Authorization: $auth" -X GET "$prUrl")
