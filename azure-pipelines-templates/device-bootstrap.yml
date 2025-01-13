@@ -47,37 +47,50 @@ steps:
       auth=$(echo -n ":$GITHUBTOKEN" | base64)
       auth="basic $auth"
 
-      prUrl="https://api.github.com/repos/$BUILD_REPOSITORY_NAME/pulls/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
-      response=$(curl -s -w "%{http_code}" -H "Authorization: $auth" -X GET "$prUrl")
-      http_code=${response: -3}
-      content=${response::-3}
+      # if this is a PR build, get the PR title
+      if [[ $branch == refs/pull/* ]]; then
 
-      if [ $http_code -eq 200 ]; then  
-        prDescription=$(echo "$content" | jq -r '.body')  
-        if [ "$prDescription" = "null" ]; then  
-            echo "Error: Failed to extract PR description from response"  
+        prUrl="https://api.github.com/repos/$BUILD_REPOSITORY_NAME/pulls/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
+        response=$(curl -s -w "%{http_code}" -H "Authorization: $auth" -X GET "$prUrl")
+        http_code=${response: -3}
+        content=${response::-3}
+
+        if [ $http_code -eq 200 ]; then  
+          prDescription=$(echo "$content" | jq -r '.body')  
+          if [ "$prDescription" = "null" ]; then  
+              echo "Error: Failed to extract PR description from response"  
+              exit 1  
+          fi
+        else  
+            echo "Error: Failed to fetch PR details. Status code: $http_code"  
+            echo "Response: $content"  
             exit 1  
+        fi  
+
+        echo "PR description: $prDescription"
+
+        # Get the PR creator
+        prCreator=$(echo "$content" | jq -r '.user.login')
+
+        echo "PR Creator: $prCreator"
+
+        # Check if the PR creator is nfbot AND description includes the version update tag, 
+        # and set skipHardwareTest accordingly
+        # This is to skip the hardware test for update PRs created by nfbot
+        if [[ "$prCreator" == "nfbot" && "$prDescription" == *"[version update]"* ]]; then
+            skipHardwareTest=true
+        else
+            skipHardwareTest=false
         fi
-      else  
-          echo "Error: Failed to fetch PR details. Status code: $http_code"  
-          echo "Response: $content"  
-          exit 1  
-      fi  
 
-      echo "PR description: $prDescription"
-
-      # Get the PR creator
-      prCreator=$(echo "$content" | jq -r '.user.login')
-
-      echo "PR Creator: $prCreator"
-
-      # Check if the PR creator is nfbot AND description includes the version update tag, 
-      # and set skipHardwareTest accordingly
-      # This is to skip the hardware test for update PRs created by nfbot
-      if [[ "$prCreator" == "nfbot" && "$prDescription" == *"[version update]"* ]]; then
-          skipHardwareTest=true
       else
-          skipHardwareTest=false
+
+        # build from a branch, not a PR
+        echo "This is not a PR build"
+
+        # don't run hardware tests on non-PR builds
+        skipHardwareTest=true
+
       fi
 
       echo "Skip Hardware Test: $skipHardwareTest"
