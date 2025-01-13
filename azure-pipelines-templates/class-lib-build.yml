@@ -291,26 +291,6 @@ steps:
     )
   displayName: Publish deployables artifacts
 
-# push NuGet packages to AzureArtifacts feed (happens on every build except PRs)
-- task: NuGetCommand@2
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
-    ) 
-  continueOnError: true
-  displayName: Push NuGet packages to AzureArtifacts
-  inputs:
-    command: push
-    nuGetFeedType: external
-    allowPackageConflicts: true
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-    includeSymbols: true
-    publishFeedCredentials: 'AzureArtifacts-$(System.TeamProject)'
-
 # push NuGet class lib package to NuGet (happens on every build except PRs)
 - task: NuGetCommand@2
   condition: >-
