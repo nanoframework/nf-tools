@@ -62,6 +62,7 @@ namespace nanoFramework.Tools.GitHub
 
         // strings for PR content
         private const string _prDescription = "## Description";
+        private const string _prMotivationAndContext = "## Motivation and Context";
         private const string _prTypesOfChanges = "## Types of changes";
         private const string _prChecklist = "## Checklist";
 
@@ -1394,7 +1395,7 @@ namespace nanoFramework.Tools.GitHub
 
         private static async Task<bool> CheckLinkedIssuesAsync(Octokit.PullRequest pr, ILogger log)
         {
-            string commentContent;
+            string commentContent = string.Empty;
 
             // check for invalid link to issues
             if (pr.Body.Contains("- Fixes/Closes/Resolves nanoFramework/Home#NNNN"))
@@ -1405,17 +1406,31 @@ namespace nanoFramework.Tools.GitHub
             {
                 commentContent = "🤪 You have to make up your mind on how this PR addresses the issue. It either **fixes**, **closes** or **resolves** it. Can't have them all...";
             }
-            // TODO replace this with a regex
-            //else if ( ( prBody.Contains("- Fixes") ||
-            //            prBody.Contains("- Closes") ||
-            //            prBody.Contains("- Resolves")) &&
-            //            prBody.Contains(" #"))
-            //{
-            //    commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
-            //}
             else
             {
-                return true;
+                // Define the regex pattern to match the GitHub link verbs and the pattern KEYWORD #NNNN
+                string pattern = @"\b(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+\b";
+                string validPattern = @"\b(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+nanoFramework/Home#\d+\b";
+
+                // Find all matches of the invalid pattern
+                var matches = Regex.Matches(pr.Body, pattern);
+
+                foreach (Match match in matches)
+                {
+                    // Check if the match is not a valid pattern
+                    if (!Regex.IsMatch(match.Value, validPattern))
+                    {
+                        commentContent = ":disappointed: All our issues are tracked in Home repo. If this PR addresses an issue, make sure the reference to it follows the correct pattern: `nanoFramework/Home#NNNN`.";
+                        break;
+                    }
+                }
+
+                // any comment content?
+                if (string.IsNullOrEmpty(commentContent))
+                {
+                    // got here, so all is good
+                    return true;
+                }
             }
 
             await _octokitClient.Issue.Comment.Create(pr.Base.Repository.Id, pr.Number, $"Hi @{pr.User.Login},\r\n\r\n{commentContent}.{_fixRequestTagComment}");
@@ -1469,6 +1484,7 @@ namespace nanoFramework.Tools.GitHub
             // check for master PR template
             if (
                 prBody.Contains(_prDescription) &&
+                prBody.Contains(_prMotivationAndContext) &&
                 prBody.Contains(_prTypesOfChanges) &&
                 prBody.Contains(_prChecklist))
             {
