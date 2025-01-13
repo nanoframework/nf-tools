@@ -1300,7 +1300,6 @@ namespace nanoFramework.Tools.GitHub
             }
         }
 
-
         private static async Task<StartReleaseResult> QueueBuildAsync(string repositoryName, string branchName, ILogger log)
         {
             var personalAccessToken = Environment.GetEnvironmentVariable("DEVOPS_PATOKEN", EnvironmentVariableTarget.Process);
@@ -1886,8 +1885,6 @@ namespace nanoFramework.Tools.GitHub
 
                 return (int)response.StatusCode;
             }
-
-            //return 0;
         }
 
         public static async Task<dynamic> GetGitHubRequest(
