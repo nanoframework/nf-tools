@@ -641,6 +641,21 @@ class Program
                         break;
                     }
                 }
+
+                if (!dependencyFound)
+                {
+                    foreach (var nextLevelDependencyPackage in dependencyInfo.Dependencies)
+                    {
+                        dependencyFound = FindDependency(packageName, packageVersion, true, nextLevelDependencyPackage, targetFramework, ref dependencyPackageId, ref hintMessage, true);
+
+                        if (dependencyFound)
+                        {
+                            dependencyPackageId = nextLevelDependencyPackage.Id;
+
+                            break;
+                        }
+                    }
+                }
             }
 
             if (!dependencyFound && packageIdentity.Id == packageName)
