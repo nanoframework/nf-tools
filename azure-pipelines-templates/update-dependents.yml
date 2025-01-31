@@ -8,6 +8,12 @@ parameters:
   - name: waitBeforeUpdate
     type: boolean
     default: false
+  - name: packageTargetVersion
+    type: string
+    default: ''
+  - name: packageName
+    type: string
+    default: ''
 
 steps:
 - task: PowerShell@2
@@ -17,7 +23,6 @@ steps:
       succeeded(),
       ne(variables['StartReleaseCandidate'], 'true'),
       or(
-        startsWith(variables['Build.SourceBranch'], 'refs/heads/main'),
         contains(variables['GetCommitDetails.COMMIT_MESSAGE'], '***UPDATE_DEPENDENTS***'),
         eq(variables['UPDATE_DEPENDENTS'], 'true')
       )
@@ -26,16 +31,67 @@ steps:
     REPOS_TO_UPDATE: ${{ parameters.repositoriesToUpdate }}
     GITHUB_TOKEN: $(GitHubToken)
     WAIT_BEFORE_UPDATE: ${{ parameters.waitBeforeUpdate }}
+    PACKAGE_TARGET_VERSION: ${{ parameters.packageTargetVersion }}
+    PACKAGE_NAME: ${{ parameters.packageName }}
   inputs:
     targetType: 'inline'
     script: |
 
-      if ($env:WAIT_BEFORE_UPDATE -eq "true")
+      # if caller provided a package name, launch the updates after the package is published
+      if ($env:PACKAGE_NAME -ne "")
       {
-          # wait 15 minutes to allow nuget package to go through validation and indexing
-          'Waiting 15 minutes to allow package indexing...' | Write-Host -ForegroundColor Yellow
+          # need to use lower case package name to call NuGet API
+          $packageName = $env:PACKAGE_NAME.ToLower()
 
-          Start-Sleep -Seconds (15 * 60)
+          # if version wasn't provided, get the tag from the repo
+          if ($env:PACKAGE_TARGET_VERSION -eq "")
+          {
+              $packageTargetVersion = $env:Build_SourceBranch
+
+              # check if it's a tag
+              if ($packageTargetVersion -notlike "refs/tags/*")
+              {
+                  throw "ERROR: Branch name is not a tag! Either provide the version or checkout a tag before calling."
+              }
+              
+              # extract version from ref (refs/tags/v1.2.3)
+              $packageTargetVersion = $packageTargetVersion -replace "refs/tags/", ""
+          }
+          else
+          {
+              $packageTargetVersion = $env:PACKAGE_TARGET_VERSION
+          }
+
+          # if version starts with 'v', remove it
+          if ($packageTargetVersion.StartsWith("v"))
+          {
+              $packageTargetVersion = $packageTargetVersion.Substring(1)
+          }
+
+          $nugetApiUrl = "https://api.nuget.org/v3-flatcontainer/$packageName/index.json"
+
+          function Get-LatestNugetVersion {
+              param (
+                  [string]$url
+              )
+              try {
+                  $response = Invoke-RestMethod -Uri $url -Method Get
+                  return $response.versions[-1]
+              }
+              catch {
+                  throw "Error querying NuGet API: $_"
+              }
+          }
+
+          $latestNugetVersion = Get-LatestNugetVersion -url $nugetApiUrl
+
+          while ($latestNugetVersion -ne $packageTargetVersion) {
+              Write-Host "Latest version still not available from nuget.org feed. Waiting 5 minutes..."
+              Start-Sleep -Seconds 300
+              $latestNugetVersion = Get-LatestNugetVersion -url $nugetApiUrl
+          }
+
+          Write-Host "Version $latestNugetVersion available from nuget.org feed. Proceeding with update."
       }
 
       $librariesToUpdate = $env:REPOS_TO_UPDATE.Split([environment]::NewLine)
@@ -62,21 +118,26 @@ steps:
 
           try 
           {
-              $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $requestUrl -Header $headers -ContentType "application/json" -Body $requestContent
               'Triggering GitHub Action to update dependencies...' | Write-Host -NoNewline
-              'OK' | Write-Host -ForegroundColor Green
 
-              # give some slack for the next action to start the decrease the likelihood of hitting the GitHub API rate limit
-              Start-Sleep -Seconds (63)
+              $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $requestUrl -Header $headers -ContentType "application/json" -Body $requestContent
+
+              'OK' | Write-Host -ForegroundColor Green
           }
           catch 
           {
+              'Failed' | Write-Host -ForegroundColor Red
+
               $result = $_.Exception.Response.GetResponseStream()
               $reader = New-Object System.IO.StreamReader($result)
               $reader.BaseStream.Position = 0
               $reader.DiscardBufferedData()
               $responseBody = $reader.ReadToEnd();
 
-              throw "Error firing GitHub action: $responseBody"
+              Write-Host "Error firing GitHub action: $responseBody"
           }
+
+          # give some slack for the next action to start the decrease the likelihood of hitting the GitHub API rate limit
+          Start-Sleep -Seconds (30)
+
       }
