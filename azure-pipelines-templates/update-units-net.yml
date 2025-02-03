@@ -6,9 +6,9 @@ steps:
   displayName: Update UnitsNet
   condition: >-
     and(
-      succeeded(),
-      ne(variables['StartReleaseCandidate'], 'true'),
+      eq(variables['StartReleaseCandidate'], 'false'),
       or(
+        contains(variables['GetCommitDetails.COMMIT_MESSAGE'], '***UPDATE_DEPENDENTS***'),
         eq(variables['UPDATE_DEPENDENTS'], 'true'),
         startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
       )

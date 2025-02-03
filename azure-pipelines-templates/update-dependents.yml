@@ -20,11 +20,11 @@ steps:
   displayName: Update dependent class libs
   condition: >-
     and(
-      succeeded(),
-      ne(variables['StartReleaseCandidate'], 'true'),
+      eq(variables['StartReleaseCandidate'], 'false'),
       or(
         contains(variables['GetCommitDetails.COMMIT_MESSAGE'], '***UPDATE_DEPENDENTS***'),
-        eq(variables['UPDATE_DEPENDENTS'], 'true')
+        eq(variables['UPDATE_DEPENDENTS'], 'true'),
+        startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
       )
     )
   env:
