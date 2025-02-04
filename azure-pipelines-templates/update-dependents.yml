@@ -116,28 +116,28 @@ steps:
           $headers.Add("Authorization","$auth")
           $headers.Add("Accept","application/vnd.github.v3+json")
 
-          try 
-          {
-              'Triggering GitHub Action to update dependencies...' | Write-Host -NoNewline
+          'Triggering GitHub Action to update dependencies...' | Write-Host -NoNewline
 
-              $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri  $requestUrl -Header $headers -ContentType "application/json" -Body $requestContent
-
+          try {
+              $result = Invoke-RestMethod -Method Post -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::InternetExplorer -Uri $requestUrl -Header $headers -ContentType "application/json" -Body $requestContent
               'OK' | Write-Host -ForegroundColor Green
           }
-          catch 
-          {
+          catch {
               'Failed' | Write-Host -ForegroundColor Red
 
-              $result = $_.Exception.Response.GetResponseStream()
-              $reader = New-Object System.IO.StreamReader($result)
-              $reader.BaseStream.Position = 0
-              $reader.DiscardBufferedData()
-              $responseBody = $reader.ReadToEnd();
-
-              Write-Host "Error firing GitHub action: $responseBody"
+              if ($_.Exception.Response) {
+                  $result = $_.Exception.Response.GetResponseStream()
+                  $reader = New-Object System.IO.StreamReader($result)
+                  $reader.BaseStream.Position = 0
+                  $reader.DiscardBufferedData()
+                  $responseBody = $reader.ReadToEnd()
+                  Write-Host "Error firing GitHub action: $responseBody"
+              } else {
+                  Write-Host "Error firing GitHub action: $_"
+              }
           }
 
           # give some slack for the next action to start the decrease the likelihood of hitting the GitHub API rate limit
-          Start-Sleep -Seconds (30)
+          Start-Sleep -Seconds (10)
 
       }
