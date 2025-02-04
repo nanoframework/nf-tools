@@ -1036,7 +1036,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             var listToReturn = new List<string>();
-            foreach (var sln in solutionsToCheck)
+
+            foreach (var sln in solutionsToCheck.Where(s => s.EndsWith(".sln")))
             {
                 var solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
 
