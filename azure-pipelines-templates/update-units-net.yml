@@ -47,6 +47,13 @@ steps:
       git checkout master
       git checkout -b $newBranch master
 
+      # install nuget to tools folder
+      $nugetPath = "$env:Agent_TempDirectory/UnitsNet/.tools/"
+      mkdir $nugetPath
+      $nugetPath = "$nugetPath/nuget.exe"
+      Invoke-WebRequest -Uri https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile $nugetPath
+      Write-Host -Foreground Green "Downloaded NuGet.exe: $nugetPath"
+
       nuget restore UnitsNet.NanoFramework/GeneratedCode/UnitsNet.NanoFramework.sln
 
       cd CodeGen > $null
