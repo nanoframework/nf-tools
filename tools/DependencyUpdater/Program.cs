@@ -114,6 +114,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
+            // remove empty arguments
+            args = args.Where(a => !string.IsNullOrEmpty(a)).ToArray();
+
             _gitHubUser = gitHubUser;
             _baseBranch = branchToPr;
 
