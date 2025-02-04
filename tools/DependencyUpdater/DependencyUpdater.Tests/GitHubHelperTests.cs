@@ -16,7 +16,7 @@ public class GitHubHelperTests
     {
         var result = nanoFramework.Tools.DependencyUpdater.GitHubHelper.GetRepoNameFromInputString(inputData);
         Assert.IsTrue(result.Success);
-        
+
         var libName = nanoFramework.Tools.DependencyUpdater.GitHubHelper.GetLibNameFromRegexMatch(result);
         Assert.AreEqual(expectedResult, libName);
     }
