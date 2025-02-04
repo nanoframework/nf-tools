@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -506,6 +507,19 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // find part for SLN
                 var solutionPath = Directory.GetParent(solutionFile).FullName;
 
+                // find ALL packages.config files inside the solution projects
+                var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
+
+                // run pre-check for new versions available
+                if (!NewVersionsAvailable(packageConfigs))
+                {
+                    // no packages to update
+                    Console.WriteLine();
+                    Console.WriteLine($"INFO: no new versions available. *** SKIPPING ***.");
+
+                    continue;
+                }
+
                 // perform NuGet restore
                 Console.WriteLine();
                 Console.WriteLine($"INFO: restoring solution...");
@@ -514,9 +528,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     Environment.Exit(1);
                 }
-
-                // find ALL packages.config files inside the solution projects
-                var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
 
                 Console.WriteLine($"Found {packageConfigs.Length} packages.config files...");
 
@@ -817,12 +828,12 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                     File.WriteAllText(projectToUpdate, updatedProjContent);
                                 }
-            
+
                                 // Remove the <Private> elements NuGet adds to the project file
                                 // This could be async be the tool isn't using that so I'll skip it for now
                                 var projectDocument = XDocument.Load(projectToUpdate);
                                 var referenceElements = projectDocument.Root?.Descendants().Where(x => x.Name.LocalName == "Reference").ToList();
-                                
+
                                 foreach (var referenceElement in referenceElements)
                                 {
                                     var privateElements = referenceElement.Descendants().Where(x => x.Name.LocalName == "Private").ToList();
@@ -834,7 +845,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                 using var projectFile = File.Create(projectToUpdate);
                                 projectDocument.Save(projectFile, SaveOptions.None);
-                                
+
                                 // load nuspec file content, if there is a nuspec file to update
                                 if (nuspecFileName is not null)
                                 {
@@ -1284,6 +1295,57 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             return false;
         }
+        private static bool NewVersionsAvailable(string[] packageConfigs)
+        {
+            bool newVersionsAvailable = false;
+
+            // loop through all packages.config files
+            foreach (var packageConfig in packageConfigs)
+            {
+                // load packages.config 
+                var packageReader = new PackagesConfigReader(XDocument.Load(packageConfig));
+                var packageList = packageReader.GetPackages();
+
+                // loop through all packages in the file
+                var packageIdentities = packageList.Select(package => package.PackageIdentity);
+                foreach (var packageIdentity in packageIdentities)
+                {
+                    string nugetApiUrl = $"https://api.nuget.org/v3-flatcontainer/{packageIdentity.Id.ToLower()}/index.json";
+
+                    // query NuGet API for latest package version
+                    using (var httpClient = new HttpClient())
+                    {
+                        try
+                        {
+                            var json = httpClient.GetStringAsync(nugetApiUrl).Result;
+                            dynamic packageInfo = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
+                            var latestVersion = packageInfo.versions[packageInfo.versions.Count - 1];
+
+                            if (new Version(packageIdentity.Version.ToString()) != new Version(latestVersion.ToString()))
+                            {
+                                // there is a newer version available...
+                                newVersionsAvailable = true;
+
+                                // ... no need to check the rest of the packages
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"ERROR: Failed to fetch version info for {packageIdentity.Id}. Exception: {ex.Message}");
+                        }
+                    }
+                }
+
+                if (newVersionsAvailable)
+                {
+                    break;
+                }
+            }
+
+            return newVersionsAvailable;
+        }
+
 
         private enum PrCreationOutcome
         {
