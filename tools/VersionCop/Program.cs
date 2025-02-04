@@ -19,7 +19,6 @@ using System.Xml.Linq;
 class Program
 {
     private static IEnumerable<SourceRepository> _nugetRepositories;
-    private static DependencyInfoResource _dependencyInfoResourceAzureFeed;
     private static DependencyInfoResource _dependencyInfoResourceNuGet;
 
     /// <param name="solutionToCheck">Path to the solution to check.</param>
@@ -144,18 +143,13 @@ class Program
         // setup NuGet source and dependency resolver
         PackageSourceProvider sourceProvider = new(NullSettings.Instance, new[]
         {
-            new PackageSource("https://pkgs.dev.azure.com/nanoframework/feed/_packaging/sandbox/nuget/v3/index.json"),
             new PackageSource("https://api.nuget.org/v3/index.json")
         });
+
         var sourceRepositoryProvider = new SourceRepositoryProvider(sourceProvider, Repository.Provider.GetCoreV3());
         _nugetRepositories = sourceRepositoryProvider.GetRepositories();
 
-        _dependencyInfoResourceAzureFeed = _nugetRepositories.ElementAt(0).GetResource<DependencyInfoResource>();
-
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // use only .NET nanoFramework feed in Azure DevOps so stats in NuGet are not messed up with the versions check
-        _dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(1).GetResource<DependencyInfoResource>();
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        _dependencyInfoResourceNuGet = _nugetRepositories.ElementAt(0).GetResource<DependencyInfoResource>();
 
         // read solution file content
         var slnFileContent = File.ReadAllText(solutionToCheck);
@@ -169,9 +163,6 @@ class Program
         {
             Console.WriteLine();
             Console.WriteLine($"INFO: working file is {packageConfigFile}");
-
-            // check if the project the packages.config belongs to it's in the solution 
-            var projectPath = Directory.GetParent(packageConfigFile);
 
             var projectPathInSln = Path.GetRelativePath(workingDirectory, Directory.GetParent(packageConfigFile).FullName);
 
@@ -264,7 +255,7 @@ class Program
             Console.WriteLine("INFO: Building package list...");
 
             // load packages.config 
-            var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(Path.Combine(Directory.GetParent(projectToCheck).FullName, "packages.config")));
+            var packageReader = new PackagesConfigReader(XDocument.Load(Path.Combine(Directory.GetParent(projectToCheck).FullName, "packages.config")));
 
             // filter out these packages: Nerdbank.GitVersioning
             var packageList = packageReader.GetPackages().Where(p => !p.IsDevelopmentDependency && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
@@ -316,16 +307,18 @@ class Program
                 Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>");
 
                 // check all packages
-                foreach (var package in packageList)
+                var packageIdentities = packageList.Select(package => package.PackageIdentity);
+
+                foreach (var packageIdentity in packageIdentities)
                 {
                     // get package name and target version
-                    string packageName = package.PackageIdentity.Id;
-                    string packageVersion = package.PackageIdentity.Version.ToNormalizedString();
+                    string packageName = packageIdentity.Id;
+                    string packageVersion = packageIdentity.Version.ToNormalizedString();
 
-                    Console.Write($"Checking {package.PackageIdentity}... ");
+                    Console.Write($"Checking {packageIdentity}... ");
 
                     // find package in project file
-                    var packageIdRegexed = package.PackageIdentity.ToString().Replace(".", "\\.");
+                    var packageIdRegexed = packageIdentity.ToString().Replace(".", "\\.");
                     var packageInProjecFile = Regex.Match(projecFileContent, $"(?'package'packages\\\\{packageIdRegexed})");
                     if (packageInProjecFile.Success)
                     {
@@ -450,7 +443,14 @@ class Program
                                 {
                                     foreach (var dependencyPackage in dependency.Packages)
                                     {
-                                        dependencyFound = FindDependency(packageName, packageVersion, analyseNuspec ? false : isDeclaredDependency, dependencyPackage, dependency.TargetFramework, ref dependencyPackageId, ref hintMessage);
+                                        dependencyFound = FindDependency(
+                                            packageName,
+                                            packageVersion,
+                                            !analyseNuspec && isDeclaredDependency,
+                                            dependencyPackage,
+                                            dependency.TargetFramework,
+                                            ref dependencyPackageId,
+                                            ref hintMessage);
 
                                         if (dependencyFound)
                                         {
@@ -462,7 +462,15 @@ class Program
                                     {
                                         foreach (var dependencyPackage in dependency.Packages)
                                         {
-                                            dependencyFound = FindDependency(packageName, packageVersion, !refMissingFromNuspec && isDeclaredDependency, dependencyPackage, dependency.TargetFramework, ref dependencyPackageId, ref hintMessage, true);
+                                            dependencyFound = FindDependency(
+                                                packageName,
+                                                packageVersion,
+                                                !refMissingFromNuspec && isDeclaredDependency,
+                                                dependencyPackage,
+                                                dependency.TargetFramework,
+                                                ref dependencyPackageId,
+                                                ref hintMessage,
+                                                true);
 
                                             if (dependencyFound)
                                             {
@@ -530,8 +538,6 @@ class Program
                                 }
 
                                 Console.ForegroundColor = ConsoleColor.White;
-
-                                refMissingFromNuspec = false;
                             }
                         }
                         else
@@ -596,7 +602,14 @@ class Program
         return 0;
     }
 
-    private static bool FindDependency(string packageName, string packageVersion, bool isDeclaredDependency, PackageDependency dependencyPackage, NuGet.Frameworks.NuGetFramework targetFramework, ref string dependencyPackageId, ref string hintMessage, bool recurring = false)
+    private static bool FindDependency(string packageName,
+                                       string packageVersion,
+                                       bool isDeclaredDependency,
+                                       PackageDependency dependencyPackage,
+                                       NuGet.Frameworks.NuGetFramework targetFramework,
+                                       ref string dependencyPackageId,
+                                       ref string hintMessage,
+                                       bool recurring = false)
     {
         PackageIdentity packageIdentity = new(
             dependencyPackage.Id,
@@ -607,7 +620,7 @@ class Program
         if (recurring)
         {
             // 2nd round
-            dependencyInfo = _dependencyInfoResourceAzureFeed.ResolvePackage(
+            dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
                 packageIdentity,
                 targetFramework,
                 new SourceCacheContext(),
@@ -616,9 +629,9 @@ class Program
 
             bool dependencyFound = false;
 
-            if (_dependencyInfoResourceNuGet is not null && dependencyInfo is null)
+            if (dependencyInfo is null)
             {
-                // try to find it in NuGet, if feed is available
+                // try to find it in NuGet
 
                 dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
                     packageIdentity,
@@ -632,7 +645,15 @@ class Program
             {
                 foreach (var nextLevelDependencyPackage in dependencyInfo.Dependencies)
                 {
-                    dependencyFound = FindDependency(packageName, packageVersion, true, nextLevelDependencyPackage, targetFramework, ref dependencyPackageId, ref hintMessage, false);
+                    dependencyFound = FindDependency(
+                        packageName,
+                        packageVersion,
+                        true,
+                        nextLevelDependencyPackage,
+                        targetFramework,
+                        ref dependencyPackageId,
+                        ref hintMessage,
+                        false);
 
                     if (dependencyFound)
                     {
@@ -646,7 +667,15 @@ class Program
                 {
                     foreach (var nextLevelDependencyPackage in dependencyInfo.Dependencies)
                     {
-                        dependencyFound = FindDependency(packageName, packageVersion, true, nextLevelDependencyPackage, targetFramework, ref dependencyPackageId, ref hintMessage, true);
+                        dependencyFound = FindDependency(
+                            packageName,
+                            packageVersion,
+                            true,
+                            nextLevelDependencyPackage,
+                            targetFramework,
+                            ref dependencyPackageId,
+                            ref hintMessage,
+                            true);
 
                         if (dependencyFound)
                         {
@@ -717,8 +746,8 @@ class Program
             }
         }
 
-        // 2nd round on nanoFramework Azure Feed
-        dependencyInfo = _dependencyInfoResourceAzureFeed.ResolvePackage(
+        // 2nd round
+        dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
             packageIdentity,
             targetFramework,
             new SourceCacheContext(),
