@@ -94,6 +94,13 @@ steps:
           Write-Host "Version $latestNugetVersion available from nuget.org feed. Proceeding with update."
       }
 
+      # check if there are any libraries to update
+      if ([string]::IsNullOrEmpty($env:REPOS_TO_UPDATE))
+      {
+          Write-Host "No libraries to update."
+          exit
+      }
+
       $librariesToUpdate = $env:REPOS_TO_UPDATE.Split([environment]::NewLine)
     
       ForEach($library in $librariesToUpdate)
