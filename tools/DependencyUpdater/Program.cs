@@ -510,8 +510,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // find ALL packages.config files inside the solution projects
                 var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
 
-                // run pre-check for new versions available
-                if (!NewVersionsAvailable(packageConfigs))
+                // run pre-check for new versions available, only if stable versions where requested
+                if (stablePackages
+                    && !NewVersionsAvailable(packageConfigs))
                 {
                     // no packages to update
                     Console.WriteLine();
@@ -1295,6 +1296,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             return false;
         }
+
         private static bool NewVersionsAvailable(string[] packageConfigs)
         {
             bool newVersionsAvailable = false;
@@ -1319,7 +1321,24 @@ namespace nanoFramework.Tools.DependencyUpdater
                         {
                             var json = httpClient.GetStringAsync(nugetApiUrl).Result;
                             dynamic packageInfo = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
-                            var latestVersion = packageInfo.versions[packageInfo.versions.Count - 1];
+
+                            // filter out versions in the pre-release stage
+                            var versions = new List<string>();
+                            foreach (var version in packageInfo.versions)
+                            {
+                                if (!version.ToString().Contains("-"))
+                                {
+                                    versions.Add(version.ToString());
+                                }
+                            }
+
+                            if (versions.Count == 0)
+                            {
+                                continue;
+                            }
+
+                            // grab latest version
+                            var latestVersion = versions[versions.Count - 1];
 
                             if (new Version(packageIdentity.Version.ToString()) != new Version(latestVersion.ToString()))
                             {
@@ -1333,6 +1352,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                         catch (Exception ex)
                         {
                             Console.WriteLine($"ERROR: Failed to fetch version info for {packageIdentity.Id}. Exception: {ex.Message}");
+
+                            // can't be sure about this one or maybe this is a preview version
+                            // better let nuget handle this...
+                            newVersionsAvailable = true;
+
+                            // ... no need to check the rest of the packages
+                            break;
                         }
                     }
                 }
