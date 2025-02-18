@@ -1,13 +1,6 @@
-﻿//
-// Copyright (c) .NET Foundation and Contributors
-// See LICENSE file in the project root for full license information.
-//
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using NuGet.Common;
-using NuGet.Configuration;
-using NuGet.Packaging;
-using NuGet.Packaging.Core;
-using NuGet.Protocol.Core.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,11 +8,17 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml.Linq;
+using NuGet.Common;
+using NuGet.Configuration;
+using NuGet.Packaging;
+using NuGet.Packaging.Core;
+using NuGet.Protocol.Core.Types;
 
 class Program
 {
     private static IEnumerable<SourceRepository> _nugetRepositories;
     private static DependencyInfoResource _dependencyInfoResourceNuGet;
+    private static readonly string _versionReplacementValue = $"9.99.999.9999+{Guid.NewGuid():N}";
 
     /// <param name="solutionToCheck">Path to the solution to check.</param>
     /// <param name="workingDirectory">Path of the working directory where solutions will be searched.</param>
@@ -101,7 +100,7 @@ class Program
         // grab working directory from solution, if it's empty
         if (workingDirectory is null)
         {
-            workingDirectory = Path.GetFullPath(solutionToCheck);
+            workingDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionToCheck));
         }
 
         // handle mscorlib library
@@ -136,7 +135,7 @@ class Program
 
         if (nuspecFile is not null)
         {
-            nuspecReader = new NuspecReader(XDocument.Load(nuspecFile));
+            nuspecReader = GetNuspecReader(nuspecFile);
         }
 
 
@@ -218,7 +217,6 @@ class Program
                     Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
 
                     // load nuspec file
-                    // NOTE: this is replacing as well $version$ by 9.99.99.999
                     nuspecReader = GetNuspecReader(nuspecFileName);
                 }
                 else
@@ -232,7 +230,6 @@ class Program
                         Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
 
                         // load nuspec file
-                        // NOTE: this is replacing as well $version$ by 9.99.99.999
                         nuspecReader = GetNuspecReader(nuspecFileName);
                     }
                     else
@@ -779,34 +776,15 @@ class Program
 
     private static NuspecReader GetNuspecReader(string nuspecFileName)
     {
-        string tokenizedVersion = "version=\"$version$\"";
-        string replacementVersion = "version=\"9.99.999.9999\"";
-        bool nuspecReplaced = false;
+        string nuspecAsText = File.ReadAllText(nuspecFileName);
 
-        // handle nuspec files that include token replacement for version
-        // need to replace it with a valid version string, read and then replace it back
-        string nuspecContent = File.ReadAllText(nuspecFileName);
+        // It is valid to use the variable $version$ in nuspec
+        // as it will be replaced with correct value when the package is created.
+        // The replacement value is unique, so it will not match any literal version value.
+        // The assumption is that all packages share the same value of $version$
+        // at the time of packaging.
+        nuspecAsText = nuspecAsText.Replace("$version$", _versionReplacementValue);
 
-        if (nuspecContent.Contains(tokenizedVersion))
-        {
-            nuspecReplaced = true;
-
-            nuspecContent = nuspecContent.Replace(tokenizedVersion, replacementVersion);
-
-            File.WriteAllText(nuspecFileName, nuspecContent);
-        }
-
-
-        var nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
-
-        // replace back the original version string
-        if (nuspecReplaced)
-        {
-            nuspecContent = nuspecContent.Replace(replacementVersion, tokenizedVersion);
-
-            File.WriteAllText(nuspecFileName, nuspecContent);
-        }
-
-        return nuspecReader;
+        return new NuspecReader(XDocument.Parse(nuspecAsText));
     }
 }
