@@ -25,8 +25,8 @@ steps:
     .\sign code azure-key-vault `
     "**/*.nupkg" `
     --base-directory "$(Build.ArtifactStagingDirectory)" `
-    --description "$(nugetPackageName)" `
-    --description-url "https://github.com/$env:Build_Repository_Name" `
+    --description "$(Build.Repository.Name)" `
+    --description-url "https://github.com/$(Build.Repository.Name)" `
     --azure-key-vault-tenant-id "$(SignTenantId)" `
     --azure-key-vault-client-id "$(SignClientId)" `
     --azure-key-vault-client-secret "$(SignClientSecret)" `
