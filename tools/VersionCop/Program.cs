@@ -779,32 +779,30 @@ class Program
 
     private static NuspecReader GetNuspecReader(string nuspecFileName)
     {
-        string originalVersion = "version=\"$version$\"";
+        string tokenizedVersion = "version=\"$version$\"";
         string replacementVersion = "version=\"9.99.999.9999\"";
-        string nuspecContent = string.Empty;
+        bool nuspecReplaced = false;
 
-        // handle edge cases in nanoFramework libraries
-        if (nuspecFileName.EndsWith("nanoFramework.Logging.Serial.nuspec")
-            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec")
-            || nuspecFileName.EndsWith("nanoFramework.Logging.Syslog.nuspec"))
+        // handle nuspec files that include token replacement for version
+        // need to replace it with a valid version string, read and then replace it back
+        string nuspecContent = File.ReadAllText(nuspecFileName);
+
+        if (nuspecContent.Contains(tokenizedVersion))
         {
-            // these two use a hack in the version for nanoFramework.Logging dependency
-            // need to replace it with a valid version string, read and then replace it back
-            nuspecContent = File.ReadAllText(nuspecFileName);
+            nuspecReplaced = true;
 
-            nuspecContent = nuspecContent.Replace(originalVersion, replacementVersion);
+            nuspecContent = nuspecContent.Replace(tokenizedVersion, replacementVersion);
 
             File.WriteAllText(nuspecFileName, nuspecContent);
         }
 
+
         var nuspecReader = new NuspecReader(XDocument.Load(nuspecFileName));
 
         // replace back the original version string
-        if (nuspecFileName.EndsWith("nanoFramework.Logging.Serial.nuspec")
-            || nuspecFileName.EndsWith("nanoFramework.Logging.Stream.nuspec")
-            || nuspecFileName.EndsWith("nanoFramework.Logging.Syslog.nuspec"))
+        if (nuspecReplaced)
         {
-            nuspecContent = nuspecContent.Replace(replacementVersion, originalVersion);
+            nuspecContent = nuspecContent.Replace(replacementVersion, tokenizedVersion);
 
             File.WriteAllText(nuspecFileName, nuspecContent);
         }
