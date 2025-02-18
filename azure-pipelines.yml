@@ -3,16 +3,17 @@ trigger:
     include: [main, develop, "release-*" ]
   paths:
     exclude: 
-      - azure-pipelines.yml
-      - README.md
-      - README.zh-cn.md
-      - CHANGELOG.md
-      - CODE_OF_CONDUCT.md
-      - LICENSE.md
       - .gitignore
       - .gitattributes
       - .editorconfig
+      - azure-pipelines.yml
+      - README.md
+      - README.zh-cn.md
+      - LICENSE.md
+      - NuGet.config
       - spelling_exclusion.dic
+      - .github/*
+      - azure-pipelines-templates/*
 
   tags:
     include:
