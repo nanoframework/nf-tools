@@ -18,7 +18,6 @@ class Program
 {
     private static IEnumerable<SourceRepository> _nugetRepositories;
     private static DependencyInfoResource _dependencyInfoResourceNuGet;
-    private static readonly string _versionReplacementValue = $"9.99.999.9999+{Guid.NewGuid():N}";
 
     /// <param name="solutionToCheck">Path to the solution to check.</param>
     /// <param name="workingDirectory">Path of the working directory where solutions will be searched.</param>
@@ -783,7 +782,7 @@ class Program
         // The replacement value is unique, so it will not match any literal version value.
         // The assumption is that all packages share the same value of $version$
         // at the time of packaging.
-        nuspecAsText = nuspecAsText.Replace("$version$", _versionReplacementValue);
+        nuspecAsText = nuspecAsText.Replace("$version$", "9.99.999.9999");
 
         return new NuspecReader(XDocument.Parse(nuspecAsText));
     }
