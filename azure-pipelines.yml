@@ -10,6 +10,9 @@ trigger:
       - CODE_OF_CONDUCT.md
       - LICENSE.md
       - .gitignore
+      - .gitattributes
+      - .editorconfig
+      - spelling_exclusion.dic
 
   tags:
     include:
