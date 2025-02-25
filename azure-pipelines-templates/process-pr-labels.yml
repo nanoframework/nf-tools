@@ -1,0 +1,33 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+steps:
+
+  - task: PowerShell@2
+    condition: succeeded()
+    displayName: Process PR labels
+    name: processPrLabels
+    env:
+      GITHUB_TOKEN: $(GitHubToken)    
+    inputs:
+      targetType: 'inline'
+      script: |
+        # set default values
+        echo "##vso[task.setvariable variable=SKIP_UNIT_TESTS;isOutput=true]false"
+
+        # check if this is a PR
+        if($env:System_PullRequest_PullRequestNumber -eq $null)
+        {
+            Write-Host "Not building from PR. Nothing to do here."
+            exit 0
+        }
+
+        # get PR labels
+        $prLabels = gh pr view $env:System_PullRequest_PullRequestNumber --repo $env:BUILD_REPOSITORY_NAME --json labels --jq '.labels | .[].name'
+
+        # parse interesting labels
+        if($prLabels -match 'CI: Skip Unit Tests')
+        {
+            Write-Host "INFO: Found CI: Skip Unit Tests label"
+            echo "##vso[task.setvariable variable=SKIP_UNIT_TESTS;isOutput=true]true"
+        }
