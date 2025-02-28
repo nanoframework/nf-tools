@@ -36,19 +36,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CliWrap" Version="3.7.1" />
+    <PackageReference Include="CliWrap" Version="3.8.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.1" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.7.115">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="NuGet.CommandLine" Version="6.12.2">
+    <PackageReference Include="NuGet.CommandLine" Version="6.13.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <GeneratePathProperty>True</GeneratePathProperty>
     </PackageReference>
     <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.21617.1" />
-    <PackageReference Include="NuGet.Packaging" Version="6.12.1" />
+    <PackageReference Include="NuGet.Packaging" Version="6.13.1" />
     <PackageReference Include="Octokit" Version="14.0.0" />
   </ItemGroup>
 
