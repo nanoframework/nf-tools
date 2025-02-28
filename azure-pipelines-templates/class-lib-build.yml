@@ -182,19 +182,6 @@ steps:
   displayName: 'Publish Quality Gate Result'
   continueOnError: true
 
-- task: UseRubyVersion@0
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      eq(variables['StartReleaseCandidate'], false)
-    )
-  displayName: Setup Ruby
-  inputs:
-    versionSpec: '= 3.0' 
-    addToPath: true
-
 - task: NuGetCommand@2
   condition: >-
     and(

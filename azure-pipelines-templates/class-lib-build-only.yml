@@ -180,16 +180,3 @@ steps:
   displayName: 'Publish Quality Gate Result'
   inputs:
     pollingTimeoutSec: '300'
-
-- task: UseRubyVersion@0
-  condition: >-
-    and(
-      succeeded(),
-      eq(variables['System.PullRequest.PullRequestId'], ''),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-      eq(variables['StartReleaseCandidate'], false)
-    )
-  displayName: Setup Ruby
-  inputs:
-    versionSpec: '= 3.0' 
-    addToPath: true
