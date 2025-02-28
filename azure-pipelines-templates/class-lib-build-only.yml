@@ -180,3 +180,5 @@ steps:
   displayName: 'Publish Quality Gate Result'
   inputs:
     pollingTimeoutSec: '300'
+
+- template: class-lib-stubs.yml

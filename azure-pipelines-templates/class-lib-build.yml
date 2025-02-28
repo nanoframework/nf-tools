@@ -133,6 +133,8 @@ steps:
 
 - template: get-assembly-native-version.yml
 
+- template: class-lib-stubs.yml
+
 - powershell: |
     # get subject and commit message for commit
     $commitMessage = git log --format='%B' -1

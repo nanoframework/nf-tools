@@ -1,0 +1,35 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+steps:
+
+- task: CopyFiles@1
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
+  displayName: Collecting stubs
+  inputs:
+    sourceFolder: $(Build.SourcesDirectory)
+    Contents: |
+      *\Stubs\**\*.cpp
+      *\Stubs\**\*.h
+      *\Stubs\**\*.cmake
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/Stubs'
+    flattenFolders: true
+
+# publish artifacts
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)'
+    artifactName: stubs
+    artifactType: pipeline
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    )
+  displayName: Publish stubs artifacts
