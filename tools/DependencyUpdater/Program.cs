@@ -3,11 +3,6 @@
 // See LICENSE file in the project root for full license information.
 //
 
-using CliWrap;
-using CliWrap.Buffered;
-using Microsoft.Extensions.Configuration;
-using NuGet.Packaging;
-using Octokit;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +13,11 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
+using CliWrap;
+using CliWrap.Buffered;
+using Microsoft.Extensions.Configuration;
+using NuGet.Packaging;
+using Octokit;
 
 namespace nanoFramework.Tools.DependencyUpdater
 {
@@ -670,7 +670,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                         Console.WriteLine();
 
                         // check all packages
-                        foreach (PackageReference package in packageList)
+                        // Initialize a HashSet to collect unique update messages
+                        HashSet<string> updateMessages = new();
+
+                        foreach (var package in packageList)
                         {
                             // get package name and target version
                             string packageName = package.PackageIdentity.Id;
@@ -805,19 +808,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                             }
                             else
                             {
-                                // build commit message
+                                // build update message
                                 if (packageOriginVersion != packageTargetVersion)
                                 {
                                     string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
 
-                                    // append to commit message, if not already reported
-                                    if (!commitMessage.ToString().Contains(updateMessage))
-                                    {
-                                        commitMessage.Append(updateMessage);
-
-                                        // bump counter
-                                        updateCount++;
-                                    }
+                                    // add to the HashSet to ensure uniqueness
+                                    updateMessages.Add(updateMessage);
 
                                     Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
                                 }
@@ -905,6 +902,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 }
                             }
                         }
+
+                        // Convert the HashSet to a list and build the commit message
+                        List<string> uniqueUpdateMessages = updateMessages.ToList();
+                        commitMessage.Append(string.Join("", uniqueUpdateMessages));
+
+                        // Update the update count
+                        updateCount = uniqueUpdateMessages.Count;
                     }
                 }
             }
@@ -1375,7 +1379,6 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             return newVersionsAvailable;
         }
-
 
         private enum PrCreationOutcome
         {
