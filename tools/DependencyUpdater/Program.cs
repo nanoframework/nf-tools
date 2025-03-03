@@ -490,6 +490,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
             }
 
+            // Initialize a HashSet to collect unique update messages
+            HashSet<string> updateMessages = new();
+
             // go through each solution (filter out the ones in the exclusion list)
             foreach (var solutionFile in solutionFiles.Where(s => !_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(s))))
             {
@@ -670,8 +673,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                         Console.WriteLine();
 
                         // check all packages
-                        // Initialize a HashSet to collect unique update messages
-                        HashSet<string> updateMessages = new();
 
                         foreach (var package in packageList)
                         {
@@ -902,15 +903,21 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 }
                             }
                         }
-
-                        // Convert the HashSet to a list and build the commit message
-                        List<string> uniqueUpdateMessages = updateMessages.ToList();
-                        commitMessage.Append(string.Join("", uniqueUpdateMessages));
-
-                        // Update the update count
-                        updateCount = uniqueUpdateMessages.Count;
                     }
                 }
+            }
+
+            // Convert the HashSet to a list and build the commit message
+            if (updateMessages.Count > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("INFO: generating commit message");
+
+                List<string> uniqueUpdateMessages = updateMessages.ToList();
+                commitMessage.Append(string.Join("", uniqueUpdateMessages));
+
+                // Update the update count
+                updateCount = uniqueUpdateMessages.Count;
             }
 
             // check if any packages where updated
