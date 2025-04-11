@@ -39,7 +39,8 @@ jobs:
           prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$ORG_NAME/$repo/pulls?state=open | jq -r '.[] | "\(.html_url) - \(.title) - Opened on: \(.created_at | split("T")[0])"')
           # Check if there are any open PRs in the repository
           if [ -z "$prs" ]; then
-            # skip the repo if there are no open PRs            
+            # skip the repo if there are no open PRs
+            continue
           else
             echo -e "\nRepository: $repo"
             echo "$prs"
