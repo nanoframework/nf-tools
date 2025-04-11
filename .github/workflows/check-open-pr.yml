@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '0 0 * * *' # Runs daily at midnight
   workflow_dispatch: # Allows manual triggering
-  # to be removed, just for the test
-  pull_request:
-   types: [opened, synchronize, reopened]
 
 jobs:
   list-open-prs:
