@@ -27,16 +27,22 @@ jobs:
           prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$ORG_NAME/$repo/pulls?state=open | jq -r '.[] | "\(.html_url) - \(.title) - Opened on: \(.created_at | split("T")[0])"')
           # Check if there are any open PRs in the repository
           if [ -z "$prs" ]; then
-            echo "\nRepository: $repo"
+            echo -e "\nRepository: $repo"
             echo "None"
           else
-            echo "Repository: $repo"
+            echo -e "\nRepository: $repo"
             echo "$prs"
           fi
+
           # Filter PRs opened in the last 3 days
-          recent_prs_repo=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$ORG_NAME/$repo/pulls?state=open | jq -r --arg date "$(date -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)" '.[] | select(.created_at >= $date) | "\(.html_url) - \(.title) - Opened on: \(.created_at)"')
+          recent_prs_repo=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$ORG_NAME/$repo/pulls?state=open | jq -r --arg date "$(date -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)" '.[] | select(.created_at >= $date) | "\(.html_url) - \(.title) - Opened on: \(.created_at | split("T")[0])"')
           recent_prs="$recent_prs\n$recent_prs_repo"
         done
-        echo -e "\n-----------------------------------------"
+
         echo -e "\nRecap of PRs opened in the last 3 days:"
-        echo -e "$recent_prs"
+        if [ -z "$recent_prs" ]; then
+          echo "None"
+        else
+          echo -e "$recent_prs"
+        done
+
