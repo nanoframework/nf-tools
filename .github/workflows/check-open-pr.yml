@@ -44,5 +44,5 @@ jobs:
           echo "None"
         else
           echo -e "$recent_prs"
-        done
+        fi
 
