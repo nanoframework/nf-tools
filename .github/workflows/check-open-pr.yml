@@ -1,0 +1,26 @@
+name: List Open PRs
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  list-open-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: List open PRs
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ORG_NAME: nanoframework
+      run: |
+        repos=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/orgs/$ORG_NAME/repos | jq -r '.[].name')
+        for repo in $repos; do
+          prs=$(curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$ORG_NAME/$repo/pulls?state=open | jq -r '.[] | "\(.html_url) - \(.title)"')
+          echo "Repository: $repo"
+          echo "$prs"
+        done
