@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '0 0 * * *' # Runs daily at midnight
   workflow_dispatch: # Allows manual triggering
+  # to be removed, just for the test
+  pull_request:
+   types: [opened, synchronize, reopened]
+
 
 jobs:
   list-open-prs:
@@ -11,7 +15,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: List open PRs
       env:
