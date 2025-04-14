@@ -48,6 +48,10 @@ jobs:
           # Filter PRs opened in the last 3 days
           recent_prs_repo=$(echo "$prs_json" | jq -r --arg date "$(date -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)" '.[] | select(.created_at >= $date) | "\(.html_url) - \(.title) - Opened on: \(.created_at | split("T")[0])"')
           recent_prs="$recent_prs\n$recent_prs_repo"
+
+          # Filter PRs opened more than 1 month ago
+          old_prs_repo=$(echo "$prs_json" | jq -r --arg date "$(date -d '1 month ago' +%Y-%m-%dT%H:%M:%SZ)" '.[] | select(.created_at < $date) | "\(.html_url) - \(.title) - Opened on: \(.created_at | split("T")[0])"')
+          old_prs="$old_prs\n$old_prs_repo"
         done
 
         # Remove empty lines from the final recent_prs
@@ -58,4 +62,11 @@ jobs:
           echo "None"
         else
           echo -e "$recent_prs"
+        fi
+
+        echo -e "\nRecap of PRs opened more than 1 month ago:"
+        if [ -z "$old_prs" ]; then
+          echo "None"
+        else
+          echo -e "$old_prs"
         fi
