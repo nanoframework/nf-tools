@@ -43,10 +43,13 @@ jobs:
             echo "$prs"
           fi
 
-          # Filter PRs opened in the last 3 days
-          recent_prs_repo=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$ORG_NAME/$repo/pulls?state=open | jq -r --arg date "$(date -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)" '.[] | select(.created_at >= $date) | "\(.html_url) - \(.title) - Opened on: \(.created_at | split("T")[0])"')
+          # Filter PRs opened in the last 3 days from the already fetched PRs
+          recent_prs_repo=$(echo "$prs" | jq -r --arg date "$(date -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)" '.[] | select(.created_at >= $date) | "\(.html_url) - \(.title) - Opened on: \(.created_at | split("T")[0])"')
           recent_prs="$recent_prs\n$recent_prs_repo"
         done
+
+        # Remove empty lines from the final recent_prs
+        recent_prs=$(echo -e "$recent_prs" | grep -v '^\s*$')
 
         echo -e "\nRecap of PRs opened in the last 3 days:"
         if [ -z "$recent_prs" ]; then
