@@ -57,6 +57,9 @@ jobs:
         # Remove empty lines from the final recent_prs
         recent_prs=$(echo -e "$recent_prs" | grep -v '^\s*$')
 
+        # Remove empty lines from the final old_prs
+        old_prs=$(echo -e "$old_prs" | grep -v '^\s*$')
+
         echo -e "\nRecap of PRs opened in the last 3 days:"
         if [ -z "$recent_prs" ]; then
           echo "None"
