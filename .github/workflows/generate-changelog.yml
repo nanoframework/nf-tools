@@ -28,10 +28,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update changelog in release
-        id: update_release
-        uses: tubone24/update_release@v1.0
+        id: update_release1
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{steps.build_changelog.outputs.toTag}}
-        with:
-          body: ${{ steps.build_changelog.outputs.changelog }}
+        shell: bash
+        run: |
+
+          # Extract repository owner and name.
+          REPO_OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f1)
+          REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f2)
+
+          # Create a JSON payload with the new release body content
+          PAYLOAD=$(jq -n --arg body "${{ steps.build_changelog.outputs.changelog }}" '{body: $body}')
+
+          # Update the release
+          UPDATE_RESPONSE=$(curl -s -X PATCH -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/${RELEASE_ID}")
