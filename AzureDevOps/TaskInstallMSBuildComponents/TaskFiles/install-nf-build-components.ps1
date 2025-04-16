@@ -35,27 +35,48 @@ Write-Output "Latest VS is: $VsInstance"
 if($isPreview -eq $true)
 {
     # get extension information from Open VSIX Gallery feed
-    $vsixFeedXml = Join-Path  $($env:Agent_TempDirectory) "vs-extension-feed.xml"
+    $vsixFeedXml = Join-Path $($env:Agent_TempDirectory) "vs-extension-feed.xml"
     Invoke-WebRequest -Uri "https://www.vsixgallery.com/feed/author/nanoframework" -OutFile $vsixFeedXml
     [xml]$feedDetails = Get-Content $vsixFeedXml
 
     Write-Output "Host OS is $([System.Environment]::OSVersion.Version)"
 
-    # feed list VS2019 and VS2022 extensions
-    # index 1 is for VS2019, running on Windows Server 2019
-    if([System.Environment]::OSVersion.Version.Major -eq "11")
-    {
-        $extensionUrl = $feedDetails.feed.entry[1].content.src
-        $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2019.Extension.zip"
-        $extensionVersion = $feedDetails.feed.entry[1].Vsix.Version
-    }
+    # Define the extension IDs
+    $vs2019Id = "455f2be5-bb07-451e-b351-a9faf3018dc9"
+    $vs2022Id = "bf694e17-fa5f-4877-9317-6d3664b2689a"
 
-    # index 0 is for VS2022, running on Windows Server 2022
-    if([System.Environment]::OSVersion.Version.Major -eq "12")
+    # feed list VS2019 and VS2022 extensions using the extension ID
+
+    # VS2022
+    if($vsInstance.Contains('2022'))
     {
-        $extensionUrl = $feedDetails.feed.entry[0].content.src
-        $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
-        $extensionVersion = $feedDetails.feed.entry[0].Vsix.Version
+        $vs2022Entry = $feedDetails.feed.entry | Where-Object { $_.Vsix.Id -eq $vs2022Id }
+
+        if($vs2022Entry)
+        {
+            $extensionUrl = $vs2022Entry.content.src
+            $vsixPath = Join-Path $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
+            $extensionVersion = $vs2022Entry.Vsix.Version
+        }
+        else
+        {
+            Write-Output "VS2022 extension with ID $vs2022Id not found."
+        }
+    }
+    elseif($vsInstance.Contains('2019'))
+    {
+        $vs2019Entry = $feedDetails.feed.entry | Where-Object { $_.Vsix.Id -eq $vs2019Id }
+
+        if($vs2019Entry)
+        {
+            $extensionUrl = $vs2019Entry.content.src
+            $vsixPath = Join-Path $tempDir "nanoFramework.Tools.VS2019.Extension.zip"
+            $extensionVersion = $vs2019Entry.Vsix.Version
+        }
+        else
+        {
+            Write-Output "VS2019 extension with ID $vs2019Id not found."
+        }
     }
 }
 else
