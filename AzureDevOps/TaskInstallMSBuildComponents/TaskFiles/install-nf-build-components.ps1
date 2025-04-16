@@ -14,14 +14,10 @@ Import-VstsLocStrings "$PSScriptRoot\Task.json"
 [string]$gitHubToken = Get-VstsInput -Name GitHubToken
 [bool]$isPreview = Get-VstsInput -Name UsePreview -AsBool
 
-# setup the web client
-[System.Net.WebClient]$webClient = New-Object System.Net.WebClient
-$webClient.UseDefaultCredentials = $true
-
 function DownloadVsixFile($fileUrl, $downloadFileName)
 {
     Write-Debug "Download VSIX file from $fileUrl to $downloadFileName"
-    $webClient.DownloadFile($fileUrl,$downloadFileName)
+    Invoke-WebRequest -Uri $fileUrl -OutFile $downloadFileName
 }
 
 $tempDir = $($env:Agent_TempDirectory)
@@ -40,26 +36,26 @@ if($isPreview -eq $true)
 {
     # get extension information from Open VSIX Gallery feed
     $vsixFeedXml = Join-Path  $($env:Agent_TempDirectory) "vs-extension-feed.xml"
-    $webClient.DownloadFile("https://vsixgallery.com/feed/author/nanoframework", $vsixFeedXml)
+    Invoke-WebRequest -Uri "https://www.vsixgallery.com/feed/author/nanoframework" -OutFile $vsixFeedXml
     [xml]$feedDetails = Get-Content $vsixFeedXml
 
     Write-Output "Host OS is $([System.Environment]::OSVersion.Version)"
 
     # feed list VS2019 and VS2022 extensions
-    # index 0 is for VS2019, running on Windows Server 2019
+    # index 1 is for VS2019, running on Windows Server 2019
     if([System.Environment]::OSVersion.Version.Major -eq "11")
     {
-        $extensionUrl = $feedDetails.feed.entry[0].content.src
+        $extensionUrl = $feedDetails.feed.entry[1].content.src
         $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2019.Extension.zip"
-        $extensionVersion = $feedDetails.feed.entry[0].Vsix.Version
+        $extensionVersion = $feedDetails.feed.entry[1].Vsix.Version
     }
 
-    # index 1 is for VS2022, running on Windows Server 2022
-    if([System.Environment]::OSVersion.Version.Major -eq "10")
+    # index 0 is for VS2022, running on Windows Server 2022
+    if([System.Environment]::OSVersion.Version.Major -eq "12")
     {
-        $extensionUrl = $feedDetails.feed.entry[1].content.src
+        $extensionUrl = $feedDetails.feed.entry[0].content.src
         $vsixPath = Join-Path  $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
-        $extensionVersion = $feedDetails.feed.entry[1].Vsix.Version
+        $extensionVersion = $feedDetails.feed.entry[0].Vsix.Version
     }
 }
 else

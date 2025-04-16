@@ -10,6 +10,8 @@ To use this AZDO Task simply add the following to the pipeline yaml that's build
 
 An option parameter `GitHubToken` with a GtiHub personal access token can be passed to the task. It will be used to perform authenticated requests to GitHub API. This can be useful, for example, if there is the need to perform authenticated requests or to keep the API usage rate under control.
 
+Another optional parameter `usePreview` (boolean) sets the usage of preview version of the VS extension downloaded from the Open VSIX gallery.
+
 ```yaml
 - task: InstallNanoMSBuildComponents@1
   displayName: Install .NET nanoFramework MSBuild components
