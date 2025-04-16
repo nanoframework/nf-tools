@@ -33,6 +33,9 @@ parameters:
   - name: unitTestRunsettings
     type: string
     default: '$(System.DefaultWorkingDirectory)\.runsettings'
+  - name: buildComponentsUsePreview
+    type: boolean
+    default: false
 
 steps:
 # need this here in order to persist GitHub credentials 
@@ -85,6 +88,7 @@ steps:
   displayName: Install .NET nanoFramework MSBuild components
   inputs:
     GitHubToken: $(GitHubToken)
+    usePreview: ${{ parameters.buildComponentsUsePreview }}
 
 - template: install-nuget.yml
 - template: cache-nano-nugets.yml
