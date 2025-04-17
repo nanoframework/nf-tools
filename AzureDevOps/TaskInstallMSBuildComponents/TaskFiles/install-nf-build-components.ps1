@@ -34,6 +34,8 @@ Write-Output "VS is: $VsInstance"
 # handle preview version
 if($isPreview -eq $true)
 {
+    Write-Output "*** Installing preview version of the extension ***"
+
     # get extension information from Open VSIX Gallery feed
     $vsixFeedXml = Join-Path $($env:Agent_TempDirectory) "vs-extension-feed.xml"
     Invoke-WebRequest -Uri "https://www.vsixgallery.com/feed/author/nanoframework" -OutFile $vsixFeedXml
