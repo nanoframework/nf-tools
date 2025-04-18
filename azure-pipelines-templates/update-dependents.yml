@@ -75,6 +75,13 @@ steps:
               $packageTargetVersion = $packageTargetVersion.Substring(1)
           }
 
+          # check if this is a preview version
+          if ($packageTargetVersion -like "*-preview*")
+          {
+              Write-Host "INFO: Package version is a preview version."
+              $usePreview = "true"
+          }
+
           $nugetApiUrl = "https://api.nuget.org/v3-flatcontainer/$packageName/index.json"
 
           function Get-LatestNugetVersion {
@@ -112,7 +119,21 @@ steps:
           "*******************************" | Write-Host
           "Updating '$library'" | Write-Host
 
-          $requestContent = @{event_type="update-dependencies"} | ConvertTo-Json
+          # Build the client_payload conditionally based on $usePreview
+          if ($null -ne $usePreview)
+          {
+              $clientPayload = @{ usePreview = $usePreview }
+          }
+          else
+          {
+              $clientPayload = @{}
+          }
+
+          $requestContent = @{
+              event_type   = "update-dependencies"
+              client_payload = $clientPayload
+          } | ConvertTo-Json
+          
           $requestUrl = "https://api.github.com/repos/nanoframework/$library/dispatches"
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
