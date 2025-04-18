@@ -28,6 +28,10 @@ on:
         required: false
         default: 15
         type: number
+      previewPackages:
+        required: false
+        default: false
+        type: boolean
     secrets:
       githubAuth:
         required: false
@@ -76,3 +80,5 @@ jobs:
           nugetConfig: '${{ inputs.nugetConfig }}'
           githubAuth: ${{ env.GITHUB_AUTH }}
           repoOwner: ${{ inputs.repoOwner }}
+          previewPackages: ${{ inputs.previewPackages }}
+          stablePackages: ${{ not(inputs.stablePackages) }}
