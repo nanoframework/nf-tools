@@ -33,7 +33,7 @@ parameters:
   - name: unitTestRunsettings
     type: string
     default: '$(System.DefaultWorkingDirectory)\.runsettings'
-  - name: buildComponentsUsePreview
+  - name: usePreviewBuild
     type: boolean
     default: false
 
@@ -88,7 +88,7 @@ steps:
   displayName: Install .NET nanoFramework MSBuild components
   inputs:
     GitHubToken: $(GitHubToken)
-    usePreview: ${{ parameters.buildComponentsUsePreview }}
+    usePreview: ${{ parameters.usePreviewBuild }}
 
 - template: install-nuget.yml
 - template: cache-nano-nugets.yml
