@@ -2,9 +2,9 @@
 # See LICENSE file in the project root for full license information.
 
 parameters:
-  - name: baseBranch
+  - name: baseBranchName
     type: string
-    default: 'refs/heads/main'
+    default: 'main'
 
 steps:
 
@@ -65,7 +65,7 @@ steps:
       not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
       eq(variables['StartReleaseCandidate'], false),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
-      startsWith(variables['Build.SourceBranch'], '${{ parameters.baseBranch }}')
+      eq(variables['Build.SourceBranchName'], '${{ parameters.baseBranchName }}')
     )
   continueOnError: true
   displayName: Push NuGet packages to NuGet

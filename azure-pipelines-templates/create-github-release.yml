@@ -3,16 +3,19 @@
 
 steps:
 
-  # create GitHub release build from main branch
+  # create GitHub release build from main & develop branches
   - task: GithubRelease@1
     condition: >-
       and(
         succeeded(),
         eq(variables['System.PullRequest.PullRequestId'], ''),
         not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
-        startsWith(variables['Build.SourceBranch'], 'refs/heads/main'),
         not(contains(variables['Build.SourceBranch'], 'preview')),
-        eq(variables['StartReleaseCandidate'], false)
+        eq(variables['StartReleaseCandidate'], false),
+        or(
+          eq(variables['Build.SourceBranchName'], 'main'),
+          eq(variables['Build.SourceBranchName'], 'develop')
+        )
       )
     displayName: Create/Update GitHub release
     inputs:
