@@ -67,6 +67,8 @@ jobs:
 
       - uses: nanoframework/nanobuild@v1
         name: Install .NET nanoFramework build components
+        env:
+          USE_PREVIEW: ${{ inputs.previewPackages }}
 
       - uses: nuget/setup-nuget@v2
 
