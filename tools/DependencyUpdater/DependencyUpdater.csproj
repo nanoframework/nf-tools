@@ -47,7 +47,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <GeneratePathProperty>True</GeneratePathProperty>
     </PackageReference>
-    <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.21617.1" />
+    <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.22272.1" />
     <PackageReference Include="NuGet.Packaging" Version="6.13.2" />
     <PackageReference Include="Octokit" Version="14.0.0" />
   </ItemGroup>
