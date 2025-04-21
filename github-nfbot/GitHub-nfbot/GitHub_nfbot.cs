@@ -1006,7 +1006,17 @@ namespace nanoFramework.Tools.GitHub
             }
             else if (command.EndsWith("updatedependencies"))
             {
-                return await UpdateDependenciesAsync(payload.repository.url.ToString(), log);
+                return await UpdateDependenciesAsync(
+                    payload.repository.url.ToString(),
+                    false,
+                    log);
+            }
+            else if (command.EndsWith("updatedependencies develop"))
+            {
+                return await UpdateDependenciesAsync(
+                    payload.repository.url.ToString(),
+                    true,
+                    log);
             }
             else if (command.StartsWith("runpipeline"))
             {
@@ -1189,12 +1199,17 @@ namespace nanoFramework.Tools.GitHub
             return StartReleaseResult.Failed;
         }
 
-        private static async Task<StartReleaseResult> UpdateDependenciesAsync(string repoUrl, ILogger log)
+        private static async Task<StartReleaseResult> UpdateDependenciesAsync(
+            string repoUrl,
+            bool isDevelopBranch,
+            ILogger log)
         {
-            string requestContent = $"{{ \"event_type\": \"update-dependencies\" }}";
+            const string _regularUpdate = "update-dependencies";
+            const string _developUpdate = "update-dependencies-develop";
 
+            string requestContent = $"{{ \"event_type\": \"{(isDevelopBranch ? _developUpdate : _regularUpdate)}\" }}";
 
-            var result = await SendGitHubRequest(
+            int result = await SendGitHubRequest(
                 repoUrl + "/dispatches",
                 requestContent,
                 log,
