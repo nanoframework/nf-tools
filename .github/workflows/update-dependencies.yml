@@ -81,4 +81,4 @@ jobs:
           githubAuth: ${{ env.GITHUB_AUTH }}
           repoOwner: ${{ inputs.repoOwner }}
           previewPackages: ${{ inputs.previewPackages }}
-          stablePackages: ${{ not(inputs.stablePackages) }}
+          stablePackages: ${{ !(inputs.stablePackages) }}
