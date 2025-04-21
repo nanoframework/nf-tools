@@ -1221,8 +1221,7 @@ namespace nanoFramework.Tools.GitHub
             // filter out:
             // samples, ST packages, ChibiOS, 
             var reposToProcess = allRepos.Where(r => r.Name.StartsWith("nanoFramework.")
-                                                     || r.Name.StartsWith("System.")
-                                                     || r.Name.StartsWith("Windows."));
+                                                     || r.Name.StartsWith("System."));
 
             foreach (var repo in reposToProcess)
             {
@@ -1259,8 +1258,7 @@ namespace nanoFramework.Tools.GitHub
             // filter out:
             // samples, ST packages, ChibiOS, 
             var reposToProcess = allRepos.Where(r => r.Name.StartsWith("nanoFramework.")
-                                                     || r.Name.StartsWith("System.")
-                                                     || r.Name.StartsWith("Windows."));
+                                                     || r.Name.StartsWith("System."));
 
             foreach (var repo in reposToProcess)
             {
