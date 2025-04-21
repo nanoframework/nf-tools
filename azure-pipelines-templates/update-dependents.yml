@@ -14,6 +14,9 @@ parameters:
   - name: packageName
     type: string
     default: ''
+  - name: branchToPr
+    type: string
+    default: 'main'
 
 steps:
 - task: PowerShell@2
@@ -33,6 +36,7 @@ steps:
     WAIT_BEFORE_UPDATE: ${{ parameters.waitBeforeUpdate }}
     PACKAGE_TARGET_VERSION: ${{ parameters.packageTargetVersion }}
     PACKAGE_NAME: ${{ parameters.packageName }}
+    BRANCH_TO_PR: ${{ parameters.branchToPr }}
   inputs:
     targetType: 'inline'
     script: |
@@ -122,18 +126,22 @@ steps:
           # Build the client_payload conditionally based on $usePreview
           if ($null -ne $usePreview)
           {
-              $clientPayload = @{ usePreview = $usePreview }
+              $clientPayload = @{ usePreview = $usePreview, branchToPr = $env:BRANCH_TO_PR }
+
+              $eventType = "update-dependencies-develop"
           }
           else
           {
-              $clientPayload = @{}
+            $clientPayload = @{}
+
+            $eventType = "update-dependencies"
           }
 
           $requestContent = @{
-              event_type   = "update-dependencies"
+              event_type   = $eventType
               client_payload = $clientPayload
           } | ConvertTo-Json
-          
+
           $requestUrl = "https://api.github.com/repos/nanoframework/$library/dispatches"
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
