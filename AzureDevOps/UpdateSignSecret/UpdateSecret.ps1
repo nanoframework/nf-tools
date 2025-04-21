@@ -14,7 +14,7 @@ Param(
     [Parameter(Mandatory=$true)]
     [string]$PAT,
     
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory=$true)]
     [string]$signSecret
 )
 
@@ -51,12 +51,12 @@ foreach ($project in $projects) {
         
         # Update or add the secret variable "SignClientSecret"
         if ($vgDetails.variables.PSObject.Properties.Name -contains "SignClientSecret") {
-            $vgDetails.variables.SignClientSecret.value = $secretValue
+            $vgDetails.variables.SignClientSecret.value = $signSecret
             $vgDetails.variables.SignClientSecret.isSecret = $true
         }
         else {
             $vgDetails.variables.SignClientSecret = @{
-                value   = $secretValue
+                value   = $signSecret
                 isSecret = $true
             }
         }
