@@ -680,7 +680,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                         // check all packages
 
-                        foreach (var package in packageList)
+                        foreach (PackageReference package in packageList)
                         {
                             // get package name and target version
                             string packageName = package.PackageIdentity.Id;
@@ -692,10 +692,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                             string updateResult = "";
                             string updateParameters;
 
-                            if (stablePackages && !packageName.StartsWith("UnitsNet."))
+                            if ((stablePackages && !packageName.StartsWith("UnitsNet."))
+                                || package.IsDevelopmentDependency)
                             {
-                                // don't allow prerelease for release, main branches and UnitsNet packages
-                                // go with our Azure feed
+                                // don't allow prerelease for:
+                                // - release
+                                // - main branches
+                                // - UnitsNet packages
+                                // - development dependencies
                                 updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -FileConflictAction Overwrite";
                             }
                             else if (packageName.StartsWith("UnitsNet."))
