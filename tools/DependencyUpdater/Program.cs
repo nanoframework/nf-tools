@@ -53,7 +53,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
         static void Main(
             string workingDirectory = null,
-            bool stablePackages = true,
+            bool stablePackages = false,
             bool previewPackages = false,
             bool solutionsToCheck = false,
             bool reposToUpdate = false,
@@ -102,10 +102,16 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
+            if (previewPackages)
+            {
+                stablePackages = false;
+            }
+
+
+            // if no preview or stable packages were requested, default to stable
             if (!stablePackages && !previewPackages)
             {
-                Console.WriteLine($"ERROR: can't specify stable and preview NuGet packages simultaneously!");
-                Environment.Exit(1);
+                stablePackages = true;
             }
 
             if (stablePackages && previewPackages)
