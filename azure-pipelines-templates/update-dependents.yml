@@ -126,8 +126,11 @@ steps:
           # Build the client_payload conditionally based on $usePreview
           if ($null -ne $usePreview)
           {
-              $clientPayload = @{ usePreview = $usePreview, branchToPr = $env:BRANCH_TO_PR }
-
+              $clientPayload = @{
+                  usePreview = $usePreview;
+                  branchToPr = $env:BRANCH_TO_PR
+              }
+              
               $eventType = "update-dependencies-develop"
           }
           else
