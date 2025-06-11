@@ -1124,9 +1124,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // check if there is already a PR with these updates
                 var openPRs = _octokitClient.PullRequest.GetAllForRepository(repoOwner, libraryName, new PullRequestRequest() { State = ItemStateFilter.Open }).Result;
 
-                var updatePRs = openPRs.Where(pr => pr.Title == prTitle && pr.Body == commitMessage).ToList();
+                var updatePRs = openPRs.Where(pr => pr.Title == prTitle && pr.Body == commitMessage);
 
-                if (updatePRs.Count != 0)
+                if (updatePRs.Any())
                 {
                     Console.WriteLine($"INFO: found existing PR with the same update: {repoOwner}/{libraryName}/pull/{updatePRs.First().Number}. Skipping PR creation.");
 
