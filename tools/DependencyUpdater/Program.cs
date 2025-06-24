@@ -1124,7 +1124,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // check if there is already a PR with these updates
                 var openPRs = _octokitClient.PullRequest.GetAllForRepository(repoOwner, libraryName, new PullRequestRequest() { State = ItemStateFilter.Open }).Result;
 
-                var updatePRs = openPRs.Where(pr => pr.User.Login == _gitHubUser && pr.Title == prTitle && pr.Body == commitMessage);
+                var updatePRs = openPRs.Where(pr => pr.Title == prTitle && pr.Body == commitMessage);
 
                 if (updatePRs.Any())
                 {
