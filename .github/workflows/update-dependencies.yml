@@ -44,7 +44,7 @@ jobs:
   update-nanoframework-nugets:
     name: Update .NET nanoFramework NuGet packages
     timeout-minutes: ${{ inputs.timeout-minutes }}
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     env:
       GITHUB_TOKEN: ${{ github.token }}

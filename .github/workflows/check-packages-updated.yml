@@ -17,7 +17,7 @@ jobs:
   check_nugets_using_latest_version:
     name: NuGets using latest version
     timeout-minutes: 15
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     env:
       GITHUB_AUTH_TOKEN: ${{ secrets.NANOBUILD_PAT }}

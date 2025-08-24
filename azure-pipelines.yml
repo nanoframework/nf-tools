@@ -28,7 +28,7 @@ jobs:
 ##############################
 - job: Check_Build_Options
   pool:
-    vmImage: 'windows-latest'
+    vmImage: 'windows-2022'
 
   steps:
   
@@ -108,7 +108,7 @@ jobs:
     Check_Build_Options
 
   pool:
-    vmImage: 'windows-latest'
+    vmImage: 'windows-2022'
 
   variables:
     - group: sign-client-credentials
@@ -227,7 +227,7 @@ jobs:
     Check_Build_Options
 
   pool:
-    vmImage: 'windows-latest'
+    vmImage: 'windows-2022'
 
   variables:
     - group: sign-client-credentials
@@ -371,7 +371,7 @@ jobs:
     Check_Build_Options
 
   pool:
-    vmImage: 'windows-latest'
+    vmImage: 'windows-2022'
 
   variables:
     - group: sign-client-credentials
@@ -421,7 +421,7 @@ jobs:
     )
 
   pool:
-    vmImage: 'windows-latest'
+    vmImage: 'windows-2022'
 
   steps:
 
