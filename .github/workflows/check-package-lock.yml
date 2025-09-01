@@ -18,7 +18,7 @@ jobs:
   check_package_lock_file:
     name: package.lock exists
     timeout-minutes: 5
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Checkout
