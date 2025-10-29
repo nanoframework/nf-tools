@@ -138,6 +138,12 @@ namespace nanoFramework.Tools.GitHub
                     {
                         return new OkObjectResult("");
                     }
+
+                    // copilot
+                    if (payload.pull_request.user.login == "copilot")
+                    {
+                        return new OkObjectResult("");
+                    }
                     ////////////////////////////////////////////////////////////
 
                     // check for PR in release branch
