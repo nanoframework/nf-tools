@@ -139,8 +139,8 @@ namespace nanoFramework.Tools.GitHub
                         return new OkObjectResult("");
                     }
 
-                    // copilot
-                    if (payload.pull_request.user.login == "copilot")
+                    // Copilot (case-insensitive)
+                    if (payload.pull_request.user.login.ToString().Equals("copilot", StringComparison.OrdinalIgnoreCase))
                     {
                         return new OkObjectResult("");
                     }
