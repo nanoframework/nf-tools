@@ -19,7 +19,9 @@ jobs:
         run: |
           git config user.email "nanoframework@outlook.com"
           git config user.name "nfbot"
+          git checkout -b dummy-branch
           git commit --allow-empty --message "[Chore] empty commit`r`n[skip ci]`r`n***NO_CI***"
-          git push
+          git push origin dummy-branch
+          git push origin --delete dummy-branch
         
         shell: pwsh
