@@ -65,8 +65,9 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - uses: nanoframework/nanobuild@v1
-        env:
-          USE_PREVIEW: ${{ inputs.previewPackages }}
+        with:
+          gitHubAuth: ${{ secrets.GITHUB_TOKEN }}
+          usePreview: ${{ inputs.previewPackages }}
 
       - uses: nuget/setup-nuget@v2
 
