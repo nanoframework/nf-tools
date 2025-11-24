@@ -52,7 +52,7 @@ jobs:
       GITHUB_AUTH: ${{ secrets.NFBOT_GITHUB_ACTIONS }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: '${{ github.workspace }}/${{ inputs.workingDirectory }}'
           ref: ${{ inputs.branchToPr }}
