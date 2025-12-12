@@ -22,7 +22,7 @@ steps:
       }
       else
       {
-          Write-Host "Assembly checksum found: $assemblyChecksum"
+          Write-Host "Assembly checksum found: $env:NF_NATIVE_ASSEMBLY_CHECKSUM"
       }
 
 - task: NuGetCommand@2
