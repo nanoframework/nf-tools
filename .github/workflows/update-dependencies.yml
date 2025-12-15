@@ -57,7 +57,7 @@ jobs:
           path: '${{ github.workspace }}/${{ inputs.workingDirectory }}'
           ref: ${{ inputs.branchToPr }}
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
