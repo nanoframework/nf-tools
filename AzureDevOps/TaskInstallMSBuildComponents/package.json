@@ -1,6 +1,6 @@
 {
   "name": "nanoframework-msbuild-components-installer",
-  "version": "1.256.0",
+  "version": "1.257.0",
   "description": "Install .NET nanoFramework MSBuild components",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -17,7 +17,7 @@ Import-VstsLocStrings "$PSScriptRoot\Task.json"
 function DownloadVsixFile($fileUrl, $downloadFileName)
 {
     Write-Debug "Download VSIX file from $fileUrl to $downloadFileName"
-    Invoke-WebRequest -Uri $fileUrl -OutFile $downloadFileName
+    Invoke-WebRequest -Uri $fileUrl -OutFile $downloadFileName -UseBasicParsing
 }
 
 $tempDir = $($env:Agent_TempDirectory)
@@ -38,7 +38,7 @@ if($isPreview -eq $true)
 
     # get extension information from Open VSIX Gallery feed
     $vsixFeedXml = Join-Path $($env:Agent_TempDirectory) "vs-extension-feed.xml"
-    Invoke-WebRequest -Uri "https://www.vsixgallery.com/feed/author/nanoframework" -OutFile $vsixFeedXml
+    Invoke-WebRequest -Uri "https://www.vsixgallery.com/feed/author/nanoframework" -OutFile $vsixFeedXml -UseBasicParsing
     [xml]$feedDetails = Get-Content $vsixFeedXml
 
     # Define the extension IDs
@@ -97,7 +97,7 @@ else
     Write-Debug "Get latest releases of nanoFramework VS extension from GitHub"
 
     # Use Invoke-WebRequest to get the release JSON
-    $response = Invoke-WebRequest -Uri 'https://api.github.com/repos/nanoframework/nf-Visual-Studio-extension/releases?per_page=10' -Headers $headers
+    $response = Invoke-WebRequest -Uri 'https://api.github.com/repos/nanoframework/nf-Visual-Studio-extension/releases?per_page=10' -Headers $headers -UseBasicParsing
 
     # Convert the response content to JSON objects
     $releases = $response.Content | ConvertFrom-Json
