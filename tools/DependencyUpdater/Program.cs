@@ -693,13 +693,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                             string updateParameters;
 
                             if ((stablePackages && !packageName.StartsWith("UnitsNet."))
-                                || package.IsDevelopmentDependency)
+                                || (package.IsDevelopmentDependency && !packageName.StartsWith("nanoFramework.TestFramework")))
                             {
                                 // don't allow prerelease for:
                                 // - release
                                 // - main branches
                                 // - UnitsNet packages
-                                // - development dependencies
+                                // - development dependencies (except nanoFramework.TestFramework)
                                 updateParameters = $"{projectToUpdate} -Id {packageName} {repositoryPath} -FileConflictAction Overwrite";
                             }
                             else if (packageName.StartsWith("UnitsNet."))
