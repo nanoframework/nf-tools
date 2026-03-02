@@ -133,14 +133,10 @@ namespace nanoFramework.Tools.GitHub
                     ////////////////////////////////////////////////////////////
                     // processing exceptions
 
-                    // any BOT
-                    if (payload.pull_request.user.login.ToString().EndsWith("[bot]"))
-                    {
-                        return new OkObjectResult("");
-                    }
-
-                    // Copilot (case-insensitive)
-                    if (payload.pull_request.user.login.ToString().Equals("copilot", StringComparison.OrdinalIgnoreCase))
+                    // any BOT (check login suffix or user type)
+                    if (payload.pull_request.user.login.ToString().EndsWith("[bot]") ||
+                        payload.pull_request.user.type?.ToString().Equals("Bot", StringComparison.OrdinalIgnoreCase) == true ||
+                        payload.pull_request.user.login.ToString().Equals("copilot", StringComparison.OrdinalIgnoreCase))
                     {
                         return new OkObjectResult("");
                     }
@@ -298,9 +294,11 @@ namespace nanoFramework.Tools.GitHub
                     {
                         // yes, check contributors list
 
-                        // skip if user it's a bot
+                        // skip if user it's a bot or Copilot
                         if (pr.User.Login == "nfbot" ||
-                            pr.User.Login.EndsWith("[bot]"))
+                            pr.User.Login.EndsWith("[bot]") ||
+                            pr.User.Type.Value == AccountType.Bot ||
+                            pr.User.Login.Equals("copilot", StringComparison.OrdinalIgnoreCase))
                         {
                             // nothing to do here
                         }
