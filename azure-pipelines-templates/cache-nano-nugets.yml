@@ -19,5 +19,5 @@ steps:
     )
   continueOnError: true
   inputs:
-    key: 'nuget | **/packages.lock.json'
+    key: 'nuget | **/packages.lock.json | **/packages.config'
     path: $(UserProfile)/.nuget/packages
