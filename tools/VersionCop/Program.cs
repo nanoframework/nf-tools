@@ -208,20 +208,22 @@ class Program
             // try to find nuspec for this in case none was specified
             if (nuspecFile is null)
             {
-                nuspecFileName = Directory.GetFiles(workingDirectory, $"*{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                var projectFileNameWithoutExtension = Path.GetFileNameWithoutExtension(projectToCheck);
+                var projectDirectory = Directory.GetParent(projectToCheck).FullName;
 
-                if (nuspecFileName is not null)
+                // Define search locations and patterns to try
+                var searchLocations = new[]
                 {
-                    // report finding
-                    Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
+                    (directory: workingDirectory, pattern: $"*{projectFileNameWithoutExtension}.nuspec"),
+                    (directory: workingDirectory, pattern: $"*{projectName}.nuspec"),
+                    (directory: projectDirectory, pattern: $"*{projectFileNameWithoutExtension}.nuspec"),
+                    (directory: projectDirectory, pattern: $"*{projectName}.nuspec")
+                };
 
-                    // load nuspec file
-                    nuspecReader = GetNuspecReader(nuspecFileName);
-                }
-                else
+                // Try each location and pattern
+                foreach (var (directory, pattern) in searchLocations)
                 {
-                    // try again with project name
-                    nuspecFileName = Directory.GetFiles(workingDirectory, $"*{projectName}.nuspec", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                    nuspecFileName = Directory.GetFiles(directory, pattern, SearchOption.TopDirectoryOnly).FirstOrDefault();
 
                     if (nuspecFileName is not null)
                     {
@@ -230,21 +232,23 @@ class Program
 
                         // load nuspec file
                         nuspecReader = GetNuspecReader(nuspecFileName);
+                        break;
                     }
-                    else
-                    {
-                        // better report this...
-                        Console.ForegroundColor = ConsoleColor.Yellow;
+                }
 
-                        Console.WriteLine("INFO: couldn't find a nuspec file for the project...");
-                        Console.WriteLine($"INFO: tried '*{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec'");
-                        Console.WriteLine($"INFO: and also '*{projectName}.nuspec'");
+                if (nuspecFileName is null)
+                {
+                    // better report this...
+                    Console.ForegroundColor = ConsoleColor.Yellow;
 
-                        Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine("INFO: couldn't find a nuspec file for the project...");
+                    Console.WriteLine($"INFO: tried '*{projectFileNameWithoutExtension}.nuspec' and '*{projectName}.nuspec'");
+                    Console.WriteLine($"INFO: in locations: '{workingDirectory}' and '{projectDirectory}'");
 
-                        // make sure nuspec reader is null
-                        nuspecReader = null;
-                    }
+                    Console.ForegroundColor = ConsoleColor.White;
+
+                    // make sure nuspec reader is null
+                    nuspecReader = null;
                 }
             }
 
