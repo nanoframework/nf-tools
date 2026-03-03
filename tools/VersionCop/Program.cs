@@ -375,15 +375,23 @@ class Program
                         && checkNuspec
                         && nuspecReader is not null)
                     {
-                        // this check here tries to determine if the package ID and Title resemble with the assembly name
+                        // this check here tries to determine if the package ID and Title match with the assembly name
                         // it looks a bit convoluted but these variations are required to deal with:
                         // - libraries that have (or not) nanoFramework prefix
                         // - libraries that have variations on the ID, like System.Net.Http.Client/Server
-                        if (!((nuspecReader.GetId().Contains(assemblyName)
-                            && nuspecReader.GetTitle().Contains(assemblyName))
-                            || (nuspecReader.GetId().Contains($"nanoFramework.{assemblyName}")
-                            && nuspecReader.GetTitle().Contains($"nanoFramework.{assemblyName}"))
-                            ))
+                        // - libraries that have additional segments like nanoFramework.UnitsNet.AbsorbedDoseOfIonizingRadiation
+                        
+                        bool idMatches = nuspecReader.GetId().EndsWith(assemblyName, StringComparison.OrdinalIgnoreCase) ||
+                                         nuspecReader.GetId().Equals(assemblyName, StringComparison.OrdinalIgnoreCase) ||
+                                         nuspecReader.GetId().Contains($".{assemblyName}", StringComparison.OrdinalIgnoreCase);
+                        
+                        // Title check is more lenient - it's OK if title doesn't contain assembly name
+                        // as long as ID matches, or if title is similar to ID
+                        bool titleMatches = string.IsNullOrEmpty(nuspecReader.GetTitle()) || 
+                                           nuspecReader.GetTitle().Contains(assemblyName, StringComparison.OrdinalIgnoreCase) ||
+                                           nuspecReader.GetTitle().Equals(nuspecReader.GetId(), StringComparison.OrdinalIgnoreCase);
+                        
+                        if (!idMatches)
                         {
                             checkNuspec = false;
                         }
