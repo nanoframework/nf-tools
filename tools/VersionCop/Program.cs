@@ -23,17 +23,20 @@ class Program
     /// <param name="workingDirectory">Path of the working directory where solutions will be searched.</param>
     /// <param name="nuspecFile">Path of nuspec file to be used for version check.</param>
     /// <param name="analyseNuspec"><see langword="true"/> to perform analysis of nuspec reporting dependencies that can be removed.</param>
+    /// <param name="excludePaths">Comma-separated list of paths to exclude from the search.</param>
     static int Main(
         string solutionToCheck,
         string workingDirectory = null,
         string nuspecFile = null,
-        bool analyseNuspec = false)
+        bool analyseNuspec = false,
+        string excludePaths = null)
     {
         Console.ForegroundColor = ConsoleColor.White;
 
         Console.WriteLine($"Solution is: '{solutionToCheck}'");
         Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
         Console.WriteLine($"Nuspec file is: '{nuspecFile ?? "*** NONE PROVIDED ***"}'");
+        Console.WriteLine($"Exclude paths: '{excludePaths ?? "*** NONE PROVIDED ***"}'");
 
         if (analyseNuspec)
         {
@@ -154,6 +157,41 @@ class Program
 
         // find ALL packages.config files in the solution projects
         var packageConfigs = Directory.GetFiles(workingDirectory, "packages.config", SearchOption.AllDirectories);
+
+        // filter out excluded paths if provided
+        if (excludePaths is not null)
+        {
+            var excludePathList = excludePaths.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            
+            packageConfigs = packageConfigs.Where(config =>
+            {
+                foreach (var excludePath in excludePathList)
+                {
+                    // Check if exclude path is an absolute path
+                    if (Path.IsPathRooted(excludePath))
+                    {
+                        // For absolute paths, check if config path starts with the exclude path
+                        if (config.StartsWith(excludePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        // For relative paths, check if any path segment matches
+                        var relativePath = Path.GetRelativePath(workingDirectory, config);
+                        var pathSegments = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                        
+                        if (pathSegments.Any(segment => segment.Equals(excludePath, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                
+                return true;
+            }).ToArray();
+        }
 
         Console.WriteLine($"Found {packageConfigs.Length} packages.config files...");
 
