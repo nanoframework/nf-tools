@@ -40,13 +40,14 @@ steps:
 
       # Replace 'merge' with 'head' in the $branch variable
       branch=$(echo "$branch" | sed 's/merge/head/')
-      echo "Updated branch: $branch"
 
-      # if this is a PR build, get the PR title
+      echo "##[group]PR details"
+
       if [[ $branch == refs/pull/* ]]; then
 
-        # Fetch the PR details from GitHub to get the title
-        # Extract the PR ID from the branch name
+        echo "Branch  : $branch"
+
+        # Fetch the PR details from GitHub
         auth=$(echo -n ":$GITHUBTOKEN" | base64)
         auth="basic $auth"
 
@@ -55,48 +56,43 @@ steps:
         http_code=${response: -3}
         content=${response::-3}
 
-        if [ $http_code -eq 200 ]; then  
-          prDescription=$(echo "$content" | jq -r '.body')  
-          if [ "$prDescription" = "null" ]; then  
-              echo "Error: Failed to extract PR description from response"  
-              exit 1  
+        if [ $http_code -eq 200 ]; then
+          prDescription=$(echo "$content" | jq -r '.body')
+          if [ "$prDescription" = "null" ]; then
+              echo "##[error]Failed to extract PR description from response"
+              exit 1
           fi
-        else  
-            echo "Error: Failed to fetch PR details. Status code: $http_code"  
-            echo "Response: $content"  
-            exit 1  
-        fi  
+        else
+            echo "##[error]Failed to fetch PR details. Status code: $http_code"
+            echo "Response: $content"
+            exit 1
+        fi
 
-        echo "PR description: $prDescription"
+        # truncate description to first 3 non-empty lines for readability
+        prDescriptionShort=$(echo "$prDescription" | grep -v '^\s*$' | head -3 | sed 's/^/  /')
+        echo "PR #$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER description (truncated):"
+        echo "$prDescriptionShort"
 
-        # Get the PR creator
         prCreator=$(echo "$content" | jq -r '.user.login')
+        echo "PR creator: $prCreator"
 
-        echo "PR Creator: $prCreator"
-
-        # Check if the PR creator is nfbot AND description includes the version update tag, 
-        # and set skipHardwareTest accordingly
-        # This is to skip the hardware test for update PRs created by nfbot
         if [[ "$prCreator" == "nfbot" && "$prDescription" == *"[version update]"* ]]; then
             skipHardwareTest=true
+            echo "Reason  : nfbot version-update PR — skipping hardware tests"
         else
             skipHardwareTest=false
         fi
 
       else
-
-        # build from a branch, not a PR
-        echo "This is not a PR build"
-
-        # don't run hardware tests on non-PR builds
+        echo "Branch  : $branch (not a PR build)"
         skipHardwareTest=true
-
+        echo "Reason  : non-PR build — skipping hardware tests"
       fi
 
-      echo "Skip Hardware Test: $skipHardwareTest"
+      echo "##[endgroup]"
 
       # Encode the PAT
-      patEncoded=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64)
+      patEncoded=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)
 
       # Define the headers
       headers=(
@@ -104,43 +100,53 @@ steps:
         -H "Content-Type: application/json"
       )
 
+      echo "##[group]Agent pool capabilities"
+
       if [ "$skipHardwareTest" = "true" ]; then
-        # Set the capabilityNames to none
-        capabilityNames="none"       
+        capabilityNames="none"
+        echo "Hardware tests skipped — no agent capabilities required"
       else
         # Get the pool ID
         url="https://dev.azure.com/${organization}/_apis/distributedtask/pools?poolName=${poolName}&api-version=7.1"
-        AZP_POOL_AGENTS=$(curl -s "${headers[@]}" -X GET "$url")
-        poolId=$(echo "$AZP_POOL_AGENTS" | jq -r '.value[0].id')
+        response=$(curl -s -w "%{http_code}" "${headers[@]}" -X GET "$url")
+        http_code=${response: -3}
+        content=${response::-3}
 
-        echo "Pool ID: $poolId"
+        if [ $http_code -ne 200 ]; then
+            echo "##[error]Failed to retrieve pool ID. HTTP Status Code: $http_code"
+            echo "Response: $content"
+            exit 1
+        fi
 
-        # Define the URL to get all agents in the pool
+        poolId=$(echo "$content" | jq -r '.value[0].id')
+        echo "Pool    : $poolName (ID: $poolId)"
+
         url="https://dev.azure.com/${organization}/_apis/distributedtask/pools/${poolId}/agents?includeCapabilities=true&api-version=7.1"
-
         response=$(curl -s -w "%{http_code}" "${headers[@]}" -X GET "$url")
         http_code=${response: -3}
         content=${response::-3}
 
         if [ $http_code -eq 200 ]; then
-            # Extract all userCapabilities names for online and enabled agents as a unique list
             capabilityNames=$(echo "$content" | jq -r '[.value[] | select(.status == "online" and .enabled == true) | .userCapabilities | keys] | unique | flatten | join("\n- ")')
+            if [ -z "$capabilityNames" ]; then
+                echo "##[warning]No online agents with capabilities found — defaulting to 'none'"
+                capabilityNames="none"
+            else
+                echo "Online agent capabilities:"
+                echo "- $capabilityNames"
+            fi
         else
-            echo "Failed to retrieve agent capabilities. HTTP Status Code: $http_code"
-            echo "Response: \"$content\""
+            echo "##[error]Failed to retrieve agent capabilities. HTTP Status Code: $http_code"
+            echo "Response: $content"
             exit 1
         fi
-        echo "Unique userCapabilities names: \"$capabilityNames\""
       fi
 
-      # Prepare the parameters
+      echo "##[endgroup]"
+
+      # Prepare the request body
       parametersJson=$(jq -n --arg appComponents "- $capabilityNames" '{templateParameters: {appComponents: $appComponents}}')
-
-      echo "Parameters: \"$parametersJson\""
-      echo "Branch for PR: \"$branch\""
-
-      # Define the request body
-      bodyJson=$(jq -n --argjson parameters "$parametersJson" --arg branch "$branch" --arg prTitle "$prTitle" '{
+      bodyJson=$(jq -n --argjson parameters "$parametersJson" --arg branch "$branch" '{
         resources: {
           repositories: {
             self: {
@@ -151,39 +157,45 @@ steps:
         templateParameters: $parameters.templateParameters
       }')
 
-      echo "Request body: \"$bodyJson\""
+      echo "##[group]Triggering pipeline"
+      echo "Organization : $organization"
+      echo "Project      : $project"
+      echo "Pipeline ID  : $pipelineId"
+      echo "Branch       : $branch"
+      echo "App components: $capabilityNames"
 
-      # Define the URL
+      # Define the URL and trigger the pipeline
       url="https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}/runs?api-version=7.1"
-
-      # Trigger the pipeline
       response=$(curl -s -w "%{http_code}" "${headers[@]}" -X POST -d "$bodyJson" "$url")
       http_code=${response: -3}
       content=${response::-3}
 
       if [ $http_code -eq 200 ]; then
           run_id=$(echo "$content" | jq -r '.id')
-          echo "Pipeline triggered successfully. Run ID: $run_id"
+          echo "##[section]Pipeline triggered successfully — Run ID: $run_id"
           echo "##vso[task.setvariable variable=run_id]$run_id"
       else
-          echo "Failed to trigger pipeline. HTTP Status Code: $http_code"
+          echo "##[error]Failed to trigger pipeline. HTTP Status Code: $http_code"
           echo "Response: $content"
           exit 1
       fi
+
+      echo "##[endgroup]"
     displayName: 'Trigger Azure DevOps Pipeline'
     env:
       BUILD_SOURCEBRANCH: $(Build.SourceBranch)
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_PAT)
 
   - script: |
-      echo "Pipeline to monitor Run ID: $(run_id)"
-      echo "Pipeline direct link: https://dev.azure.com/${{ parameters.AZURE_DEVOPS_ORG }}/${{ parameters.AZURE_DEVOPS_PROJECT }}/_build/results?buildId=$(run_id)"
-      # Define the URL to get the pipeline run status
+      echo "##[group]Monitoring pipeline run"
+      echo "Run ID : $(run_id)"
+      echo "Link   : https://dev.azure.com/${{ parameters.AZURE_DEVOPS_ORG }}/${{ parameters.AZURE_DEVOPS_PROJECT }}/_build/results?buildId=$(run_id)"
+      echo "##[endgroup]"
+
       url="https://dev.azure.com/${{ parameters.AZURE_DEVOPS_ORG }}/${{ parameters.AZURE_DEVOPS_PROJECT }}/_apis/pipelines/${{ parameters.AZURE_DEVOPS_PIPELINE_ID }}/runs/$(run_id)?api-version=7.1"
 
-      # Loop to monitor the pipeline run status
       while true; do
-          response=$(curl -s -w "%{http_code}" -H "Authorization: Basic $(echo -n ":${AZURE_DEVOPS_PAT}" | base64)" -X GET "$url")
+          response=$(curl -s -w "%{http_code}" -H "Authorization: Basic $(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)" -X GET "$url")
           http_code=${response: -3}
           content=${response::-3}
 
@@ -191,23 +203,23 @@ steps:
               state=$(echo "$content" | jq -r '.state')
               result=$(echo "$content" | jq -r '.result')
 
-              echo "Pipeline run state: $state"
+              echo "State: $state"
 
               if [ "$state" == "completed" ]; then
-                  echo "Pipeline run completed with result: $result"
                   if [ "$result" == "succeeded" ]; then
+                      echo "##[section]Pipeline completed successfully"
                       exit 0
                   else
+                      echo "##[error]Pipeline completed with result: $result"
                       exit 1
                   fi
               fi
           else
-              echo "Failed to get pipeline run status. HTTP Status Code: $http_code"
+              echo "##[error]Failed to get pipeline run status. HTTP Status Code: $http_code"
               echo "Response: $content"
               exit 1
           fi
 
-          # Wait for a while before checking again
           sleep 30
       done
     displayName: 'Monitoring Azure DevOps pipeline'
