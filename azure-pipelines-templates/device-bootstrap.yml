@@ -95,8 +95,23 @@ steps:
 
       echo "Skip Hardware Test: $skipHardwareTest"
 
+      # Diagnose the PAT before using it
+      patLength=${#AZURE_DEVOPS_PAT}
+      echo "PAT length: $patLength"
+      if [[ "$AZURE_DEVOPS_PAT" == '$('* ]]; then
+          echo "ERROR: AZURE_DEVOPS_PAT was not expanded - pipeline variable is missing or not linked"
+          exit 1
+      fi
+      if [ $patLength -lt 10 ]; then
+          echo "ERROR: AZURE_DEVOPS_PAT appears to be empty or too short"
+          exit 1
+      fi
+
       # Encode the PAT
-      patEncoded=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64)
+      # Use -w 0 to disable base64 line wrapping (default wraps at 76 chars,
+      # which breaks the Authorization header for long PATs)
+      patEncoded=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)
+      echo "Encoded PAT length: ${#patEncoded}"
 
       # Define the headers
       headers=(
@@ -104,20 +119,40 @@ steps:
         -H "Content-Type: application/json"
       )
 
+      # Validate that the PAT is accepted by Azure DevOps before proceeding
+      echo "Validating PAT against Azure DevOps..."
+      testUrl="https://dev.azure.com/${organization}/_apis/projects?api-version=7.1"
+      testResponse=$(curl -s -w "%{http_code}" -H "Authorization: Basic $patEncoded" -X GET "$testUrl")
+      testCode=${testResponse: -3}
+      testContent=${testResponse::-3}
+      if [ $testCode -eq 200 ]; then
+          echo "PAT validation successful"
+      else
+          echo "PAT validation failed. HTTP Status Code: $testCode"
+          echo "Response: $testContent"
+          exit 1
+      fi
+
       if [ "$skipHardwareTest" = "true" ]; then
         # Set the capabilityNames to none
-        capabilityNames="none"       
+        capabilityNames="none"
       else
         # Get the pool ID
         url="https://dev.azure.com/${organization}/_apis/distributedtask/pools?poolName=${poolName}&api-version=7.1"
-        AZP_POOL_AGENTS=$(curl -s "${headers[@]}" -X GET "$url")
-        poolId=$(echo "$AZP_POOL_AGENTS" | jq -r '.value[0].id')
+        response=$(curl -s -w "%{http_code}" "${headers[@]}" -X GET "$url")
+        http_code=${response: -3}
+        content=${response::-3}
 
+        if [ $http_code -ne 200 ]; then
+            echo "Failed to retrieve pool ID. HTTP Status Code: $http_code"
+            echo "Response: \"$content\""
+            exit 1
+        fi
+
+        poolId=$(echo "$content" | jq -r '.value[0].id')
         echo "Pool ID: $poolId"
 
-        # Define the URL to get all agents in the pool
         url="https://dev.azure.com/${organization}/_apis/distributedtask/pools/${poolId}/agents?includeCapabilities=true&api-version=7.1"
-
         response=$(curl -s -w "%{http_code}" "${headers[@]}" -X GET "$url")
         http_code=${response: -3}
         content=${response::-3}
