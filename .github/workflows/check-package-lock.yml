@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: nuget/setup-nuget@v2
+      - uses: nuget/setup-nuget@v3
           
       - name: Find packages folder
         env:

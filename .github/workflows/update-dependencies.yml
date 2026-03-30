@@ -69,7 +69,7 @@ jobs:
           gitHubAuth: ${{ secrets.GITHUB_TOKEN }}
           usePreview: ${{ inputs.previewPackages }}
 
-      - uses: nuget/setup-nuget@v2
+      - uses: nuget/setup-nuget@v3
 
       - uses: nanoframework/nanodu@v1
         with:
