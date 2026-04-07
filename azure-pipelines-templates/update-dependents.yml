@@ -86,30 +86,37 @@ steps:
               $usePreview = "true"
           }
 
+          Write-Host "INFO: Waiting for package '$($env:PACKAGE_NAME)' version '$packageTargetVersion' to be available on nuget.org feed before launching updates..." 
+
           $nugetApiUrl = "https://api.nuget.org/v3-flatcontainer/$packageName/index.json"
 
-          function Get-LatestNugetVersion {
+          function Test-NugetVersionAvailable {
               param (
-                  [string]$url
+                  [string]$url,
+                  [string]$targetVersion
               )
               try {
                   $response = Invoke-RestMethod -Uri $url -Method Get
-                  return $response.versions[-1]
+                  return $response.versions -contains $targetVersion
               }
               catch {
                   throw "Error querying NuGet API: $_"
               }
           }
 
-          $latestNugetVersion = Get-LatestNugetVersion -url $nugetApiUrl
+          while (-not (Test-NugetVersionAvailable -url $nugetApiUrl -targetVersion $packageTargetVersion)) {
 
-          while ($latestNugetVersion -ne $packageTargetVersion) {
-              Write-Host "Latest version still not available from nuget.org feed. Waiting 5 minutes..."
+              # exit if the build was canceled
+              if ($env:AGENT_JOBSTATUS -eq "Canceled") {
+                  Write-Host "Build was canceled. Exiting wait loop."
+                  exit 0
+              }
+
+              Write-Host "Version '$packageTargetVersion' still not available from nuget.org feed. Waiting 5 minutes..."
               Start-Sleep -Seconds 300
-              $latestNugetVersion = Get-LatestNugetVersion -url $nugetApiUrl
           }
 
-          Write-Host "Version $latestNugetVersion available from nuget.org feed. Proceeding with update."
+          Write-Host "Version '$packageTargetVersion' available from nuget.org feed. Proceeding with update."
       }
 
       $librariesToUpdate = $env:REPOS_TO_UPDATE.Split([environment]::NewLine)
