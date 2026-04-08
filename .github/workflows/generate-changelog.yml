@@ -37,6 +37,21 @@ jobs:
           REPO_OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f1)
           REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f2)
 
+          # Get the tag name from the ref
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+
+          # Get the release ID for the current tag
+          RELEASE_ID=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+            "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/tags/${TAG_NAME}" \
+            | jq -r '.id')
+
+          if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
+            echo "::error::Could not find release for tag ${TAG_NAME}"
+            exit 1
+          fi
+
+          echo "Found release ID: ${RELEASE_ID} for tag: ${TAG_NAME}"
+
           # Create a JSON payload with the new release body content
           PAYLOAD=$(jq -n --arg body "${{ steps.build_changelog.outputs.changelog }}" '{body: $body}')
 
