@@ -37,7 +37,7 @@ jobs:
         with:
           gitHubAuth: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: nuget/setup-nuget@v3
+      - uses: nuget/setup-nuget@v4
           
       - name: Check NuGets updated
         env:
