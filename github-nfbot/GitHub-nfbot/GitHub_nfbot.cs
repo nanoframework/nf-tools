@@ -428,22 +428,22 @@ namespace nanoFramework.Tools.GitHub
                             if (processResult == StartReleaseResult.Executed)
                             {
                                 // add thumbs up reaction to comment
-                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (uint)payload.comment.id.Value, new NewReaction(ReactionType.Plus1));
+                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (long)payload.comment.id.Value, new NewReaction(ReactionType.Plus1));
                             }
                             else if (processResult == StartReleaseResult.Started)
                             {
                                 // add rocket reaction to comment
-                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (uint)payload.comment.id.Value, new NewReaction(ReactionType.Rocket));
+                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (long)payload.comment.id.Value, new NewReaction(ReactionType.Rocket));
                             }
                             else if (processResult == StartReleaseResult.WatchoutConditions)
                             {
                                 // add eyes reaction to comment
-                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (uint)payload.comment.id.Value, new NewReaction(ReactionType.Eyes));
+                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (long)payload.comment.id.Value, new NewReaction(ReactionType.Eyes));
                             }
                             else
                             {
                                 // add confused reaction to comment
-                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (uint)payload.comment.id.Value, new NewReaction(ReactionType.Confused));
+                                await _octokitClient.Reaction.IssueComment.Create(repositoryId, (long)payload.comment.id.Value, new NewReaction(ReactionType.Confused));
                             }
                         }
                         else
@@ -451,7 +451,7 @@ namespace nanoFramework.Tools.GitHub
                             log.LogInformation($"User has no permission to execute command");
 
                             // add thumbs down reaction to comment
-                            await _octokitClient.Reaction.IssueComment.Create(repositoryId, (uint)payload.comment.id.Value, new NewReaction(ReactionType.Minus1));
+                            await _octokitClient.Reaction.IssueComment.Create(repositoryId, (long)payload.comment.id.Value, new NewReaction(ReactionType.Minus1));
                         }
                     }
                 }
