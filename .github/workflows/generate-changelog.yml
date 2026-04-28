@@ -53,7 +53,7 @@ jobs:
           echo "Found release ID: ${RELEASE_ID} for tag: ${TAG_NAME}"
 
           # Create a JSON payload with the new release body content
-          PAYLOAD=$(jq -n --arg body "${{ steps.build_changelog.outputs.changelog }}" '{body: $body}')
+          PAYLOAD=$(jq -n --arg body "$CHANGELOG" '{body: $body}')
 
           # Update the release
           UPDATE_RESPONSE=$(curl -s -X PATCH -H "Authorization: token ${GITHUB_TOKEN}" \
