@@ -31,7 +31,7 @@ steps:
   inputs:
     versionSelector: latestStable
 
-- task: VSTest@2
+- task: VSTest@3
   condition: >-
     and(
       succeeded(),
@@ -55,5 +55,7 @@ steps:
     configuration: '$(BuildConfiguration)'
     diagnosticsEnabled: true
     vsTestVersion: toolsInstaller
-    codeCoverageEnabled: true
+    codeCoverageEnabled: false
+    runTestsInIsolation: true
+    collectDumpOn: always
     runSettingsFile: '${{ parameters.unitTestRunsettings }}'
