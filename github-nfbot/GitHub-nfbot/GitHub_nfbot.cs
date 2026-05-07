@@ -267,14 +267,18 @@ namespace nanoFramework.Tools.GitHub
 
                             log.LogInformation($"Found {openPrs.Count} open PRs");
 
-                            // filter PRs created by our bots, only about version updates and earlier than the current PR 
+                            var currentBaseBranch = pr.Base.Ref;
+
+                            // filter PRs created by our bots, only about version updates and earlier than the current PR
+                            // include only PRs targeting the same base branch (main/develop/etc.)
                             foreach (var pull in openPrs.Where(
                                 p => (p.User.Login == "nfbot"
                                 || p.User.Login == "github-actions[bot]")
                                 && p.Body.Contains(_tagVersionUpdate)
-                                && p.Number < pr.Number))
+                                && p.Number < pr.Number
+                                && string.Equals(p.Base.Ref, currentBaseBranch, StringComparison.OrdinalIgnoreCase)))
                             {
-                                log.LogInformation($"Closing PR {pull.Number}");
+                                log.LogInformation($"Closing PR {pull.Number} targeting branch '{currentBaseBranch}'");
 
                                 await _octokitClient.PullRequest.Update(
                                     _gitOwner,
