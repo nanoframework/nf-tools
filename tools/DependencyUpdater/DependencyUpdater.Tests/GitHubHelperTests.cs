@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) .NET Foundation and Contributors
 // See LICENSE file in the project root for full license information.
 //
@@ -8,7 +8,7 @@ namespace DependencyUpdater.Tests;
 [TestClass]
 public class GitHubHelperTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("origin	https://github.com/torbacz/nf-tools.git (fetch) origin	https://github.com/torbacz/nf-tools.git (push)", "nf-tools")]
     [DataRow("origin	https://github.com/nanoframework/nf-tools.git (fetch) origin	https://github.com/nanoframework/nf-tools.git (push)", "nf-tools")]
     [DataRow("origin	https://ghp_dfsadfasdfsa2@github.com/torbacz/nf-tools.git (fetch) origin	https://github.com/torbacz/nf-tools.git (push)", "nf-tools")]
@@ -21,7 +21,7 @@ public class GitHubHelperTests
         Assert.AreEqual(expectedResult, libName);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("origin	https://github.com/torbacz/nf-tools.git (fetch) origin	https://github.com/torbacz/nf-tools.git (push)", "torbacz")]
     [DataRow("origin	https://github.com/nanoframework/nf-tools.git (fetch) origin	https://github.com/nanoframework/nf-tools.git (push)", "nanoframework")]
     [DataRow("origin	https://github.com/nanoframework-test/nf-tools.git (fetch) origin	https://github.com/nanoframework/nf-tools.git (push)", "nanoframework-test")]
