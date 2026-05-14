@@ -7,7 +7,7 @@
     </TN>
     <MS>
       <S N="Name">VstsTaskSdk</S>
-      <S N="Version">0.21.0</S>
+      <S N="Version">0.21.3</S>
       <S N="Type">Module</S>
       <S N="Description">VSTS Task SDK</S>
       <S N="Author">Microsoft Corporation</S>
@@ -21,10 +21,11 @@
           <S>VSTS</S>
           <S>martinmrazik</S>
           <S>EDergachev</S>
+          <S>tramsing</S>
         </LST>
       </Obj>
       <S N="Copyright">(c) Microsoft Corporation. All rights reserved.</S>
-      <DT N="PublishedDate">2024-05-02T10:19:39+01:00</DT>
+      <DT N="PublishedDate">2025-12-12T08:52:17+00:00</DT>
       <Nil N="InstalledDate" />
       <Nil N="UpdatedDate" />
       <Nil N="LicenseUri" />
@@ -43,30 +44,30 @@
         </TN>
         <DCT>
           <En>
-            <S N="Key">Cmdlet</S>
+            <S N="Key">Workflow</S>
             <Obj N="Value" RefId="4">
               <TNRef RefId="1" />
               <LST />
             </Obj>
           </En>
           <En>
-            <S N="Key">Command</S>
-            <Ref N="Value" RefId="4" />
-          </En>
-          <En>
             <S N="Key">Function</S>
             <Ref N="Value" RefId="4" />
           </En>
           <En>
-            <S N="Key">DscResource</S>
-            <Ref N="Value" RefId="4" />
-          </En>
-          <En>
-            <S N="Key">Workflow</S>
-            <Ref N="Value" RefId="4" />
-          </En>
-          <En>
             <S N="Key">RoleCapability</S>
+            <Ref N="Value" RefId="4" />
+          </En>
+          <En>
+            <S N="Key">Command</S>
+            <Ref N="Value" RefId="4" />
+          </En>
+          <En>
+            <S N="Key">Cmdlet</S>
+            <Ref N="Value" RefId="4" />
+          </En>
+          <En>
+            <S N="Key">DscResource</S>
             <Ref N="Value" RefId="4" />
           </En>
         </DCT>
@@ -91,16 +92,16 @@
           <S N="requireLicenseAcceptance">False</S>
           <S N="isLatestVersion">True</S>
           <S N="isAbsoluteLatestVersion">True</S>
-          <S N="versionDownloadCount">9419</S>
-          <S N="downloadCount">553359</S>
-          <S N="packageSize">67529</S>
-          <S N="published">2024-05-02 10:19:39 +01:00</S>
-          <S N="created">2024-05-02 10:19:39 +01:00</S>
-          <S N="lastUpdated">2024-06-18 12:21:46 +01:00</S>
+          <S N="versionDownloadCount">29884</S>
+          <S N="downloadCount">834491</S>
+          <S N="packageSize">67553</S>
+          <S N="published">2025-12-12 08:52:17 +00:00</S>
+          <S N="created">2025-12-12 08:52:17 +00:00</S>
+          <S N="lastUpdated">2026-05-14 10:00:00 +01:00</S>
           <S N="tags">PSModule</S>
           <S N="developmentDependency">False</S>
-          <S N="updated">2024-06-18T12:21:46Z</S>
-          <S N="NormalizedVersion">0.21.0</S>
+          <S N="updated">2026-05-14T10:00:00Z</S>
+          <S N="NormalizedVersion">0.21.3</S>
           <S N="Authors">Microsoft Corporation</S>
           <S N="IsPrerelease">false</S>
           <S N="ItemType">Module</S>
@@ -110,7 +111,7 @@
           <S N="CompanyName">Microsoft Corporation</S>
         </MS>
       </Obj>
-      <S N="InstalledLocation">E:\GitHub\nf-tools\AzureDevOps\TaskInstallMSBuildComponents\TaskFiles\VstsTaskSdk\0.21.0</S>
+      <S N="InstalledLocation">E:\GitHub\nf-tools\AzureDevOps\TaskInstallMSBuildComponents\TaskFiles\ps_modules\VstsTaskSdk\0.21.3</S>
     </MS>
   </Obj>
 </Objs>

@@ -202,16 +202,20 @@ function Invoke-Process {
             $processOptions.Add("RedirectStandardError", $StdErrPath)
         }
 
-        # TODO: For some reason, -Wait is not working on agent.
-        # Agent starts executing the System usage metrics and hangs the step forever.
+        # We can't use -Wait in this case as it waits for the whole process tree, it can lead to unexprected hangs
         $proc = Start-Process @processOptions
 
-        # https://stackoverflow.com/a/23797762
-        $null = $($proc.Handle)
-        $proc.WaitForExit()
+        # Wait directly on the process object to avoid Wait-Process throwing when the child exits immediately
+        [void]$proc.WaitForExit()
 
         $procExitCode = $proc.ExitCode
         Write-Verbose "Exit code: $procExitCode"
+        
+        # Handle case where exit code might be null
+        if ($procExitCode -eq $null) {
+            Write-Warning "Process exit code is null, defaulting to 0"
+            $procExitCode = 0
+        }
 
         if ($RequireExitCodeZero -and $procExitCode -ne 0) {
             Write-Error (Get-LocString -Key PSLIB_Process0ExitedWithCode1 -ArgumentList ([System.IO.Path]::GetFileName($FileName)), $procExitCode)
@@ -219,7 +223,8 @@ function Invoke-Process {
 
         $global:LASTEXITCODE = $procExitCode
 
-        return $procExitCode
+        # Ensure we return an integer
+        return [int]$procExitCode
     }
     finally {
         Trace-LeavingInvocation $MyInvocation

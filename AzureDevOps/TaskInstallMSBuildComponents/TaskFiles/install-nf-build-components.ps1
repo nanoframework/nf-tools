@@ -47,15 +47,22 @@ if($isPreview -eq $true)
 
     # feed list VS2019 and VS2022 extensions using the extension ID
 
-    # VS2022
-    if($vsInstance.Contains('2022'))
+    # VS2026 and VS2022 (use same extension)
+    if($vsInstance.Contains('2026') -or $vsInstance.Contains('2022'))
     {
         $vs2022Entry = $feedDetails.feed.entry | Where-Object { $_.Vsix.Id -eq $vs2022Id }
 
         if($vs2022Entry)
         {
             $extensionUrl = $vs2022Entry.content.src
-            $vsixPath = Join-Path $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
+            if($vsInstance.Contains('2026'))
+            {
+                $vsixPath = Join-Path $tempDir "nanoFramework.Tools.VS2026.Extension.zip"
+            }
+            else
+            {
+                $vsixPath = Join-Path $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
+            }
             $extensionVersion = $vs2022Entry.Vsix.Version
         }
         else
@@ -118,11 +125,18 @@ else
         $vs2019Tag = $vs2019Release.tag_name
     }
 
-    # Get extension details according to VS version, starting from VS2022 down to VS2019
-    if($vsInstance.Contains('2022'))
+    # Get extension details according to VS version, starting from VS2026/VS2022 down to VS2019
+    if($vsInstance.Contains('2026') -or $vsInstance.Contains('2022'))
     {
         $extensionUrl = "https://github.com/nanoframework/nf-Visual-Studio-extension/releases/download/$vs2022Tag/nanoFramework.Tools.VS2022.Extension.vsix"
-        $vsixPath = Join-Path $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
+        if($vsInstance.Contains('2026'))
+        {
+            $vsixPath = Join-Path $tempDir "nanoFramework.Tools.VS2026.Extension.zip"
+        }
+        else
+        {
+            $vsixPath = Join-Path $tempDir "nanoFramework.Tools.VS2022.Extension.zip"
+        }
         $extensionVersion = $vs2022Tag
     }
     elseif($vsInstance.Contains('2019'))
