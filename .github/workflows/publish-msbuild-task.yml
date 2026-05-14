@@ -1,0 +1,82 @@
+# Copyright (c) .NET Foundation and Contributors
+# See LICENSE file in the project root for full license information.
+
+name: Publish MSBuild Task to Marketplace
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'AzureDevOps/TaskInstallMSBuildComponents/**'
+  workflow_dispatch:
+
+env:
+  EXTENSION_PATH: AzureDevOps/TaskInstallMSBuildComponents
+
+jobs:
+  publish-extension:
+    name: Publish MSBuild Task Extension
+    runs-on: windows-2022
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.EXTENSION_PATH }}/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ${{ env.EXTENSION_PATH }}
+        run: npm ci
+
+      - name: Install TFX CLI
+        run: npm install -g tfx-cli
+
+      - name: Validate manifest
+        working-directory: ${{ env.EXTENSION_PATH }}
+        run: |
+          Write-Host "Validating vss-extension.json manifest..."
+          if (-Not (Test-Path "vss-extension.json")) {
+            Write-Error "vss-extension.json not found"
+            exit 1
+          }
+          $manifest = Get-Content vss-extension.json | ConvertFrom-Json
+          Write-Host "✓ Extension ID: $($manifest.id)"
+          Write-Host "✓ Publisher: $($manifest.publisher)"
+          Write-Host "✓ Version: $($manifest.version)"
+
+      - name: Publish extension to marketplace
+        working-directory: ${{ env.EXTENSION_PATH }}
+        env:
+          AZDO_PAT: ${{ secrets.AZDO_MARKETPLACE_PAT }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace("$env:AZDO_PAT")) {
+            Write-Error "AZDO_MARKETPLACE_PAT secret is not configured. Please set it in repository settings."
+            exit 1
+          }
+          
+          Write-Host "Publishing extension..."
+          tfx extension publish --publisher nanoframework --manifest-globs vss-extension.json --token "$env:AZDO_PAT" --no-wait-validation
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to publish extension"
+            exit 1
+          }
+          
+          Write-Host "✓ Extension published successfully"
+
+      - name: Log published version
+        if: success()
+        working-directory: ${{ env.EXTENSION_PATH }}
+        run: |
+          $manifest = Get-Content vss-extension.json | ConvertFrom-Json
+          Write-Host "Published extension version: $($manifest.version)"
+          Write-Host "Publisher: $($manifest.publisher)"
+          Write-Host "Extension: $($manifest.name)"
