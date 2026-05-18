@@ -890,8 +890,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
                                 }
 
-                                using var projectFile = File.Create(projectToUpdate);
-                                projectDocument.Save(projectFile, SaveOptions.None);
+                                // Save project file and ensure stream is fully closed before proceeding
+                                using (var projectFile = File.Create(projectToUpdate))
+                                {
+                                    projectDocument.Save(projectFile, SaveOptions.None);
+                                }
 
                                 // load nuspec file content, if there is a nuspec file to update
                                 if (nuspecFileName is not null)
@@ -930,10 +933,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                                             // save back changes
                                             // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
                                             // not being saved thus causing bogus updates on the nuspec content
-                                            using StreamWriter nuspecStreamWriter = File.CreateText(nuspecFileName);
-                                            nuspecFile.Save(nuspecStreamWriter);
-                                            nuspecStreamWriter.Flush();
-                                            nuspecStreamWriter.Close();
+                                            using (StreamWriter nuspecStreamWriter = new StreamWriter(nuspecFileName, false))
+                                            {
+                                                nuspecFile.Save(nuspecStreamWriter);
+                                            }
 
                                             // bump counter
                                             nuspecUpdatedCounter++;
