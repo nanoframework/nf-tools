@@ -34,6 +34,8 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static string _gitHubUser;
         private static string _workingRepoOwner;
         private static string _baseBranch;
+        private static bool _isGitHubActions;
+        private static bool _isAzureDevOps;
 
         /// <summary>
         /// 
@@ -70,10 +72,13 @@ namespace nanoFramework.Tools.DependencyUpdater
             bool localUpdate = false,
             string[] args = null)
         {
+            // Detect running environment
+            DetectEnvironment();
+
             // sanity check 
             if (!solutionsToCheck && !reposToUpdate)
             {
-                Console.WriteLine($"::error::❌ Missing required option: specify either '--solutions-to-check' or '--repos-to-update'");
+                WriteError($"❌ Missing required option: specify either '--solutions-to-check' or '--repos-to-update'");
                 Environment.Exit(1);
             }
 
@@ -81,7 +86,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             var gitRepo = CheckIfDirectoryIsGitRepo(workingDirectory);
             if (!gitRepo.Item1)
             {
-                Console.WriteLine($"::error::❌ Working directory is not a git repository");
+                WriteError($"❌ Working directory is not a git repository");
                 Environment.Exit(1);
             }
 
@@ -101,7 +106,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (!Directory.Exists(workingDirectory))
             {
-                Console.WriteLine($"::error::❌ Directory not found: {workingDirectory}");
+                WriteError($"❌ Directory not found: {workingDirectory}");
                 Environment.Exit(1);
             }
 
@@ -119,7 +124,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (stablePackages && previewPackages)
             {
-                Console.WriteLine($"::error::❌ Cannot specify both stable and preview packages simultaneously");
+                WriteError($"❌ Cannot specify both stable and preview packages simultaneously");
                 Environment.Exit(1);
             }
 
@@ -178,7 +183,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
             catch
             {
-                Console.WriteLine($"::error::❌ Failed to parse exclusion list. Use comma-separated solution names.");
+                WriteError($"❌ Failed to parse exclusion list. Use comma-separated solution names.");
                 Environment.Exit(1);
             }
 
@@ -379,7 +384,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             var tokenFromEnvironmentVariable = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
             if (tokenFromEnvironmentVariable is null)
             {
-                Console.WriteLine($"::error::❌ GITHUB_TOKEN environment variable not found");
+                WriteError($"❌ GITHUB_TOKEN environment variable not found");
 
                 // exit with error
                 Environment.Exit(1);
@@ -395,12 +400,14 @@ namespace nanoFramework.Tools.DependencyUpdater
             if (Environment.GetEnvironmentVariable("Agent_HomeDirectory") is not null
                 && Environment.GetEnvironmentVariable("Build_BuildNumber") is not null)
             {
+                _isAzureDevOps = true;
                 return RunningEnvironment.AzurePipelines;
             }
 
             // this variable it's only set when running on a GitHub action
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") is not null)
             {
+                _isGitHubActions = true;
                 return RunningEnvironment.GitHubAction;
             }
 
@@ -435,7 +442,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             var repoName = GitHubHelper.GetRepoNameFromInputString(gitRepo);
             if (!repoName.Success)
             {
-                Console.WriteLine($"::error::❌ Unable to determine repository name from git remote");
+                WriteError($"❌ Unable to determine repository name from git remote");
                 Environment.Exit(1);
             }
 
@@ -461,7 +468,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
                 else
                 {
-                    Console.WriteLine($"::error::❌ NuGet config file not found: {nugetConfig}");
+                    WriteError($"❌ NuGet config file not found: {nugetConfig}");
                     Environment.Exit(1);
                 }
             }
@@ -525,7 +532,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine();
                 Console.WriteLine();
-                Console.WriteLine("::group::🔧 Processing solution");
+                WriteGroupStart("🔧 Processing solution");
                 Console.WriteLine($"  📄 {Path.GetFileName(solutionFile)}");
 
                 // look for nfproj
@@ -534,7 +541,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 if (!slnFileContent.Contains(".nfproj"))
                 {
                     Console.WriteLine($"  ⚠️  No .nfproj files found - skipping");
-                    Console.WriteLine("::endgroup::");
+                    WriteGroupEnd();
                     continue;
                 }
 
@@ -575,7 +582,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 foreach (var packageConfigFile in packageConfigs)
                 {
                     Console.WriteLine();
-                    Console.WriteLine($"::group::📝 Processing project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
+                    WriteGroupStart($"📝 Processing project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
 
                     // check if the project the packages.config belongs to it's in the solution 
                     var projectPathInSln = Path.GetRelativePath(solutionPath, Directory.GetParent(packageConfigFile).FullName);
@@ -603,7 +610,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     if (!match.Success)
                     {
                         Console.WriteLine($"  ⚠️  No matching project found - skipping");
-                        Console.WriteLine("::endgroup::");
+                        WriteGroupEnd();
                         continue;
                     }
 
@@ -620,7 +627,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     {
                         // no packages to update
                         Console.WriteLine($"  ℹ️  No packages found - skipping");
-                        Console.WriteLine("::endgroup::");
+                        WriteGroupEnd();
 
                         continue;
                     }
@@ -793,7 +800,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 {
                                     // something wrong happened!
                                     // output update message for the log
-                                    Console.WriteLine($"::warning::⚠️  Unexpected update outcome:");
+                                    WriteWarning($"⚠️  Unexpected update outcome:");
                                     Console.WriteLine($"{updateResult}");
                                     Console.WriteLine();
 
@@ -842,7 +849,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             // sanity check
                             if (packageTargetVersion.Contains("alpha"))
                             {
-                                Console.WriteLine($"::error::🛑 Attempting to use alpha version of {packageName} - aborting");
+                                WriteError($"🛑 Attempting to use alpha version of {packageName} - aborting");
 
                                 // exit with error 
                                 Environment.Exit(1);
@@ -954,20 +961,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
             }
 
-            // Convert the HashSet to a list and build the commit message
-            if (updateMessages.Count > 0)
-            {
-                Console.WriteLine();
-                Console.WriteLine("INFO: generating commit message");
-
-                List<string> uniqueUpdateMessages = updateMessages.ToList();
-                commitMessage.Append(string.Join("", uniqueUpdateMessages));
-
-                // Update the update count
-                updateCount = uniqueUpdateMessages.Count;
-            }
-
-            Console.WriteLine("::endgroup::");
+            WriteGroupEnd();
 
             // check if any packages where updated
             if (updateCount == 0)
@@ -983,7 +977,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                 if (updateCount != 0)
                 {
-                    Console.WriteLine($"::warning::⚠️  No nuspec files were updated - this may need review");
+                    WriteWarning($"⚠️  No nuspec files were updated - this may need review");
                 }
             }
 
@@ -994,21 +988,13 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             Console.WriteLine();
-            Console.WriteLine($"::notice::✅ Successfully updated {updateCount} package(s)");
+            WriteNotice($"✅ Successfully updated {updateCount} package(s)");
 
             // need this line so nfbot flags the PR appropriately
             commitMessage.Append("\n[version update]\n\n");
 
             // better add this warning line               
             commitMessage.Append("### :warning: This is an automated update. :warning:\n");
-
-            if (localUpdate)
-            {
-                Console.WriteLine($"INFO: local update mode, skipping branch creation and PR submission.");
-                return;
-            }
-
-
 
             Console.WriteLine($"  🔀 Branch: {newBranchName}");
 
@@ -1071,7 +1057,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"\n♻️  Cleaning up: checking out '{_baseBranch}'");
                 if (!RunGitCli($"checkout {_baseBranch}", workingDirectory))
                 {
-                    Console.WriteLine($"::warning::⚠️  Failed to checkout '{_baseBranch}' - manual cleanup may be needed");
+                    WriteWarning($"⚠️  Failed to checkout '{_baseBranch}' - manual cleanup may be needed");
                 }
 
                 // delete local and remote branches
@@ -1083,7 +1069,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // remote
                 if (!RunGitCli($"push origin --delete {newBranchName}", workingDirectory))
                 {
-                    Console.WriteLine($"::warning::⚠️  Failed to delete remote branch '{newBranchName}' - manual cleanup may be needed");
+                    WriteWarning($"⚠️  Failed to delete remote branch '{newBranchName}' - manual cleanup may be needed");
                 }
             }
         }
@@ -1121,7 +1107,8 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             Console.WriteLine();
-            Console.WriteLine($"::group::📦 Building update cache for {uniquePackages.Count} unique package(s)");
+            Console.WriteLine();
+            WriteGroupStart($"📦 Building update cache for {uniquePackages.Count} unique package(s)");
 
             // Check each unique package and cache the result
             foreach (var packageEntry in uniquePackages)
@@ -1215,7 +1202,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine($"✅ Update cache built: All packages are up-to-date");
             }
-            Console.WriteLine("::endgroup::");
+            WriteGroupEnd();
 
             return updateCache;
         }
@@ -1245,7 +1232,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
                 else
                 {
-                    Console.WriteLine($"::error::❌ Solution not found: {sln}");
+                    WriteError($"❌ Solution not found: {sln}");
                     Environment.Exit(1);
                 }
             }
@@ -1333,11 +1320,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                     updatePr.Number,
                     updatePrBody).Result;
 
-                Console.WriteLine($"::notice::✅ Pull request created: #{updatePr.Number} in {repoOwner}/{libraryName}");
+                WriteNotice($"✅ Pull request created: #{updatePr.Number} in {repoOwner}/{libraryName}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"::error::❌ Failed to create PR: {ex.Message}:{ex.InnerException.Message}");
+                WriteError($"❌ Failed to create PR: {ex.Message}:{ex.InnerException.Message}");
                 Environment.Exit(1);
             }
 
@@ -1499,6 +1486,91 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             return false;
+        }
+
+        private static void DetectEnvironment()
+        {
+            // Check for GitHub Actions environment
+            _isGitHubActions = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"));
+
+            // Check for Azure Pipelines environment
+            _isAzureDevOps = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"));
+        }
+
+        private static void WriteGroupStart(string title)
+        {
+            if (_isGitHubActions)
+            {
+                Console.WriteLine($"::group::{title}");
+            }
+            else if (_isAzureDevOps)
+            {
+                Console.WriteLine($"##[group]{title}");
+            }
+            else
+            {
+                Console.WriteLine($"\n{title}");
+            }
+        }
+
+        private static void WriteGroupEnd()
+        {
+            if (_isGitHubActions)
+            {
+                Console.WriteLine("::endgroup::");
+            }
+            else if (_isAzureDevOps)
+            {
+                Console.WriteLine("##[endgroup]");
+            }
+        }
+
+        private static void WriteError(string message)
+        {
+            if (_isGitHubActions)
+            {
+                Console.WriteLine($"::error::{message}");
+            }
+            else if (_isAzureDevOps)
+            {
+                Console.WriteLine($"##vso[task.logissue type=error]{message}");
+            }
+            else
+            {
+                Console.WriteLine($"ERROR: {message}");
+            }
+        }
+
+        private static void WriteWarning(string message)
+        {
+            if (_isGitHubActions)
+            {
+                Console.WriteLine($"::warning::{message}");
+            }
+            else if (_isAzureDevOps)
+            {
+                Console.WriteLine($"##vso[task.logissue type=warning]{message}");
+            }
+            else
+            {
+                Console.WriteLine($"WARNING: {message}");
+            }
+        }
+
+        private static void WriteNotice(string message)
+        {
+            if (_isGitHubActions)
+            {
+                Console.WriteLine($"::notice::{message}");
+            }
+            else if (_isAzureDevOps)
+            {
+                Console.WriteLine($"##vso[task.logissue type=warning]{message}");
+            }
+            else
+            {
+                Console.WriteLine($"NOTICE: {message}");
+            }
         }
 
         private enum PrCreationOutcome
