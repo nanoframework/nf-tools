@@ -19,6 +19,7 @@ using Microsoft.Extensions.Configuration;
 using NuGet.Packaging;
 using NuGet.Versioning;
 using Octokit;
+using Newtonsoft.Json.Linq;
 
 namespace nanoFramework.Tools.DependencyUpdater
 {
@@ -162,7 +163,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 if (string.IsNullOrEmpty(gitHubAuth))
                 {
                     // no auth provided, try to use GITHUB_TOKEN environment variable
-                    var gitHubToken = GetGitHubToken();
+                    string gitHubToken = GetGitHubToken();
                     _octokitClient.Credentials = new Octokit.Credentials(gitHubToken);
                     // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
                     _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{gitHubUser}:{gitHubToken}"))}";
@@ -215,10 +216,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 var resultCollection = new List<Tuple<bool, string>>();
-                foreach (var repoName in args)
+                foreach (string repoName in args)
                 {
                     // remove quotes, if any
-                    var library = repoName.Replace("'", "");
+                    string library = repoName.Replace("'", "");
 
                     _baseBranch = branchToPr;
 
@@ -242,7 +243,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Console.WriteLine();
                     Console.WriteLine($"📥 Cloning repository: {library}");
 
-                    var cloneCommand = CreateCloneCommand(cloneDepth, repoOwner, library, useGitTokenForClone, gitHubAuth);
+                    string cloneCommand = CreateCloneCommand(cloneDepth, repoOwner, library, useGitTokenForClone, gitHubAuth);
                     if (!RunGitCli(cloneCommand, workingDirectory))
                     {
                         resultCollection.Add(Tuple.Create(false, $"❌ {repoName}: Clone failed"));
@@ -330,7 +331,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <returns>Tuple with status and remote address of git repository.</returns>
         private static Tuple<bool, string> CheckIfDirectoryIsGitRepo(string directory)
         {
-            var gitRepo = string.Empty;
+            string gitRepo = string.Empty;
             if (!RunGitCli("remote -v", ref gitRepo, directory))
             {
                 return Tuple.Create(false, string.Empty);
@@ -348,7 +349,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         {
             if (usePatForClone)
             {
-                var token = string.IsNullOrEmpty(gitHubAuth) ? GetGitHubToken() : gitHubAuth;
+                string token = string.IsNullOrEmpty(gitHubAuth) ? GetGitHubToken() : gitHubAuth;
                 return $"clone {cloneDepth} https://{token}@github.com/{repoOwner}/{library} {library}";
             }
 
@@ -473,7 +474,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
             }
 
-            var libraryName = GitHubHelper.GetLibNameFromRegexMatch(repoName);
+            string libraryName = GitHubHelper.GetLibNameFromRegexMatch(repoName);
 
             Console.WriteLine($"\n📦 Repository: {libraryName}");
 
@@ -509,7 +510,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             Console.WriteLine();
             Console.WriteLine($"📝 Solutions to process:");
 
-            foreach (var sln in solutionFiles)
+            foreach (string sln in solutionFiles)
             {
                 Console.Write($"  • {Path.GetRelativePath(workingDirectory, sln)}");
 
@@ -528,7 +529,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             HashSet<string> updateMessages = new();
 
             // go through each solution (filter out the ones in the exclusion list)
-            foreach (var solutionFile in solutionFiles.Where(s => !_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(s))))
+            foreach (string solutionFile in solutionFiles.Where(s => !_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(s))))
             {
                 Console.WriteLine();
                 Console.WriteLine();
@@ -536,7 +537,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"  📄 {Path.GetFileName(solutionFile)}");
 
                 // look for nfproj
-                var slnFileContent = File.ReadAllText(solutionFile);
+                string slnFileContent = File.ReadAllText(solutionFile);
 
                 if (!slnFileContent.Contains(".nfproj"))
                 {
@@ -546,10 +547,10 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 // find part for SLN
-                var solutionPath = Directory.GetParent(solutionFile).FullName;
+                string solutionPath = Directory.GetParent(solutionFile).FullName;
 
                 // find ALL packages.config files inside the solution projects
-                var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
+                string[] packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
 
                 // perform NuGet restore
                 Console.WriteLine();
@@ -563,7 +564,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"  ✅ Found {packageConfigs.Length} packages.config file(s)");
 
                 // Build package update cache once for the entire solution
-                var packageUpdateCache = BuildPackageUpdateCache(packageConfigs, stablePackages);
+                Dictionary<(string Id, string Version), string> packageUpdateCache = BuildPackageUpdateCache(packageConfigs, stablePackages);
 
                 // Pre-check: skip solution if no updates available (only for stable packages)
                 if (stablePackages && !packageUpdateCache.Any(kv => kv.Value != null))
@@ -579,13 +580,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // specify repository path, just in case
                 string repositoryPath = $"-RepositoryPath {Directory.GetParent(solutionFile).FullName}\\packages";
 
-                foreach (var packageConfigFile in packageConfigs)
+                foreach (string packageConfigFile in packageConfigs)
                 {
                     Console.WriteLine();
                     WriteGroupStart($"📝 Processing project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
 
                     // check if the project the packages.config belongs to it's in the solution 
-                    var projectPathInSln = Path.GetRelativePath(solutionPath, Directory.GetParent(packageConfigFile).FullName);
+                    string projectPathInSln = Path.GetRelativePath(solutionPath, Directory.GetParent(packageConfigFile).FullName);
 
                     // check for project in the same folder
                     if (projectPathInSln == ".")
@@ -602,7 +603,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         projectPathInSln += "\\\\";
                     }
 
-                    var match = Regex.Match(
+                    Match match = Regex.Match(
                         slnFileContent,
                         $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")",
                         RegexOptions.IgnoreCase);
@@ -614,14 +615,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                         continue;
                     }
 
-                    var projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
-                    var projectName = match.Groups["projectname"].Value;
+                    string projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
+                    string projectName = match.Groups["projectname"].Value;
 
 
 
                     // load packages.config 
-                    var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
-                    var packageList = packageReader.GetPackages();
+                    PackagesConfigReader packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
+                    IEnumerable<PackageReference> packageList = packageReader.GetPackages();
 
                     if (!packageList.Any())
                     {
@@ -644,57 +645,23 @@ namespace nanoFramework.Tools.DependencyUpdater
                         // try to find nuspec to update it
                         string nuspecFileName = null;
 
-                        var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec", SearchOption.AllDirectories);
-                        if (candidateNuspecFiles.Any())
-                        {
-                            // take 1st
-                            nuspecFileName = candidateNuspecFiles.FirstOrDefault();
-                        }
+                        nuspecFileName = FindNuspecFile(solutionPath, projectToUpdate, projectName, libraryName);
 
-                        // sanity check for nuspec file
                         if (nuspecFileName is null)
                         {
-                            // try again with project name
-                            candidateNuspecFiles = Directory.GetFiles(solutionPath, $"{projectName}.nuspec", SearchOption.AllDirectories);
-                            if (candidateNuspecFiles.Any())
+                            if (!nuspecNotFoundMessage.Contains(projectToUpdate))
                             {
-                                // take 1st
-                                nuspecFileName = candidateNuspecFiles.FirstOrDefault();
-                            }
+                                WriteWarning($"⚠️  Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
 
-                            // if this is AMQPLite, there is a different pattern for the nuspec names
-                            if (libraryName == AMQPLiteLibraryName)
-                            {
-                                candidateNuspecFiles = Directory.GetFiles(solutionPath, $"{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
-
-                                if (candidateNuspecFiles.Any())
-                                {
-                                    // take 1st
-                                    nuspecFileName = candidateNuspecFiles.FirstOrDefault();
-                                }
-                            }
-
-                            if (nuspecFileName is null)
-                            {
-                                if (!nuspecNotFoundMessage.Contains(projectToUpdate))
-                                {
-                                    Console.WriteLine();
-                                    Console.WriteLine();
-                                    Console.WriteLine("**********************************************");
-                                    Console.WriteLine($"INFO: Can't find nuspec file matching project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
-                                    Console.WriteLine("**********************************************");
-                                    Console.WriteLine();
-
-                                    // store project name, so the warning shows only once
-                                    nuspecNotFoundMessage += projectToUpdate;
-                                }
+                                // store project name, so the warning shows only once
+                                nuspecNotFoundMessage += projectToUpdate;
                             }
                         }
 
                         // list packages to check
                         Console.WriteLine();
                         Console.WriteLine("  📦 Packages:");
-                        foreach (var package in packageList)
+                        foreach (PackageReference package in packageList)
                         {
                             Console.WriteLine($"    • {package.PackageIdentity.Id} {package.PackageIdentity.Version}");
                         }
@@ -708,8 +675,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                             string packageName = package.PackageIdentity.Id;
                             string packageOriginVersion = package.PackageIdentity.Version.ToNormalizedString();
 
-
-
                             // Check cache first to see if update is available
                             // Skip packages not in cache or with no available updates (unless they need special handling)
                             // UnitsNet packages need special handling (search nuget.org)
@@ -717,8 +682,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                             if (!packageName.StartsWith("UnitsNet.")
                                 && !packageName.StartsWith("nanoFramework.TestFramework"))
                             {
-                                var cacheKey = (packageName, packageOriginVersion);
-                                if (packageUpdateCache.TryGetValue(cacheKey, out var cachedVersion))
+                                (string packageName, string packageOriginVersion) cacheKey = (packageName, packageOriginVersion);
+
+                                if (packageUpdateCache.TryGetValue(cacheKey, out string cachedVersion))
                                 {
                                     if (cachedVersion == null)
                                     {
@@ -745,6 +711,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             {
                                 // grab latest version from NuGet
                                 string unitsNetPackageInfo = "";
+
                                 if (!RunNugetCLI(
                                     "search",
                                     $" {packageName} -Verbosity quiet ",
@@ -791,7 +758,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             // check update outcome
                             string updateRegex = $"(?:Successfully\\sinstalled\\s\\'{packageName.Replace(".", "\\.")}\\s)(?'newVersion'\\S+)(?:\\'\\sto\\s)";
 
-                            var updateOutcome = Regex.Match(updateResult, updateRegex);
+                            Match updateOutcome = Regex.Match(updateResult, updateRegex);
 
                             if (!updateOutcome.Success)
                             {
@@ -821,7 +788,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 packageReader = new PackagesConfigReader(XDocument.Load(packageConfigFile));
 
                                 // filter out Nerdbank.GitVersioning package and development dependencies (except our Test Framework)
-                                var packageToRefresh = packageReader.GetPackages()
+                                PackageReference packageToRefresh = packageReader.GetPackages()
                                     .FirstOrDefault(p => p.PackageIdentity.Id == packageName);
 
                                 if (packageToRefresh is null)
@@ -861,8 +828,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 {
                                     string updateMessage = $"Bumps {packageName} from {packageOriginVersion} to {packageTargetVersion}</br>";
 
-                                    // add to the HashSet to ensure uniqueness
-                                    updateMessages.Add(updateMessage);
+                                    // add to the HashSet to ensure uniqueness; only count and append if not already seen
+                                    if (updateMessages.Add(updateMessage))
+                                    {
+                                        commitMessage.Append(updateMessage);
+                                        updateCount++;
+                                    }
 
                                     Console.WriteLine($"  ⬆️  {packageName} {packageOriginVersion} → {packageTargetVersion}");
                                     Console.WriteLine($"    📋 Project file: {Path.GetFileName(projectToUpdate)}");
@@ -872,9 +843,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 if (packageName == "nanoFramework.TestFramework")
                                 {
                                     // read nfproj file
-                                    var nfprojFileContent = File.ReadAllText(projectToUpdate);
+                                    string nfprojFileContent = File.ReadAllText(projectToUpdate);
 
-                                    var updatedProjContent = Regex.Replace(nfprojFileContent, $"(?<=packages\\\\nanoFramework\\.TestFramework\\.)(?'version'\\d+\\.\\d+\\.\\d+)(?=\\\\build\\\\)", packageTargetVersion, RegexOptions.ExplicitCapture);
+                                    string updatedProjContent = Regex.Replace(nfprojFileContent, $"(?<=packages\\\\nanoFramework\\.TestFramework\\.)(?'version'\\d+\\.\\d+\\.\\d+)(?=\\\\build\\\\)", packageTargetVersion, RegexOptions.ExplicitCapture);
 
                                     File.WriteAllText(projectToUpdate, updatedProjContent);
                                 }
@@ -884,7 +855,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 var projectDocument = XDocument.Load(projectToUpdate);
                                 var referenceElements = projectDocument.Root?.Descendants().Where(x => x.Name.LocalName == "Reference").ToList();
 
-                                foreach (var referenceElement in referenceElements)
+                                foreach (XElement referenceElement in referenceElements)
                                 {
                                     var privateElements = referenceElement.Descendants().Where(x => x.Name.LocalName == "Private").ToList();
                                     foreach (var privateElement in privateElements)
@@ -894,7 +865,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 }
 
                                 // Save project file and ensure stream is fully closed before proceeding
-                                using (var projectFile = File.Create(projectToUpdate))
+                                using (FileStream projectFile = File.Create(projectToUpdate))
                                 {
                                     projectDocument.Save(projectFile, SaveOptions.None);
                                 }
@@ -929,7 +900,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     var dependency = nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr);
                                     if (dependency is not null)
                                     {
-                                        var currentVersion = dependency.Attributes["version"]?.Value;
+                                        string currentVersion = dependency.Attributes["version"]?.Value;
 
                                         if (currentVersion != packageTargetVersion)
                                         {
@@ -968,23 +939,14 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine();
                 Console.WriteLine("ℹ️  No package updates were applied");
+                return;
             }
 
             // sanity check for no nuspecs found
             if (nuspecUpdatedCounter == 0)
             {
                 Console.WriteLine();
-
-                if (updateCount != 0)
-                {
-                    WriteWarning($"⚠️  No nuspec files were updated - this may need review");
-                }
-            }
-
-            if (updateCount == 0
-                && nuspecUpdatedCounter == 0)
-            {
-                return;
+                WriteWarning($"⚠️  No nuspec files were updated - this may need review");
             }
 
             Console.WriteLine();
@@ -1084,7 +1046,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             var uniquePackages = new Dictionary<(string Id, string Version), bool>(); // Track if development dependency
 
             // Collect all unique package identities across all config files
-            foreach (var packageConfig in packageConfigs)
+            foreach (string packageConfig in packageConfigs)
             {
                 var packageReader = new PackagesConfigReader(XDocument.Load(packageConfig));
                 var packageList = packageReader.GetPackages();
@@ -1111,89 +1073,39 @@ namespace nanoFramework.Tools.DependencyUpdater
             WriteGroupStart($"📦 Building update cache for {uniquePackages.Count} unique package(s)");
 
             // Check each unique package and cache the result
-            foreach (var packageEntry in uniquePackages)
+            foreach (KeyValuePair<(string Id, string Version), bool> packageEntry in uniquePackages)
             {
-                var (packageId, packageVersion) = packageEntry.Key;
+                (string packageId, string packageVersion) = packageEntry.Key;
                 bool isDevelopmentDependency = packageEntry.Value;
 
-                string nugetApiUrl = $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLower()}/index.json";
-
-                using (var httpClient = new HttpClient())
+                try
                 {
-                    try
+                    // Determine if we should include prerelease versions for this package
+                    bool useOnlyStable = stablePackages
+                        || (isDevelopmentDependency && !packageId.StartsWith("nanoFramework.TestFramework"));
+
+                    var latestVersion = GetLatestListedVersion(packageId, !useOnlyStable);
+
+                    if (latestVersion is not null
+                        && NuGetVersion.TryParse(packageVersion, out NuGetVersion currentVersion)
+                        && currentVersion < latestVersion)
                     {
-                        var json = httpClient.GetStringAsync(nugetApiUrl).Result;
-                        dynamic packageInfo = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
-
-                        // Determine if we should only use stable versions for this package
-                        bool useOnlyStable = stablePackages
-                            || (isDevelopmentDependency && !packageId.StartsWith("nanoFramework.TestFramework"));
-
-                        // Filter versions based on package type and mode
-                        var versions = new List<string>();
-                        foreach (var version in packageInfo.versions)
-                        {
-                            string versionStr = version.ToString();
-
-                            if (useOnlyStable)
-                            {
-                                // Only include stable versions for:
-                                // - stable mode
-                                // - development dependencies (except nanoFramework.TestFramework)
-                                if (!versionStr.Contains("-"))
-                                {
-                                    versions.Add(versionStr);
-                                }
-                            }
-                            else
-                            {
-                                // Include all versions (stable + preview)
-                                versions.Add(versionStr);
-                            }
-                        }
-
-                        if (versions.Count == 0)
-                        {
-                            // No versions available, mark as no update
-                            updateCache[(packageId, packageVersion)] = null;
-                            continue;
-                        }
-
-                        // Grab latest version
-                        var latestVersion = versions[versions.Count - 1];
-
-                        // Use NuGet version comparison to properly handle semantic versioning
-                        if (NuGetVersion.TryParse(packageVersion, out var currentVersion) &&
-                            NuGetVersion.TryParse(latestVersion.ToString(), out var newestVersion))
-                        {
-                            if (currentVersion < newestVersion)
-                            {
-                                // Update available
-                                updateCache[(packageId, packageVersion)] = newestVersion.ToString();
-                                Console.WriteLine($"  ⬆️  {packageId}: {packageVersion} → {newestVersion}");
-                            }
-                            else
-                            {
-                                // Already up-to-date
-                                updateCache[(packageId, packageVersion)] = null;
-                            }
-                        }
-                        else
-                        {
-                            // Version parsing failed, mark as no update to be safe
-                            updateCache[(packageId, packageVersion)] = null;
-                        }
+                        updateCache[(packageId, packageVersion)] = latestVersion.ToString();
+                        Console.WriteLine($"  ⬆️  {packageId}: {packageVersion} → {latestVersion}");
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Console.WriteLine($"WARNING: Failed to fetch version info for {packageId}. Exception: {ex.Message}");
-                        // Mark as no update available in cache to avoid retrying
                         updateCache[(packageId, packageVersion)] = null;
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"WARNING: Failed to fetch version info for {packageId}. Exception: {ex.Message}");
+                    updateCache[(packageId, packageVersion)] = null;
+                }
             }
 
-            var updatesFound = updateCache.Count(kv => kv.Value != null);
+            int updatesFound = updateCache.Count(kv => kv.Value != null);
             if (updatesFound > 0)
             {
                 Console.WriteLine($"✅ Update cache built: {updatesFound} package(s) have updates available");
@@ -1205,6 +1117,22 @@ namespace nanoFramework.Tools.DependencyUpdater
             WriteGroupEnd();
 
             return updateCache;
+        }
+
+        private static NuGetVersion GetLatestListedVersion(string packageId, bool includePrerelease)
+        {
+            using var httpClient = new HttpClient();
+            string url = $"https://api.nuget.org/v3/search?q=packageid:{packageId}&prerelease={includePrerelease.ToString().ToLowerInvariant()}&semVerLevel=2.0.0";
+            string json = httpClient.GetStringAsync(url).Result;
+            var data = JObject.Parse(json)["data"] as JArray;
+
+            if (data is null || data.Count == 0)
+            {
+                return null;
+            }
+
+            string versionStr = data[0]["version"]?.ToString();
+            return NuGetVersion.TryParse(versionStr, out var version) ? version : null;
         }
 
         private static List<string> CollectSolutions(string workingDirectory, string[] solutionsToCheck)
@@ -1222,9 +1150,9 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             var listToReturn = new List<string>();
 
-            foreach (var sln in solutionsToCheck.Where(s => s.EndsWith(".sln")))
+            foreach (string sln in solutionsToCheck.Where(s => s.EndsWith(".sln")))
             {
-                var solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
+                string[] solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
 
                 if (solutions.Any())
                 {
@@ -1240,11 +1168,94 @@ namespace nanoFramework.Tools.DependencyUpdater
             return listToReturn;
         }
 
+        private static string FindNuspecFile(string solutionPath, string projectToUpdate, string projectName, string libraryName)
+        {
+            string projectBaseName = Path.GetFileNameWithoutExtension(projectToUpdate);
+
+            // Strategy 1: exact project file name match
+            // Strategy 2: with nanoFramework. prefix
+            // Strategy 3: project name match
+            // Strategy 4: project name with nanoFramework. prefix
+            // Strategy 5: AMQPLite special case
+            string[] namesToTry =
+            [
+                $"{projectBaseName}.nuspec",
+                $"nanoFramework.{projectBaseName}.nuspec",
+                $"{projectName}.nuspec",
+                $"nanoFramework.{projectName}.nuspec",
+            ];
+
+            foreach (string pattern in namesToTry)
+            {
+                string[] candidates = Directory.GetFiles(solutionPath, pattern, SearchOption.AllDirectories);
+                if (candidates.Length > 0)
+                {
+                    return candidates[0];
+                }
+            }
+
+            // AMQPLite special case
+            if (libraryName == AMQPLiteLibraryName)
+            {
+                string amqpPattern = $"{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec";
+                string[] amqpCandidates = Directory.GetFiles(solutionPath, amqpPattern, SearchOption.AllDirectories);
+                if (amqpCandidates.Length > 0)
+                {
+                    return amqpCandidates[0];
+                }
+            }
+
+            // Strategy 6: content-based scan - look at every nuspec file in the solution and its parent
+            // and match <id> element against project base name or project name
+            var searchRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                solutionPath,
+                Directory.GetParent(solutionPath)?.FullName
+            };
+            searchRoots.RemoveWhere(r => r is null);
+
+            var allNuspecs = searchRoots
+                .SelectMany(root => Directory.GetFiles(root, "*.nuspec", SearchOption.AllDirectories))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            foreach (string nuspecFile in allNuspecs)
+            {
+                try
+                {
+                    var doc = XDocument.Load(nuspecFile);
+                    XNamespace ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+                    string id = doc.Root
+                        ?.Element(ns + "metadata")
+                        ?.Element(ns + "id")
+                        ?.Value;
+
+                    if (id is null)
+                    {
+                        continue;
+                    }
+
+                    // match against project base name or project name (with or without nanoFramework. prefix)
+                    if (string.Equals(id, projectBaseName, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(id, projectName, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(id, $"nanoFramework.{projectBaseName}", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(id, $"nanoFramework.{projectName}", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return nuspecFile;
+                    }
+                }
+                catch
+                {
+                    // skip malformed nuspec files
+                }
+            }
+
+            return null;
+        }
+
         private static void UpdateProject(string projectToUpdate, string repositoryPath, ref int updateCount, ref StringBuilder commitMessage)
         {
             string updateResult = "";
 
-            // perform NuGet update
             if (!RunNugetCLI(
                 "update",
                 $"\"{projectToUpdate}\" {repositoryPath} -FileConflictAction Overwrite",
@@ -1264,7 +1275,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     string updateMessage = $"Bumps {packageUpdatedInfo.Groups["package"].Value.Replace(" ", " to ")}</br>";
 
-                    // append to commit message, if not already reported
                     if (!commitMessage.ToString().Contains(updateMessage))
                     {
                         commitMessage.Append(updateMessage);
@@ -1275,6 +1285,9 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
         }
 
+        /// <summary>
+        /// Creates a Pull Request with the update.
+        /// </summary>
         private static PrCreationOutcome CretePRWithUpdate(
             string branchToPr,
             string libraryName,
