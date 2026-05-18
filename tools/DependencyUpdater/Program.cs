@@ -682,11 +682,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     nuspecNotFoundMessage += projectToUpdate;
                                 }
                             }
-
-                            if (nuspecFileName is not null)
-                            {
-                                Console.WriteLine($"  📋 Nuspec: {Path.GetFileName(nuspecFileName)}");
-                            }
                         }
 
                         // list packages to check
@@ -899,6 +894,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // load nuspec file content, if there is a nuspec file to update
                                 if (nuspecFileName is not null)
                                 {
+                                    Console.WriteLine($"  📋 Nuspec: {Path.GetFileName(nuspecFileName)}");
+
                                     var nuspecFile = new XmlDocument();
                                     nuspecFile.Load(nuspecFileName);
 
@@ -924,11 +921,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     var dependency = nuspecFile.SelectSingleNode($"descendant::package:dependency[@id='{packageName}']", nsmgr);
                                     if (dependency is not null)
                                     {
-                                        if (dependency.Attributes["version"].Value != packageTargetVersion)
+                                        var currentVersion = dependency.Attributes["version"]?.Value;
+                                        Console.WriteLine($"  📄 Nuspec dependency '{packageName}': current={currentVersion}, target={packageTargetVersion}");
+
+                                        if (currentVersion != packageTargetVersion)
                                         {
                                             dependency.Attributes["version"].Value = packageTargetVersion;
 
-                                            Console.WriteLine($"Updating nuspec: '{dependency.Attributes["id"].Value}' ---> {packageTargetVersion}");
+                                            Console.WriteLine($"  ✏️  Updating nuspec: '{dependency.Attributes["id"].Value}' ---> {packageTargetVersion}");
 
                                             // save back changes
                                             // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
@@ -944,7 +944,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
                                     else
                                     {
-                                        // Silently skip - not listed in nuspec (no need to log)
+                                        Console.WriteLine($"  ⚠️  Dependency '{packageName}' not found in nuspec (may not be required)");
                                     }
 
                                 }
