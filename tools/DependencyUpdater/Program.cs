@@ -73,7 +73,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             // sanity check 
             if (!solutionsToCheck && !reposToUpdate)
             {
-                Console.WriteLine($"ERROR: need to specify update options. Either '--solutions-to-check' or '--repos-to-update'.");
+                Console.WriteLine($"::error::❌ Missing required option: specify either '--solutions-to-check' or '--repos-to-update'");
                 Environment.Exit(1);
             }
 
@@ -81,7 +81,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             var gitRepo = CheckIfDirectoryIsGitRepo(workingDirectory);
             if (!gitRepo.Item1)
             {
-                Console.WriteLine($"ERROR: working directory is not a git repository");
+                Console.WriteLine($"::error::❌ Working directory is not a git repository");
                 Environment.Exit(1);
             }
 
@@ -101,7 +101,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (!Directory.Exists(workingDirectory))
             {
-                Console.WriteLine($"ERROR: directory '{workingDirectory}' does not exist!");
+                Console.WriteLine($"::error::❌ Directory not found: {workingDirectory}");
                 Environment.Exit(1);
             }
 
@@ -119,7 +119,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             if (stablePackages && previewPackages)
             {
-                Console.WriteLine($"ERROR: can't specify stable and preview NuGet packages simultaneously!");
+                Console.WriteLine($"::error::❌ Cannot specify both stable and preview packages simultaneously");
                 Environment.Exit(1);
             }
 
@@ -130,15 +130,15 @@ namespace nanoFramework.Tools.DependencyUpdater
             _baseBranch = branchToPr;
 
             _runningEnvironment = GetRunningEnvironment();
-            Console.WriteLine($"Running on {_runningEnvironment.ToString()} environment");
+            Console.WriteLine($"\n🚀 Environment: {_runningEnvironment}");
 
             if (localUpdate)
             {
-                Console.WriteLine("Running in local update mode. No PR will be created.");
+                Console.WriteLine("ℹ️  Mode: Local update (no PR will be created)");
             }
             else
             {
-                Console.WriteLine($"Branch to submit PR: {branchToPr}");
+                Console.WriteLine($"🔀 Branch target: {branchToPr}");
             }
 
             // setup git stuff, only if we are not in debug mode
@@ -178,7 +178,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
             catch
             {
-                Console.WriteLine($"ERROR: exception parsing {nameof(exclusionList)}. Make sure to follow the instructions and pass a comma separated list of solution names.");
+                Console.WriteLine($"::error::❌ Failed to parse exclusion list. Use comma-separated solution names.");
                 Environment.Exit(1);
             }
 
@@ -219,8 +219,9 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     Console.WriteLine();
                     Console.WriteLine();
-                    Console.WriteLine("*******************************");
-                    Console.WriteLine($"Updating {library}");
+                    Console.WriteLine("═══════════════════════════════════════");
+                    Console.WriteLine($"📦 Processing repository: {library}");
+                    Console.WriteLine("═══════════════════════════════════════");
 
                     // clone depth
                     string cloneDepth = "--depth 1";
@@ -234,12 +235,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                     }
 
                     Console.WriteLine();
-                    Console.WriteLine($"INFO: cloning '{library}' repository");
+                    Console.WriteLine($"📥 Cloning repository: {library}");
 
                     var cloneCommand = CreateCloneCommand(cloneDepth, repoOwner, library, useGitTokenForClone, gitHubAuth);
                     if (!RunGitCli(cloneCommand, workingDirectory))
                     {
-                        resultCollection.Add(Tuple.Create(false, $"{repoName} ERROR: unable to clone"));
+                        resultCollection.Add(Tuple.Create(false, $"❌ {repoName}: Clone failed"));
                         continue;
                     }
 
@@ -267,7 +268,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     if (!RunGitCli($"checkout --quiet {_baseBranch}", workingDirectory))
                     {
-                        resultCollection.Add(Tuple.Create(false, $"{repoName} ERROR: unable to checkout to {_baseBranch}"));
+                        resultCollection.Add(Tuple.Create(false, $"❌ {repoName}: Checkout to {_baseBranch} failed"));
                         continue;
                     }
 
@@ -275,7 +276,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     var gitRepoInternal = CheckIfDirectoryIsGitRepo(workingDirectory);
                     if (!gitRepoInternal.Item1)
                     {
-                        resultCollection.Add(Tuple.Create(false, $"{repoName} ERROR: working directory is not a git repository"));
+                        resultCollection.Add(Tuple.Create(false, $"❌ {repoName}: Not a valid git repository"));
                         continue;
                     }
 
@@ -293,14 +294,17 @@ namespace nanoFramework.Tools.DependencyUpdater
                         localUpdate,
                         sln);
 
-                    resultCollection.Add(Tuple.Create(true, $"{repoName} SUCCESS: Update completed"));
+                    resultCollection.Add(Tuple.Create(true, $"✅ {repoName}: Update completed"));
                 }
 
                 // Print result
-                Console.WriteLine($"Update result");
+                Console.WriteLine();
+                Console.WriteLine("═══════════════════════════════════════");
+                Console.WriteLine("📊 Update Summary");
+                Console.WriteLine("═══════════════════════════════════════");
                 foreach (var result in resultCollection)
                 {
-                    Console.WriteLine($"{result.Item2}");
+                    Console.WriteLine($"  {result.Item2}");
                 }
 
                 // If any error, exit application with error code
@@ -375,7 +379,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             var tokenFromEnvironmentVariable = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
             if (tokenFromEnvironmentVariable is null)
             {
-                Console.WriteLine($"ERROR: environment variable with GitHub token not found");
+                Console.WriteLine($"::error::❌ GITHUB_TOKEN environment variable not found");
 
                 // exit with error
                 Environment.Exit(1);
@@ -415,23 +419,23 @@ namespace nanoFramework.Tools.DependencyUpdater
         {
             string releaseType = stablePackages ? "stable" : previewPackages ? "preview" : "?????";
 
-            Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
+            Console.WriteLine($"\n📂 Working directory: {workingDirectory}");
 
-            Console.WriteLine($"Using {releaseType} NuGet packages.");
+            Console.WriteLine($"📦 Using {releaseType} NuGet packages");
 
             if (solutionsToCheck is not null)
             {
-                Console.WriteLine($"Target solution(s): '{string.Join(";", solutionsToCheck)}'");
+                Console.WriteLine($"🎯 Target solution(s): {string.Join(", ", solutionsToCheck.Select(Path.GetFileName))}");
             }
             else
             {
-                Console.WriteLine("Targeting every solution in the repository.");
+                Console.WriteLine("🎯 Target: All solutions in repository");
             }
 
             var repoName = GitHubHelper.GetRepoNameFromInputString(gitRepo);
             if (!repoName.Success)
             {
-                Console.WriteLine($"ERROR: couldn't determine repository name.");
+                Console.WriteLine($"::error::❌ Unable to determine repository name from git remote");
                 Environment.Exit(1);
             }
 
@@ -457,14 +461,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
                 else
                 {
-                    Console.WriteLine($"INFO: couldn't find :{nugetConfig}");
+                    Console.WriteLine($"::error::❌ NuGet config file not found: {nugetConfig}");
                     Environment.Exit(1);
                 }
             }
 
             var libraryName = GitHubHelper.GetLibNameFromRegexMatch(repoName);
 
-            Console.WriteLine($"Repository is: '{libraryName ?? "null"}'");
+            Console.WriteLine($"\n📦 Repository: {libraryName}");
 
             // adjust location and 
             if (_runningEnvironment == RunningEnvironment.AzurePipelines)
@@ -495,17 +499,17 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             // list solutions to check
-            Console.WriteLine("");
-            Console.WriteLine($"Solutions to check are:");
+            Console.WriteLine();
+            Console.WriteLine($"📝 Solutions to process:");
 
             foreach (var sln in solutionFiles)
             {
-                Console.Write($"{Path.GetRelativePath(workingDirectory, sln)}");
+                Console.Write($"  • {Path.GetRelativePath(workingDirectory, sln)}");
 
                 // check if this on is in the exclusion list
                 if (_solutionsExclusionList.Contains(Path.GetFileNameWithoutExtension(sln)))
                 {
-                    Console.WriteLine(" *** EXCLUDED ***");
+                    Console.WriteLine(" \u274c EXCLUDED");
                 }
                 else
                 {
@@ -521,15 +525,16 @@ namespace nanoFramework.Tools.DependencyUpdater
             {
                 Console.WriteLine();
                 Console.WriteLine();
-                Console.WriteLine("************");
-                Console.WriteLine($"Processing solution '{solutionFile}'");
+                Console.WriteLine("::group::🔧 Processing solution");
+                Console.WriteLine($"  📄 {Path.GetFileName(solutionFile)}");
 
                 // look for nfproj
                 var slnFileContent = File.ReadAllText(solutionFile);
 
                 if (!slnFileContent.Contains(".nfproj"))
                 {
-                    Console.WriteLine($"INFO: solution file '{solutionFile}' doesn't have any nfproj file. *** SKIPPING ***");
+                    Console.WriteLine($"  ⚠️  No .nfproj files found - skipping");
+                    Console.WriteLine("::endgroup::");
                     continue;
                 }
 
@@ -541,14 +546,14 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                 // perform NuGet restore
                 Console.WriteLine();
-                Console.WriteLine($"INFO: restoring solution...");
+                Console.WriteLine("  📥 Restoring NuGet packages...");
 
                 if (!RunNugetCLI("restore", $"\"{solutionFile}\""))
                 {
                     Environment.Exit(1);
                 }
 
-                Console.WriteLine($"Found {packageConfigs.Length} packages.config files...");
+                Console.WriteLine($"  ✅ Found {packageConfigs.Length} packages.config file(s)");
 
                 // Build package update cache once for the entire solution
                 var packageUpdateCache = BuildPackageUpdateCache(packageConfigs, stablePackages);
@@ -558,7 +563,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     // no packages to update
                     Console.WriteLine();
-                    Console.WriteLine($"INFO: no new versions available. *** SKIPPING ***.");
+                    Console.WriteLine($"⏭️  No updates available - skipping solution");
+                    Console.WriteLine();
 
                     continue;
                 }
@@ -569,8 +575,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                 foreach (var packageConfigFile in packageConfigs)
                 {
                     Console.WriteLine();
-                    Console.WriteLine();
-                    Console.WriteLine($"INFO: working file is {packageConfigFile}");
+                    Console.WriteLine("::group::📝 Processing project");
+                    Console.WriteLine($"  {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
 
                     // check if the project the packages.config belongs to it's in the solution 
                     var projectPathInSln = Path.GetRelativePath(solutionPath, Directory.GetParent(packageConfigFile).FullName);
@@ -597,15 +603,15 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     if (!match.Success)
                     {
-                        Console.WriteLine($"INFO: couldn't find a project matching this packages.config. *** SKIPPING ***.");
+                        Console.WriteLine($"  ⚠️  No matching project found - skipping");
+                        Console.WriteLine("::endgroup::");
                         continue;
                     }
 
                     var projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
                     var projectName = match.Groups["projectname"].Value;
 
-                    Console.WriteLine();
-                    Console.WriteLine($"Updating project '{Path.GetFileNameWithoutExtension(projectToUpdate)}'");
+                    Console.WriteLine($"  🔨 Project: {Path.GetFileNameWithoutExtension(projectToUpdate)}");
 
                     // load packages.config 
                     var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
@@ -614,8 +620,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                     if (!packageList.Any())
                     {
                         // no packages to update
-                        Console.WriteLine();
-                        Console.WriteLine($"INFO: no packages found to update. *** SKIPPING ***.");
+                        Console.WriteLine($"  ℹ️  No packages found - skipping");
+                        Console.WriteLine("::endgroup::");
 
                         continue;
                     }
@@ -680,21 +686,17 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                             if (nuspecFileName is not null)
                             {
-                                Console.WriteLine();
-                                Console.WriteLine($"nuspec file to update is '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
+                                Console.WriteLine($"  📋 Nuspec: {Path.GetFileName(nuspecFileName)}");
                             }
                         }
 
                         // list packages to check
                         Console.WriteLine();
-                        Console.WriteLine();
-                        Console.WriteLine("-- NuGet packages to update --");
+                        Console.WriteLine("  📦 Packages:");
                         foreach (var package in packageList)
                         {
-                            Console.WriteLine($"{package.PackageIdentity}");
+                            Console.WriteLine($"    • {package.PackageIdentity.Id} {package.PackageIdentity.Version}");
                         }
-                        Console.WriteLine("--------- end of list --------");
-                        Console.WriteLine();
                         Console.WriteLine();
 
                         // check all packages
@@ -705,8 +707,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             string packageName = package.PackageIdentity.Id;
                             string packageOriginVersion = package.PackageIdentity.Version.ToNormalizedString();
 
-                            Console.WriteLine();
-                            Console.WriteLine($"Checking updates for {packageName}.{packageOriginVersion}");
+                            Console.WriteLine($"\n  🔄 Checking: {packageName} {packageOriginVersion}");
 
                             // Check cache first to see if update is available
                             // Skip packages not in cache or with no available updates (unless they need special handling)
@@ -720,12 +721,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 {
                                     if (cachedVersion == null)
                                     {
-                                        Console.WriteLine($"No newer version (from cache)");
+                                        Console.WriteLine($"    ✓ Up-to-date");
                                         continue;
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"Cache: Update available to {cachedVersion}");
+                                        Console.WriteLine($"    ⬆️  Update available: {cachedVersion}");
                                     }
                                 }
                             }
@@ -802,9 +803,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 {
                                     // something wrong happened!
                                     // output update message for the log
-                                    Console.WriteLine();
-                                    Console.WriteLine(
-                                        $"INFO: unexpected update outcome {Environment.NewLine}>>>>>>>{Environment.NewLine}{updateResult}{Environment.NewLine}>>>>>>>{Environment.NewLine}");
+                                    Console.WriteLine($"::warning::⚠️  Unexpected update outcome:");
+                                    Console.WriteLine($"{updateResult}");
                                     Console.WriteLine();
 
                                     if (okToRetry)
@@ -829,8 +829,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                 if (packageToRefresh is null)
                                 {
-                                    Console.WriteLine();
-                                    Console.WriteLine($"INFO: {packageName} not found in any nuget source. Skipping update.");
+                                    Console.WriteLine($"    ℹ️  Package not found in any NuGet source - skipping");
                                     Console.WriteLine();
                                     continue;
                                 }
@@ -841,7 +840,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                 if (packageOriginVersion == packageTargetVersion)
                                 {
-                                    Console.WriteLine($"No newer version");
+                                    Console.WriteLine($"    ✓ Already at latest version");
                                 }
                             }
                             else
@@ -853,7 +852,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             // sanity check
                             if (packageTargetVersion.Contains("alpha"))
                             {
-                                Console.WriteLine($"Skipping update of {packageName} because it's trying to use an alpha version!");
+                                Console.WriteLine($"::error::🛑 Attempting to use alpha version of {packageName} - aborting");
 
                                 // exit with error 
                                 Environment.Exit(1);
@@ -868,7 +867,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     // add to the HashSet to ensure uniqueness
                                     updateMessages.Add(updateMessage);
 
-                                    Console.WriteLine($"Bumping {packageName} from {packageOriginVersion} to {packageTargetVersion}.");
+                                    Console.WriteLine($"    ✅ Updated: {packageOriginVersion} → {packageTargetVersion}");
                                 }
 
                                 // if this is the Test Framework, need to update the nfproj file too
@@ -947,8 +946,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
                                     else
                                     {
-                                        Console.WriteLine();
-                                        Console.WriteLine($"INFO: {packageName} not listed in '{Path.GetRelativePath(solutionPath, nuspecFileName)}'");
+                                        Console.WriteLine($"      ℹ️  Not listed in nuspec");
                                     }
 
                                 }
@@ -971,11 +969,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                 updateCount = uniqueUpdateMessages.Count;
             }
 
+            Console.WriteLine("::endgroup::");
+
             // check if any packages where updated
             if (updateCount == 0)
             {
                 Console.WriteLine();
-                Console.WriteLine("INFO: No packages found to update...");
+                Console.WriteLine("ℹ️  No package updates were applied");
             }
 
             // sanity check for no nuspecs found
@@ -985,7 +985,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                 if (updateCount != 0)
                 {
-                    Console.WriteLine($"*** WARNING: No nuspecs files updated... Maybe worth checking ***");
+                    Console.WriteLine($"::warning::⚠️  No nuspec files were updated - this may need review");
                 }
             }
 
@@ -996,7 +996,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             Console.WriteLine();
-            Console.WriteLine($"INFO: {updateCount} packages updated");
+            Console.WriteLine($"::notice::✅ Successfully updated {updateCount} package(s)");
 
             // need this line so nfbot flags the PR appropriately
             commitMessage.Append("\n[version update]\n\n");
@@ -1010,9 +1010,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                 return;
             }
 
-            Console.WriteLine($"INFO: generating PR information");
+            Console.WriteLine($"\n📝 Generating pull request...");
 
-            Console.WriteLine($"INFO: creating branch '{newBranchName}' to perform updates");
+            Console.WriteLine($"  🔀 Creating branch: {newBranchName}");
 
             // create branch to perform updates
             if (!RunGitCli($"branch {newBranchName}", workingDirectory))
@@ -1026,7 +1026,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
-            Console.WriteLine($"INFO: adding changes");
+            Console.WriteLine($"  ➕ Staging changes...");
 
             // add changes without any .runsettings file which may override user config and break unit test execution
             if (!RunGitCli("add --all -- :!*.runsettings", workingDirectory))
@@ -1070,14 +1070,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // PR wasn't submitted, better delete new branch so they don't pile up
 
                 // checkout to "base" branch
-                Console.WriteLine($"INFO: checking out '{_baseBranch}'.");
+                Console.WriteLine($"\n♻️  Cleaning up: checking out '{_baseBranch}'");
                 if (!RunGitCli($"checkout {_baseBranch}", workingDirectory))
                 {
-                    Console.WriteLine($"ERROR: ⚠️ failed to checkout '{_baseBranch}' when deleting '{branchToPr}'! Need to delete branch manually.");
+                    Console.WriteLine($"::warning::⚠️  Failed to checkout '{_baseBranch}' - manual cleanup may be needed");
                 }
 
                 // delete local and remote branches
-                Console.WriteLine($"INFO: deleting '{newBranchName}' branch.");
+                Console.WriteLine($"  🗑️  Deleting branch: {newBranchName}");
 
                 // local (don't care about outcome
                 _ = RunGitCli($"branch -D {newBranchName}", workingDirectory);
@@ -1085,7 +1085,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // remote
                 if (!RunGitCli($"push origin --delete {newBranchName}", workingDirectory))
                 {
-                    Console.WriteLine($"ERROR: ⚠️ failed to delete '{newBranchName}'! Need to delete branch manually.");
+                    Console.WriteLine($"::warning::⚠️  Failed to delete remote branch '{newBranchName}' - manual cleanup may be needed");
                 }
             }
         }
@@ -1123,7 +1123,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             Console.WriteLine();
-            Console.WriteLine($"INFO: Building update cache for {uniquePackages.Count} unique package(s)...");
+            Console.WriteLine($"::group::📦 Building update cache for {uniquePackages.Count} unique package(s)");
 
             // Check each unique package and cache the result
             foreach (var packageEntry in uniquePackages)
@@ -1185,7 +1185,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             {
                                 // Update available
                                 updateCache[(packageId, packageVersion)] = newestVersion.ToString();
-                                Console.WriteLine($"INFO: Update available for {packageId}: {packageVersion} -> {newestVersion}");
+                                Console.WriteLine($"  ⬆️  {packageId}: {packageVersion} → {newestVersion}");
                             }
                             else
                             {
@@ -1208,7 +1208,16 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
             }
 
-            Console.WriteLine($"INFO: Update cache built. Found updates for {updateCache.Count(kv => kv.Value != null)} package(s).");
+            var updatesFound = updateCache.Count(kv => kv.Value != null);
+            if (updatesFound > 0)
+            {
+                Console.WriteLine($"✅ Update cache built: {updatesFound} package(s) have updates available");
+            }
+            else
+            {
+                Console.WriteLine($"✅ Update cache built: All packages are up-to-date");
+            }
+            Console.WriteLine("::endgroup::");
 
             return updateCache;
         }
@@ -1238,7 +1247,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
                 else
                 {
-                    Console.WriteLine($"ERROR: ⚠️ couldn't find solution '{sln}'! Please check solution name.");
+                    Console.WriteLine($"::error::❌ Solution not found: {sln}");
                     Environment.Exit(1);
                 }
             }
@@ -1298,13 +1307,15 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                 if (updatePRs.Any())
                 {
-                    Console.WriteLine($"INFO: found existing PR with the same update: {repoOwner}/{libraryName}/pull/{updatePRs.First().Number}. Skipping PR creation.");
+                    Console.WriteLine($"\nℹ️  PR already exists: #{updatePRs.First().Number} - skipping creation");
 
                     return PrCreationOutcome.QuitSubmission;
                 }
 
                 // go ahead and create PR
-                Console.WriteLine($"INFO: creating PR against {repoOwner}/{libraryName}, head: {repoOwner}:{newBranchName}, base:{branchToPr}");
+                Console.WriteLine($"\n📤 Creating PR: {repoOwner}/{libraryName}");
+                Console.WriteLine($"  Head: {repoOwner}:{newBranchName}");
+                Console.WriteLine($"  Base: {branchToPr}");
 
                 // developer note: head must be in the format 'user:branch'
                 var updatePr = _octokitClient.PullRequest.Create(
@@ -1324,11 +1335,11 @@ namespace nanoFramework.Tools.DependencyUpdater
                     updatePr.Number,
                     updatePrBody).Result;
 
-                Console.WriteLine($"INFO: created PR #{updatePr.Number} @ {repoOwner}/{libraryName}");
+                Console.WriteLine($"::notice::✅ Pull request created: #{updatePr.Number} in {repoOwner}/{libraryName}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR: exception when submitting PR {ex.Message}:{ex.InnerException.Message}");
+                Console.WriteLine($"::error::❌ Failed to create PR: {ex.Message}:{ex.InnerException.Message}");
                 Environment.Exit(1);
             }
 
