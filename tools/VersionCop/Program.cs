@@ -19,6 +19,8 @@ class Program
     private static IEnumerable<SourceRepository> _nugetRepositories;
     private static DependencyInfoResource _dependencyInfoResourceNuGet;
     private static Dictionary<PackageIdentity, SourcePackageDependencyInfo> _packageDependencyCache = new();
+    private static bool _isGitHubActions;
+    private static bool _isAzureDevOps;
 
     /// <param name="solutionToCheck">Path to the solution to check.</param>
     /// <param name="workingDirectory">Path of the working directory where solutions will be searched.</param>
@@ -32,6 +34,9 @@ class Program
         bool analyseNuspec = false,
         string excludePaths = null)
     {
+        // Detect running environment
+        DetectEnvironment();
+
         Console.WriteLine($"📋 Solution:           '{solutionToCheck}'");
         Console.WriteLine($"📂 Working directory:  '{workingDirectory ?? "null"}'");
         Console.WriteLine($"📄 Nuspec file:        '{nuspecFile ?? "*** NONE PROVIDED ***"}'");
@@ -46,7 +51,7 @@ class Program
         if (workingDirectory is not null
             && !Directory.Exists(workingDirectory))
         {
-            Console.WriteLine($"::error::❌ Directory '{workingDirectory}' does not exist!");
+            WriteError($"❌ Directory '{workingDirectory}' does not exist!");
             return 1;
         }
 
@@ -61,7 +66,7 @@ class Program
             }
             else
             {
-                Console.WriteLine($"::error::❌ Solution file '{solutionToCheck}' does not exist!");
+                WriteError($"❌ Solution file '{solutionToCheck}' does not exist!");
                 return 1;
             }
         }
@@ -78,7 +83,7 @@ class Program
             }
             else
             {
-                Console.WriteLine($"::error::❌ Nuspec file '{solutionToCheck}' does not exist!");
+                WriteError($"❌ Nuspec file '{solutionToCheck}' does not exist!");
                 return 1;
             }
         }
@@ -96,7 +101,8 @@ class Program
             return 0;
         }
 
-        Console.WriteLine($"\n::group::🔍 Parsing '{Path.GetFileNameWithoutExtension(solutionToCheck)}'");
+        Console.WriteLine();
+        WriteGroupStart($"🔍 Parsing '{Path.GetFileNameWithoutExtension(solutionToCheck)}'");
 
         // declare flags
         bool projectCheckFailed = true;
@@ -107,8 +113,8 @@ class Program
         // check for nfproj
         if (!File.ReadAllText(solutionToCheck).Contains(".nfproj"))
         {
-            Console.WriteLine($"::error::❌ Solution file '{solutionToCheck}' doesn't have any nfproj file??");
-            Console.WriteLine("::endgroup::");
+            WriteError($"❌ Solution file '{solutionToCheck}' doesn't have any nfproj file??");
+            WriteGroupEnd();
             return 1;
         }
 
@@ -182,7 +188,7 @@ class Program
         foreach (var packageConfigFile in packageConfigs)
         {
             Console.WriteLine();
-            Console.WriteLine($"::group::📂 Project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
+            WriteGroupStart($"📂 Project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
 
             var projectPathInSln = Path.GetRelativePath(workingDirectory, Directory.GetParent(packageConfigFile).FullName);
 
@@ -203,7 +209,7 @@ class Program
             if (!match.Success)
             {
                 Console.WriteLine($"  ⚠️  Couldn't find a project matching this packages.config - skipping");
-                Console.WriteLine("::endgroup::");
+                WriteGroupEnd();
                 continue;
             }
 
@@ -250,7 +256,7 @@ class Program
 
                 if (nuspecFileName is null)
                 {
-                    Console.WriteLine($"  ::warning::⚠️  No nuspec file found for project");
+                    WriteWarning($"⚠️  No nuspec file found for project");
                     Console.WriteLine($"    Tried '*{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec' and '*{projectName}.nuspec'");
 
                     // make sure nuspec reader is null
@@ -260,6 +266,7 @@ class Program
 
             // load packages.config 
             var packageReader = new PackagesConfigReader(XDocument.Load(Path.Combine(Directory.GetParent(projectToCheck).FullName, "packages.config")));
+            var projectFileDirectory = Directory.GetParent(projectToCheck).FullName;
 
             // filter out these packages: Nerdbank.GitVersioning
             var packageList = packageReader.GetPackages().Where(p => !p.IsDevelopmentDependency && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
@@ -287,8 +294,8 @@ class Program
                 }
                 else
                 {
-                    Console.WriteLine("::error::❌ Couldn't read assembly name from project file");
-                    Console.WriteLine("::endgroup::");
+                    WriteError($"❌ Couldn't read assembly name from project file");
+                    WriteGroupEnd();
                     return 1;
                 }
 
@@ -391,7 +398,7 @@ class Program
                     if (projectCheckFailed)
                     {
                         Console.WriteLine();
-                        Console.WriteLine($"::error::❌ Couldn't find '{packageIdentity}' in '{Path.GetFileName(projectToCheck)}'");
+                        WriteError($"❌ Couldn't find '{packageIdentity}' in '{Path.GetFileName(projectToCheck)}'");
                     }
                     else
                     {
@@ -400,7 +407,7 @@ class Program
                         if (idMismatchInNuspec)
                         {
                             Console.WriteLine();
-                            Console.WriteLine($"::error::❌ Found in nuspec but declared dependency version doesn't match!");
+                            WriteError($"❌ Found in nuspec but declared dependency version doesn't match!");
                             Console.WriteLine($"    Expecting '{packageVersion}' but found '{idFoundInNuspec}'");
                         }
                     }
@@ -469,7 +476,7 @@ class Program
                             if (!dependencyFound)
                             {
                                 Console.WriteLine();
-                                Console.WriteLine($"::error::❌ Couldn't find '{packageName}' in nuspec!");
+                                WriteError($"❌ Couldn't find '{packageName}' in nuspec!");
 
                                 if (hintMessage is null)
                                 {
@@ -518,13 +525,13 @@ class Program
             }
             else
             {
-                Console.WriteLine("::error::❌ Couldn't identify any NuGet packages to check!");
-                Console.WriteLine("::endgroup::");
+                WriteError($"❌ Couldn't identify any NuGet packages to check!");
+                WriteGroupEnd();
                 return 1;
             }
 
             Console.WriteLine();
-            Console.WriteLine("::endgroup::");
+            WriteGroupEnd();
 
             if (projectCheckFailed || nuspecCheckFailed)
             {
@@ -533,14 +540,14 @@ class Program
 
             if (analyseNuspec && nuspecDependenciesToRemove)
             {
-                Console.WriteLine("::warning::⚠️  Found nuspec declarations that could be removed.");
+                WriteWarning($"⚠️  Found nuspec declarations that could be removed.");
             }
         }
 
         if (!nuspecChecked)
         {
             Console.WriteLine();
-            Console.WriteLine("::error::❌ Nuspec was not checked! Verify package ID/Title and/or assembly name.");
+            WriteError($"❌ Nuspec was not checked! Verify package ID/Title and/or assembly name.");
             Console.WriteLine();
 
             // exit with error code
@@ -560,7 +567,8 @@ class Program
     /// </summary>
     private static void BuildPackageCache(string[] packageConfigs, NuGet.Frameworks.NuGetFramework targetFramework)
     {
-        Console.WriteLine($"\n::group::📦 Building package dependency cache");
+        Console.WriteLine();
+        WriteGroupStart($"📦 Building package dependency cache");
 
         // Collect all unique package identities across all config files
         HashSet<PackageIdentity> uniquePackages = new();
@@ -614,7 +622,7 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"  ::warning::⚠️  Failed to fetch dependency info for {packageIdentity}: {ex.Message}");
+                WriteWarning($"⚠️  Failed to fetch dependency info for {packageIdentity}: {ex.Message}");
                 // Store null to avoid retrying
                 _packageDependencyCache[packageIdentity] = null;
                 failedCount++;
@@ -630,7 +638,7 @@ class Program
             Console.WriteLine($"  ✅ Cache built: {cachedCount} package(s) resolved");
         }
 
-        Console.WriteLine("::endgroup::");
+        WriteGroupEnd();
     }
 
     /// <summary>
@@ -821,6 +829,75 @@ class Program
         }
 
         return false;
+    }
+
+    private static void DetectEnvironment()
+    {
+        // Check for GitHub Actions environment
+        _isGitHubActions = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"));
+
+        // Check for Azure Pipelines environment
+        _isAzureDevOps = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"));
+    }
+
+    private static void WriteGroupStart(string title)
+    {
+        if (_isGitHubActions)
+        {
+            Console.WriteLine($"::group::{title}");
+        }
+        else if (_isAzureDevOps)
+        {
+            Console.WriteLine($"##[group]{title}");
+        }
+        else
+        {
+            Console.WriteLine($"\n{title}");
+        }
+    }
+
+    private static void WriteGroupEnd()
+    {
+        if (_isGitHubActions)
+        {
+            Console.WriteLine("::endgroup::");
+        }
+        else if (_isAzureDevOps)
+        {
+            Console.WriteLine("##[endgroup]");
+        }
+    }
+
+    private static void WriteError(string message)
+    {
+        if (_isGitHubActions)
+        {
+            Console.WriteLine($"::error::{message}");
+        }
+        else if (_isAzureDevOps)
+        {
+            Console.WriteLine($"##vso[task.logissue type=error]{message}");
+        }
+        else
+        {
+            Console.WriteLine($"ERROR: {message}");
+        }
+    }
+
+    private static void WriteWarning(string message)
+    {
+        if (_isGitHubActions)
+        {
+            Console.WriteLine($"::warning::{message}");
+        }
+        else if (_isAzureDevOps)
+        {
+            Console.WriteLine($"##vso[task.logissue type=warning]{message}");
+        }
+        else
+        {
+            Console.WriteLine($"WARNING: {message}");
+        }
     }
 
     private static NuspecReader GetNuspecReader(string nuspecFileName)
