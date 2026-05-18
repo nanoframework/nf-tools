@@ -32,28 +32,21 @@ class Program
         bool analyseNuspec = false,
         string excludePaths = null)
     {
-        Console.ForegroundColor = ConsoleColor.White;
-
-        Console.WriteLine($"Solution is: '{solutionToCheck}'");
-        Console.WriteLine($"Working directory is: '{workingDirectory ?? "null"}'");
-        Console.WriteLine($"Nuspec file is: '{nuspecFile ?? "*** NONE PROVIDED ***"}'");
-        Console.WriteLine($"Exclude paths: '{excludePaths ?? "*** NONE PROVIDED ***"}'");
+        Console.WriteLine($"📋 Solution:           '{solutionToCheck}'");
+        Console.WriteLine($"📂 Working directory:  '{workingDirectory ?? "null"}'");
+        Console.WriteLine($"📄 Nuspec file:        '{nuspecFile ?? "*** NONE PROVIDED ***"}'");
+        Console.WriteLine($"🚫 Exclude paths:      '{excludePaths ?? "*** NONE PROVIDED ***"}'");
 
         if (analyseNuspec)
         {
-            Console.WriteLine("Performing analysis on nuspec declarations that should be removed.");
+            Console.WriteLine("🔍 Performing analysis on nuspec declarations that should be removed.");
         }
 
         // sanity checks
         if (workingDirectory is not null
             && !Directory.Exists(workingDirectory))
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-
-            Console.WriteLine($"ERROR: directory '{workingDirectory}' does not exist!");
-
-            Console.ForegroundColor = ConsoleColor.White;
-
+            Console.WriteLine($"::error::❌ Directory '{workingDirectory}' does not exist!");
             return 1;
         }
 
@@ -68,12 +61,7 @@ class Program
             }
             else
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-
-                Console.WriteLine($"ERROR: solution file '{solutionToCheck}' does not exist!");
-
-                Console.ForegroundColor = ConsoleColor.White;
-
+                Console.WriteLine($"::error::❌ Solution file '{solutionToCheck}' does not exist!");
                 return 1;
             }
         }
@@ -90,12 +78,7 @@ class Program
             }
             else
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-
-                Console.WriteLine($"ERROR: nuspec file '{solutionToCheck}' does not exist!");
-
-                Console.ForegroundColor = ConsoleColor.White;
-
+                Console.WriteLine($"::error::❌ Nuspec file '{solutionToCheck}' does not exist!");
                 return 1;
             }
         }
@@ -109,11 +92,11 @@ class Program
         // handle mscorlib library
         if (solutionToCheck.EndsWith("nanoFramework.CoreLibrary.sln"))
         {
-            Console.WriteLine("INFO: This is mscorlib, skipping this check!");
+            Console.WriteLine("ℹ️  This is mscorlib, skipping this check!");
             return 0;
         }
 
-        Console.WriteLine($"INFO: parsing '{Path.GetFileNameWithoutExtension(solutionToCheck)}'");
+        Console.WriteLine($"\n::group::🔍 Parsing '{Path.GetFileNameWithoutExtension(solutionToCheck)}'");
 
         // declare flags
         bool projectCheckFailed = true;
@@ -124,12 +107,8 @@ class Program
         // check for nfproj
         if (!File.ReadAllText(solutionToCheck).Contains(".nfproj"))
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-
-            Console.WriteLine($"ERROR: solution file '{solutionToCheck}' doesn't have any nfproj file??");
-
-            Console.ForegroundColor = ConsoleColor.White;
-
+            Console.WriteLine($"::error::❌ Solution file '{solutionToCheck}' doesn't have any nfproj file??");
+            Console.WriteLine("::endgroup::");
             return 1;
         }
 
@@ -194,7 +173,7 @@ class Program
             }).ToArray();
         }
 
-        Console.WriteLine($"Found {packageConfigs.Length} packages.config files...");
+        Console.WriteLine($"  📦 Found {packageConfigs.Length} packages.config file(s)");
 
         // Build cache of package dependencies to avoid duplicate API calls
         // Use a generic .NET target framework for cache building
@@ -203,7 +182,7 @@ class Program
         foreach (var packageConfigFile in packageConfigs)
         {
             Console.WriteLine();
-            Console.WriteLine($"INFO: working file is {packageConfigFile}");
+            Console.WriteLine($"::group::📂 Project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
 
             var projectPathInSln = Path.GetRelativePath(workingDirectory, Directory.GetParent(packageConfigFile).FullName);
 
@@ -215,33 +194,24 @@ class Program
             else
             {
                 // need these extra replacements to adjust for regex expression
-                projectPathInSln = projectPathInSln.Replace("\\", "\\\\");
-                projectPathInSln = projectPathInSln.Replace(".", "\\.");
-
-                // add trailing \ to match whatever will be in the solution file
-                projectPathInSln += "\\\\";
+                projectPathInSln = projectPathInSln.Replace("\\", "\\\\")
+                                                     .Replace(".", "\\.")
+                                                     + "\\\\"; // add trailing \ to match whatever will be in the solution file
             }
 
             var match = Regex.Match(slnFileContent, $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")");
             if (!match.Success)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-
-                Console.WriteLine($"INFO: couldn't find a project matching this packages.config. *** SKIPPING ***.");
-
-                Console.ForegroundColor = ConsoleColor.White;
-
+                Console.WriteLine($"  ⚠️  Couldn't find a project matching this packages.config - skipping");
+                Console.WriteLine("::endgroup::");
                 continue;
             }
-
-            Console.WriteLine();
-            Console.WriteLine($"Checking '" + match.Groups["projectname"] + "' project file...");
 
             // compose project path
             var projectToCheck = Directory.GetFiles(workingDirectory, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
             var projectName = match.Groups["projectname"].Value;
 
-            Console.WriteLine($"INFO: Reading packages.config for '{Path.GetFileNameWithoutExtension(projectToCheck)}'");
+            Console.WriteLine($"  📄 {Path.GetFileNameWithoutExtension(projectToCheck)}");
 
             string nuspecFileName = string.Empty;
 
@@ -270,8 +240,7 @@ class Program
 
                     if (nuspecFileName is not null)
                     {
-                        // report finding
-                        Console.WriteLine($"INFO: found matching nuspec file '{Path.GetFileName(nuspecFileName)}'");
+                        Console.WriteLine($"  📋 Nuspec: '{Path.GetFileName(nuspecFileName)}'");
 
                         // load nuspec file
                         nuspecReader = GetNuspecReader(nuspecFileName);
@@ -281,21 +250,13 @@ class Program
 
                 if (nuspecFileName is null)
                 {
-                    // better report this...
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-
-                    Console.WriteLine("INFO: couldn't find a nuspec file for the project...");
-                    Console.WriteLine($"INFO: tried '*{projectFileNameWithoutExtension}.nuspec' and '*{projectName}.nuspec'");
-                    Console.WriteLine($"INFO: in locations: '{workingDirectory}' and '{projectDirectory}'");
-
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine($"  ::warning::⚠️  No nuspec file found for project");
+                    Console.WriteLine($"    Tried '*{Path.GetFileNameWithoutExtension(projectToCheck)}.nuspec' and '*{projectName}.nuspec'");
 
                     // make sure nuspec reader is null
                     nuspecReader = null;
                 }
             }
-
-            Console.WriteLine("INFO: Building package list...");
 
             // load packages.config 
             var packageReader = new PackagesConfigReader(XDocument.Load(Path.Combine(Directory.GetParent(projectToCheck).FullName, "packages.config")));
@@ -307,12 +268,11 @@ class Program
             {
                 // list packages to check
                 Console.WriteLine();
-                Console.WriteLine("-- NuGet packages to check --");
+                Console.WriteLine("  📦 Packages to check:");
                 foreach (var package in packageList)
                 {
-                    Console.WriteLine($"{package.PackageIdentity}");
+                    Console.WriteLine($"    • {package.PackageIdentity}");
                 }
-                Console.WriteLine("-------- end of list --------");
                 Console.WriteLine();
 
                 // read content from nfproj file
@@ -327,16 +287,10 @@ class Program
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-
-                    Console.WriteLine("ERROR: couldn't read assembly name from project file");
-
-                    Console.ForegroundColor = ConsoleColor.White;
-
+                    Console.WriteLine("::error::❌ Couldn't read assembly name from project file");
+                    Console.WriteLine("::endgroup::");
                     return 1;
                 }
-
-                Console.WriteLine($"INFO: AssemblyName is '{assemblyName}'");
 
                 // reset flags
                 projectCheckFailed = false;
@@ -345,9 +299,6 @@ class Program
                 bool idMismatchInNuspec = false;
                 string idFoundInNuspec = "";
                 checkNuspec = true;
-
-                Console.WriteLine();
-                Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>");
 
                 // check all packages
                 var packageIdentities = packageList.Select(package => package.PackageIdentity);
@@ -358,7 +309,7 @@ class Program
                     string packageName = packageIdentity.Id;
                     string packageVersion = packageIdentity.Version.ToNormalizedString();
 
-                    Console.Write($"Checking {packageIdentity}... ");
+                    Console.Write($"  🔄 {packageIdentity}... ");
 
                     // find package in project file
                     var packageIdRegexed = packageIdentity.ToString().Replace(".", "\\.");
@@ -439,35 +390,18 @@ class Program
 
                     if (projectCheckFailed)
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
-
                         Console.WriteLine();
-                        Console.WriteLine("*****************************************************************");
-                        Console.WriteLine($"Couldn't find it in '{Path.GetFileName(projectToCheck)}'");
-                        Console.WriteLine("*****************************************************************");
-                        Console.WriteLine();
-
-                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.WriteLine($"::error::❌ Couldn't find '{packageIdentity}' in '{Path.GetFileName(projectToCheck)}'");
                     }
                     else
                     {
-                        Console.ForegroundColor = ConsoleColor.Green;
-
-                        Console.Write("nfproj OK! ");
-
-                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write("nfproj ✅ ");
 
                         if (idMismatchInNuspec)
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-
                             Console.WriteLine();
-                            Console.WriteLine("*****************************************************************");
-                            Console.WriteLine($"Found in nuspec, but declared dependency version doesn't match!");
-                            Console.WriteLine($"expecting '{packageVersion}' but found '{idFoundInNuspec}'");
-                            Console.WriteLine("*****************************************************************");
-
-                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine($"::error::❌ Found in nuspec but declared dependency version doesn't match!");
+                            Console.WriteLine($"    Expecting '{packageVersion}' but found '{idFoundInNuspec}'");
                         }
                     }
 
@@ -534,25 +468,17 @@ class Program
 
                             if (!dependencyFound)
                             {
-                                Console.ForegroundColor = ConsoleColor.Red;
-
                                 Console.WriteLine();
-                                Console.WriteLine("*****************************************************************");
+                                Console.WriteLine($"::error::❌ Couldn't find '{packageName}' in nuspec!");
 
                                 if (hintMessage is null)
                                 {
-                                    Console.WriteLine($"Couldn't find it in '{Path.GetFileName(nuspecFileName)}'");
-                                    Console.WriteLine($"And it is not a dependency on any of the listed dependency packages");
+                                    Console.WriteLine($"    Not listed in '{Path.GetFileName(nuspecFileName)}' and not a dependency of any listed package");
                                 }
                                 else
                                 {
-                                    Console.WriteLine(hintMessage);
+                                    Console.WriteLine($"    {hintMessage}");
                                 }
-
-                                Console.WriteLine("*****************************************************************");
-                                Console.WriteLine();
-
-                                Console.ForegroundColor = ConsoleColor.White;
 
                                 // flag failed check
                                 nuspecCheckFailed = true;
@@ -566,55 +492,39 @@ class Program
                                 {
                                     if (!isDeclaredDependency)
                                     {
-                                        Console.ForegroundColor = ConsoleColor.Yellow;
-
-                                        Console.WriteLine(" NOT listed in nuspec, but that's OK");
+                                        Console.WriteLine("nuspec ⚠️  not listed but OK (transitive dependency)");
                                     }
                                     else
                                     {
-                                        Console.ForegroundColor = ConsoleColor.Green;
-
-                                        Console.WriteLine("nuspec OK! ");
+                                        Console.WriteLine("nuspec ✅");
                                     }
                                 }
 
                                 if (analyseNuspec && (!refMissingFromNuspec || idMismatchInNuspec) && packageName != dependencyPackageId && packageName != "nanoFramework.CoreLibrary")
                                 {
-                                    Console.ForegroundColor = ConsoleColor.Yellow;
-
-                                    Console.WriteLine($"*** OK to remove it because it's declared as a dependency of '{dependencyPackageId}' ***");
+                                    Console.WriteLine($"    💡 OK to remove - declared as dependency of '{dependencyPackageId}'");
 
                                     // flag this
                                     nuspecDependenciesToRemove = true;
                                 }
-
-                                Console.ForegroundColor = ConsoleColor.White;
                             }
                         }
                         else
                         {
-                            Console.ForegroundColor = ConsoleColor.Green;
-
-                            Console.WriteLine("nuspec OK! ");
-
-                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine("nuspec ✅");
                         }
                     }
                 }
             }
             else
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-
-                Console.WriteLine("ERROR: couldn't identify any nuget packages to check for??");
-
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("::error::❌ Couldn't identify any NuGet packages to check!");
+                Console.WriteLine("::endgroup::");
                 return 1;
             }
 
             Console.WriteLine();
-            Console.WriteLine("<<<<<<<<<<<<<<<<<<<<<<<<");
-            Console.WriteLine();
+            Console.WriteLine("::endgroup::");
 
             if (projectCheckFailed || nuspecCheckFailed)
             {
@@ -623,31 +533,22 @@ class Program
 
             if (analyseNuspec && nuspecDependenciesToRemove)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-
-                Console.WriteLine("INFO: found nuspec declarations that could be removed.");
-
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("::warning::⚠️  Found nuspec declarations that could be removed.");
             }
         }
 
         if (!nuspecChecked)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-
             Console.WriteLine();
-            Console.WriteLine("********************************************************************");
-            Console.WriteLine("nuspec wasn't checked!! Verify package ID/Title and/or assembly name");
-            Console.WriteLine("********************************************************************");
+            Console.WriteLine("::error::❌ Nuspec was not checked! Verify package ID/Title and/or assembly name.");
             Console.WriteLine();
-
-            Console.ForegroundColor = ConsoleColor.White;
 
             // exit with error code
             return 1;
         }
 
-        Console.WriteLine("Versions check completed!");
+        Console.WriteLine();
+        Console.WriteLine("✅ Versions check completed successfully!");
 
         // exit OK
         return 0;
@@ -659,8 +560,7 @@ class Program
     /// </summary>
     private static void BuildPackageCache(string[] packageConfigs, NuGet.Frameworks.NuGetFramework targetFramework)
     {
-        Console.WriteLine();
-        Console.WriteLine("INFO: Building package dependency cache...");
+        Console.WriteLine($"\n::group::📦 Building package dependency cache");
 
         // Collect all unique package identities across all config files
         HashSet<PackageIdentity> uniquePackages = new();
@@ -677,7 +577,7 @@ class Program
             }
         }
 
-        Console.WriteLine($"INFO: Found {uniquePackages.Count} unique package(s) to cache");
+        Console.WriteLine($"  🔄 {uniquePackages.Count} unique package(s) to resolve");
 
         int cachedCount = 0;
         int failedCount = 0;
@@ -714,14 +614,23 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"WARNING: Failed to fetch dependency info for {packageIdentity}: {ex.Message}");
+                Console.WriteLine($"  ::warning::⚠️  Failed to fetch dependency info for {packageIdentity}: {ex.Message}");
                 // Store null to avoid retrying
                 _packageDependencyCache[packageIdentity] = null;
                 failedCount++;
             }
         }
 
-        Console.WriteLine($"INFO: Cache built successfully - {cachedCount} package(s) cached, {failedCount} failed");
+        if (failedCount > 0)
+        {
+            Console.WriteLine($"  ✅ Cache built: {cachedCount} resolved, {failedCount} failed");
+        }
+        else
+        {
+            Console.WriteLine($"  ✅ Cache built: {cachedCount} package(s) resolved");
+        }
+
+        Console.WriteLine("::endgroup::");
     }
 
     /// <summary>
