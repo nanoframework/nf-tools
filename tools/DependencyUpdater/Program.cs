@@ -637,7 +637,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         // try to find nuspec to update it
                         string nuspecFileName = null;
 
-                        var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec", SearchOption.AllDirectories);
+                        var candidateNuspecFiles = Directory.GetFiles(solutionPath, $"{Path.GetFileNameWithoutExtension(projectToUpdate)}.nuspec", SearchOption.AllDirectories);
                         if (candidateNuspecFiles.Any())
                         {
                             // take 1st
@@ -648,7 +648,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         if (nuspecFileName is null)
                         {
                             // try again with project name
-                            candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName}.nuspec", SearchOption.AllDirectories);
+                            candidateNuspecFiles = Directory.GetFiles(solutionPath, $"{projectName}.nuspec", SearchOption.AllDirectories);
                             if (candidateNuspecFiles.Any())
                             {
                                 // take 1st
@@ -658,7 +658,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                             // if this is AMQPLite, there is a different pattern for the nuspec names
                             if (libraryName == AMQPLiteLibraryName)
                             {
-                                candidateNuspecFiles = Directory.GetFiles(solutionPath, $"*{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
+                                candidateNuspecFiles = Directory.GetFiles(solutionPath, $"{projectName.Replace("Amqp.Micro", "AMQPNetMicro").Replace("Amqp.", "AMQPNetLite.")}.nuspec", SearchOption.AllDirectories);
 
                                 if (candidateNuspecFiles.Any())
                                 {
@@ -858,6 +858,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     updateMessages.Add(updateMessage);
 
                                     Console.WriteLine($"  ⬆️  {packageName} {packageOriginVersion} → {packageTargetVersion}");
+                                    Console.WriteLine($"    📋 Project file: {Path.GetFileName(projectToUpdate)}");
                                 }
 
                                 // if this is the Test Framework, need to update the nfproj file too
@@ -894,7 +895,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // load nuspec file content, if there is a nuspec file to update
                                 if (nuspecFileName is not null)
                                 {
-                                    Console.WriteLine($"  📋 Nuspec: {Path.GetFileName(nuspecFileName)}");
+                                    Console.WriteLine($"      📋 Nuspec: {Path.GetFileName(nuspecFileName)}");
 
                                     var nuspecFile = new XmlDocument();
                                     nuspecFile.Load(nuspecFileName);
@@ -922,13 +923,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     if (dependency is not null)
                                     {
                                         var currentVersion = dependency.Attributes["version"]?.Value;
-                                        Console.WriteLine($"  📄 Nuspec dependency '{packageName}': current={currentVersion}, target={packageTargetVersion}");
 
                                         if (currentVersion != packageTargetVersion)
                                         {
                                             dependency.Attributes["version"].Value = packageTargetVersion;
 
-                                            Console.WriteLine($"  ✏️  Updating nuspec: '{dependency.Attributes["id"].Value}' ---> {packageTargetVersion}");
+                                            Console.WriteLine($"        ✏️  Updating nuspec: '{dependency.Attributes["id"].Value}' ---> {packageTargetVersion}");
 
                                             // save back changes
                                             // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
@@ -944,7 +944,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"  ⚠️  Dependency '{packageName}' not found in nuspec (may not be required)");
+                                        Console.WriteLine($"      ⚠️  Dependency '{packageName}' not found in nuspec (may not be required)");
                                     }
 
                                 }
