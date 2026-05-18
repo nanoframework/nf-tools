@@ -17,6 +17,7 @@ using CliWrap;
 using CliWrap.Buffered;
 using Microsoft.Extensions.Configuration;
 using NuGet.Packaging;
+using NuGet.Versioning;
 using Octokit;
 
 namespace nanoFramework.Tools.DependencyUpdater
@@ -1387,13 +1388,18 @@ namespace nanoFramework.Tools.DependencyUpdater
                             // grab latest version
                             var latestVersion = versions[versions.Count - 1];
 
-                            if (new Version(packageIdentity.Version.ToString()) != new Version(latestVersion.ToString()))
+                            // Use NuGet version comparison to properly handle semantic versioning
+                            if (NuGetVersion.TryParse(packageIdentity.Version.ToString(), out var currentVersion) &&
+                                NuGetVersion.TryParse(latestVersion.ToString(), out var newestVersion))
                             {
-                                // there is a newer version available...
-                                newVersionsAvailable = true;
+                                if (currentVersion < newestVersion)
+                                {
+                                    // there is a newer version available...
+                                    newVersionsAvailable = true;
 
-                                // ... no need to check the rest of the packages
-                                break;
+                                    // ... no need to check the rest of the packages
+                                    break;
+                                }
                             }
                         }
                         catch (Exception ex)
