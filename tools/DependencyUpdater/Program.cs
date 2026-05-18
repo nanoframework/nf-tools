@@ -539,17 +539,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // find ALL packages.config files inside the solution projects
                 var packageConfigs = Directory.GetFiles(solutionPath, "packages.config", SearchOption.AllDirectories);
 
-                // run pre-check for new versions available, only if stable versions where requested
-                if (stablePackages
-                    && !NewVersionsAvailable(packageConfigs))
-                {
-                    // no packages to update
-                    Console.WriteLine();
-                    Console.WriteLine($"INFO: no new versions available. *** SKIPPING ***.");
-
-                    continue;
-                }
-
                 // perform NuGet restore
                 Console.WriteLine();
                 Console.WriteLine($"INFO: restoring solution...");
@@ -560,6 +549,19 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 Console.WriteLine($"Found {packageConfigs.Length} packages.config files...");
+
+                // Build package update cache once for the entire solution
+                var packageUpdateCache = BuildPackageUpdateCache(packageConfigs, stablePackages);
+
+                // Pre-check: skip solution if no updates available (only for stable packages)
+                if (stablePackages && !packageUpdateCache.Any(kv => kv.Value != null))
+                {
+                    // no packages to update
+                    Console.WriteLine();
+                    Console.WriteLine($"INFO: no new versions available. *** SKIPPING ***.");
+
+                    continue;
+                }
 
                 // specify repository path, just in case
                 string repositoryPath = $"-RepositoryPath {Directory.GetParent(solutionFile).FullName}\\packages";
@@ -705,6 +707,28 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                             Console.WriteLine();
                             Console.WriteLine($"Checking updates for {packageName}.{packageOriginVersion}");
+
+                            // Check cache first to see if update is available
+                            // Skip packages not in cache or with no available updates (unless they need special handling)
+                            // UnitsNet packages need special handling (search nuget.org)
+                            // TestFramework needs special handling (updates .nfproj file)
+                            if (!packageName.StartsWith("UnitsNet.") 
+                                && !packageName.StartsWith("nanoFramework.TestFramework"))
+                            {
+                                var cacheKey = (packageName, packageOriginVersion);
+                                if (packageUpdateCache.TryGetValue(cacheKey, out var cachedVersion))
+                                {
+                                    if (cachedVersion == null)
+                                    {
+                                        Console.WriteLine($"No newer version (from cache)");
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Cache: Update available to {cachedVersion}");
+                                    }
+                                }
+                            }
 
                             string updateResult = "";
                             string updateParameters;
@@ -1066,6 +1090,129 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
         }
 
+        /// <summary>
+        /// Builds a cache of available package updates for all unique packages in the solution.
+        /// Returns a dictionary mapping (packageId, currentVersion) to availableVersion (or null if no update available).
+        /// </summary>
+        private static Dictionary<(string Id, string Version), string> BuildPackageUpdateCache(string[] packageConfigs, bool stablePackages)
+        {
+            var updateCache = new Dictionary<(string Id, string Version), string>();
+            var uniquePackages = new Dictionary<(string Id, string Version), bool>(); // Track if development dependency
+
+            // Collect all unique package identities across all config files
+            foreach (var packageConfig in packageConfigs)
+            {
+                var packageReader = new PackagesConfigReader(XDocument.Load(packageConfig));
+                var packageList = packageReader.GetPackages();
+
+                foreach (var package in packageList)
+                {
+                    var key = (package.PackageIdentity.Id, package.PackageIdentity.Version.ToString());
+
+                    // Track if this package is a development dependency anywhere
+                    if (!uniquePackages.ContainsKey(key))
+                    {
+                        uniquePackages[key] = package.IsDevelopmentDependency;
+                    }
+                    else if (package.IsDevelopmentDependency)
+                    {
+                        // If we find it's a dev dependency in any project, mark it as such
+                        uniquePackages[key] = true;
+                    }
+                }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine($"INFO: Building update cache for {uniquePackages.Count} unique package(s)...");
+
+            // Check each unique package and cache the result
+            foreach (var packageEntry in uniquePackages)
+            {
+                var (packageId, packageVersion) = packageEntry.Key;
+                bool isDevelopmentDependency = packageEntry.Value;
+
+                string nugetApiUrl = $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLower()}/index.json";
+
+                using (var httpClient = new HttpClient())
+                {
+                    try
+                    {
+                        var json = httpClient.GetStringAsync(nugetApiUrl).Result;
+                        dynamic packageInfo = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
+
+                        // Determine if we should only use stable versions for this package
+                        bool useOnlyStable = stablePackages 
+                            || (isDevelopmentDependency && !packageId.StartsWith("nanoFramework.TestFramework"));
+
+                        // Filter versions based on package type and mode
+                        var versions = new List<string>();
+                        foreach (var version in packageInfo.versions)
+                        {
+                            string versionStr = version.ToString();
+
+                            if (useOnlyStable)
+                            {
+                                // Only include stable versions for:
+                                // - stable mode
+                                // - development dependencies (except nanoFramework.TestFramework)
+                                if (!versionStr.Contains("-"))
+                                {
+                                    versions.Add(versionStr);
+                                }
+                            }
+                            else
+                            {
+                                // Include all versions (stable + preview)
+                                versions.Add(versionStr);
+                            }
+                        }
+
+                        if (versions.Count == 0)
+                        {
+                            // No versions available, mark as no update
+                            updateCache[(packageId, packageVersion)] = null;
+                            continue;
+                        }
+
+                        // Grab latest version
+                        var latestVersion = versions[versions.Count - 1];
+
+                        // Use NuGet version comparison to properly handle semantic versioning
+                        if (NuGetVersion.TryParse(packageVersion, out var currentVersion) &&
+                            NuGetVersion.TryParse(latestVersion.ToString(), out var newestVersion))
+                        {
+                            if (currentVersion < newestVersion)
+                            {
+                                // Update available
+                                updateCache[(packageId, packageVersion)] = newestVersion.ToString();
+                                Console.WriteLine($"INFO: Update available for {packageId}: {packageVersion} -> {newestVersion}");
+                            }
+                            else
+                            {
+                                // Already up-to-date
+                                updateCache[(packageId, packageVersion)] = null;
+                            }
+                        }
+                        else
+                        {
+                            // Version parsing failed, mark as no update to be safe
+                            updateCache[(packageId, packageVersion)] = null;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"WARNING: Failed to fetch version info for {packageId}. Exception: {ex.Message}");
+                        // Mark as no update available in cache to avoid retrying
+                        updateCache[(packageId, packageVersion)] = null;
+                    }
+                }
+            }
+
+            Console.WriteLine($"INFO: Update cache built. Found updates for {updateCache.Count(kv => kv.Value != null)} package(s).");
+
+            return updateCache;
+        }
+
         private static List<string> CollectSolutions(string workingDirectory, string[] solutionsToCheck)
         {
             if (solutionsToCheck is null)
@@ -1343,86 +1490,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             return false;
-        }
-
-        private static bool NewVersionsAvailable(string[] packageConfigs)
-        {
-            bool newVersionsAvailable = false;
-
-            // loop through all packages.config files
-            foreach (var packageConfig in packageConfigs)
-            {
-                // load packages.config 
-                var packageReader = new PackagesConfigReader(XDocument.Load(packageConfig));
-                var packageList = packageReader.GetPackages();
-
-                // loop through all packages in the file
-                var packageIdentities = packageList.Select(package => package.PackageIdentity);
-                foreach (var packageIdentity in packageIdentities)
-                {
-                    string nugetApiUrl = $"https://api.nuget.org/v3-flatcontainer/{packageIdentity.Id.ToLower()}/index.json";
-
-                    // query NuGet API for latest package version
-                    using (var httpClient = new HttpClient())
-                    {
-                        try
-                        {
-                            var json = httpClient.GetStringAsync(nugetApiUrl).Result;
-                            dynamic packageInfo = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
-
-                            // filter out versions in the pre-release stage
-                            var versions = new List<string>();
-                            foreach (var version in packageInfo.versions)
-                            {
-                                if (!version.ToString().Contains("-"))
-                                {
-                                    versions.Add(version.ToString());
-                                }
-                            }
-
-                            if (versions.Count == 0)
-                            {
-                                continue;
-                            }
-
-                            // grab latest version
-                            var latestVersion = versions[versions.Count - 1];
-
-                            // Use NuGet version comparison to properly handle semantic versioning
-                            if (NuGetVersion.TryParse(packageIdentity.Version.ToString(), out var currentVersion) &&
-                                NuGetVersion.TryParse(latestVersion.ToString(), out var newestVersion))
-                            {
-                                if (currentVersion < newestVersion)
-                                {
-                                    // there is a newer version available...
-                                    newVersionsAvailable = true;
-
-                                    // ... no need to check the rest of the packages
-                                    break;
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"ERROR: Failed to fetch version info for {packageIdentity.Id}. Exception: {ex.Message}");
-
-                            // can't be sure about this one or maybe this is a preview version
-                            // better let nuget handle this...
-                            newVersionsAvailable = true;
-
-                            // ... no need to check the rest of the packages
-                            break;
-                        }
-                    }
-                }
-
-                if (newVersionsAvailable)
-                {
-                    break;
-                }
-            }
-
-            return newVersionsAvailable;
         }
 
         private enum PrCreationOutcome
