@@ -50,6 +50,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <param name="repoOwner">Github repository owner (https://github.com/[repoOwner]/repositoryName). If not provided, created based on github repository url where the tool was invoked.</param>
         /// <param name="gitHubAuth">GitHub authentication token. If not provided, the tool will try to use the GITHUB_TOKEN environment variable.</param>
         /// <param name="useGitTokenForClone">Set to true if you trying to update private GitHub repository. Default is false.</param>
+        /// <param name="localUpdate">Perform the update locally without creating a PR or pushing to GitHub. When set, GitHub token and PR-related parameters are not required.</param>
         /// <param name="args">List of Solutions files to check or repositories to update. According to option specified with <paramref name="solutionsToCheck"/> or <paramref name="reposToUpdate"/>.</param>
         static void Main(
             string workingDirectory = null,
@@ -65,6 +66,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             string repoOwner = null,
             string gitHubAuth = null,
             bool useGitTokenForClone = false,
+            bool localUpdate = false,
             string[] args = null)
         {
             // sanity check 
@@ -128,7 +130,15 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             _runningEnvironment = GetRunningEnvironment();
             Console.WriteLine($"Running on {_runningEnvironment.ToString()} environment");
-            Console.WriteLine($"Branch to submit PR: {branchToPr}");
+
+            if (localUpdate)
+            {
+                Console.WriteLine("Running in local update mode. No PR will be created.");
+            }
+            else
+            {
+                Console.WriteLine($"Branch to submit PR: {branchToPr}");
+            }
 
             // setup git stuff, only if we are not in debug mode
 #if DEBUG
@@ -141,20 +151,23 @@ namespace nanoFramework.Tools.DependencyUpdater
             RunGitCli("config --global core.autocrlf true", "");
 #endif
 
-            if (string.IsNullOrEmpty(gitHubAuth))
+            if (!localUpdate)
             {
-                // no auth provided, try to use GITHUB_TOKEN environment variable
-                var gitHubToken = GetGitHubToken();
-                _octokitClient.Credentials = new Octokit.Credentials(gitHubToken);
-                // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
-                _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{gitHubUser}:{gitHubToken}"))}";
-            }
-            else
-            {
-                // use provided auth token
-                _octokitClient.Credentials = new Octokit.Credentials(gitHubAuth);
-                // compute authorization header in format "AUTHORIZATION: basic x-access-token:<accessToken>"
-                _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"x-access-token:{gitHubAuth}"))}";
+                if (string.IsNullOrEmpty(gitHubAuth))
+                {
+                    // no auth provided, try to use GITHUB_TOKEN environment variable
+                    var gitHubToken = GetGitHubToken();
+                    _octokitClient.Credentials = new Octokit.Credentials(gitHubToken);
+                    // compute authorization header in format "AUTHORIZATION: basic 'encoded token'"
+                    _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{gitHubUser}:{gitHubToken}"))}";
+                }
+                else
+                {
+                    // use provided auth token
+                    _octokitClient.Credentials = new Octokit.Credentials(gitHubAuth);
+                    // compute authorization header in format "AUTHORIZATION: basic x-access-token:<accessToken>"
+                    _gitHubAuth = $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"x-access-token:{gitHubAuth}"))}";
+                }
             }
 
             // store exclusion list
@@ -184,6 +197,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     nugetConfig,
                     repoOwner,
                     gitRepo.Item2,
+                    localUpdate,
                     args);
             }
             else
@@ -275,6 +289,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         nugetConfig,
                         repoOwner,
                         gitRepoInternal.Item2,
+                        localUpdate,
                         sln);
 
                     resultCollection.Add(Tuple.Create(true, $"{repoName} SUCCESS: Update completed"));
@@ -394,6 +409,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         string nugetConfig,
                         string repoOwner,
                         string gitRepo,
+                        bool localUpdate,
                         string[] solutionsToCheck)
         {
             string releaseType = stablePackages ? "stable" : previewPackages ? "preview" : "?????";
@@ -962,6 +978,12 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             // better add this warning line               
             commitMessage.Append("### :warning: This is an automated update. :warning:\n");
+
+            if (localUpdate)
+            {
+                Console.WriteLine($"INFO: local update mode, skipping branch creation and PR submission.");
+                return;
+            }
 
             Console.WriteLine($"INFO: generating PR information");
 
