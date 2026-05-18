@@ -18,6 +18,7 @@ class Program
 {
     private static IEnumerable<SourceRepository> _nugetRepositories;
     private static DependencyInfoResource _dependencyInfoResourceNuGet;
+    private static Dictionary<PackageIdentity, SourcePackageDependencyInfo> _packageDependencyCache = new();
 
     /// <param name="solutionToCheck">Path to the solution to check.</param>
     /// <param name="workingDirectory">Path of the working directory where solutions will be searched.</param>
@@ -194,6 +195,10 @@ class Program
         }
 
         Console.WriteLine($"Found {packageConfigs.Length} packages.config files...");
+
+        // Build cache of package dependencies to avoid duplicate API calls
+        // Use a generic .NET target framework for cache building
+        BuildPackageCache(packageConfigs, NuGet.Frameworks.NuGetFramework.AnyFramework);
 
         foreach (var packageConfigFile in packageConfigs)
         {
@@ -648,6 +653,113 @@ class Program
         return 0;
     }
 
+    /// <summary>
+    /// Builds a cache of package dependency information for all packages across all config files.
+    /// This eliminates duplicate NuGet API calls and significantly improves performance.
+    /// </summary>
+    private static void BuildPackageCache(string[] packageConfigs, NuGet.Frameworks.NuGetFramework targetFramework)
+    {
+        Console.WriteLine();
+        Console.WriteLine("INFO: Building package dependency cache...");
+
+        // Collect all unique package identities across all config files
+        HashSet<PackageIdentity> uniquePackages = new();
+
+        foreach (var packageConfig in packageConfigs)
+        {
+            var packageReader = new PackagesConfigReader(XDocument.Load(packageConfig));
+            var packageList = packageReader.GetPackages()
+                .Where(p => !p.IsDevelopmentDependency && !p.PackageIdentity.Id.Contains("Nerdbank.GitVersioning"));
+
+            foreach (var package in packageList)
+            {
+                uniquePackages.Add(package.PackageIdentity);
+            }
+        }
+
+        Console.WriteLine($"INFO: Found {uniquePackages.Count} unique package(s) to cache");
+
+        int cachedCount = 0;
+        int failedCount = 0;
+
+        // Fetch dependency info for each unique package
+        foreach (var packageIdentity in uniquePackages)
+        {
+            if (_packageDependencyCache.ContainsKey(packageIdentity))
+            {
+                // Already cached
+                continue;
+            }
+
+            try
+            {
+                var dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
+                    packageIdentity,
+                    targetFramework,
+                    new SourceCacheContext(),
+                    new NullLogger(),
+                    CancellationToken.None).Result;
+
+                if (dependencyInfo is not null)
+                {
+                    _packageDependencyCache[packageIdentity] = dependencyInfo;
+                    cachedCount++;
+                }
+                else
+                {
+                    // Store null to indicate package wasn't found, avoiding repeated lookups
+                    _packageDependencyCache[packageIdentity] = null;
+                    failedCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"WARNING: Failed to fetch dependency info for {packageIdentity}: {ex.Message}");
+                // Store null to avoid retrying
+                _packageDependencyCache[packageIdentity] = null;
+                failedCount++;
+            }
+        }
+
+        Console.WriteLine($"INFO: Cache built successfully - {cachedCount} package(s) cached, {failedCount} failed");
+    }
+
+    /// <summary>
+    /// Gets package dependency info from cache or fetches it from NuGet if not cached.
+    /// </summary>
+    private static SourcePackageDependencyInfo GetDependencyInfo(
+        PackageIdentity packageIdentity,
+        NuGet.Frameworks.NuGetFramework targetFramework)
+    {
+        // Check cache first
+        if (_packageDependencyCache.TryGetValue(packageIdentity, out var cachedInfo))
+        {
+            return cachedInfo;
+        }
+
+        // Not in cache, fetch from NuGet (this should rarely happen if cache was built properly)
+        try
+        {
+            var dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
+                packageIdentity,
+                targetFramework,
+                new SourceCacheContext(),
+                new NullLogger(),
+                CancellationToken.None).Result;
+
+            // Cache the result
+            _packageDependencyCache[packageIdentity] = dependencyInfo;
+
+            return dependencyInfo;
+        }
+        catch
+        {
+            // Cache null on failure to avoid retrying
+            _packageDependencyCache[packageIdentity] = null;
+            return null;
+        }
+    }
+
     private static bool FindDependency(string packageName,
                                        string packageVersion,
                                        bool isDeclaredDependency,
@@ -665,26 +777,15 @@ class Program
 
         if (recurring)
         {
-            // 2nd round
-            dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
-                packageIdentity,
-                targetFramework,
-                new SourceCacheContext(),
-                new NullLogger(),
-                CancellationToken.None).Result;
+            // 2nd round - use cache
+            dependencyInfo = GetDependencyInfo(packageIdentity, targetFramework);
 
             bool dependencyFound = false;
 
             if (dependencyInfo is null)
             {
-                // try to find it in NuGet
-
-                dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
-                    packageIdentity,
-                    targetFramework,
-                    new SourceCacheContext(),
-                    new NullLogger(),
-                    CancellationToken.None).Result;
+                // try to find it in NuGet - use cache
+                dependencyInfo = GetDependencyInfo(packageIdentity, targetFramework);
             }
 
             if (dependencyInfo is not null)
@@ -764,12 +865,7 @@ class Program
         if (_dependencyInfoResourceNuGet is not null
             && recurring)
         {
-            dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
-                packageIdentity,
-                targetFramework,
-                new SourceCacheContext(),
-                new NullLogger(),
-                CancellationToken.None).Result;
+            dependencyInfo = GetDependencyInfo(packageIdentity, targetFramework);
 
             if (dependencyInfo is not null
                 && dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
@@ -792,13 +888,8 @@ class Program
             }
         }
 
-        // 2nd round
-        dependencyInfo = _dependencyInfoResourceNuGet.ResolvePackage(
-            packageIdentity,
-            targetFramework,
-            new SourceCacheContext(),
-            new NullLogger(),
-            CancellationToken.None).Result;
+        // 2nd round - use cache
+        dependencyInfo = GetDependencyInfo(packageIdentity, targetFramework);
 
         if (dependencyInfo is not null
             && dependencyInfo.Dependencies.Any(d => d.Id == packageName && d.VersionRange.ToShortString() == packageVersion))
