@@ -16,10 +16,10 @@ using System.Xml.Linq;
 using CliWrap;
 using CliWrap.Buffered;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using NuGet.Packaging;
 using NuGet.Versioning;
 using Octokit;
-using Newtonsoft.Json.Linq;
 
 namespace nanoFramework.Tools.DependencyUpdater
 {
