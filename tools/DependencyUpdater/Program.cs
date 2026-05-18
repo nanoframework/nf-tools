@@ -575,8 +575,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 foreach (var packageConfigFile in packageConfigs)
                 {
                     Console.WriteLine();
-                    Console.WriteLine("::group::📝 Processing project");
-                    Console.WriteLine($"  {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
+                    Console.WriteLine($"::group::📝 Processing project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
 
                     // check if the project the packages.config belongs to it's in the solution 
                     var projectPathInSln = Path.GetRelativePath(solutionPath, Directory.GetParent(packageConfigFile).FullName);
@@ -611,7 +610,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                     var projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
                     var projectName = match.Groups["projectname"].Value;
 
-                    Console.WriteLine($"  🔨 Project: {Path.GetFileNameWithoutExtension(projectToUpdate)}");
+
 
                     // load packages.config 
                     var packageReader = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packageConfigFile));
@@ -707,13 +706,13 @@ namespace nanoFramework.Tools.DependencyUpdater
                             string packageName = package.PackageIdentity.Id;
                             string packageOriginVersion = package.PackageIdentity.Version.ToNormalizedString();
 
-                            Console.WriteLine($"\n  🔄 Checking: {packageName} {packageOriginVersion}");
+
 
                             // Check cache first to see if update is available
                             // Skip packages not in cache or with no available updates (unless they need special handling)
                             // UnitsNet packages need special handling (search nuget.org)
                             // TestFramework needs special handling (updates .nfproj file)
-                            if (!packageName.StartsWith("UnitsNet.") 
+                            if (!packageName.StartsWith("UnitsNet.")
                                 && !packageName.StartsWith("nanoFramework.TestFramework"))
                             {
                                 var cacheKey = (packageName, packageOriginVersion);
@@ -721,12 +720,8 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 {
                                     if (cachedVersion == null)
                                     {
-                                        Console.WriteLine($"    ✓ Up-to-date");
+                                        Console.WriteLine($"  ✓ {packageName} {packageOriginVersion}");
                                         continue;
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"    ⬆️  Update available: {cachedVersion}");
                                     }
                                 }
                             }
@@ -840,7 +835,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                                 if (packageOriginVersion == packageTargetVersion)
                                 {
-                                    Console.WriteLine($"    ✓ Already at latest version");
+                                    Console.WriteLine($"  ✓ {packageName} {packageOriginVersion}");
                                 }
                             }
                             else
@@ -867,7 +862,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     // add to the HashSet to ensure uniqueness
                                     updateMessages.Add(updateMessage);
 
-                                    Console.WriteLine($"    ✅ Updated: {packageOriginVersion} → {packageTargetVersion}");
+                                    Console.WriteLine($"  ⬆️  {packageName} {packageOriginVersion} → {packageTargetVersion}");
                                 }
 
                                 // if this is the Test Framework, need to update the nfproj file too
@@ -946,7 +941,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"      ℹ️  Not listed in nuspec");
+                                        // Silently skip - not listed in nuspec (no need to log)
                                     }
 
                                 }
@@ -1010,9 +1005,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                 return;
             }
 
-            Console.WriteLine($"\n📝 Generating pull request...");
 
-            Console.WriteLine($"  🔀 Creating branch: {newBranchName}");
+
+            Console.WriteLine($"  🔀 Branch: {newBranchName}");
 
             // create branch to perform updates
             if (!RunGitCli($"branch {newBranchName}", workingDirectory))
@@ -1026,7 +1021,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Environment.Exit(1);
             }
 
-            Console.WriteLine($"  ➕ Staging changes...");
+            Console.WriteLine($"  ➕ Staging changes");
 
             // add changes without any .runsettings file which may override user config and break unit test execution
             if (!RunGitCli("add --all -- :!*.runsettings", workingDirectory))
@@ -1141,7 +1136,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         dynamic packageInfo = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
 
                         // Determine if we should only use stable versions for this package
-                        bool useOnlyStable = stablePackages 
+                        bool useOnlyStable = stablePackages
                             || (isDevelopmentDependency && !packageId.StartsWith("nanoFramework.TestFramework"));
 
                         // Filter versions based on package type and mode
@@ -1313,9 +1308,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                 }
 
                 // go ahead and create PR
-                Console.WriteLine($"\n📤 Creating PR: {repoOwner}/{libraryName}");
-                Console.WriteLine($"  Head: {repoOwner}:{newBranchName}");
-                Console.WriteLine($"  Base: {branchToPr}");
+                Console.WriteLine($"  📤 Creating PR: {repoOwner}/{libraryName}");
+                Console.WriteLine($"      Head: {repoOwner}:{newBranchName}");
+                Console.WriteLine($"      Base: {branchToPr}");
 
                 // developer note: head must be in the format 'user:branch'
                 var updatePr = _octokitClient.PullRequest.Create(
