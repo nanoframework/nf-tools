@@ -2,26 +2,21 @@ trigger:
   branches:
     include: [main, develop, "release-*" ]
   paths:
-    exclude: 
-      - .gitignore
-      - .gitattributes
-      - .editorconfig
-      - azure-pipelines.yml
-      - README.md
-      - README.zh-cn.md
-      - LICENSE.md
-      - NuGet.config
-      - spelling_exclusion.dic
-      - .github/*
-      - azure-pipelines-templates/*
+    include:
+      - github-nfbot/**
+      - tools/**
 
   tags:
     include:
     - refs/tags/v*
 
-# PR always trigger build
+# PR triggers only for selected paths
 pr:
   autoCancel: true
+  paths:
+    include:
+      - github-nfbot/**
+      - tools/**
 
 jobs:
 
