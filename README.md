@@ -12,8 +12,18 @@ This repo contains various tools that are required in **nanoFramework** developm
 
 - [Azure DevOps extensions](AzureDevOps) Extensions used in build pipelines for our repositories.
 - [Azure Pipelines Templates](azure-pipelines-templates) Azure Pipelines templates for our repositories.
-- [github-actions](github-actions) Github Action workflow scripts/templates for our repositories.
 - [GitHub-bot](AzureFunction-github-bot) Azure Function project for **nanoFramework** GitHub bot which help with managing various aspects of communication and the pull requests workflow.
+- [Tools](tools) CLI and desktop tools used in **nanoFramework** development workflows.
+
+## Tools
+
+The following tools are available under the [tools](tools) folder:
+
+| Tool | Folder | Description |
+|------|--------|-------------|
+| `nanodu` (Dependency Updater) | [tools/DependencyUpdater](tools/DependencyUpdater) | Updates NuGet dependencies and related metadata for .NET nanoFramework solutions. |
+| `nanovc` (VersionCop) | [tools/VersionCop](tools/VersionCop) | Validates package version consistency and reports version mismatches in nanoFramework builds. |
+| `NanoProfiler` | [tools/Profiler](tools/Profiler) | Windows profiler application to inspect runtime and memory behavior of nanoFramework targets. |
 
 ## Feedback and documentation
 
