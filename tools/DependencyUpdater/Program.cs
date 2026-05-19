@@ -73,6 +73,9 @@ namespace nanoFramework.Tools.DependencyUpdater
             bool localUpdate = false,
             string[] args = null)
         {
+            // ensure console output supports UTF-8 (required for emoji/icons)
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+
             // Detect running environment
             DetectEnvironment();
 
@@ -873,7 +876,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                                 // load nuspec file content, if there is a nuspec file to update
                                 if (nuspecFileName is not null)
                                 {
-                                    Console.WriteLine($"      📋 Nuspec: {Path.GetFileName(nuspecFileName)}");
+                                    Console.WriteLine($"    📋 Nuspec: {Path.GetFileName(nuspecFileName)}");
 
                                     var nuspecFile = new XmlDocument();
                                     nuspecFile.Load(nuspecFileName);
@@ -906,8 +909,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                                         {
                                             dependency.Attributes["version"].Value = packageTargetVersion;
 
-                                            Console.WriteLine($"        ✏️  Updating nuspec: '{dependency.Attributes["id"].Value}' ---> {packageTargetVersion}");
-
                                             // save back changes
                                             // developer note: using stream writer instead of Save(to file name) because of random issues with updated content
                                             // not being saved thus causing bogus updates on the nuspec content
@@ -920,11 +921,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                                             nuspecUpdatedCounter++;
                                         }
                                     }
-                                    else
-                                    {
-                                        Console.WriteLine($"      ⚠️  Dependency '{packageName}' not found in nuspec (may not be required)");
-                                    }
-
                                 }
                             }
                         }
@@ -951,6 +947,11 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             Console.WriteLine();
             WriteNotice($"✅ Successfully updated {updateCount} package(s)");
+
+            if (localUpdate)
+            {
+                return;
+            }
 
             // need this line so nfbot flags the PR appropriately
             commitMessage.Append("\n[version update]\n\n");
@@ -1122,7 +1123,8 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static NuGetVersion GetLatestListedVersion(string packageId, bool includePrerelease)
         {
             using var httpClient = new HttpClient();
-            string url = $"https://api.nuget.org/v3/search?q=packageid:{packageId}&prerelease={includePrerelease.ToString().ToLowerInvariant()}&semVerLevel=2.0.0";
+
+            string url = $"https://azuresearch-usnc.nuget.org/query?q=packageid:{Uri.EscapeDataString(packageId)}&prerelease={includePrerelease.ToString().ToLowerInvariant()}&semVerLevel=2.0.0";
             string json = httpClient.GetStringAsync(url).Result;
             var data = JObject.Parse(json)["data"] as JArray;
 
@@ -1132,7 +1134,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             string versionStr = data[0]["version"]?.ToString();
-            return NuGetVersion.TryParse(versionStr, out var version) ? version : null;
+            return NuGetVersion.TryParse(versionStr, out NuGetVersion version) ? version : null;
         }
 
         private static List<string> CollectSolutions(string workingDirectory, string[] solutionsToCheck)
@@ -1522,7 +1524,7 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
             else
             {
-                Console.WriteLine($"\n{title}");
+                Console.WriteLine(title);
             }
         }
 
