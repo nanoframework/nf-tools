@@ -833,11 +833,11 @@ class Program
 
     private static void DetectEnvironment()
     {
-        // Check for GitHub Actions environment
-        _isGitHubActions = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"));
-
-        // Check for Azure Pipelines environment
+        // Check for Azure Pipelines environment first - takes priority
         _isAzureDevOps = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"));
+
+        // Check for GitHub Actions environment only if not already identified as Azure DevOps
+        _isGitHubActions = !_isAzureDevOps && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"));
     }
 
     private static void WriteGroupStart(string title)
