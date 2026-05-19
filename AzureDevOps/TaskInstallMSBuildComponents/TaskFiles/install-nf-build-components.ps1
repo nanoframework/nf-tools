@@ -1,4 +1,4 @@
-# Copyright (c) .NET Foundation and Contributors
+﻿# Copyright (c) .NET Foundation and Contributors
 # See LICENSE file in the project root for full license information.
 
 [CmdletBinding()]
@@ -16,7 +16,7 @@ Import-VstsLocStrings "$PSScriptRoot\Task.json"
 
 function DownloadVsixFile($fileUrl, $downloadFileName)
 {
-    Write-Debug "  ⬇️  $fileUrl"
+    Write-Debug "  ⬇️  Downloading from: $fileUrl"
     Invoke-WebRequest -Uri $fileUrl -OutFile $downloadFileName -UseBasicParsing
 }
 

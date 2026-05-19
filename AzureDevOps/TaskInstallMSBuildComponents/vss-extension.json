@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "install-nanoframework-msbuild-components",
     "name": "Install .NET nanoFramework MSBuild components",
-    "version": "1.259.0",
+    "version": "1.260.0",
     "publisher": "nanoframework",
     "targets": [
         {
