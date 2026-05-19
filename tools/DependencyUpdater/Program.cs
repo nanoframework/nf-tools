@@ -569,10 +569,9 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // Build package update cache once for the entire solution
                 Dictionary<(string Id, string Version), string> packageUpdateCache = BuildPackageUpdateCache(packageConfigs, stablePackages);
 
-                // Pre-check: skip solution if no updates available (only for stable packages)
-                if (stablePackages && !packageUpdateCache.Any(kv => kv.Value != null))
+                // Pre-check: skip solution if no updates are available
+                if (!packageUpdateCache.Any(kv => kv.Value != null))
                 {
-                    // no packages to update
                     Console.WriteLine();
                     Console.WriteLine($"⏭️  No updates available - skipping solution");
                     Console.WriteLine();
