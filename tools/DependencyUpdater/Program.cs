@@ -150,15 +150,18 @@ namespace nanoFramework.Tools.DependencyUpdater
                 Console.WriteLine($"🔀 Branch target: {branchToPr}");
             }
 
-            // setup git stuff, only if we are not in debug mode
+            // setup git stuff, only if we are not in debug mode and not doing a local update
 #if DEBUG
             // doing something with this parameter so it doesn't get caught by static analysers
             _ = gitHubEmail.Contains(_gitHubUser);
 #else
-            RunGitCli("config --global gc.auto 0", "");
-            RunGitCli($"config --global user.name {gitHubUser}", "");
-            RunGitCli($"config --global user.email {gitHubEmail}", "");
-            RunGitCli("config --global core.autocrlf true", "");
+            if (!localUpdate)
+            {
+                RunGitCli("config --global gc.auto 0", "");
+                RunGitCli($"config --global user.name {gitHubUser}", "");
+                RunGitCli($"config --global user.email {gitHubEmail}", "");
+                RunGitCli("config --global core.autocrlf true", "");
+            }
 #endif
 
             if (!localUpdate)
