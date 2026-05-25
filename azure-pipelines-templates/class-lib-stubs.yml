@@ -14,13 +14,13 @@ steps:
   inputs:
     sourceFolder: $(Build.SourcesDirectory)
     Contents: |
-      *\Stubs\**\*.cpp
-      *\Stubs\**\*.h
-      *\Stubs\**\*.cmake
+      **\Stubs\**\*.cpp
+      **\Stubs\**\*.h
+      **\Stubs\**\*.cmake
     TargetFolder: '$(Build.ArtifactStagingDirectory)/Stubs'
     flattenFolders: true
 
-# publish artifacts
+# publish artifacts (PR builds only)
 - task: PublishPipelineArtifact@1
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)'
@@ -30,6 +30,6 @@ steps:
     and(
       succeeded(),
       eq(variables['StartReleaseCandidate'], false),
-      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+      ne(variables['System.PullRequest.PullRequestId'], '')
     )
   displayName: Publish stubs artifacts

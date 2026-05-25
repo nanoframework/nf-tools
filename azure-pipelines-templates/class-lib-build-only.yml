@@ -186,3 +186,7 @@ steps:
     pollingTimeoutSec: '300'
 
 - template: class-lib-stubs.yml
+
+- template: class-lib-checksum.yml
+  parameters:
+    usePreviewBuild: ${{ parameters.usePreviewBuild }}
