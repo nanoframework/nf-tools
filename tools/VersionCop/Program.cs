@@ -302,6 +302,7 @@ class Program
                 // reset flags
                 projectCheckFailed = false;
                 nuspecCheckFailed = false;
+                nuspecDependenciesToRemove = false;
                 bool refMissingFromNuspec = false;
                 bool idMismatchInNuspec = false;
                 string idFoundInNuspec = "";
@@ -493,7 +494,7 @@ class Program
                                 {
                                     if (!isDeclaredDependency)
                                     {
-                                        Console.WriteLine("nuspec ⚠️  not listed but OK (transitive dependency)");
+                                        Console.WriteLine("nuspec ✅ not listed (transitive dependency)");
                                     }
                                     else
                                     {
@@ -501,7 +502,7 @@ class Program
                                     }
                                 }
 
-                                if (analyseNuspec && (!refMissingFromNuspec || idMismatchInNuspec) && packageName != dependencyPackageId && packageName != "nanoFramework.CoreLibrary")
+                                if (analyseNuspec && !idMismatchInNuspec && !refMissingFromNuspec && packageName != dependencyPackageId && packageName != "nanoFramework.CoreLibrary")
                                 {
                                     Console.WriteLine($"    💡 OK to remove - declared as dependency of '{dependencyPackageId}'");
 
