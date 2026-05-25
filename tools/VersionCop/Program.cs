@@ -318,14 +318,8 @@ class Program
 
                     Console.Write($"  🔄 {packageIdentity}... ");
 
-                    // find package in project file
-                    var packageIdRegexed = packageIdentity.ToString().Replace(".", "\\.");
-                    var packageInProjecFile = Regex.Match(projecFileContent, $"(?'package'packages\\\\{packageIdRegexed})");
-                    if (packageInProjecFile.Success)
-                    {
-                        assemblyName = nameRegex.Groups["assemblyname"].Value;
-                    }
-                    else
+                    bool packageFoundInProject = IsPackageReferencedInProject(projecFileContent, packageName, packageVersion);
+                    if (!packageFoundInProject)
                     {
                         // flag failed check
                         projectCheckFailed = true;
@@ -334,7 +328,7 @@ class Program
                     // flag for nuspec missing
                     refMissingFromNuspec = true;
 
-                    if (!projectCheckFailed
+                    if (packageFoundInProject
                         && checkNuspec
                         && nuspecReader is not null)
                     {
@@ -395,7 +389,7 @@ class Program
                         }
                     }
 
-                    if (projectCheckFailed)
+                    if (!packageFoundInProject)
                     {
                         Console.WriteLine();
                         WriteError($"❌ Couldn't find '{packageIdentity}' in '{Path.GetFileName(projectToCheck)}'");
@@ -912,5 +906,82 @@ class Program
         nuspecAsText = nuspecAsText.Replace("$version$", "9.99.999.9999");
 
         return new NuspecReader(XDocument.Parse(nuspecAsText));
+    }
+
+    private static bool IsPackageReferencedInProject(string projectFileContent, string packageName, string packageVersion)
+    {
+        var packagePath = $"packages\\{packageName}.{packageVersion}";
+        if (projectFileContent.Contains(packagePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var packagePathForwardSlash = packagePath.Replace('\\', '/');
+        if (projectFileContent.Contains(packagePathForwardSlash, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var normalizedPackageName = NormalizePackageOrReferenceName(packageName);
+
+        try
+        {
+            var projectXml = XDocument.Parse(projectFileContent);
+            var references = projectXml.Descendants().Where(x => x.Name.LocalName == "Reference");
+
+            foreach (var reference in references)
+            {
+                var includeValue = reference.Attribute("Include")?.Value;
+                if (!string.IsNullOrEmpty(includeValue))
+                {
+                    var includeName = includeValue.Split(',')[0].Trim();
+                    if (ReferenceNameMatchesPackage(includeName, packageName, normalizedPackageName))
+                    {
+                        return true;
+                    }
+                }
+
+                var hintPath = reference.Elements().FirstOrDefault(x => x.Name.LocalName == "HintPath")?.Value;
+                if (!string.IsNullOrEmpty(hintPath))
+                {
+                    var assemblyFileName = Path.GetFileNameWithoutExtension(hintPath);
+                    if (!string.IsNullOrEmpty(assemblyFileName)
+                        && ReferenceNameMatchesPackage(assemblyFileName, packageName, normalizedPackageName))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // if parsing fails keep default false outcome
+        }
+
+        return false;
+    }
+
+    private static bool ReferenceNameMatchesPackage(string referenceName, string packageName, string normalizedPackageName)
+    {
+        if (string.IsNullOrEmpty(referenceName))
+        {
+            return false;
+        }
+
+        return referenceName.Equals(packageName, StringComparison.OrdinalIgnoreCase)
+            || referenceName.Equals(normalizedPackageName, StringComparison.OrdinalIgnoreCase)
+            || NormalizePackageOrReferenceName(referenceName).Equals(normalizedPackageName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizePackageOrReferenceName(string value)
+    {
+        const string nanoFrameworkPrefix = "nanoFramework.";
+
+        if (value.StartsWith(nanoFrameworkPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return value.Substring(nanoFrameworkPrefix.Length);
+        }
+
+        return value;
     }
 }
