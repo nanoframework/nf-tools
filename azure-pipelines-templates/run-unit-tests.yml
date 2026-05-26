@@ -24,7 +24,7 @@ steps:
       not(${{ parameters.skipInstall }}),
       succeeded(),
       ${{ parameters.runUnitTests }},
-      eq(variables['StartReleaseCandidate'], false),
+      ne(variables['StartReleaseCandidate'], 'true'),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: 'Visual Studio Test Platform Installer'
@@ -36,7 +36,7 @@ steps:
     and(
       succeeded(),
       ${{ parameters.runUnitTests }},
-      eq(variables['StartReleaseCandidate'], false),
+      ne(variables['StartReleaseCandidate'], 'true'),
       not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     )
   displayName: 'Running Unit Tests'
