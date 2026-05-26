@@ -281,7 +281,7 @@ steps:
 
       if ($versionBumpNeeded)
       {
-          Write-Host "##[warning]Checksum changed but native version was not bumped — posting version-bump comment."
+          Write-Host "##[error]Checksum changed but native version was not bumped — posting version-bump comment and failing the build."
 
           $versionBumpBody = @(
               $versionBumpMarker,
@@ -309,6 +309,9 @@ steps:
               gh pr comment $prNumber --repo $repoName --body "$versionBumpBody"
               Write-Host "Version-bump comment posted."
           }
+
+          Write-Host "##vso[task.logissue type=error]Native version must be bumped: checksum changed from $pubChecksum to $newChecksum but native version $newNativeVersion was not incremented."
+          exit 1
       }
       else
       {
