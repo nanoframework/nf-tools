@@ -24,11 +24,11 @@ steps:
     script: |
 
       # check if this is a PR
-      if($env:System_PullRequest_PullRequestId -ne $null)
+      if($env:SYSTEM_PULLREQUEST_PULLREQUESTID -ne $null)
       {
           Write-Host "Building from PR"
 
-          $user = $(gh pr view $env:System_PullRequest_PullRequestNumber --json author --jq .author.login)
+          $user = $(gh pr view $env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER --json author --jq .author.login)
 
           Write-Host "PR from user: $user"
 
@@ -83,10 +83,10 @@ steps:
             }
           }
 
-          $AUTHOR_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%aN")"
-          $COMMITTER_NAME="$(git log -1 "$env:Build_SourceVersion" --pretty="%cN")"
-          $COMMIT_SUBJECT="$(git log -1 "$env:Build_SourceVersion" --pretty="%s")"
-          $COMMIT_MESSAGE="$(git log -1 "$env:Build_SourceVersion" --pretty="%b")"
+          $AUTHOR_NAME="$(git log -1 "$env:BUILD_SOURCEVERSION" --pretty="%aN")"
+          $COMMITTER_NAME="$(git log -1 "$env:BUILD_SOURCEVERSION" --pretty="%cN")"
+          $COMMIT_SUBJECT="$(git log -1 "$env:BUILD_SOURCEVERSION" --pretty="%s")"
+          $COMMIT_MESSAGE="$(git log -1 "$env:BUILD_SOURCEVERSION" --pretty="%b")"
 
           if ($AUTHOR_NAME -eq $COMMITTER_NAME)
           {
@@ -100,16 +100,16 @@ steps:
           $WEBHOOK_URL = "${{ parameters.webhookUrl }}"
           $MESSAGE = "${{ parameters.message }}"
 
-          if ($env:System_PullRequest_PullRequestNumber) {
-            $URL="https://github.com/$env:Build_Repository_Name/pull/$env:System_PullRequest_PullRequestNumber"
+          if ($env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER) {
+            $URL="https://github.com/$env:BUILD_REPOSITORY_NAME/pull/$env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
           }
-        
-          $BUILD_VERSION = [uri]::EscapeDataString($env:Build_BuildNumber)
+
+          $BUILD_VERSION = [uri]::EscapeDataString($env:BUILD_BUILDNUMBER)
 
           [System.Collections.ArrayList]$embedArray = @()
 
-          $name = "Job #$env:Build_BuildId (Build #$env:Build_BuildNumber) $STATUS_MESSAGE - $env:Build_Repository_Name"
-          $url = "https://dev.azure.com/nanoframework/$env:System_TeamProject/_build/results?buildId=$env:Build_BuildId&view=results"
+          $name = "Job #$env:BUILD_BUILDID (Build #$env:BUILD_BUILDNUMBER) $STATUS_MESSAGE - $env:BUILD_REPOSITORY_NAME"
+          $url = "https://dev.azure.com/nanoframework/$env:SYSTEM_TEAMPROJECT/_build/results?buildId=$env:BUILD_BUILDID&view=results"
           $description = "$COMMIT_MESSAGE`\n$CREDITS`\n$MESSAGE"
 
           $authorObject = [PSCustomObject]@{
@@ -118,7 +118,7 @@ steps:
               icon_url = $AVATAR
           }
 
-          $field1Value = "[``$($env:Build_SourceVersion.substring(0, 7))``](https://github.com/$env:Build_Repository_Name/commit/$env:Build_SourceVersion)"
+          $field1Value = "[``$($env:BUILD_SOURCEVERSION.substring(0, 7))``](https://github.com/$env:BUILD_REPOSITORY_NAME/commit/$env:BUILD_SOURCEVERSION)"
 
           $field1Object = [PSCustomObject]@{
               name = "Commit"
@@ -126,7 +126,7 @@ steps:
               inline = 'true'
           }
           
-          $field2Value = "[``$env:Build_SourceBranchName``](https://github.com/$env:Build_Repository_Name/tree/$env:Build_SourceBranchName)"
+          $field2Value = "[``$env:BUILD_SOURCEBRANCHNAME``](https://github.com/$env:BUILD_REPOSITORY_NAME/tree/$env:BUILD_SOURCEBRANCHNAME)"
 
           $field2Object = [PSCustomObject]@{
               name = "Branch/Tag"
@@ -135,8 +135,8 @@ steps:
           }
 
           [System.Collections.ArrayList]$fieldsArray = @()
-          $fieldsArray.Add($field1Object)
-          $fieldsArray.Add($field2Object)
+          [void]$fieldsArray.Add($field1Object)
+          [void]$fieldsArray.Add($field2Object)
 
           $embedObject = [PSCustomObject]@{
               color = $EMBED_COLOR
@@ -147,7 +147,7 @@ steps:
               fields = $fieldsArray
           }
 
-          $embedArray.Add($embedObject)
+          [void]$embedArray.Add($embedObject)
           
           $payload = [PSCustomObject]@{
               embeds = $embedArray
