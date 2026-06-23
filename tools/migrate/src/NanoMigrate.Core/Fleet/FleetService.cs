@@ -16,7 +16,7 @@ public readonly record struct GitResult(int Code, string Stdout, string Stderr);
 /// </summary>
 public interface IGitRunner
 {
-    GitResult Run(string args, string workingDirectory);
+    GitResult Run(string args, string workingDirectory, CancellationToken cancellationToken = default);
 }
 
 /// <summary>The knobs that drive a fleet run, layered over the per-project options.</summary>
@@ -96,7 +96,8 @@ public sealed class FleetService
     /// commit. <paramref name="progress"/> (if supplied) is invoked with each repo
     /// name before it is processed. Returns one <see cref="RepoReport"/> per repo.
     /// </summary>
-    public List<RepoReport> Process(List<string> repoDirs, FleetOptions o, Action<string>? progress = null)
+    public List<RepoReport> Process(List<string> repoDirs, FleetOptions o, Action<string>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         // In a git repo the commit history already preserves the pre-migration file,
         // so a .bak alongside it is just noise in the diff. Skip backups when committing.
@@ -105,30 +106,32 @@ public sealed class FleetService
         var report = new List<RepoReport>();
         foreach (var repo in repoDirs)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             progress?.Invoke(Path.GetFileName(repo));
             var rr = new RepoReport { Name = Path.GetFileName(repo) };
             try
             {
                 if (o.Branch is not null && !conv.DryRun)
                 {
-                    var checkout = _git.Run($"checkout -B {o.Branch}", repo);
+                    var checkout = _git.Run($"checkout -B {o.Branch}", repo, cancellationToken);
                     if (checkout.Code != 0) { rr.Error = $"git checkout failed: {checkout.Stderr.Trim()}"; report.Add(rr); continue; }
                 }
 
                 foreach (var nf in ProjectScanner.NfprojUnder(repo, conv.Glob).OrderBy(p => p))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     rr.Projects++;
-                    var result = _converter.Convert(nf, conv);
+                    var result = _converter.Convert(nf, conv, cancellationToken);
                     var rel = Path.GetRelativePath(repo, nf);
                     foreach (var item in result.Review) rr.Review.Add($"{rel}: {item}");
                 }
 
                 if (o.Commit && !conv.DryRun)
                 {
-                    _git.Run("add -A", repo);
+                    _git.Run("add -A", repo, cancellationToken);
                     var msgFile = WriteCommitMessage(o);
                     var signOff = o.SignOff ? "-s " : "";
-                    var commit = _git.Run($"commit {signOff}-F \"{msgFile}\"", repo);
+                    var commit = _git.Run($"commit {signOff}-F \"{msgFile}\"", repo, cancellationToken);
                     File.Delete(msgFile);
                     rr.Committed = commit.Code == 0;
                     if (commit.Code != 0 && !commit.Stderr.Contains("nothing to commit"))

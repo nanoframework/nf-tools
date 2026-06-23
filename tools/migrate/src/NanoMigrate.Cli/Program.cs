@@ -35,6 +35,13 @@ catch (UserError ue)
     AnsiConsole.MarkupLine($"[red]error:[/] {Markup.Escape(ue.Message)}");
     return 1;
 }
+catch (OperationCanceledException)
+{
+    // Ctrl+C / console close — Spectre cancels the command token, which the long-running
+    // operations observe and surface here. 130 = 128 + SIGINT, the conventional code.
+    AnsiConsole.MarkupLine("[yellow]cancelled.[/]");
+    return 130;
+}
 catch (Exception ex)
 {
     // Spectre's own parse/validation errors surface here (PropagateExceptions).

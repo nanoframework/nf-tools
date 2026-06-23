@@ -100,8 +100,14 @@ public sealed class MigrateCommand : Command<MigrateSettings>
 {
     private readonly IProjectConverter _converter = new ProjectConverter();
 
+    // Spectre hands a fresh command instance per invocation and cancels this token on
+    // Ctrl+C / console close; the conversion and verify helpers read it so a long run
+    // (convert + dotnet build) stops promptly.
+    private CancellationToken _cancellationToken;
+
     protected override int Execute(CommandContext context, MigrateSettings settings, CancellationToken cancellationToken)
     {
+        _cancellationToken = cancellationToken;
         Header("NanoMigrate");
 
         var o = settings.ToConversionOptions();
@@ -254,7 +260,7 @@ public sealed class MigrateCommand : Command<MigrateSettings>
         foreach (var nf in targets)
         {
             ConvertResult preview;
-            try { preview = _converter.Convert(nf, dryOpts); }
+            try { preview = _converter.Convert(nf, dryOpts, _cancellationToken); }
             catch { continue; } // a project that fails to analyse is converted (and reported) normally; just not journaled
             if (preview.AlreadySdk) continue;
             MigrationJournaling.Record(journal, preview, extras);
@@ -285,12 +291,12 @@ public sealed class MigrateCommand : Command<MigrateSettings>
             AnsiConsole.Status().Spinner(Spinner.Known.Dots).Start("Verifying build…", ctx =>
                 captured = builder.VerifyAll(verifyTargets,
                     t => ctx.Status($"Building [blue]{Esc(Path.GetFileName(t))}[/]…"),
-                    () => toolMissing = true));
+                    () => toolMissing = true, _cancellationToken));
             outcomes = captured!;
         }
         else
         {
-            outcomes = builder.VerifyAll(verifyTargets, null, () => toolMissing = true);
+            outcomes = builder.VerifyAll(verifyTargets, null, () => toolMissing = true, _cancellationToken);
         }
 
         if (toolMissing)
@@ -488,7 +494,7 @@ public sealed class MigrateCommand : Command<MigrateSettings>
                 ConvertResult result;
                 try
                 {
-                    result = _converter.Convert(nf, o);
+                    result = _converter.Convert(nf, o, _cancellationToken);
                 }
                 catch (Exception ex)
                 {

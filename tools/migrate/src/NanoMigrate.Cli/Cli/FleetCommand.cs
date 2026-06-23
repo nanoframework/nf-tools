@@ -125,12 +125,12 @@ internal sealed class FleetCommand : Command<FleetSettings>
             List<RepoReport>? captured = null;
             AnsiConsole.Status().Spinner(Spinner.Known.Dots)
                 .Start("Migrating…", ctx => captured = service.Process(repoDirs, o,
-                    name => ctx.Status($"Migrating [blue]{Esc(name)}[/]…")));
+                    name => ctx.Status($"Migrating [blue]{Esc(name)}[/]…"), cancellationToken));
             report = captured!;
         }
         else
         {
-            report = service.Process(repoDirs, o);
+            report = service.Process(repoDirs, o, cancellationToken: cancellationToken);
         }
 
         FleetRenderer.RenderFleetTable(report);

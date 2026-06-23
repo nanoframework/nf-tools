@@ -61,7 +61,7 @@ public sealed class CleanCommand : Command<CleanSettings>
             return 0;
         }
 
-        var result = BackupCleaner.Remove(plan);
+        var result = BackupCleaner.Remove(plan, cancellationToken);
         foreach (var p in result.Problems)
             AnsiConsole.MarkupLine($"[red]clean issue:[/] {Esc(p)}");
 

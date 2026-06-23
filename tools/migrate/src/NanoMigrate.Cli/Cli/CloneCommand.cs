@@ -63,6 +63,7 @@ internal sealed class CloneCommand : AsyncCommand<CloneSettings>
         {
             foreach (var r in repos)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 report?.Invoke(r.Name);
                 var dest = Path.Combine(outDir, r.Name);
                 if (Directory.Exists(dest))
@@ -70,7 +71,7 @@ internal sealed class CloneCommand : AsyncCommand<CloneSettings>
                     table.AddRow(new Markup($"[blue]{Esc(r.Name)}[/]"), new Markup("[grey]skipped (already present)[/]"));
                     skipped++; continue;
                 }
-                var (code, _, err) = ProcessRunner.Run("git", $"clone --depth 1 {r.CloneUrl} \"{dest}\"", outDir);
+                var (code, _, err) = ProcessRunner.Run("git", $"clone --depth 1 {r.CloneUrl} \"{dest}\"", outDir, cancellationToken);
                 if (code == 0)
                 {
                     table.AddRow(new Markup($"[blue]{Esc(r.Name)}[/]"), new Markup("[green]cloned[/]"));

@@ -82,12 +82,13 @@ public static class BackupCleaner
     /// Removes everything in <paramref name="plan"/>. Returns a tally; per-item
     /// failures are collected as problems rather than aborting the sweep.
     /// </summary>
-    public static CleanResult Remove(CleanPlan plan)
+    public static CleanResult Remove(CleanPlan plan, CancellationToken cancellationToken = default)
     {
         var result = new CleanResult();
 
         foreach (var bak in plan.BackupFiles)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 // Only tally what actually existed and was deleted, so the report doesn't
@@ -99,6 +100,7 @@ public static class BackupCleaner
 
         foreach (var dir in plan.RollbackFolders)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 if (Directory.Exists(dir)) { Directory.Delete(dir, recursive: true); result.RemovedFolders.Add(dir); }

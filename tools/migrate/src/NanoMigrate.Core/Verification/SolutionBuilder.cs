@@ -1,8 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System.Diagnostics;
-using System.Text;
+using nanoFramework.Migrate.Core.Common;
 
 namespace nanoFramework.Migrate.Core.Verification;
 
@@ -63,7 +62,7 @@ public sealed class SolutionBuilder
     /// <paramref name="onSkippedToolMissing"/> (if given) is invoked once.
     /// </summary>
     public List<BuildOutcome> VerifyAll(IEnumerable<string> targets, Action<string>? onProgress = null,
-        Action? onSkippedToolMissing = null)
+        Action? onSkippedToolMissing = null, CancellationToken cancellationToken = default)
     {
         var results = new List<BuildOutcome>();
         if (!_runner.IsAvailable)
@@ -82,9 +81,10 @@ public sealed class SolutionBuilder
 
         foreach (var t in targets)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var full = Path.GetFullPath(t);
             onProgress?.Invoke(full);
-            var (code, stdout, stderr) = _runner.Build(full);
+            var (code, stdout, stderr) = _runner.Build(full, cancellationToken);
             results.Add(Interpret(full, code, stdout, stderr));
         }
         return results;
@@ -140,61 +140,26 @@ public interface IBuildRunner
     bool IsAvailable { get; }
 
     /// <summary>Builds <paramref name="target"/>, returning the exit code and output streams.</summary>
-    (int exitCode, string stdout, string stderr) Build(string target);
+    (int exitCode, string stdout, string stderr) Build(string target, CancellationToken cancellationToken = default);
 }
 
 /// <summary>The production runner: shells the <c>dotnet</c> already on PATH.</summary>
 public sealed class DotnetBuildRunner : IBuildRunner
 {
-    // Generous cap so a wedged build can't hang the verification step forever.
-    private const int BuildTimeoutMs = 600_000;
-
     private readonly Lazy<bool> _available = new(ProbeDotnet);
 
     public bool IsAvailable => _available.Value;
 
-    public (int exitCode, string stdout, string stderr) Build(string target)
+    public (int exitCode, string stdout, string stderr) Build(string target, CancellationToken cancellationToken = default)
     {
         var dir = Path.GetDirectoryName(Path.GetFullPath(target)) ?? ".";
-        var psi = new ProcessStartInfo("dotnet", $"build \"{target}\" --nologo")
-        {
-            WorkingDirectory = dir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
         try
         {
-            using var p = Process.Start(psi)!;
-
-            // Drain both pipes concurrently; sequential ReadToEnd() can deadlock when the
-            // build fills one buffer while we block on the other. Named local functions
-            // (not lambdas) so the handlers can be detached in the finally.
-            var so = new StringBuilder();
-            var se = new StringBuilder();
-            void OnOutput(object? _, DataReceivedEventArgs e) { if (e.Data is not null) so.AppendLine(e.Data); }
-            void OnError(object? _, DataReceivedEventArgs e) { if (e.Data is not null) se.AppendLine(e.Data); }
-            p.OutputDataReceived += OnOutput;
-            p.ErrorDataReceived += OnError;
-            try
-            {
-                p.BeginOutputReadLine();
-                p.BeginErrorReadLine();
-
-                if (!p.WaitForExit(BuildTimeoutMs))
-                {
-                    try { p.Kill(entireProcessTree: true); } catch { /* already exited */ }
-                    return (-1, so.ToString(), $"build timed out after {BuildTimeoutMs / 1000}s");
-                }
-                p.WaitForExit(); // let the async output handlers flush
-                return (p.ExitCode, so.ToString(), se.ToString());
-            }
-            finally
-            {
-                p.OutputDataReceived -= OnOutput;
-                p.ErrorDataReceived -= OnError;
-            }
+            return ProcessExec.Run("dotnet", $"build \"{target}\" --nologo", dir, cancellationToken: cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw; // propagate cancellation rather than reporting it as a build failure
         }
         catch (Exception ex)
         {
@@ -205,22 +170,7 @@ public sealed class DotnetBuildRunner : IBuildRunner
     // True when `dotnet --version` runs and exits 0. Cached for the runner's lifetime.
     private static bool ProbeDotnet()
     {
-        try
-        {
-            var psi = new ProcessStartInfo("dotnet", "--version")
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
-            using var p = Process.Start(psi);
-            if (p is null) return false;
-            p.StandardOutput.ReadToEnd();
-            p.StandardError.ReadToEnd();
-            p.WaitForExit();
-            return p.ExitCode == 0;
-        }
+        try { return ProcessExec.Run("dotnet", "--version", Directory.GetCurrentDirectory(), timeoutMs: 30_000).exitCode == 0; }
         catch { return false; }
     }
 }

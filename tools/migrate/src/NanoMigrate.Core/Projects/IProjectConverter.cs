@@ -14,5 +14,5 @@ public interface IProjectConverter
     /// In dry-run mode nothing is written; the returned <see cref="ConvertResult"/>
     /// still describes exactly what a real run would change.
     /// </summary>
-    ConvertResult Convert(string nfprojPath, ConversionOptions options);
+    ConvertResult Convert(string nfprojPath, ConversionOptions options, CancellationToken cancellationToken = default);
 }

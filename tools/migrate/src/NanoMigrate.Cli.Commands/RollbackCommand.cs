@@ -48,7 +48,7 @@ public sealed class RollbackCommand : Command<RollbackSettings>
             return 0;
         }
 
-        var result = RollbackJournal.ApplyAndCleanup(manifestPath);
+        var result = RollbackJournal.ApplyAndCleanup(manifestPath, cancellationToken);
         if (result is null)
         {
             AnsiConsole.MarkupLine("[red]error:[/] the rollback journal could not be read.");

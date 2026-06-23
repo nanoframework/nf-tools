@@ -20,7 +20,7 @@ public class VerifyTests
             _byName = byName ?? new();
         }
 
-        public (int exitCode, string stdout, string stderr) Build(string target)
+        public (int exitCode, string stdout, string stderr) Build(string target, CancellationToken cancellationToken = default)
         {
             var key = Path.GetFileName(target);
             return _byName.TryGetValue(key, out var r) ? r : (0, "ok", "");

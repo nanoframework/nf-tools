@@ -221,13 +221,14 @@ public sealed class RollbackJournal
     /// file already gone, or a restore target already matching its backup, is a no-op.
     /// Returns a tally of what was reverted (and any per-entry problems).
     /// </summary>
-    public static RollbackResult Apply(RollbackManifest manifest)
+    public static RollbackResult Apply(RollbackManifest manifest, CancellationToken cancellationToken = default)
     {
         var result = new RollbackResult();
 
         // Restore originals first (modified/deleted files), then remove created files.
         foreach (var e in manifest.Entries.Where(e => e.Action == RollbackAction.Restore))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 if (e.BackupPath is null || !File.Exists(e.BackupPath))
@@ -248,6 +249,7 @@ public sealed class RollbackJournal
 
         foreach (var e in manifest.Entries.Where(e => e.Action == RollbackAction.Created))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 if (File.Exists(e.OriginalPath))
@@ -270,11 +272,11 @@ public sealed class RollbackJournal
     /// success removes its backup set folder. Returns the result, or null when the
     /// manifest could not be read.
     /// </summary>
-    public static RollbackResult? ApplyAndCleanup(string manifestPath)
+    public static RollbackResult? ApplyAndCleanup(string manifestPath, CancellationToken cancellationToken = default)
     {
         var manifest = TryLoadManifest(manifestPath);
         if (manifest is null) return null;
-        var result = Apply(manifest);
+        var result = Apply(manifest, cancellationToken);
 
         // Remove the run's backup set once reverted (best-effort).
         try

@@ -57,8 +57,9 @@ public sealed class ProjectConverter : IProjectConverter
     // global.json `msbuild-sdks` entry, not the Sdk attribute.
     private const string SdkReference = "nanoFramework.NET.Sdk";
 
-    public ConvertResult Convert(string nfprojPath, ConversionOptions options)
+    public ConvertResult Convert(string nfprojPath, ConversionOptions options, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var nfproj = nfprojPath;
         var o = options;
         var projDir = Path.GetDirectoryName(Path.GetFullPath(nfproj))!;
