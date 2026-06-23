@@ -533,12 +533,15 @@ jobs:
       artifactType: pipeline
 
   # push NuGet packages to NuGet
+  # NOTE: publishing is gated off until these tools are ready for release. Set the
+  # pipeline variable PublishNanoTools=true to enable pushing the packages to NuGet.
   - task: NuGetCommand@2
     displayName: Push NuGet packages to NuGet
     condition: >-
       and(
         succeeded(),
-        eq(variables['System.PullRequest.PullRequestId'], '')
+        eq(variables['System.PullRequest.PullRequestId'], ''),
+        eq(variables['PublishNanoTools'], 'true')
       )
     continueOnError: true
     inputs:
@@ -663,12 +666,15 @@ jobs:
       artifactType: pipeline
 
   # push NuGet packages to NuGet
+  # NOTE: publishing is gated off until these tools are ready for release. Set the
+  # pipeline variable PublishNanoTools=true to enable pushing the packages to NuGet.
   - task: NuGetCommand@2
     displayName: Push NuGet packages to NuGet
     condition: >-
       and(
         succeeded(),
-        eq(variables['System.PullRequest.PullRequestId'], '')
+        eq(variables['System.PullRequest.PullRequestId'], ''),
+        eq(variables['PublishNanoTools'], 'true')
       )
     continueOnError: true
     inputs:
