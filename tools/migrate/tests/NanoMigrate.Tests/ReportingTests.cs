@@ -201,6 +201,7 @@ public class ReportingTests
         // --dry-run keeps it hermetic (no writes/verify); the report is still produced.
         var exit = app.Run(new[] { "migrate", dir.Path, "--report", reportPath, "--dry-run", "--no-verify" });
 
+        Assert.Equal(0, exit);
         Assert.True(File.Exists(reportPath), $"report not written (exit {exit})");
         assertContents(File.ReadAllText(reportPath));
     }

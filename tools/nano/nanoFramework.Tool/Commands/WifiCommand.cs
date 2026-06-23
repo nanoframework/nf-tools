@@ -54,6 +54,11 @@ public sealed class WifiSettings : CommandSettings
             return Spectre.Console.ValidationResult.Error("--auth must be one of: WPA2, WPA, OPEN.");
         }
 
+        if ((auth == "WPA" || auth == "WPA2") && string.IsNullOrEmpty(Password))
+        {
+            return Spectre.Console.ValidationResult.Error("--password is required for WPA/WPA2 (use --auth OPEN for an open network).");
+        }
+
         return Spectre.Console.ValidationResult.Success();
     }
 }

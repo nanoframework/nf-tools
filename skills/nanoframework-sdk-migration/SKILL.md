@@ -14,7 +14,7 @@ description: >-
 
 # nanoFramework SDK-style project migration
 
-Convert a nanoFramework repo from the legacy flavored `.nfproj` project system onto SDK-style
+Convert a nanoFramework repo from the legacy-flavored `.nfproj` project system onto SDK-style
 projects that compose over `nanoFramework.NET.Sdk`. The mechanical conversion is done by the
 **NanoMigrate** tool (in this repo at `tools/migrate`, surfaced as `dotnet nano migrate`). The
 tool is **idempotent + reentrant**: it skips already-SDK-style projects and re-running over a tree
@@ -25,7 +25,7 @@ The full, as-built command/option reference is [`tools/migrate/README.md`](../..
 truth; this skill is the workflow guide. **Always confirm the live surface with `--help`** — it
 matches the installed version exactly:
 
-```
+```bash
 dotnet nano --help               # every command
 dotnet nano migrate --help       # options for one command
 ```

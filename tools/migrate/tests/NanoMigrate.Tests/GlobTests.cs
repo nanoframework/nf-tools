@@ -18,6 +18,10 @@ public class GlobTests
     [InlineData("Foo.nfproj", "**/*.nfproj", true)]        // ** can match zero directories
     [InlineData("Beginner/x/y.nfproj", "Beginner/**", true)]
     [InlineData("Other/x/y.nfproj", "Beginner/**", false)]
+    // "**/" ends on a directory boundary: it matches zero or whole segments, not a partial one
+    [InlineData("Foo.nfproj", "**/Foo.nfproj", true)]
+    [InlineData("a/b/Foo.nfproj", "**/Foo.nfproj", true)]
+    [InlineData("MyFoo.nfproj", "**/Foo.nfproj", false)]
     // the "Beginner/** matches Beginner itself" rule
     [InlineData("Beginner", "Beginner/**", true)]
     // single char wildcard

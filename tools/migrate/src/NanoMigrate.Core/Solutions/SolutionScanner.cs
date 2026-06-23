@@ -18,9 +18,12 @@ public static class SolutionScanner
     {
         if (!Directory.Exists(dir)) return new List<string>();
 
+        // IgnoreInaccessible so a single permission-denied subtree doesn't abort the
+        // whole scan (the SearchOption overload throws instead of skipping).
+        var opts = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true };
         var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var pattern in new[] { "*.sln", "*.slnx" })
-            foreach (var sln in Directory.EnumerateFiles(dir, pattern, SearchOption.AllDirectories))
+            foreach (var sln in Directory.EnumerateFiles(dir, pattern, opts))
                 found.Add(Path.GetFullPath(sln));
 
         return found.OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToList();

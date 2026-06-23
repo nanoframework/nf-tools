@@ -48,10 +48,19 @@ public static class Glob
                     if (i + 1 < pattern.Length && pattern[i + 1] == '*')
                     {
                         i++;                       // consume the second '*'
-                        // "**/" (or trailing "**") spans directories; collapse any
-                        // following slash so "Beginner/**" also matches "Beginner".
-                        if (i + 1 < pattern.Length && pattern[i + 1] == '/') i++;
-                        sb.Append(".*");
+                        // "**/" spans zero or more WHOLE directory segments, so it must end
+                        // on a separator: "**/Foo.nfproj" matches "Foo.nfproj" and "a/Foo.nfproj"
+                        // but not "MyFoo.nfproj". A trailing "**" (no following slash) matches the
+                        // rest of the path, separators included.
+                        if (i + 1 < pattern.Length && pattern[i + 1] == '/')
+                        {
+                            i++;
+                            sb.Append("(?:.*/)?");
+                        }
+                        else
+                        {
+                            sb.Append(".*");
+                        }
                     }
                     else
                     {

@@ -76,6 +76,11 @@ public sealed class FleetService
         if (o.Branch is not null && o.Branch.StartsWith("develop", StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("branch name must not start with 'develop' (nanoFramework workflow); "
                               + "use something like 'sdk-migration' or 'issue-123'");
+        // The branch is interpolated into `git checkout -B <branch>`; reject anything that
+        // could smuggle a git option or otherwise alter argument parsing.
+        if (o.Branch is not null && !IsSafeBranchName(o.Branch))
+            throw new ArgumentException("invalid branch name; use only letters, digits, '.', '_', '-', '/' "
+                              + "and do not start with '-'");
 
         // A repo qualifies if it contains at least one .nfproj that survives the
         // glob filter (default: any .nfproj).
@@ -155,8 +160,19 @@ public sealed class FleetService
     /// <summary>Builds the markdown fleet report and writes it to <c>o.Report</c>.</summary>
     public void WriteReport(List<RepoReport> report, FleetOptions o, string reposDir)
     {
+        // Create the report's parent directory so a nested --report path (e.g.
+        // reports/fleet/migration.md) does not fail the write.
+        var dir = Path.GetDirectoryName(Path.GetFullPath(o.Report));
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         File.WriteAllText(o.Report, BuildReport(report, o, reposDir));
     }
+
+    // Reject branch names that could smuggle a git option or otherwise alter argument
+    // parsing when interpolated into `git checkout -B <branch>`.
+    private static bool IsSafeBranchName(string branch) =>
+        branch.Length > 0
+        && !branch.StartsWith('-')
+        && branch.All(c => char.IsLetterOrDigit(c) || c is '.' or '_' or '-' or '/');
 
     /// <summary>Builds the markdown fleet report as a string (pure; no I/O).</summary>
     public static string BuildReport(List<RepoReport> report, FleetOptions o, string reposDir)
