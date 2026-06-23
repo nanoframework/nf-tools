@@ -41,28 +41,50 @@ steps:
       }
       catch
       {
-          Write-Host "Package '$packageId' not found on NuGet (new package?). Skipping checksum check."
-          Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]false"
+          Write-Host "##[warning]Package '$packageId' not found on NuGet (new package). Native declaration update is required before publishing."
+          Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]true"
+          Write-Host "##vso[task.setvariable variable=PUBLISHED_NATIVE_VERSION]N/A"
+          Write-Host "##vso[task.setvariable variable=PUBLISHED_CHECKSUM]N/A"
           exit 0
       }
 
       $versions = $indexResponse.versions
 
-      # Filter to stable or preview depending on parameter
+      # Select comparison baseline by release channel.
+      # Preview builds must compare against latest preview, not latest overall version.
       if ($usePreview)
       {
-          $targetVersion = $versions | Select-Object -Last 1
+          $previewVersions = $versions | Where-Object { $_ -match '-' }
+          Write-Host "Preview versions found: $($previewVersions.Count)"
+
+          if (-not $previewVersions)
+          {
+              Write-Host "##[warning]No preview versions published yet. Native declaration update is required before preview publishing."
+              Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]true"
+              Write-Host "##vso[task.setvariable variable=PUBLISHED_NATIVE_VERSION]N/A"
+              Write-Host "##vso[task.setvariable variable=PUBLISHED_CHECKSUM]N/A"
+              exit 0
+          }
+
+          $targetVersion = $previewVersions | Select-Object -Last 1
+          Write-Host "Comparison channel: preview"
       }
       else
       {
           $stableVersions = $versions | Where-Object { $_ -notmatch '-' }
+          Write-Host "Stable versions found : $($stableVersions.Count)"
+
           if (-not $stableVersions)
           {
-              Write-Host "No stable versions published yet. Skipping checksum check."
-              Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]false"
+              Write-Host "##[warning]No stable versions published yet. Native declaration update is required before stable publishing."
+              Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]true"
+              Write-Host "##vso[task.setvariable variable=PUBLISHED_NATIVE_VERSION]N/A"
+              Write-Host "##vso[task.setvariable variable=PUBLISHED_CHECKSUM]N/A"
               exit 0
           }
+
           $targetVersion = $stableVersions | Select-Object -Last 1
+          Write-Host "Comparison channel: stable"
       }
 
       Write-Host "Comparing against published version: $targetVersion"
