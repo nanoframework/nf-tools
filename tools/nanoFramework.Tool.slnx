@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/nano/">
+    <Project Path="nano/nanoFramework.Tool/nanoFramework.Tool.csproj" />
+    <Project Path="nano/nanoFramework.Tool.Tests/nanoFramework.Tool.Tests.csproj" />
+  </Folder>
+  <Folder Name="/migrate/">
+    <Project Path="migrate/src/NanoMigrate.Cli.Commands/NanoMigrate.Cli.Commands.csproj" />
+    <Project Path="migrate/src/NanoMigrate.Core/NanoMigrate.Core.csproj" />
+  </Folder>
+</Solution>

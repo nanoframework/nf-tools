@@ -21,6 +21,8 @@
 
 | 工具 | 文件夹 | 描述 |
 |------|--------|------|
+| `nano` (dotnet nano) | [tools/nano](tools/nano) | 统一的 `dotnet nano <命令>` CLI：内置托管命令（migrate、deploy、monitor、devices），并封装外部工具（例如通过 `flash` 调用 `nanoff`）。 |
+| `nano-migrate` (NanoMigrate) | [tools/migrate](tools/migrate) | 将旧式 `.nfproj` 项目转换为 SDK 风格，支持单仓库或整个仓库集群。由配套的[迁移技能](skills/nanoframework-sdk-migration)驱动。 |
 | `nanodu` (Dependency Updater) | [tools/DependencyUpdater](tools/DependencyUpdater) | 更新 .NET nanoFramework 解决方案中的 NuGet 依赖项及相关元数据。 |
 | `nanovc` (VersionCop) | [tools/VersionCop](tools/VersionCop) | 校验包版本一致性，并报告 nanoFramework 构建中的版本不匹配。 |
 | `NanoProfiler` | [tools/Profiler](tools/Profiler) | 用于分析 nanoFramework 目标设备运行时和内存行为的 Windows 分析工具。 |

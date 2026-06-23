@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>nano</AssemblyName>
+    <RootNamespace>NanoFramework.Tool</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Run through the `dotnet` host rather than a native launcher, so the tool
+         works even where the build output directory is mounted noexec. -->
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <!-- Packaged as the `dotnet nano` umbrella .NET tool. -->
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>nano</ToolCommandName>
+    <PackageId>nanoFramework.Tool</PackageId>
+    <Title>nanoFramework CLI (dotnet nano)</Title>
+    <Description>The single `dotnet nano &lt;command&gt;` CLI for nanoFramework. Hosts built-in managed commands (migrate, deploy, monitor, devices) and wraps prebuilt external tools (e.g. nanoff via `flash`) under one uniform Spectre.Console UX.</Description>
+    <Authors>nanoFramework</Authors>
+    <Company>nanoFramework</Company>
+    <PackageProjectUrl>https://github.com/nanoframework/nf-tools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nanoframework/nf-tools</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>nanoFramework;CLI;dotnet-tool;migrate;flash;nanoff;IoT;embedded;C#</PackageTags>
+    <Copyright>Copyright (c) .NET Foundation and Contributors</Copyright>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Git-height versioning (same scheme as the other nf-tools): CI packs with
+         -p:PublicRelease=true to produce a properly versioned package. -->
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.9.50">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Polished CLI: header rules, progress, summary tables, panels, trees.
+         0.55.0 is the latest pair where Spectre.Console and Spectre.Console.Cli
+         share a stable version (Spectre.Console.Cli has no 0.57.0 release). -->
+    <PackageReference Include="Spectre.Console" Version="0.55.0" />
+    <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Wire-protocol device debugger used by `deploy` to push the managed .pe set
+         over the serial connection (same library the VS extension / Test Adapter use). -->
+    <PackageReference Include="nanoFramework.Tools.Debugger.Net" Version="2.5.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The built-in `migrate` command is the shared Spectre command sitting over
+         the NanoMigrate.Core engine; reused verbatim from the standalone CLI. -->
+    <ProjectReference Include="..\..\migrate\src\NanoMigrate.Cli.Commands\NanoMigrate.Cli.Commands.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The external-tool manifest is embedded so resolution/fetch is deterministic
+         and ships inside the tool package. -->
+    <EmbeddedResource Include="ExternalTools\nano-tools.json" />
+  </ItemGroup>
+
+</Project>
