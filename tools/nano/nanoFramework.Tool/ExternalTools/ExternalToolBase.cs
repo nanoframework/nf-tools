@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 
-namespace NanoFramework.Tool.ExternalTools;
+namespace nanoFramework.Tool.ExternalTools;
 
 /// <summary>
 /// Shared <see cref="IExternalTool"/> behaviour: pin the entry, resolve via

@@ -3,9 +3,9 @@
 
 using System.Net;
 using System.Text;
-using NanoFramework.Migrate.Core.Projects;
+using nanoFramework.Migrate.Core.Projects;
 
-namespace NanoFramework.Migrate.Core.Reporting;
+namespace nanoFramework.Migrate.Core.Reporting;
 
 /// <summary>
 /// Renders a <see cref="MigrationReport"/> as a self-contained HTML page: inline

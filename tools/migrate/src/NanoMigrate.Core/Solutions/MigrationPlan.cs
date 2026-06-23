@@ -1,9 +1,9 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using NanoFramework.Migrate.Core.Common;
+using nanoFramework.Migrate.Core.Common;
 
-namespace NanoFramework.Migrate.Core.Solutions;
+namespace nanoFramework.Migrate.Core.Solutions;
 
 /// <summary>
 /// How the migration target was specified, which decides whether the CLI must

@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>NanoFramework.Tool.Tests</RootNamespace>
+    <RootNamespace>nanoFramework.Tool.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>

@@ -3,9 +3,9 @@
 
 using System.Text;
 using Spectre.Console;
-using static NanoFramework.Migrate.Cli.Rendering.ConsoleSupport;
+using static nanoFramework.Migrate.Cli.Rendering.ConsoleSupport;
 
-namespace NanoFramework.Migrate.Cli.Rendering;
+namespace nanoFramework.Migrate.Cli.Rendering;
 
 /// <summary>Spectre presentation for the fleet command. Consumes Core's RepoReport data.</summary>
 internal static class FleetRenderer

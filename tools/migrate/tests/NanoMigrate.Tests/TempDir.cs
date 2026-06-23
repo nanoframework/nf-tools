@@ -1,7 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace NanoFramework.Migrate.Tests;
+namespace nanoFramework.Migrate.Tests;
 
 /// <summary>A throwaway directory that deletes itself (recursively) on Dispose.</summary>
 internal sealed class TempDir : IDisposable

@@ -2,9 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Text;
-using NanoFramework.Migrate.Core.Projects;
+using nanoFramework.Migrate.Core.Projects;
 
-namespace NanoFramework.Migrate.Core.Reporting;
+namespace nanoFramework.Migrate.Core.Reporting;
 
 /// <summary>
 /// Renders a <see cref="MigrationReport"/> as Markdown. Pure: it returns a string

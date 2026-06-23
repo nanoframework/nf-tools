@@ -2,12 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.ComponentModel;
-using NanoFramework.Migrate.Cli.Rendering;
+using nanoFramework.Migrate.Cli.Rendering;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using static NanoFramework.Migrate.Cli.Rendering.ConsoleSupport;
+using static nanoFramework.Migrate.Cli.Rendering.ConsoleSupport;
 
-namespace NanoFramework.Migrate.Cli.Commands;
+namespace nanoFramework.Migrate.Cli.Commands;
 
 public sealed class RollbackSettings : AssumeYesSettings
 {

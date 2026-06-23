@@ -14,7 +14,7 @@ re-running over a tree is a safe no-op, so a partial or repeated migration is ne
 
 ## Layout
 
-```
+```text
 tools/migrate/
   src/
     NanoMigrate.Core/          # conversion engine — console-free, unit-testable, NuGet-ready library

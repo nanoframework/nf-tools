@@ -7,7 +7,7 @@ Spectre.Console UX, so the toolchain is **one install and one CLI**.
 
 ## Layout
 
-```
+```text
 tools/nano/
   nanoFramework.Tool/          # the dotnet-nano umbrella (PackAsTool, ToolCommandName=nano)
     Program.cs                 # Spectre CommandApp host (wires the command surface)

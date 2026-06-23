@@ -3,7 +3,7 @@
 
 using Spectre.Console;
 
-namespace NanoFramework.Migrate.Cli.Rendering;
+namespace nanoFramework.Migrate.Cli.Rendering;
 
 /// <summary>Shared, low-level console helpers. The only consumers of AnsiConsole.</summary>
 public static class ConsoleSupport

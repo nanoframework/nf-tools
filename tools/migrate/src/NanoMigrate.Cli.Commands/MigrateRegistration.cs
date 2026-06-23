@@ -3,7 +3,7 @@
 
 using Spectre.Console.Cli;
 
-namespace NanoFramework.Migrate.Cli.Commands;
+namespace nanoFramework.Migrate.Cli.Commands;
 
 /// <summary>
 /// Registers the migrate command surface once, so BOTH front ends — the standalone
@@ -20,8 +20,8 @@ public static class MigrateRegistration
 {
     /// <summary>
     /// Adds <c>migrate</c>, <c>clean</c> and <c>rollback</c> to <paramref name="config"/>.
-    /// <paramref name="appName"/> is the host's command name (<c>nano</c> or
-    /// <c>nano-migrate</c>), used only to phrase examples.
+    /// <paramref name="migrateDescription"/> is the lead description for the <c>migrate</c>
+    /// verb, phrased by the host (<c>nano</c> or <c>nano-migrate</c>).
     /// </summary>
     public static void Add(IConfigurator config, string migrateDescription)
     {

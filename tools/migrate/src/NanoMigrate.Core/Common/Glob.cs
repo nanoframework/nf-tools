@@ -4,7 +4,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace NanoFramework.Migrate.Core.Common;
+namespace nanoFramework.Migrate.Core.Common;
 
 /// <summary>
 /// Small hand-rolled glob matcher (no external dependency). Matches a path that

@@ -3,9 +3,9 @@
 
 using System.Text;
 using Spectre.Console;
-using static NanoFramework.Migrate.Cli.Rendering.ConsoleSupport;
+using static nanoFramework.Migrate.Cli.Rendering.ConsoleSupport;
 
-namespace NanoFramework.Migrate.Cli.Rendering;
+namespace nanoFramework.Migrate.Cli.Rendering;
 
 /// <summary>Pairs a source .nfproj path with its conversion outcome.</summary>
 public readonly record struct ProjectOutcome(string Nfproj, ConvertResult Result);

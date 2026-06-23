@@ -4,7 +4,7 @@
 using Spectre.Console;
 using Spectre.Console.Cli;
 
-namespace NanoFramework.Tool.Commands;
+namespace nanoFramework.Tool.Commands;
 
 /// <summary>
 /// A minimal placeholder for a built-in command that is on the design's command

@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace NanoFramework.Migrate.Core.Backup;
+namespace nanoFramework.Migrate.Core.Backup;
 
 /// <summary>
 /// One recorded action in a rollback journal: either a file the migration CREATED

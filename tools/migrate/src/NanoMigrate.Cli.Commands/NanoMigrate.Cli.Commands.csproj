@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>NanoFramework.Migrate.Cli</RootNamespace>
+    <RootNamespace>nanoFramework.Migrate.Cli</RootNamespace>
     <AssemblyName>NanoMigrate.Cli.Commands</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
@@ -48,13 +48,13 @@
   <!-- The engine is organized into vertical-slice sub-namespaces; surface them all
        as global usings so the command layer can reference Core types unqualified. -->
   <ItemGroup>
-    <Using Include="NanoFramework.Migrate.Core.Projects" />
-    <Using Include="NanoFramework.Migrate.Core.Solutions" />
-    <Using Include="NanoFramework.Migrate.Core.Backup" />
-    <Using Include="NanoFramework.Migrate.Core.Verification" />
-    <Using Include="NanoFramework.Migrate.Core.Fleet" />
-    <Using Include="NanoFramework.Migrate.Core.Common" />
-    <Using Include="NanoFramework.Migrate.Core.Reporting" />
+    <Using Include="nanoFramework.Migrate.Core.Projects" />
+    <Using Include="nanoFramework.Migrate.Core.Solutions" />
+    <Using Include="nanoFramework.Migrate.Core.Backup" />
+    <Using Include="nanoFramework.Migrate.Core.Verification" />
+    <Using Include="nanoFramework.Migrate.Core.Fleet" />
+    <Using Include="nanoFramework.Migrate.Core.Common" />
+    <Using Include="nanoFramework.Migrate.Core.Reporting" />
   </ItemGroup>
 
 </Project>

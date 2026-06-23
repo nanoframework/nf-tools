@@ -1,9 +1,9 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using NanoFramework.Migrate.Core.Projects;
+using nanoFramework.Migrate.Core.Projects;
 
-namespace NanoFramework.Migrate.Core.Backup;
+namespace nanoFramework.Migrate.Core.Backup;
 
 /// <summary>
 /// Bridges a (dry-run) <see cref="ConvertResult"/> preview into a

@@ -1,7 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace NanoFramework.Migrate.Core.Projects;
+namespace nanoFramework.Migrate.Core.Projects;
 
 /// <summary>How a single project ended up after a (dry-run or real) conversion.</summary>
 public enum ConvertStatus

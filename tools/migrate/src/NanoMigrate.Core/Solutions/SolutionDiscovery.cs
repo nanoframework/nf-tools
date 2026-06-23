@@ -1,7 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace NanoFramework.Migrate.Core.Solutions;
+namespace nanoFramework.Migrate.Core.Solutions;
 
 /// <summary>
 /// Given a set of target <c>.nfproj</c> paths, finds which discovered solutions

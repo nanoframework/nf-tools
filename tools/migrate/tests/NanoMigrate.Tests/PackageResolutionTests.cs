@@ -3,7 +3,7 @@
 
 using Xunit;
 
-namespace NanoFramework.Migrate.Tests;
+namespace nanoFramework.Migrate.Tests;
 
 /// <summary>
 /// Tests for the packages.config-first resolution strategy and Central Package

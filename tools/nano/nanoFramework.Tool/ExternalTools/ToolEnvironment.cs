@@ -3,7 +3,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace NanoFramework.Tool.ExternalTools;
+namespace nanoFramework.Tool.ExternalTools;
 
 /// <summary>
 /// The host-environment seams the resolver depends on, behind an interface so the

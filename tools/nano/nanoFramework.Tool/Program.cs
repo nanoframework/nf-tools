@@ -14,8 +14,8 @@
 // surface, descriptions and examples, surfaces exceptions cleanly, and maps the
 // command result to the process exit code.
 
-using NanoFramework.Migrate.Cli.Commands;
-using NanoFramework.Tool.Commands;
+using nanoFramework.Migrate.Cli.Commands;
+using nanoFramework.Tool.Commands;
 using Spectre.Console;
 using Spectre.Console.Cli;
 

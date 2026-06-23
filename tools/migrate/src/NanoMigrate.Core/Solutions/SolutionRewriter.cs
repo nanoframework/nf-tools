@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
 using Microsoft.VisualStudio.SolutionPersistence.Serializer;
 
-namespace NanoFramework.Migrate.Core.Solutions;
+namespace nanoFramework.Migrate.Core.Solutions;
 
 /// <summary>
 /// Retargets a solution's converted projects from <c>.nfproj</c> to <c>.csproj</c>.

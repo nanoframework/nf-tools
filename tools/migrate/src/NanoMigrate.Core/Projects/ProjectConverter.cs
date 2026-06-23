@@ -4,9 +4,9 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using NanoFramework.Migrate.Core.Solutions;
+using nanoFramework.Migrate.Core.Solutions;
 
-namespace NanoFramework.Migrate.Core.Projects;
+namespace nanoFramework.Migrate.Core.Projects;
 
 /// <summary>
 /// Converts one legacy .nfproj into an SDK-style project. Faithful to the

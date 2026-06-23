@@ -2,11 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.ComponentModel;
-using NanoFramework.Tool.ExternalTools;
+using nanoFramework.Tool.ExternalTools;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
-namespace NanoFramework.Tool.Commands;
+namespace nanoFramework.Tool.Commands;
 
 public sealed class FlashSettings : CommandSettings
 {

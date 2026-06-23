@@ -1,12 +1,12 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using NanoFramework.Migrate.Cli.Commands;
-using NanoFramework.Migrate.Cli.Rendering;
+using nanoFramework.Migrate.Cli.Commands;
+using nanoFramework.Migrate.Cli.Rendering;
 using Spectre.Console.Cli;
 using Xunit;
 
-namespace NanoFramework.Migrate.Tests;
+namespace nanoFramework.Migrate.Tests;
 
 public class ReportingTests
 {

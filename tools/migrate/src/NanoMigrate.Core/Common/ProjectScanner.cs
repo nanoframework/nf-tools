@@ -1,7 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace NanoFramework.Migrate.Core.Common;
+namespace nanoFramework.Migrate.Core.Common;
 
 /// <summary>
 /// Enumerates <c>.nfproj</c> files under a path, with an optional glob filter.

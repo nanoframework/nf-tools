@@ -1,7 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace NanoFramework.Migrate.Core.Projects;
+namespace nanoFramework.Migrate.Core.Projects;
 
 /// <summary>
 /// Converts a single legacy <c>.nfproj</c> into an SDK-style project. The result

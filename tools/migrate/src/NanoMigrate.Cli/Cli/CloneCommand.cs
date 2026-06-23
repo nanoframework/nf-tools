@@ -4,9 +4,9 @@
 using System.ComponentModel;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using static NanoFramework.Migrate.Cli.Rendering.ConsoleSupport;
+using static nanoFramework.Migrate.Cli.Rendering.ConsoleSupport;
 
-namespace NanoFramework.Migrate.Cli.Commands;
+namespace nanoFramework.Migrate.Cli.Commands;
 
 internal sealed class CloneSettings : CommandSettings
 {
@@ -31,16 +31,18 @@ internal sealed class CloneSettings : CommandSettings
     public bool IncludeArchived { get; init; }
 }
 
-internal sealed class CloneCommand : Command<CloneSettings>
+internal sealed class CloneCommand : AsyncCommand<CloneSettings>
 {
-    protected override int Execute(CommandContext context, CloneSettings settings, CancellationToken cancellationToken)
+    protected override async Task<int> ExecuteAsync(CommandContext context, CloneSettings settings, CancellationToken cancellationToken)
     {
         Header("NanoMigrate · clone");
-        var outDir = settings.OutDir ?? "./nano-repos";
+        // Resolve to an absolute path so the destination is stable regardless of the
+        // working directory git inherits for each clone.
+        var outDir = Path.GetFullPath(settings.OutDir ?? "./nano-repos");
         Directory.CreateDirectory(outDir);
 
         AnsiConsole.MarkupLine($"Enumerating [bold]{Esc(settings.Org)}[/] repositories matching '[blue]{Esc(settings.Filter)}*[/]'…");
-        var repos = GitHub.ListOrgRepos(settings.Org, settings.Token, settings.IncludeArchived)
+        var repos = (await GitHub.ListOrgReposAsync(settings.Org, settings.Token, settings.IncludeArchived, cancellationToken))
                           .Where(r => r.Name.StartsWith(settings.Filter, StringComparison.OrdinalIgnoreCase))
                           .OrderBy(r => r.Name).ToList();
 

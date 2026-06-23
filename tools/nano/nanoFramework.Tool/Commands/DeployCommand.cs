@@ -22,7 +22,7 @@ using nanoFramework.Tools.Debugger;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
-namespace NanoFramework.Tool.Commands;
+namespace nanoFramework.Tool.Commands;
 
 public sealed class DeploySettings : CommandSettings
 {

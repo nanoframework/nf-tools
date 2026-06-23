@@ -13,8 +13,8 @@
 // The conversion engine lives in NanoMigrate.Core (a console-free library). This
 // project is a thin Spectre.Console.Cli front end over it.
 
-using NanoFramework.Migrate.Cli;
-using NanoFramework.Migrate.Cli.Commands;
+using nanoFramework.Migrate.Cli;
+using nanoFramework.Migrate.Cli.Commands;
 using Spectre.Console;
 using Spectre.Console.Cli;
 

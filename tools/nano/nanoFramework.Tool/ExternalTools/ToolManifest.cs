@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace NanoFramework.Tool.ExternalTools;
+namespace nanoFramework.Tool.ExternalTools;
 
 /// <summary>One external tool entry from <c>nano-tools.json</c>.</summary>
 public sealed class ToolManifestEntry

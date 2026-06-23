@@ -2,8 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics;
+using System.Text;
 
-namespace NanoFramework.Migrate.Core.Verification;
+namespace nanoFramework.Migrate.Core.Verification;
 
 /// <summary>
 /// The outcome of verifying one target (a solution or a project) by building it.
@@ -145,6 +146,9 @@ public interface IBuildRunner
 /// <summary>The production runner: shells the <c>dotnet</c> already on PATH.</summary>
 public sealed class DotnetBuildRunner : IBuildRunner
 {
+    // Generous cap so a wedged build can't hang the verification step forever.
+    private const int BuildTimeoutMs = 600_000;
+
     private readonly Lazy<bool> _available = new(ProbeDotnet);
 
     public bool IsAvailable => _available.Value;
@@ -163,10 +167,34 @@ public sealed class DotnetBuildRunner : IBuildRunner
         try
         {
             using var p = Process.Start(psi)!;
-            var so = p.StandardOutput.ReadToEnd();
-            var se = p.StandardError.ReadToEnd();
-            p.WaitForExit();
-            return (p.ExitCode, so, se);
+
+            // Drain both pipes concurrently; sequential ReadToEnd() can deadlock when the
+            // build fills one buffer while we block on the other. Named local functions
+            // (not lambdas) so the handlers can be detached in the finally.
+            var so = new StringBuilder();
+            var se = new StringBuilder();
+            void OnOutput(object? _, DataReceivedEventArgs e) { if (e.Data is not null) so.AppendLine(e.Data); }
+            void OnError(object? _, DataReceivedEventArgs e) { if (e.Data is not null) se.AppendLine(e.Data); }
+            p.OutputDataReceived += OnOutput;
+            p.ErrorDataReceived += OnError;
+            try
+            {
+                p.BeginOutputReadLine();
+                p.BeginErrorReadLine();
+
+                if (!p.WaitForExit(BuildTimeoutMs))
+                {
+                    try { p.Kill(entireProcessTree: true); } catch { /* already exited */ }
+                    return (-1, so.ToString(), $"build timed out after {BuildTimeoutMs / 1000}s");
+                }
+                p.WaitForExit(); // let the async output handlers flush
+                return (p.ExitCode, so.ToString(), se.ToString());
+            }
+            finally
+            {
+                p.OutputDataReceived -= OnOutput;
+                p.ErrorDataReceived -= OnError;
+            }
         }
         catch (Exception ex)
         {

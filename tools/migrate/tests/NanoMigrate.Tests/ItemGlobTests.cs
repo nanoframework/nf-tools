@@ -3,7 +3,7 @@
 
 using Xunit;
 
-namespace NanoFramework.Migrate.Tests;
+namespace nanoFramework.Migrate.Tests;
 
 /// <summary>
 /// Tests for the converter hardening that keeps migrated samples building: the SDK

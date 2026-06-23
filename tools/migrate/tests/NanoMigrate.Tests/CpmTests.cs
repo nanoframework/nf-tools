@@ -3,7 +3,7 @@
 
 using Xunit;
 
-namespace NanoFramework.Migrate.Tests;
+namespace nanoFramework.Migrate.Tests;
 
 /// <summary>
 /// Central Package Management (CPM) behavior: versionless PackageReferences in the

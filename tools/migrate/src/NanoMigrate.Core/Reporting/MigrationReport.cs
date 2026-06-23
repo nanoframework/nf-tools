@@ -1,10 +1,10 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using NanoFramework.Migrate.Core.Projects;
-using NanoFramework.Migrate.Core.Verification;
+using nanoFramework.Migrate.Core.Projects;
+using nanoFramework.Migrate.Core.Verification;
 
-namespace NanoFramework.Migrate.Core.Reporting;
+namespace nanoFramework.Migrate.Core.Reporting;
 
 /// <summary>
 /// The result of a single project within a <see cref="MigrationReport"/>, expressed

@@ -1,10 +1,10 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using NanoFramework.Tool.ExternalTools;
+using nanoFramework.Tool.ExternalTools;
 using Xunit;
 
-namespace NanoFramework.Tool.Tests;
+namespace nanoFramework.Tool.Tests;
 
 public class ExternalToolResolverTests
 {

@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>NanoFramework.Migrate.Core</RootNamespace>
+    <RootNamespace>nanoFramework.Migrate.Core</RootNamespace>
     <AssemblyName>NanoMigrate.Core</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>

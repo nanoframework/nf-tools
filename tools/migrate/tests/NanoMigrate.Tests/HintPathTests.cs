@@ -3,7 +3,7 @@
 
 using Xunit;
 
-namespace NanoFramework.Migrate.Tests;
+namespace nanoFramework.Migrate.Tests;
 
 public class HintPathTests
 {

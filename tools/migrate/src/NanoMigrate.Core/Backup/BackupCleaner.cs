@@ -1,7 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace NanoFramework.Migrate.Core.Backup;
+namespace nanoFramework.Migrate.Core.Backup;
 
 /// <summary>The leftovers a clean would remove, gathered for preview before deletion.</summary>
 public sealed class CleanPlan
@@ -90,8 +90,9 @@ public static class BackupCleaner
         {
             try
             {
-                if (File.Exists(bak)) File.Delete(bak);
-                result.RemovedBackups.Add(bak);
+                // Only tally what actually existed and was deleted, so the report doesn't
+                // over-count phantom removals for files that were already gone.
+                if (File.Exists(bak)) { File.Delete(bak); result.RemovedBackups.Add(bak); }
             }
             catch (Exception ex) { result.Problems.Add($"could not delete {bak}: {ex.Message}"); }
         }
@@ -100,8 +101,7 @@ public static class BackupCleaner
         {
             try
             {
-                if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
-                result.RemovedFolders.Add(dir);
+                if (Directory.Exists(dir)) { Directory.Delete(dir, recursive: true); result.RemovedFolders.Add(dir); }
             }
             catch (Exception ex) { result.Problems.Add($"could not remove {dir}: {ex.Message}"); }
         }
