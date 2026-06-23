@@ -278,13 +278,17 @@ public sealed class RollbackJournal
         if (manifest is null) return null;
         var result = Apply(manifest, cancellationToken);
 
-        // Remove the run's backup set once reverted (best-effort).
-        try
+        // Only remove the backup set when the revert fully succeeded; on partial failure
+        // keep it so the originals remain available for a retry or manual recovery.
+        if (result.Problems.Count == 0)
         {
-            var setDir = Path.GetDirectoryName(manifestPath);
-            if (setDir is not null && Directory.Exists(setDir)) Directory.Delete(setDir, recursive: true);
+            try
+            {
+                var setDir = Path.GetDirectoryName(manifestPath);
+                if (setDir is not null && Directory.Exists(setDir)) Directory.Delete(setDir, recursive: true);
+            }
+            catch { /* leave the set if it cannot be removed; clean can mop up later */ }
         }
-        catch { /* leave the set if it cannot be removed; clean can mop up later */ }
 
         return result;
     }
