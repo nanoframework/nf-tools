@@ -1,13 +1,42 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Ardalis.SmartEnum;
+
 namespace nanoFramework.Migrate.Cli.Rendering;
 
-/// <summary>The output format chosen for a written migration report.</summary>
-public enum ReportFormat
+/// <summary>
+/// The output format for a written migration report. A SmartEnum so each value owns its
+/// file extensions and its writer; adding a format (e.g. JSON) is a new value rather than
+/// another switch arm. <see cref="FromPath"/> keys the format off the path's extension.
+/// </summary>
+public sealed class ReportFormat : SmartEnum<ReportFormat>
 {
-    Markdown,
-    Html,
+    public static readonly ReportFormat Markdown =
+        new("Markdown", 0, new[] { ".md", ".markdown" }, MarkdownReportWriter.Write);
+
+    public static readonly ReportFormat Html =
+        new("Html", 1, new[] { ".html", ".htm" }, HtmlReportWriter.Write);
+
+    private readonly string[] _extensions;
+    private readonly Action<MigrationReport, string> _write;
+
+    private ReportFormat(string name, int value, string[] extensions, Action<MigrationReport, string> write)
+        : base(name, value)
+    {
+        _extensions = extensions;
+        _write = write;
+    }
+
+    /// <summary>The format keyed by a path's extension; unknown or none falls back to Markdown.</summary>
+    public static ReportFormat FromPath(string path)
+    {
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return List.FirstOrDefault(f => f._extensions.Contains(ext)) ?? Markdown;
+    }
+
+    /// <summary>Renders <paramref name="report"/> to <paramref name="path"/> in this format.</summary>
+    public void Write(MigrationReport report, string path) => _write(report, path);
 }
 
 /// <summary>
@@ -69,28 +98,14 @@ public static class MigrationReportBuilder
         };
     }
 
-    /// <summary>
-    /// Picks the report format from the file extension: <c>.md</c>/<c>.markdown</c> →
-    /// Markdown, <c>.html</c>/<c>.htm</c> → HTML, anything else → Markdown.
-    /// </summary>
-    public static ReportFormat FormatFor(string path)
-    {
-        var ext = Path.GetExtension(path);
-        return ext.ToLowerInvariant() switch
-        {
-            ".html" or ".htm" => ReportFormat.Html,
-            _ => ReportFormat.Markdown, // .md, .markdown, and everything else
-        };
-    }
+    /// <summary>Picks the report format from the file extension (unknown or none → Markdown).</summary>
+    public static ReportFormat FormatFor(string path) => ReportFormat.FromPath(path);
 
     /// <summary>Renders <paramref name="report"/> to <paramref name="path"/> in the format keyed by the extension.</summary>
     public static ReportFormat Write(MigrationReport report, string path)
     {
-        var format = FormatFor(path);
-        if (format == ReportFormat.Html)
-            HtmlReportWriter.Write(report, path);
-        else
-            MarkdownReportWriter.Write(report, path);
+        var format = ReportFormat.FromPath(path);
+        format.Write(report, path);
         return format;
     }
 

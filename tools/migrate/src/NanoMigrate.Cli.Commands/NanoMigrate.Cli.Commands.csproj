@@ -39,6 +39,8 @@
          pair the rest of the tooling uses (Spectre.Console.Cli has no 0.57.0). -->
     <PackageReference Include="Spectre.Console" Version="0.55.0" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
+    <!-- Object-model enum for the report format (extensions + writer live on the value). -->
+    <PackageReference Include="Ardalis.SmartEnum" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

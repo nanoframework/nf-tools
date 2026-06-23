@@ -145,15 +145,16 @@ public class ReportingTests
     }
 
     [Theory]
-    [InlineData("report.md", ReportFormat.Markdown)]
-    [InlineData("report.markdown", ReportFormat.Markdown)]
-    [InlineData("report.html", ReportFormat.Html)]
-    [InlineData("report.htm", ReportFormat.Html)]
-    [InlineData("report.txt", ReportFormat.Markdown)] // unknown -> Markdown
-    [InlineData("report", ReportFormat.Markdown)]      // no extension -> Markdown
-    public void Format_is_chosen_by_extension(string path, ReportFormat expected)
+    // ReportFormat is a SmartEnum (not a const), so the expected value is given by name.
+    [InlineData("report.md", "Markdown")]
+    [InlineData("report.markdown", "Markdown")]
+    [InlineData("report.html", "Html")]
+    [InlineData("report.htm", "Html")]
+    [InlineData("report.txt", "Markdown")] // unknown -> Markdown
+    [InlineData("report", "Markdown")]     // no extension -> Markdown
+    public void Format_is_chosen_by_extension(string path, string expected)
     {
-        Assert.Equal(expected, MigrationReportBuilder.FormatFor(path));
+        Assert.Equal(expected, MigrationReportBuilder.FormatFor(path).Name);
     }
 
     [Fact]
