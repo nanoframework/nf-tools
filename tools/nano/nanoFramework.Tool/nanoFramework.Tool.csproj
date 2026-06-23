@@ -46,6 +46,9 @@
          share a stable version (Spectre.Console.Cli has no 0.57.0 release). -->
     <PackageReference Include="Spectre.Console" Version="0.55.0" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
+    <!-- Object-model enums for fixed-value options (e.g. the auth option): each member
+         carries behaviour, and a Spectre TypeConverter binds the raw string at parse time. -->
+    <PackageReference Include="Ardalis.SmartEnum" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,6 +9,7 @@
 // the new credentials. The password is never echoed.
 
 using System.ComponentModel;
+using nanoFramework.Tool.Cli;
 using nanoFramework.Tools.Debugger;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -39,7 +40,8 @@ public sealed class WifiSettings : CommandSettings
 
     [CommandOption("--auth <AUTH>")]
     [Description("Authentication: WPA2 (default), WPA, or OPEN.")]
-    public string Auth { get; init; } = "WPA2";
+    [TypeConverter(typeof(SmartEnumTypeConverter<AuthMode>))]
+    public AuthMode Auth { get; init; } = AuthMode.Wpa2;
 
     public override Spectre.Console.ValidationResult Validate()
     {
@@ -48,13 +50,9 @@ public sealed class WifiSettings : CommandSettings
             return Spectre.Console.ValidationResult.Error("--ssid is required.");
         }
 
-        var auth = Auth.Trim().ToUpperInvariant();
-        if (auth != "WPA2" && auth != "WPA" && auth != "OPEN")
-        {
-            return Spectre.Console.ValidationResult.Error("--auth must be one of: WPA2, WPA, OPEN.");
-        }
-
-        if ((auth == "WPA" || auth == "WPA2") && string.IsNullOrEmpty(Password))
+        // Invalid --auth values are rejected at parse time by the SmartEnum converter;
+        // here we only enforce the cross-field rule the type alone cannot express.
+        if (Auth.RequiresPassword && string.IsNullOrEmpty(Password))
         {
             return Spectre.Console.ValidationResult.Error("--password is required for WPA/WPA2 (use --auth OPEN for an open network).");
         }
@@ -77,13 +75,9 @@ public sealed class WifiCommand : Command<WifiSettings>
     {
         try
         {
-            // Map --auth to the matching authentication + encryption pair.
-            var (authentication, encryption) = settings.Auth.Trim().ToUpperInvariant() switch
-            {
-                "OPEN" => (AuthenticationType.Open, EncryptionType.None),
-                "WPA" => (AuthenticationType.WPA, EncryptionType.WPA),
-                _ => (AuthenticationType.WPA2, EncryptionType.WPA2),
-            };
+            // --auth was bound to a typed AuthMode at parse time; it carries the pair.
+            var authentication = settings.Auth.Authentication;
+            var encryption = settings.Auth.Encryption;
 
             // AutoConnect (which also forces Enable) unless the user opted out.
             var options = settings.NoAutoConnect
