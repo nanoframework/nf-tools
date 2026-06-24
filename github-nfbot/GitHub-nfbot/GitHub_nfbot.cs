@@ -933,13 +933,13 @@ namespace nanoFramework.Tools.GitHub
 
                 var slackPayload = new
                 {
-                    text = $":notepad_spiral: **{payload.issue.title.ToString()}** :notepad_spiral: \nThere's a new issue up for grabs! Please take a look: <https://github.com/nanoframework/Home/issues/{payload.issue.number.ToString()}>! :wink:",
+                    text = $":notepad_spiral: **{payload.issue.title.ToString()}** :notepad_spiral: \nThere's a new issue up for grabs! Please take a look:\nhttps://github.com/nanoframework/Home/issues/{payload.issue.number.ToString()} :wink:",
                     icon_url = "https://avatars.githubusercontent.com/u/25073645?v=4",
                 };
 
                 // Add the DISCORD_UP_FOR_GRABS_WEBHOOK_URL as an app setting, Value for the app setting is the URL from Slack API integration
                 // this is possible because Discord webhooks API supports Slack compatible webhooks
-                // see https://discordapp.com/developers/docs/resources/webhook#execute-slackcompatible-webhook
+                // see https://docs.discord.com/developers/resources/webhook#execute-slackcompatible-webhook
                 using var client = new HttpClient();
                 var res = await client.PostAsync(
                     Environment.GetEnvironmentVariable("DISCORD_UP_FOR_GRABS_WEBHOOK_URL"),
