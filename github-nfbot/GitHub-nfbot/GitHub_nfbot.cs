@@ -66,6 +66,14 @@ namespace nanoFramework.Tools.GitHub
         private const string _prTypesOfChanges = "## Types of changes";
         private const string _prChecklist = "## Checklist";
 
+        // marker placed (hidden) at the end of the PR template validation review
+        // so subsequent runs can locate / update it. DO NOT change this string
+        // without a migration plan, otherwise old reviews will be orphaned.
+        private const string _prTemplateValidationMarker = "<!-- nfbot pr-template-validation DO NOT REMOVE -->";
+
+        // link to the canonical org template (shown to the user on validation failure)
+        private const string _prTemplateOrgUrl = "https://github.com/nanoframework/.github/blob/main/PULL_REQUEST_TEMPLATE.md";
+
         // labels
         private const string _labelConfigAndBuildName = "Area: Config-and-Build";
         private const string _labelDevContainersName = "Area: Dev-Containers";
@@ -1498,23 +1506,21 @@ namespace nanoFramework.Tools.GitHub
         private static async Task<bool> ValidatePRContentAsync(dynamic payload, ILogger log)
         {
             // get PR body
-            string prBody = payload.pull_request.body;
+            string prBody = payload.pull_request.body ?? string.Empty;
+            string repoName = payload.repository.name.ToString();
+            long repoId = (long)payload.repository.id;
+            int prNumber = (int)payload.pull_request.number;
+            string author = payload.pull_request.user.login.ToString();
 
-            // check for expected/mandatory content
-
-            // check for master PR template
-            if (
-                prBody.Contains(_prDescription) &&
-                prBody.Contains(_prMotivationAndContext) &&
-                prBody.Contains(_prTypesOfChanges) &&
-                prBody.Contains(_prChecklist))
+            // documentation repo is not using template
+            if (repoName == "nanoframework.github.io")
             {
-                // content looks good
+                // don't perform any template check here
                 return true;
             }
 
-            // community targets is not using template
-            if (payload.repository.name == "nf-Community-Targets")
+            // community targets uses a per-target checkbox flow (legacy behavior preserved)
+            if (repoName == "nf-Community-Targets")
             {
                 // community targets need to have ALL or at least one target selected for build
                 if (
@@ -1537,7 +1543,6 @@ namespace nanoFramework.Tools.GitHub
                 }
                 else
                 {
-                    // 
                     string myComment = $"{{ \"body\": \"{_prCommunityTargetMissingTargetContent} {_fixCheckListComment}\" }}";
 
                     await SendGitHubRequest(
@@ -1545,53 +1550,543 @@ namespace nanoFramework.Tools.GitHub
                         myComment,
                         log);
 
-
-                    // close PR
-                    await ClosePR(
-                        payload.pull_request.url.ToString(),
-                        log);
-
+                    // legacy behavior preserved for nf-Community-Targets (do NOT close)
                     return false;
                 }
             }
-            // documentation repo is not using template
-            if (payload.repository.name == "nanoframework.github.io")
+
+            // community contributions uses a checklist-only template
+            if (repoName == "nf-Community-Contributions")
             {
-                // don't perform any template check here
-                return true;
-            }
-            else if (payload.repository.name == "nf-Community-Contributions")
-            {
-                // check content
                 if (prBody.Contains(_prChecklist))
                 {
-                    // check for missing check boxes
+                    // check for missing check boxes (un-ticked items)
                     if (prBody.Contains("[ ]"))
                     {
-                        // developer has left un-checked items in the to-do list
-                        await _octokitClient.Issue.Comment.Create((int)payload.repository.id, (int)payload.pull_request.number, $"Hi @{payload.pull_request.user.login},\r\n\r\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}");
-
-                        return true;
+                        await _octokitClient.Issue.Comment.Create(
+                            (int)repoId,
+                            prNumber,
+                            $"Hi @{author},\r\n\r\n{_prCommentChecklistWithOpenItemsTemplateContent}.{_fixRequestTagComment}");
                     }
-                    else
+
+                    return true;
+                }
+
+                // checklist section missing -> fall through to org-default-style review below
+            }
+
+            // dispatch to the descriptor matching this repo (org default fallback)
+            PrTemplate template = PrTemplate.ForRepo(repoName);
+
+            PrTemplateValidationResult result = ValidateAgainstTemplate(prBody, template);
+
+            if (result.IsValid)
+            {
+                // if a previous validation review exists, mark it resolved (edit body)
+                await ResolveTemplateValidationReviewIfAnyAsync(repoName, prNumber, log);
+                return true;
+            }
+
+            log.LogInformation($"PR template validation failed for #{prNumber} in {repoName}: {result.ProblemSummary()}");
+
+            string reviewBody = BuildTemplateValidationReviewBody(author, template, result);
+
+            await PostOrUpdateTemplateValidationReviewAsync(repoName, prNumber, reviewBody, log);
+
+            // NOTE: per policy, we do NOT close the PR on template-validation failure.
+            return false;
+        }
+
+        /// <summary>
+        /// PR template validation: descriptors, parsing helpers, review post/update.
+        /// The org has several PR templates in use.
+        /// Each one has different required "Types of changes" / "Checklist"
+        /// checkbox lines, so we model them as descriptors and dispatch per repo.
+        /// </summary>
+        private sealed class PrTemplate
+        {
+            public string Name { get; }
+            public string[] RequiredSections { get; }
+            public string[] OptionalSections { get; }
+            // Identifying prefix of each canonical "Types of changes" checkbox line.
+            // We match the prefix (the text before the first `(`) case-insensitively so
+            // the descriptor is robust to small wording tweaks in the parenthesis.
+            public string[] TypesOfChangesLines { get; }
+            // Same idea for the "Checklist" section.
+            public string[] ChecklistLines { get; }
+            // If true, at least one "Types of changes" checkbox must be ticked.
+            public bool RequireAtLeastOneTypeTicked { get; }
+
+            private PrTemplate(
+                string name,
+                string[] requiredSections,
+                string[] optionalSections,
+                string[] typesOfChangesLines,
+                string[] checklistLines,
+                bool requireAtLeastOneTypeTicked)
+            {
+                Name = name;
+                RequiredSections = requiredSections;
+                OptionalSections = optionalSections;
+                TypesOfChangesLines = typesOfChangesLines;
+                ChecklistLines = checklistLines;
+                RequireAtLeastOneTypeTicked = requireAtLeastOneTypeTicked;
+            }
+
+            // Canonical org template (nanoframework/.github/PULL_REQUEST_TEMPLATE.md).
+            // Used as the fallback for every repo that does not ship its own template.
+            public static readonly PrTemplate OrgDefault = new PrTemplate(
+                name: "OrgDefault",
+                requiredSections: new[] { "Description", "Motivation and Context", "Types of changes", "Checklist" },
+                optionalSections: new[] { "How Has This Been Tested?", "Screenshots" },
+                typesOfChangesLines: new[]
+                {
+                    "Improvement",
+                    "Bug fix",
+                    "New feature",
+                    "Breaking change",
+                    "Config and build",
+                    "Dependencies",
+                    "Unit Tests",
+                    "Documentation",
+                },
+                checklistLines: new[]
+                {
+                    "My code follows the code style of this project",
+                    "My changes require an update to the documentation",
+                    "I have updated the documentation accordingly",
+                    "I have read the",
+                    "I have tested everything locally",
+                    "I have added new tests to cover my changes",
+                },
+                requireAtLeastOneTypeTicked: true);
+
+            // nf-interpreter ships its own local template
+            public static readonly PrTemplate NfInterpreter = new PrTemplate(
+                name: "NfInterpreter",
+                requiredSections: new[] { "Description", "Motivation and Context", "Types of changes", "Checklist" },
+                optionalSections: new[] { "How Has This Been Tested?", "Screenshots" },
+                typesOfChangesLines: new[]
+                {
+                    "Improvement",
+                    "Bug fix",
+                    "New feature",
+                    "Breaking change",
+                    "Config and build",
+                    "Dev Containers",
+                    "Dependencies/declarations",
+                    "Documentation",
+                },
+                checklistLines: new[]
+                {
+                    "My code follows the code style of this project",
+                    "My changes require an update to the documentation",
+                    "I have updated the documentation accordingly",
+                    "I have read the",
+                    "I have tested everything locally",
+                },
+                requireAtLeastOneTypeTicked: true);
+
+            // Home repo template
+            public static readonly PrTemplate Home = new PrTemplate(
+                name: "Home",
+                requiredSections: new[] { "Description", "Motivation and Context", "Types of changes", "Checklist" },
+                optionalSections: new string[0],
+                typesOfChangesLines: new[]
+                {
+                    "Improvement",
+                    "New Content",
+                    "Config and build",
+                },
+                checklistLines: new[]
+                {
+                    "My doc follows the code style of this project",
+                    "I have read the",
+                },
+                requireAtLeastOneTypeTicked: true);
+
+            // Samples repo template
+            public static readonly PrTemplate Samples = new PrTemplate(
+                name: "Samples",
+                requiredSections: new[] { "Description", "Motivation and Context", "Types of changes", "Checklist" },
+                optionalSections: new[] { "How Has This Been Tested?", "Screenshots" },
+                typesOfChangesLines: new[]
+                {
+                    "Improvement",
+                    "Bug fix",
+                    "New Sample",
+                    "Config and build",
+                    "Documentation/comment",
+                },
+                checklistLines: new[]
+                {
+                    "My code follows the code style of this project",
+                    "My change requires a change to the documentation",
+                    "I have updated the documentation accordingly",
+                    "I have read the",
+                    "I have added tests to cover my changes",
+                    "All new and existing tests passed",
+                },
+                requireAtLeastOneTypeTicked: true);
+
+            // Repo -> descriptor dispatch. Repos not in the map use OrgDefault.
+            private static readonly IReadOnlyDictionary<string, PrTemplate> _byRepo =
+                new Dictionary<string, PrTemplate>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["nf-interpreter"] = NfInterpreter,
+                    ["Home"] = Home,
+                    ["Samples"] = Samples,
+                };
+
+            public static PrTemplate ForRepo(string repoName)
+            {
+                if (!string.IsNullOrEmpty(repoName) && _byRepo.TryGetValue(repoName, out PrTemplate t))
+                {
+                    return t;
+                }
+
+                return OrgDefault;
+            }
+        }
+
+        private sealed class PrTemplateValidationResult
+        {
+            public List<string> MissingSections { get; } = new List<string>();
+            public List<string> EmptySections { get; } = new List<string>();
+            public List<string> MissingTypesOfChangesLines { get; } = new List<string>();
+            public List<string> MissingChecklistLines { get; } = new List<string>();
+            public bool NoTypesOfChangesTicked { get; set; }
+            public bool BodyLooksTruncated { get; set; }
+
+            public bool IsValid =>
+                MissingSections.Count == 0 &&
+                EmptySections.Count == 0 &&
+                MissingTypesOfChangesLines.Count == 0 &&
+                MissingChecklistLines.Count == 0 &&
+                !NoTypesOfChangesTicked;
+
+            public string ProblemSummary()
+            {
+                List<string> parts = new List<string>();
+                if (MissingSections.Count > 0) parts.Add($"missing sections: {string.Join(", ", MissingSections)}");
+                if (EmptySections.Count > 0) parts.Add($"empty sections: {string.Join(", ", EmptySections)}");
+                if (MissingTypesOfChangesLines.Count > 0) parts.Add($"missing types-of-changes lines: {MissingTypesOfChangesLines.Count}");
+                if (MissingChecklistLines.Count > 0) parts.Add($"missing checklist lines: {MissingChecklistLines.Count}");
+                if (NoTypesOfChangesTicked) parts.Add("no types-of-changes item ticked");
+                if (BodyLooksTruncated) parts.Add("body looks truncated");
+                return parts.Count == 0 ? "ok" : string.Join("; ", parts);
+            }
+        }
+
+        private static PrTemplateValidationResult ValidateAgainstTemplate(
+            string prBody,
+            PrTemplate template)
+        {
+            var result = new PrTemplateValidationResult();
+
+            string body = StripHtmlComments(prBody ?? string.Empty);
+
+            // section presence + body lookups
+            foreach (string section in template.RequiredSections)
+            {
+                if (!TryFindSectionBody(body, section, template, out string sectionBody))
+                {
+                    result.MissingSections.Add(section);
+                    continue;
+                }
+
+                // Description must have actual content (after comment strip).
+                // Motivation and Context is allowed to be empty: it's occasionally legitimate
+                // (e.g. trivial fixes where there is no extra context to add).
+                if (section == "Description"
+                    && string.IsNullOrWhiteSpace(StripTemplateLinkPlaceholder(sectionBody)))
+                {
+                    result.EmptySections.Add(section);
+                }
+            }
+
+            // canonical checkbox lines for Types of changes
+            if (TryFindSectionBody(body, "Types of changes", template, out string typesBody))
+            {
+                foreach (string canonical in template.TypesOfChangesLines)
+                {
+                    if (!ContainsCanonicalCheckboxLine(typesBody, canonical))
                     {
-                        return true;
+                        result.MissingTypesOfChangesLines.Add(canonical);
+                    }
+                }
+
+                if (template.RequireAtLeastOneTypeTicked)
+                {
+                    // any line of the form "- [x] <text>" inside the Types of changes section
+                    if (!Regex.IsMatch(typesBody, @"^\s*[-*]\s*\[\s*[xX]\s*\]", RegexOptions.Multiline))
+                    {
+                        result.NoTypesOfChangesTicked = true;
                     }
                 }
             }
 
-            // user seems to have ignored the template
+            // canonical checkbox lines for Checklist
+            if (TryFindSectionBody(body, "Checklist", template, out string checklistBody))
+            {
+                foreach (string canonical in template.ChecklistLines)
+                {
+                    if (!ContainsCanonicalCheckboxLine(checklistBody, canonical))
+                    {
+                        result.MissingChecklistLines.Add(canonical);
+                    }
+                }
+            }
 
-            log.LogInformation($"User ignoring PR template. Adding comment before closing.");
+            // soft truncation heuristic: body has a Types of changes section but not the
+            // Checklist that should follow it (in templates that require Checklist).
+            if (Array.IndexOf(template.RequiredSections, "Checklist") >= 0
+                && result.MissingSections.Contains("Checklist")
+                && !result.MissingSections.Contains("Types of changes"))
+            {
+                result.BodyLooksTruncated = true;
+            }
 
-            await _octokitClient.Issue.Comment.Create((int)payload.repository.id, (int)payload.pull_request.number, $"Hi @{payload.pull_request.user.login},\r\n\r\n{_prCommentUserIgnoringTemplateContent}.{_fixRequestTagComment}");
+            return result;
+        }
 
-            // close PR
-            await ClosePR(
-                payload.pull_request.url.ToString(),
-                log);
+        // Removes HTML comments (the template ships with many of them as guidance).
+        private static string StripHtmlComments(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text ?? string.Empty;
+            return Regex.Replace(text, @"<!--.*?-->", string.Empty, RegexOptions.Singleline);
+        }
 
-            return false;
+        private static string StripTemplateLinkPlaceholder(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+            string s = Regex.Replace(text, @"^\s*-\s*Fixes/Closes/Resolves\s+nanoFramework/Home#N+\s*$", string.Empty, RegexOptions.Multiline);
+            return s;
+        }
+
+        // Tolerant section header match
+        private static bool TryFindSectionBody(
+            string body,
+            string sectionTitle,
+            PrTemplate template,
+            out string sectionBody)
+        {
+            sectionBody = string.Empty;
+            if (string.IsNullOrEmpty(body)) return false;
+
+            // build a tolerant header regex
+            string escaped = Regex.Escape(sectionTitle);
+            string headerPattern = $@"(?im)^\s{{0,3}}#{{1,6}}\s+{escaped}\s*:?\s*$";
+            Match header = Regex.Match(body, headerPattern);
+            if (!header.Success) return false;
+
+            int start = header.Index + header.Length;
+            // find next header (any level) starting on its own line after `start`
+            Match next = Regex.Match(body.Substring(start), @"(?m)^\s{0,3}#{1,6}\s+");
+            int end = next.Success ? start + next.Index : body.Length;
+
+            sectionBody = body.Substring(start, end - start);
+            return true;
+        }
+
+        // Validate if the section body contains a checkbox line (- [ ] / - [x]) whose
+        // text starts with the canonical prefix (case-insensitive).
+        private static bool ContainsCanonicalCheckboxLine(
+            string sectionBody,
+            string canonicalLinePrefix)
+        {
+            if (string.IsNullOrEmpty(sectionBody) || string.IsNullOrEmpty(canonicalLinePrefix)) return false;
+
+            string escaped = Regex.Escape(canonicalLinePrefix);
+            // - [ ] <prefix> ... | - [x] <prefix> ...
+            string pattern = $@"(?im)^\s*[-*]\s*\[\s*[ xX]?\s*\]\s*\**\s*{escaped}";
+            return Regex.IsMatch(sectionBody, pattern);
+        }
+
+        private static string BuildTemplateValidationReviewBody(
+            string author,
+            PrTemplate template,
+            PrTemplateValidationResult result)
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"🤖 Hey @{author}, your PR description doesn't match our [PR template]({_prTemplateOrgUrl}) and that breaks our auto-labeling.");
+            sb.AppendLine();
+            sb.AppendLine("Here's what's off:");
+
+            foreach (string section in result.MissingSections)
+            {
+                sb.AppendLine($"- 🚫 Missing section: `## {section}`");
+            }
+
+            foreach (string section in result.EmptySections)
+            {
+                sb.AppendLine($"- ✏️ Section `## {section}` is empty — please fill it in.");
+            }
+
+            if (result.MissingTypesOfChangesLines.Count > 0)
+            {
+                sb.AppendLine("- 🧩 `## Types of changes` is missing these checkbox lines (keep them all, tick only the ones that apply):");
+                foreach (string line in result.MissingTypesOfChangesLines)
+                {
+                    sb.AppendLine($"    - `- [ ] {line} (...)`");
+                }
+            }
+
+            if (result.NoTypesOfChangesTicked)
+            {
+                sb.AppendLine("- ☑️ At least one item under `## Types of changes` must be ticked (`[x]`).");
+            }
+
+            if (result.MissingChecklistLines.Count > 0)
+            {
+                sb.AppendLine("- 📋 `## Checklist` is missing these checkbox lines (keep them all, tick only the ones that apply):");
+                foreach (string line in result.MissingChecklistLines)
+                {
+                    sb.AppendLine($"    - `- [ ] {line} ...`");
+                }
+            }
+
+            if (result.BodyLooksTruncated)
+            {
+                sb.AppendLine("- ✂️ The body looks like it was truncated before the end of the template. Please paste the full template.");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"Please paste the template from the [link above]({_prTemplateOrgUrl}) and fill it in — keep all the checkbox lines even if they don't apply (just leave them unticked). 🙏");
+            sb.AppendLine();
+
+            // collapsed AI-fixing prompt
+            sb.AppendLine("<details>");
+            sb.AppendLine("<summary>🤖 Prompt for fixing with AI agents</summary>");
+            sb.AppendLine();
+            sb.AppendLine("```");
+            sb.AppendLine("You are fixing a GitHub pull request description that failed the nanoFramework PR template check.");
+            sb.AppendLine($"Rewrite the PR body so that it strictly matches the template at {_prTemplateOrgUrl} (variant: \"{template.Name}\").");
+            sb.AppendLine();
+            sb.AppendLine("Rules:");
+            sb.AppendLine($"1. Keep these top-level headings, in this order: {string.Join(", ", template.RequiredSections.Select(s => "## " + s))}.");
+            sb.AppendLine($"2. The `## Types of changes` section MUST contain ALL of these checkbox lines (verbatim), ticked only when they apply:");
+            foreach (string line in template.TypesOfChangesLines)
+            {
+                sb.AppendLine($"   - [ ] {line} (...)");
+            }
+            sb.AppendLine($"3. The `## Checklist` section MUST contain ALL of these checkbox lines (verbatim), ticked only when they apply:");
+            foreach (string line in template.ChecklistLines)
+            {
+                sb.AppendLine($"   - [ ] {line} ...");
+            }
+            sb.AppendLine("4. `## Description` must be non-empty. `## Motivation and Context` may be empty when there's nothing extra to add.");
+            sb.AppendLine("5. Do NOT invent new facts — preserve whatever real content the author already wrote.");
+            sb.AppendLine("6. Do NOT remove checkbox lines just because they don't apply; leave them unticked.");
+            sb.AppendLine();
+            sb.AppendLine("Specifically, fix these issues:");
+            foreach (string s in result.MissingSections) sb.AppendLine($"- Missing section: ## {s}");
+            foreach (string s in result.EmptySections) sb.AppendLine($"- Empty section: ## {s}");
+            foreach (string s in result.MissingTypesOfChangesLines) sb.AppendLine($"- Missing Types-of-changes line: {s}");
+            if (result.NoTypesOfChangesTicked) sb.AppendLine("- No Types-of-changes item is ticked; tick the applicable ones.");
+            foreach (string s in result.MissingChecklistLines) sb.AppendLine($"- Missing Checklist line: {s}");
+            if (result.BodyLooksTruncated) sb.AppendLine("- Body appears truncated; restore the missing tail of the template.");
+            sb.AppendLine();
+            sb.AppendLine("Output ONLY the new PR body in markdown — no fences, no commentary.");
+            sb.AppendLine("```");
+            sb.AppendLine();
+            sb.AppendLine("</details>");
+            sb.AppendLine();
+            sb.AppendLine(_prTemplateValidationMarker);
+
+            return sb.ToString();
+        }
+
+        // Creates a new PR review of type COMMENT, or edits the existing one
+        private static async Task PostOrUpdateTemplateValidationReviewAsync(
+            string repoName,
+            int prNumber,
+            string reviewBody,
+            ILogger log)
+        {
+            try
+            {
+                var existing = await FindTemplateValidationReviewAsync(repoName, prNumber, log);
+
+                if (existing != null)
+                {
+                    string url = $"https://api.github.com/repos/{_gitOwner}/{repoName}/pulls/{prNumber}/reviews/{existing.Id}";
+                    string payload = JsonConvert.SerializeObject(new { body = reviewBody });
+
+                    await SendGitHubRequest(url, payload, log, null, "PUT");
+                    log.LogInformation($"Updated existing PR template validation review {existing.Id} on {repoName}#{prNumber}.");
+                }
+                else
+                {
+                    string url = $"https://api.github.com/repos/{_gitOwner}/{repoName}/pulls/{prNumber}/reviews";
+                    string payload = JsonConvert.SerializeObject(new { body = reviewBody, @event = "COMMENT" });
+
+                    await SendGitHubRequest(url, payload, log, null, "POST");
+                    log.LogInformation($"Posted new PR template validation review on {repoName}#{prNumber}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Failed to post/update PR template validation review on {repoName}#{prNumber}.");
+            }
+        }
+
+        // When the PR becomes valid, edit any existing validation review body to a short acknowledgement 
+        private static async Task ResolveTemplateValidationReviewIfAnyAsync(
+            string repoName,
+            int prNumber,
+            ILogger log)
+        {
+            try
+            {
+                var existing = await FindTemplateValidationReviewAsync(repoName, prNumber, log);
+                if (existing == null) return;
+
+                // already resolved? avoid pointless edits
+                if (existing.Body != null && existing.Body.Contains("template looks good now"))
+                {
+                    return;
+                }
+
+                string url = $"https://api.github.com/repos/{_gitOwner}/{repoName}/pulls/{prNumber}/reviews/{existing.Id}";
+                string newBody = $"✅ The PR template looks good now. Thanks!\r\n\r\n{_prTemplateValidationMarker}";
+                string payload = JsonConvert.SerializeObject(new { body = newBody });
+
+                await SendGitHubRequest(url, payload, log, null, "PUT");
+                log.LogInformation($"Resolved PR template validation review {existing.Id} on {repoName}#{prNumber}.");
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Failed to resolve PR template validation review on {repoName}#{prNumber}.");
+            }
+        }
+
+        private sealed class ExistingReview
+        {
+            public long Id { get; set; }
+            public string Body { get; set; }
+        }
+
+        private static async Task<ExistingReview> FindTemplateValidationReviewAsync(
+            string repoName,
+            int prNumber,
+            ILogger log)
+        {
+            var reviews = await _octokitClient.PullRequest.Review.GetAll(_gitOwner, repoName, prNumber);
+
+            foreach (var r in reviews)
+            {
+                if (r.User != null
+                    && string.Equals(r.User.Login, "nfbot", StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrEmpty(r.Body)
+                    && r.Body.Contains(_prTemplateValidationMarker))
+                {
+                    return new ExistingReview { Id = r.Id, Body = r.Body };
+                }
+            }
+
+            return null;
         }
 
         private static async Task<IActionResult> ProcessClosedIssueAsync(
