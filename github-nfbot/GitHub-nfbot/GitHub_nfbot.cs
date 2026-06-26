@@ -5,8 +5,8 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -114,11 +114,13 @@ namespace nanoFramework.Tools.GitHub
 
         static GitHubClient _octokitClient = new GitHubClient(new Octokit.ProductHeaderValue("nfbot"));
 
-        [FunctionName("GitHub-nfbot")]
+        [Function("GitHub-nfbot")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
-            ILogger log)
+            FunctionContext executionContext)
         {
+            ILogger log = executionContext.GetLogger("GitHub-nfbot");
+
             log.LogInformation("GitHub nfbot processing request.");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();

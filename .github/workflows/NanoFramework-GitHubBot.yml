@@ -15,9 +15,8 @@ env:
   AZURE_FUNCTIONAPP_NAME: NanoFramework-GitHubBot
   AZURE_FUNCTIONAPP_PACKAGE_PATH: .\published
   CONFIGURATION: Release
-  DOTNET_VERSION: '6.0.x'
+  DOTNET_VERSION: '10.0.x'
   WORKING_DIRECTORY: .
-  DOTNET_CORE_VERSION_INPROC: ''
 
 jobs:
   build-and-deploy:
@@ -32,9 +31,9 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
-    - name: Build Azure Function
+    - name: Build and publish Azure Function
       run: |
-        dotnet build "github-nfbot/GitHub-nfbot" --configuration ${{ env.CONFIGURATION }} --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+        dotnet publish "github-nfbot/GitHub-nfbot/GitHub-nfbot.csproj" --configuration ${{ env.CONFIGURATION }} --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
 
     - name: Deploy to Azure Function App
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
