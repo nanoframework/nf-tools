@@ -64,7 +64,6 @@ jobs:
       echo "##vso[task.setvariable variable=BUILD_NANOVC;isOutput=true]false"
       echo "##vso[task.setvariable variable=BUILD_NANODU;isOutput=true]false"
       echo "##vso[task.setvariable variable=BUILD_PROFILER;isOutput=true]false"
-      echo "##vso[task.setvariable variable=BUILD_NANO;isOutput=true]false"
       echo "##vso[task.setvariable variable=BUILD_MIGRATE;isOutput=true]false"
 
       if( ($files.where{$_.Contains('tools/VersionCop')}).Count -gt 0)
@@ -89,14 +88,6 @@ jobs:
           echo "##vso[task.setvariable variable=BUILD_PROFILER;isOutput=true]true"
 
           Write-host "Building Profiler"
-      }
-
-      if( ($files.where{$_.Contains('tools/nano')}).Count -gt 0)
-      {
-          # files at dotnet nano umbrella tool folder
-          echo "##vso[task.setvariable variable=BUILD_NANO;isOutput=true]true"
-
-          Write-host "Building nano"
       }
 
       if( ($files.where{$_.Contains('tools/migrate')}).Count -gt 0)
@@ -418,140 +409,6 @@ jobs:
       maximumCpuCount: true
 
 ##############
-- job: Build_Nano
-  condition: >-
-    or(
-      eq(dependencies.Check_Build_Options.outputs['TargetsToBuild.BUILD_NANO'], true),
-      eq(variables['BUILD_NANO'], 'true')
-    )
-  dependsOn:
-    Check_Build_Options
-
-  pool:
-    vmImage: 'windows-2022'
-
-  variables:
-    - group: sign-client-credentials
-    - name: DOTNET_NOLOGO
-      value: true
-
-  steps:
-
-  - checkout: self
-    persistCredentials: true
-
-  - template: azure-pipelines-templates/install-nuget.yml
-
-  - task: DotNetCoreCLI@2
-    displayName: Restore NuGet packages
-    condition: succeeded()
-    retryCountOnTaskFailure: 5
-    inputs:
-      command: restore
-      projects: $(System.DefaultWorkingDirectory)/tools/nano/nanoFramework.Tool/nanoFramework.Tool.csproj
-      feedsToUse: select
-      includeNuGetOrg: true
-
-  - script: dotnet build nanoFramework.Tool/nanoFramework.Tool.csproj -c Release -p:Platform="Any CPU" -p:PublicRelease=true --no-restore /t:build,pack
-    displayName: Build NuGet package
-    condition: succeeded()
-    workingDirectory: '$(System.DefaultWorkingDirectory)/tools/nano'
-
-  - task: DotNetCoreCLI@2
-    condition: succeeded()
-    displayName: 'Running Unit Tests'
-    inputs:
-      command: 'test'
-      projects: |
-        tools/nano/**/*Tests.csproj
-        !**/obj/**
-        !**/bin/**/ref/**
-      arguments: '--configuration Release'
-      testRunTitle: 'nano Unit Tests'
-
-  - task: CopyFiles@1
-    condition: succeeded()
-    displayName: Collecting deployable artifacts
-    inputs:
-      sourceFolder: $(Agent.BuildDirectory)
-      Contents: |
-        **\nanoFramework.Tool.*.nupkg
-      TargetFolder: '$(Build.ArtifactStagingDirectory)'
-      flattenFolders: true
-
-  - task: PowerShell@2
-    condition: >-
-      and(
-        succeeded(),
-        eq(variables['StartReleaseCandidate'], false),
-        not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
-      )
-    displayName: Check deployable artifacts
-    inputs:
-      targetType: 'inline'
-      script: |
-
-        $artifacts = (Get-ChildItem -Path "$env:Build_ArtifactStagingDirectory" -Recurse)
-
-        if ($artifacts.Count -eq 0)
-        {
-            Write-Error "No deployable artifacts found!"
-            Exit 1
-        }
-
-  - task: DotNetCoreCLI@2
-    displayName: Install Sign Client CLI
-    condition: succeeded()
-    inputs:
-      command: custom
-      custom: tool
-      arguments: install --tool-path . sign --version 0.9.1-beta.23530.1
-
-  - pwsh: |
-      .\sign code azure-key-vault `
-      "**/*.nupkg" `
-      --base-directory "$(Build.ArtifactStagingDirectory)" `
-      --description ".NET nanoFramework CLI (dotnet nano)" `
-      --description-url "https://github.com/$env:Build_Repository_Name" `
-      --azure-key-vault-tenant-id "$(SignTenantId)" `
-      --azure-key-vault-client-id "$(SignClientId)" `
-      --azure-key-vault-client-secret "$(SignClientSecret)" `
-      --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
-      --azure-key-vault-url "$(SignKeyVaultUrl)" `
-      --timestamp-url http://timestamp.digicert.com
-    displayName: Sign packages
-    continueOnError: true
-    condition: succeeded()
-
-  # publish artifacts (only possible if this is not a PR originated on a fork)
-  - task: PublishPipelineArtifact@1
-    condition: succeeded()
-    displayName: Publish deployables artifacts
-    inputs:
-      targetPath: '$(Build.ArtifactStagingDirectory)'
-      artifactName: deployables
-      artifactType: pipeline
-
-  # push NuGet packages to NuGet
-  # NOTE: publishing is gated off until these tools are ready for release. Set the
-  # pipeline variable PublishNanoTools=true to enable pushing the packages to NuGet.
-  - task: NuGetCommand@2
-    displayName: Push NuGet packages to NuGet
-    condition: >-
-      and(
-        succeeded(),
-        eq(variables['System.PullRequest.PullRequestId'], ''),
-        eq(variables['PublishNanoTools'], 'true')
-      )
-    continueOnError: true
-    inputs:
-      command: push
-      nuGetFeedType: external
-      packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-      includeSymbols: true
-      publishFeedCredentials: 'NuGet-$(System.TeamProject)'
-
-##############
 - job: Build_Migrate
   condition: >-
     or(
@@ -692,7 +549,6 @@ jobs:
   - Build_VersionCop
   - Build_DependencyUpdater
   - Build_NanoProfiler
-  - Build_Nano
   - Build_Migrate
   condition: >-
     or(
@@ -700,7 +556,6 @@ jobs:
       failed('Build_VersionCop'),
       failed('Build_DependencyUpdater'),
       failed('Build_NanoProfiler'),
-      failed('Build_Nano'),
       failed('Build_Migrate')
     )
 
