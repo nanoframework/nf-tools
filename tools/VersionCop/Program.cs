@@ -95,7 +95,8 @@ class Program
         }
 
         // handle mscorlib library
-        if (solutionToCheck.EndsWith("nanoFramework.CoreLibrary.sln"))
+        if (solutionToCheck.EndsWith("nanoFramework.CoreLibrary.sln") ||
+            solutionToCheck.EndsWith("nanoFramework.CoreLibrary.slnx"))
         {
             Console.WriteLine("ℹ️  This is mscorlib, skipping this check!");
             return 0;
@@ -140,6 +141,7 @@ class Program
 
         // read solution file content
         var slnFileContent = File.ReadAllText(solutionToCheck);
+        bool isSlnx = solutionToCheck.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase);
 
         // find ALL packages.config files in the solution projects
         var packageConfigs = Directory.GetFiles(workingDirectory, "packages.config", SearchOption.AllDirectories);
@@ -190,32 +192,65 @@ class Program
             Console.WriteLine();
             WriteGroupStart($"📂 Project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
 
-            var projectPathInSln = Path.GetRelativePath(workingDirectory, Directory.GetParent(packageConfigFile).FullName);
+            var packageConfigRelPath = Path.GetRelativePath(workingDirectory, Directory.GetParent(packageConfigFile).FullName);
 
-            // check for project in the same folder
-            if (projectPathInSln == ".")
+            string projectToCheck;
+            string projectName;
+
+            if (isSlnx)
             {
-                projectPathInSln = "";
+                // slnx is XML-based: <Project Path="folder\Project.nfproj" /> or <Project Path="Project.nfproj" />
+                var slnxDoc = XDocument.Parse(slnFileContent);
+                var projectEl = slnxDoc.Descendants("Project")
+                    .FirstOrDefault(el =>
+                    {
+                        var path = el.Attribute("Path")?.Value;
+                        if (path == null) return false;
+                        var dir = Path.GetDirectoryName(path) ?? string.Empty;
+                        
+                        // Normalize directory separators
+                        dir = dir.Replace('/', '\\');
+                        var normalizedRelPath = packageConfigRelPath.Replace('/', '\\');
+                        
+                        // Handle root-level projects (empty directory or ".")
+                        if (string.IsNullOrEmpty(dir))
+                        {
+                            return normalizedRelPath == "." || string.IsNullOrEmpty(normalizedRelPath);
+                        }
+                        
+                        return string.Equals(dir, normalizedRelPath, StringComparison.OrdinalIgnoreCase);
+                    });
+
+                if (projectEl == null)
+                {
+                    Console.WriteLine($"  ⚠️  Couldn't find a project matching this packages.config - skipping");
+                    WriteGroupEnd();
+                    continue;
+                }
+
+                var projectPath = projectEl.Attribute("Path").Value;
+                projectName = Path.GetFileNameWithoutExtension(projectPath);
+                projectToCheck = Directory.GetFiles(workingDirectory, Path.GetFileName(projectPath), SearchOption.AllDirectories).FirstOrDefault();
             }
             else
             {
-                // need these extra replacements to adjust for regex expression
-                projectPathInSln = projectPathInSln.Replace("\\", "\\\\")
-                                                     .Replace(".", "\\.")
-                                                     + "\\\\"; // add trailing \ to match whatever will be in the solution file
-            }
+                var projectPathInSln = packageConfigRelPath == "."
+                    ? ""
+                    : packageConfigRelPath.Replace("\\", "\\\\")
+                                         .Replace(".", "\\.")
+                                         + "\\\\"; // add trailing \ to match whatever will be in the solution file
 
-            var match = Regex.Match(slnFileContent, $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")");
-            if (!match.Success)
-            {
-                Console.WriteLine($"  ⚠️  Couldn't find a project matching this packages.config - skipping");
-                WriteGroupEnd();
-                continue;
-            }
+                var match = Regex.Match(slnFileContent, $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")");
+                if (!match.Success)
+                {
+                    Console.WriteLine($"  ⚠️  Couldn't find a project matching this packages.config - skipping");
+                    WriteGroupEnd();
+                    continue;
+                }
 
-            // compose project path
-            var projectToCheck = Directory.GetFiles(workingDirectory, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
-            var projectName = match.Groups["projectname"].Value;
+                projectToCheck = Directory.GetFiles(workingDirectory, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
+                projectName = match.Groups["projectname"].Value;
+            }
 
             Console.WriteLine($"  📄 {Path.GetFileNameWithoutExtension(projectToCheck)}");
 
