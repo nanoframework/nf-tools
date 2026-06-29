@@ -240,6 +240,15 @@ class Program
                 projectPath = projectPath.Replace('\\', Path.DirectorySeparatorChar);
                 // Construct full path directly from working directory + relative path in slnx
                 projectToCheck = Path.Combine(workingDirectory, projectPath);
+                
+                // Check if the project file actually exists on disk
+                if (!File.Exists(projectToCheck))
+                {
+                    Console.WriteLine($"  ⚠️  Project file not found: {projectToCheck} - skipping");
+                    WriteGroupEnd();
+                    continue;
+                }
+                
                 projectName = Path.GetFileNameWithoutExtension(projectPath);
             }
             else
