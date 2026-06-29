@@ -33,22 +33,33 @@ steps:
       Write-Host "Build checksum    : $newChecksum"
       Write-Host "Build native ver  : $newNativeVersion"
 
-      # Fetch version list from NuGet flat-container
-      $indexUrl = "https://api.nuget.org/v3-flatcontainer/$($packageId.ToLower())/index.json"
+      # Fetch the list of LISTED versions from the NuGet search service.
+      $searchUrl = "https://azuresearch-usnc.nuget.org/query?q=packageid:$($packageId.ToLower())&prerelease=true&semVerLevel=2.0.0"
       try
       {
-          $indexResponse = Invoke-RestMethod -Uri $indexUrl -Method Get -ErrorAction Stop
+          $searchResponse = Invoke-RestMethod -Uri $searchUrl -Method Get -ErrorAction Stop
       }
       catch
       {
-          Write-Host "##[warning]Package '$packageId' not found on NuGet (new package). Native declaration update is required before publishing."
+          Write-Host "##[warning]Could not query NuGet search for '$packageId'. Native declaration update is required before publishing."
           Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]true"
           Write-Host "##vso[task.setvariable variable=PUBLISHED_NATIVE_VERSION]N/A"
           Write-Host "##vso[task.setvariable variable=PUBLISHED_CHECKSUM]N/A"
           exit 0
       }
 
-      $versions = $indexResponse.versions
+      $package = $searchResponse.data | Where-Object { $_.id -ieq $packageId } | Select-Object -First 1
+
+      if (-not $package -or -not $package.versions)
+      {
+          Write-Host "##[warning]Package '$packageId' not found on NuGet (new package or no listed versions). Native declaration update is required before publishing."
+          Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]true"
+          Write-Host "##vso[task.setvariable variable=PUBLISHED_NATIVE_VERSION]N/A"
+          Write-Host "##vso[task.setvariable variable=PUBLISHED_CHECKSUM]N/A"
+          exit 0
+      }
+
+      $versions = $package.versions | ForEach-Object { $_.version }
 
       # Select comparison baseline by release channel.
       # Preview builds must compare against latest preview, not latest overall version.
