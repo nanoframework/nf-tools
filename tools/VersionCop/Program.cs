@@ -95,8 +95,8 @@ class Program
         }
 
         // handle mscorlib library
-        if (solutionToCheck.EndsWith("nanoFramework.CoreLibrary.sln") ||
-            solutionToCheck.EndsWith("nanoFramework.CoreLibrary.slnx"))
+        if (solutionToCheck.EndsWith("nanoFramework.CoreLibrary.sln", StringComparison.OrdinalIgnoreCase) ||
+            solutionToCheck.EndsWith("nanoFramework.CoreLibrary.slnx", StringComparison.OrdinalIgnoreCase))
         {
             Console.WriteLine("ℹ️  This is mscorlib, skipping this check!");
             return 0;
@@ -187,6 +187,13 @@ class Program
         // Use a generic .NET target framework for cache building
         BuildPackageCache(packageConfigs, NuGet.Frameworks.NuGetFramework.AnyFramework);
 
+        // Parse slnx document once if needed (avoids repeated parsing for each package.config)
+        XDocument slnxDoc = null;
+        if (isSlnx)
+        {
+            slnxDoc = XDocument.Parse(slnFileContent);
+        }
+
         foreach (var packageConfigFile in packageConfigs)
         {
             Console.WriteLine();
@@ -200,17 +207,17 @@ class Program
             if (isSlnx)
             {
                 // slnx is XML-based: <Project Path="folder\Project.nfproj" /> or <Project Path="Project.nfproj" />
-                var slnxDoc = XDocument.Parse(slnFileContent);
-                var projectEl = slnxDoc.Descendants("Project")
+                var projectElement = slnxDoc.Descendants("Project")
                     .FirstOrDefault(el =>
                     {
                         var path = el.Attribute("Path")?.Value;
                         if (path == null) return false;
-                        var dir = Path.GetDirectoryName(path) ?? string.Empty;
                         
-                        // Normalize directory separators
-                        dir = dir.Replace('/', '\\');
-                        var normalizedRelPath = packageConfigRelPath.Replace('/', '\\');
+                        // Normalize separators BEFORE parsing so it works cross-platform
+                        // (Path.GetDirectoryName won't recognize \ on non-Windows OSes)
+                        path = path.Replace('\\', Path.DirectorySeparatorChar);
+                        var dir = Path.GetDirectoryName(path) ?? string.Empty;
+                        var normalizedRelPath = packageConfigRelPath.Replace('/', '\\').Replace('\\', Path.DirectorySeparatorChar);
                         
                         // Handle root-level projects (empty directory or ".")
                         if (string.IsNullOrEmpty(dir))
@@ -221,16 +228,19 @@ class Program
                         return string.Equals(dir, normalizedRelPath, StringComparison.OrdinalIgnoreCase);
                     });
 
-                if (projectEl == null)
+                if (projectElement == null)
                 {
                     Console.WriteLine($"  ⚠️  Couldn't find a project matching this packages.config - skipping");
                     WriteGroupEnd();
                     continue;
                 }
 
-                var projectPath = projectEl.Attribute("Path").Value;
+                var projectPath = projectElement.Attribute("Path").Value;
+                // Normalize separators to match the current OS
+                projectPath = projectPath.Replace('\\', Path.DirectorySeparatorChar);
+                // Construct full path directly from working directory + relative path in slnx
+                projectToCheck = Path.Combine(workingDirectory, projectPath);
                 projectName = Path.GetFileNameWithoutExtension(projectPath);
-                projectToCheck = Directory.GetFiles(workingDirectory, Path.GetFileName(projectPath), SearchOption.AllDirectories).FirstOrDefault();
             }
             else
             {
@@ -250,6 +260,14 @@ class Program
 
                 projectToCheck = Directory.GetFiles(workingDirectory, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
                 projectName = match.Groups["projectname"].Value;
+            }
+
+            // Guard against null projectToCheck (file not found on disk)
+            if (projectToCheck is null)
+            {
+                Console.WriteLine($"  ⚠️  Couldn't resolve project file on disk - skipping");
+                WriteGroupEnd();
+                continue;
             }
 
             Console.WriteLine($"  📄 {Path.GetFileNameWithoutExtension(projectToCheck)}");
