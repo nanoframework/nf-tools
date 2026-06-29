@@ -211,7 +211,10 @@ class Program
                     .FirstOrDefault(el =>
                     {
                         var path = el.Attribute("Path")?.Value;
-                        if (path == null) return false;
+                        if (path == null)
+                        {
+                            return false;
+                        }
                         
                         // Normalize separators BEFORE parsing so it works cross-platform
                         // (Path.GetDirectoryName won't recognize \ on non-Windows OSes)
