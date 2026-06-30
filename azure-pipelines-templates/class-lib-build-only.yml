@@ -55,6 +55,20 @@ steps:
 
 - template: prepare-release.yml
 
+- task: JavaToolInstaller@0
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      not(${{ parameters.skipSonarCloudAnalysis }})
+    )
+  displayName: Set Java 21 for SonarCloud analysis
+  inputs:
+    versionSpec: '21'
+    jdkArchitectureOption: 'x64'
+    jdkSourceOption: 'PreInstalled'
+
 - task: SonarCloudPrepare@3
   condition: >-
     and(
