@@ -217,99 +217,16 @@ steps:
       $dataTag        = "<!-- nf-data: native-version=$newNativeVersion checksum=$newChecksum -->"
       $dataTagPattern = '<!-- nf-data: native-version=(\S+) checksum=(0x[0-9A-Fa-f]+) -->'
       $commentMarker  = "<!-- nf-checksum-mismatch-comment -->"
+      $checksumChanged      = ($newChecksum -ine $pubChecksum)
+      $nativeVersionChanged = ($newNativeVersion -ne $pubNativeVersion)
+      $shouldCreateIssue    = $checksumChanged -and $nativeVersionChanged
 
-      # ── Issue body ──────────────────────────────────────────────────────────
-      $issueBody = @(
-          $dataTag,
-          "",
-          "## :wrench: Native Assembly Declaration Update Required",
-          "",
-          "The NuGet package ``$packageName`` was built with new native assembly values that differ from what is currently declared in [nf-interpreter](https://github.com/nanoframework/nf-interpreter).",
-          "",
-          "### Changed values",
-          "",
-          "| | Previously published | New (from $prLink) |",
-          "|---|---|---|",
-          "| Native version | ``$pubNativeVersion`` | ``$newNativeVersion`` |",
-          "| Checksum | ``$pubChecksum`` | ``$newChecksum`` |",
-          "",
-          "### Stub files",
-          "",
-          "The updated stubs are available in the build artifacts — **do not regenerate them**.",
-          "",
-          "**Direct zip download:**",
-          "",
-          "$stubsZipUrl",
-          "",
-          "[Browse artifacts in Azure DevOps]($artifactUrl)",
-          "",
-          "The artifact contains the ``.cpp``, ``.h``, and ``.cmake`` files for ``$packageName``.",
-          "",
-          "---",
-          "",
-          "> Follow the Copilot instructions in this repository for the step-by-step process to merge the stubs into nf-interpreter.",
-          ">",
-          "> :warning: This issue was automatically created by the CI pipeline for $prLink."
-      ) -join "`n"
-
-      # ── Handle GitHub Issue ─────────────────────────────────────────────────
-      $existingIssues = gh issue list `
-          --repo $homeRepo `
-          --state open `
-          --search "$issueTitle in:title" `
-          --json number,url,body `
-          --limit 5 | ConvertFrom-Json
-
-      $existingIssue = $existingIssues | Where-Object { $_.url -ne $null } | Select-Object -First 1
-
-      if ($existingIssue)
-      {
-          $issueUrl    = $existingIssue.url
-          $issueNumber = $existingIssue.number
-
-          if ($existingIssue.body -match $dataTagPattern)
-          {
-              $storedNativeVersion = $Matches[1]
-              $storedChecksum      = $Matches[2]
-
-              if (($storedChecksum -ieq $newChecksum) -and ($storedNativeVersion -eq $newNativeVersion))
-              {
-                  Write-Host "Open issue exists with matching values — refreshing artifact URL: $issueUrl"
-              }
-              else
-              {
-                  Write-Host "Open issue exists with changed values — updating: $issueUrl"
-              }
-          }
-          else
-          {
-              Write-Host "Open issue exists without value marker — updating: $issueUrl"
-          }
-
-          gh issue edit $issueNumber --repo $homeRepo --body "$issueBody"
-          Write-Host "Issue updated."
-      }
-      else
-      {
-          $issueUrl = gh issue create `
-              --repo $homeRepo `
-              --title "$issueTitle" `
-              --label "Type: Chores" `
-              --body "$issueBody" | Select-Object -Last 1
-
-          Write-Host "Created issue: $issueUrl"
-      }
-
-      # Fetch all PR comments once — used by both branches below.
+      # Fetch all PR comments once
       $comments = gh api "/repos/$repoName/issues/$prNumber/comments?per_page=100" | ConvertFrom-Json
 
-      # ── Branch on version bump condition ────────────────────────────────────
-      # When the checksum changed but the native version was NOT bumped, the PR
-      # is blocked: post only the version-bump comment and skip the usual mismatch
-      # comment (which links the tracking issue) — that comes later, once the
-      # version has been bumped.
+      # When the checksum changed but the native version was NOT bumped, the PR is blocked
       $versionBumpMarker  = "<!-- nf-version-bump-required -->"
-      $versionBumpNeeded  = ($newChecksum -ine $pubChecksum) -and ($newNativeVersion -eq $pubNativeVersion)
+      $versionBumpNeeded  = $checksumChanged -and (-not $nativeVersionChanged)
       $existingBumpComment = $comments | Where-Object { $_.body -match [regex]::Escape($versionBumpMarker) } | Select-Object -First 1
 
       if ($versionBumpNeeded)
@@ -349,15 +266,10 @@ steps:
       else
       {
           # Version is correctly bumped (or only the version changed without a checksum change).
-          # If a previous run posted a version-bump comment, strike through its text and add a thumbs-up.
           if ($existingBumpComment)
           {
               Write-Host "Version is now bumped — striking through version-bump comment and adding thumbs-up reaction."
 
-              # Replace the original comment body with a flat struck-through summary.
-              # Per-line ~~ wrapping is NOT used because GitHub strikethrough silently
-              # fails on headings (## ...), table rows (| ... |), and blank lines.
-              # A plain paragraph is the only form that renders strikethrough reliably.
               $resolvedBody = @(
                   $versionBumpMarker,
                   "",
@@ -375,6 +287,110 @@ steps:
               Write-Host "Version-bump comment struck through and reaction added."
           }
 
+      $issueUrl = $null
+
+      if ($shouldCreateIssue)
+      {
+        Write-Host "Checksum and native version both changed — creating/updating Home tracking issue."
+
+        # Issue body
+        $issueBody = @(
+          $dataTag,
+          "",
+          "## :wrench: Native Assembly Declaration Update Required",
+          "",
+          "The NuGet package ``$packageName`` was built with new native assembly values that differ from what is currently declared in [nf-interpreter](https://github.com/nanoframework/nf-interpreter).",
+          "",
+          "### Changed values",
+          "",
+          "| | Previously published | New (from $prLink) |",
+          "|---|---|---|",
+          "| Native version | ``$pubNativeVersion`` | ``$newNativeVersion`` |",
+          "| Checksum | ``$pubChecksum`` | ``$newChecksum`` |",
+          "",
+          "### Stub files",
+          "",
+          "The updated stubs are available in the build artifacts — **do not regenerate them**.",
+          "",
+          "**Direct zip download:**",
+          "",
+          "$stubsZipUrl",
+          "",
+          "[Browse artifacts in Azure DevOps]($artifactUrl)",
+          "",
+          "The artifact contains the ``.cpp``, ``.h``, and ``.cmake`` files for ``$packageName``.",
+          "",
+          "---",
+          "",
+          "> Follow the Copilot instructions in this repository for the step-by-step process to merge the stubs into nf-interpreter.",
+          ">",
+          "> :warning: This issue was automatically created by the CI pipeline for $prLink."
+        ) -join "`n"
+
+        # Handle GitHub Issue
+        $existingIssues = gh issue list `
+          --repo $homeRepo `
+          --state open `
+          --search "$issueTitle in:title" `
+          --json number,url,body `
+          --limit 5 | ConvertFrom-Json
+
+        $existingIssue = $existingIssues | Where-Object { $_.url -ne $null } | Select-Object -First 1
+
+        if ($existingIssue)
+        {
+          $issueUrl    = $existingIssue.url
+          $issueNumber = $existingIssue.number
+
+          if ($existingIssue.body -match $dataTagPattern)
+          {
+            $storedNativeVersion = $Matches[1]
+            $storedChecksum      = $Matches[2]
+
+            if (($storedChecksum -ieq $newChecksum) -and ($storedNativeVersion -eq $newNativeVersion))
+            {
+              Write-Host "Open issue exists with matching values — refreshing artifact URL: $issueUrl"
+            }
+            else
+            {
+              Write-Host "Open issue exists with changed values — updating: $issueUrl"
+            }
+          }
+          else
+          {
+            Write-Host "Open issue exists without value marker — updating: $issueUrl"
+          }
+
+          gh issue edit $issueNumber --repo $homeRepo --body "$issueBody"
+          Write-Host "Issue updated."
+        }
+        else
+        {
+          $issueUrl = gh issue create `
+            --repo $homeRepo `
+            --title "$issueTitle" `
+            --label "Type: Chores" `
+            --body "$issueBody" | Select-Object -Last 1
+
+          Write-Host "Created issue: $issueUrl"
+        }
+      }
+      else
+      {
+        Write-Host "Skipping Home issue creation because both checksum and native version did not change together."
+      }
+
+      if ($issueUrl)
+      {
+        $trackingLine = ":point_right: **Tracking issue: $issueUrl**"
+        $detailsLine = "The issue contains a link to the stubs artifact from this build and instructions for GitHub Copilot to perform the update."
+      }
+      else
+      {
+        $trackingLine = ":information_source: No Home tracking issue created for this run (requires both checksum and native version changes)."
+        $detailsLine = ""
+      }
+
           # ── Post / update the usual checksum-mismatch comment ───────────────
           $prCommentBody = @(
               $commentMarker,
@@ -389,9 +405,9 @@ steps:
               "| Native version | ``$pubNativeVersion`` | ``$newNativeVersion`` |",
               "| Checksum | ``$pubChecksum`` | ``$newChecksum`` |",
               "",
-              ":point_right: **Tracking issue: $issueUrl**",
+                $trackingLine,
               "",
-              "The issue contains a link to the stubs artifact from this build and instructions for GitHub Copilot to perform the update."
+                $detailsLine
           ) -join "`n"
 
           $existingComment = $comments | Where-Object { $_.body -match [regex]::Escape($commentMarker) } | Select-Object -First 1
