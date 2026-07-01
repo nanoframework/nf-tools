@@ -69,7 +69,7 @@ steps:
     jdkArchitectureOption: 'x64'
     jdkSourceOption: 'PreInstalled'
 
-- task: SonarCloudPrepare@3
+- task: SonarCloudPrepare@4
   condition: >-
     and(
       succeeded(),
@@ -177,7 +177,7 @@ steps:
     )
   displayName: Set release draft var
 
-- task: SonarCloudAnalyze@3
+- task: SonarCloudAnalyze@4
   condition: >-
     and(
       succeeded(),
@@ -187,7 +187,7 @@ steps:
     )
   displayName: 'Run Code Analysis'
 
-- task: SonarCloudPublish@3
+- task: SonarCloudPublish@4
   condition: >-
     and(
       succeeded(),
