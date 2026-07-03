@@ -169,11 +169,7 @@ steps:
     flattenFolders: true
 
 - task: PublishPipelineArtifact@1
-  condition: >-
-    and(
-      not(canceled()),
-      eq(variables['CHECKSUM_MISMATCH'], 'true')
-    )
+  condition: not(canceled())
   continueOnError: true
   displayName: Publish stubs artifact (checksum mismatch)
   inputs:
