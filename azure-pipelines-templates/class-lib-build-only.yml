@@ -55,7 +55,7 @@ steps:
 
 - template: prepare-release.yml
 
-- task: JavaToolInstaller@0
+- task: JavaToolInstaller@1
   condition: >-
     and(
       succeeded(),
@@ -87,7 +87,6 @@ steps:
      sonar.exclusions=**/obj/**,**/*.dll
      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/**/**.coverage
      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/**/**.trx
-     sonar.scanner.skipJreProvisioning=true
 
 - task: InstallNanoMSBuildComponents@1
   condition: >-
