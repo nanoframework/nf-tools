@@ -75,3 +75,23 @@ steps:
     allowPackageConflicts: true
     packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
     publishFeedCredentials: 'NuGet-$(System.TeamProject)'
+
+# push NuGet packages to Azure Artifacts feed (always happens except on PR builds)
+- task: NuGetCommand@2
+  condition: >-
+    and(
+      succeeded(),
+      eq(variables['System.PullRequest.PullRequestId'], ''),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/pull/')),
+      eq(variables['StartReleaseCandidate'], false),
+      not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v')),
+      eq(variables['Build.SourceBranchName'], '${{ parameters.baseBranchName }}')
+    )
+  continueOnError: true
+  displayName: Push NuGet packages to Azure Artifacts
+  inputs:
+    command: push
+    nuGetFeedType: external
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+    publishFeedCredentials: 'AzureArtifacts-$(System.TeamProject)'
+    allowPackageConflicts: true
