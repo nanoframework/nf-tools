@@ -32,6 +32,7 @@ namespace nanoFramework.Tools.GitHub
         // strings to be used in messages and comments
         private const string _fixRequestTagComment = "<!-- nfbot fix request DO NOT REMOVE -->";
         private const string _todoTagComment = "<!-- todo-tag DO NOT REMOVE -->";
+        private const string _firstContributionTagComment = "<!-- nfbot first contribution DO NOT REMOVE -->";
         private const string _issueCommentInvalidDeviceCaps = ":disappointed: If that's relevant, make sure to include the complete Device Capabilities output.\r\n.If it isn't, just remove the section completely.\r\nAfter fixing that, feel free to reopen the issue.";
         private const string _issueCommentUnshureAboutIssueContent = "🤪 I couldn't figure out what type of issue you're trying to open...\r\nMake sure you're used one of the **templates** and have include all the required information. After doing that feel free to reopen the issue.\r\n\r\nIf you have a question, need clarification on something, need help on a particular situation or want to start a discussion, **DO NOT** open an issue here. It is best to start a conversation on one of our [Discord channels](https://discordapp.com/invite/gCyBu8T) or to ask the question on [Stack Overflow](https://stackoverflow.com/questions/tagged/nanoframework) using the `nanoframework` tag.";
         private const string _prCommentUserIgnoringTemplateContent = "😯 I'm afraid you'll have to use the PR template like the rest of us...\r\nMake sure you've used the **template** and have include all the required information and fill in the appropriate details. After doing that feel free to reopen the PR. If you have questions we are here to help.";
@@ -328,14 +329,16 @@ namespace nanoFramework.Tools.GitHub
                                 var userDetails = await _octokitClient.User.Get(pr.User.Login);
 
                                 // isn't there, send a message inviting to self add
-                                var commentContent = $"\\r\\n@{pr.User.Login} thank you again for your contribution! :pray::smile:\\r\\n\\r\\n.NET nanoFramework is all about community involvement, and no contribution is too small.\\r\\nWe would like to invite you to join the project's [Contributors list](https://github.com/nanoframework/Home/blob/main/CONTRIBUTORS.md).\\r\\n\\r\\nPlease edit it and add an entry with your GitHub username in the appropriate location (names are sorted alphabetically):\\r\\n```text\\r\\n  <tr>\\r\\n    <td><img src=\\\"https://github.com/{pr.User.Login}.png?size=50\\\" height=\\\"50\\\" width=\\\"50\\\" ></td>\\r\\n    <td><a href=\\\"https://github.com/{pr.User.Login}\\\">{userDetails.Name}</a></td>\\r\\n  </tr>\\r\\n```\\r\\n\\r\\n(Feel free to adjust your name if it's not correct)";
+                                var commentContent = $"{_firstContributionTagComment}\r\n@{pr.User.Login} thank you again for your contribution! :pray::smile:\r\n\r\n.NET nanoFramework is all about community involvement, and no contribution is too small.\r\nWe would like to invite you to join the project's [Contributors list](https://github.com/nanoframework/Home/blob/main/CONTRIBUTORS.md).\r\n\r\nPlease edit it and add an entry with your GitHub username in the appropriate location (names are sorted alphabetically):\r\n```text\r\n  <tr>\r\n    <td><img src=\"https://github.com/{pr.User.Login}.png?size=50\" height=\"50\" width=\"50\" ></td>\r\n    <td><a href=\"https://github.com/{pr.User.Login}\">{userDetails.Name}</a></td>\r\n  </tr>\r\n```\r\n\r\n(Feel free to adjust your name if it's not correct)";
 
-                                string comment = $"{{ \"body\": \"{commentContent}\" }}";
+                                // invite to share the news on social media
+                                commentContent += "\r\n\r\n---\r\n\r\n" + SocialShare.BuildMarkdown(SocialShare.BuildFirstContributionContent(pr.HtmlUrl));
 
-                                await SendGitHubRequest(
-                                    payload.pull_request.comments_url.ToString(),
-                                    comment,
-                                    log);
+                                await _octokitClient.Issue.Comment.Create(
+                                    _gitOwner,
+                                    payload.repository.name.ToString(),
+                                    (int)payload.number,
+                                    commentContent);
                             }
                         }
                     }
