@@ -404,9 +404,7 @@ class Program
                         // - libraries that have variations on the ID, like System.Net.Http.Client/Server
                         // - libraries that have additional segments like nanoFramework.UnitsNet.AbsorbedDoseOfIonizingRadiation
                         
-                        bool idMatches = nuspecReader.GetId().EndsWith(assemblyName, StringComparison.OrdinalIgnoreCase) ||
-                                         nuspecReader.GetId().Equals(assemblyName, StringComparison.OrdinalIgnoreCase) ||
-                                         nuspecReader.GetId().Contains($".{assemblyName}", StringComparison.OrdinalIgnoreCase);
+                        bool idMatches = NuspecIdMatchesAssemblyName(nuspecReader.GetId(), assemblyName);
                         
                         // Title check is more lenient - it's OK if title doesn't contain assembly name
                         // as long as ID matches, or if title is similar to ID
@@ -1037,6 +1035,22 @@ class Program
         return referenceName.Equals(packageName, StringComparison.OrdinalIgnoreCase)
             || referenceName.Equals(normalizedPackageName, StringComparison.OrdinalIgnoreCase)
             || NormalizePackageOrReferenceName(referenceName).Equals(normalizedPackageName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static bool NuspecIdMatchesAssemblyName(string nuspecId, string assemblyName)
+    {
+        if (nuspecId.EndsWith(assemblyName, StringComparison.OrdinalIgnoreCase)
+            || nuspecId.Equals(assemblyName, StringComparison.OrdinalIgnoreCase)
+            || nuspecId.Contains($".{assemblyName}", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var normalizedNuspecId = NormalizePackageOrReferenceName(nuspecId);
+
+        return normalizedNuspecId.Equals("System.Net.Http", StringComparison.OrdinalIgnoreCase)
+            && (assemblyName.Equals("System.Net.Http.Client", StringComparison.OrdinalIgnoreCase)
+                || assemblyName.Equals("System.Net.Http.Server", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string NormalizePackageOrReferenceName(string value)
