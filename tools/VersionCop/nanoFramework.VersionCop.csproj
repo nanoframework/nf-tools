@@ -31,6 +31,7 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <None Remove="nanoFramework.VersionCop.Tests\**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.7.115">
@@ -41,5 +42,16 @@
     <PackageReference Include="NuGet.Resolver" Version="6.13.2" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.21617.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>nanoFramework.VersionCop.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="nanoFramework.VersionCop.Tests\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="nanoFramework.VersionCop.Tests\**" />
   </ItemGroup>
 </Project>
