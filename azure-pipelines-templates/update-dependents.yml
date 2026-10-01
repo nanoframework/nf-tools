@@ -37,6 +37,7 @@ steps:
     PACKAGE_TARGET_VERSION: ${{ parameters.packageTargetVersion }}
     PACKAGE_NAME: ${{ parameters.packageName }}
     BRANCH_TO_PR: ${{ parameters.branchToPr }}
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
   inputs:
     targetType: 'inline'
     script: |
@@ -54,69 +55,132 @@ steps:
           # need to use lower case package name to call NuGet API
           $packageName = $env:PACKAGE_NAME.ToLower()
 
-          # if version wasn't provided, get the tag from the repo
-          if ($env:PACKAGE_TARGET_VERSION -eq "")
-          {
-              $packageTargetVersion = $env:Build_SourceBranch
-
-              # check if it's a tag
-              if ($packageTargetVersion -notlike "refs/tags/*")
-              {
-                  throw "ERROR: Branch name is not a tag! Either provide the version or checkout a tag before calling."
-              }
-              
-              # extract version from ref (refs/tags/v1.2.3)
-              $packageTargetVersion = $packageTargetVersion -replace "refs/tags/", ""
-          }
-          else
-          {
+          # resolve target version: prefer version provided by caller, fall back to the build tag
+          if (![string]::IsNullOrWhiteSpace($env:PACKAGE_TARGET_VERSION)) {
               $packageTargetVersion = $env:PACKAGE_TARGET_VERSION
+              $explicitVersion = $true
+              Write-Host "Using version provided by caller: $packageTargetVersion"
+          }
+          else {
+              $packageTargetVersion = $env:Build_SourceBranch
+              $explicitVersion = $false
+
+              # check if this is running from a checked out tag
+              if ($packageTargetVersion -notlike "refs/tags/*") {
+                  throw "ERROR: Branch name is not a tag and no version was provided! Either provide the version or checkout a tag before calling."
+              }
           }
 
-          # if version starts with 'v', remove it
-          if ($packageTargetVersion.StartsWith("v"))
-          {
-              $packageTargetVersion = $packageTargetVersion.Substring(1)
+          # normalize version: accepts '1.2.3', 'v1.2.3', 'V1.2.3', 'refs/tags/v1.2.3', surrounding quotes/spaces and build metadata
+          $packageTargetVersion = $packageTargetVersion -replace "^[\s'`"]+|[\s'`"]+$", ""
+          $packageTargetVersion = $packageTargetVersion -replace "^refs/tags/", ""
+          $packageTargetVersion = $packageTargetVersion -replace "^[vV]", ""
+          $packageTargetVersion = $packageTargetVersion -replace "\+.*$", ""
+
+          if ($packageTargetVersion -notmatch "^\d+\.\d+\.\d+(-[0-9A-Za-z\.-]+)?$") {
+              throw "ERROR: '$packageTargetVersion' is not a valid package version."
           }
 
-          # check if this is a preview version
-          if ($packageTargetVersion -like "*-preview*")
-          {
+          $isPreview = $packageTargetVersion -match "preview"
+
+          if ($isPreview) {
               Write-Host "INFO: Package version is a preview version."
               $usePreview = "true"
           }
 
-          Write-Host "INFO: Waiting for package '$($env:PACKAGE_NAME)' version '$packageTargetVersion' to be available on nuget.org feed before launching updates..." 
+          Write-Host "INFO: Waiting for package '$($env:PACKAGE_NAME)' version '$packageTargetVersion' to be available on nuget.org feed before launching updates..."
 
           $nugetApiUrl = "https://api.nuget.org/v3-flatcontainer/$packageName/index.json"
 
           function Test-NugetVersionAvailable {
               param (
                   [string]$url,
-                  [string]$targetVersion
+                  [string]$targetVersion,
+                  [bool]$exactMatch,
+                  [bool]$preview
               )
               try {
-                  $response = Invoke-RestMethod -Uri $url -Method Get
-                  return $response.versions -contains $targetVersion
+                  $versions = @((Invoke-RestMethod -Uri $url -Method Get).versions)
               }
               catch {
-                  throw "Error querying NuGet API: $_"
+                  Write-Warning "Error querying NuGet API: $_"
+                  return $false
+              }
+
+              if ($exactMatch) {
+                  # explicit version: just check that it has been published (-contains is case-insensitive)
+                  return $versions -contains $targetVersion
+              }
+
+              # no explicit version: check that the target is the latest one published for its track (preview or stable)
+              if ($preview) {
+                  $versions = @($versions | Where-Object { $_ -match "preview" })
+              }
+              else {
+                  $versions = @($versions | Where-Object { $_ -notmatch "preview" })
+              }
+
+              if ($versions.Count -eq 0) {
+                  return $false
+              }
+
+              Write-Host "Latest version on nuget.org feed: $($versions[-1])"
+
+              return $versions[-1] -eq $targetVersion
+          }
+
+          $script:cancelCheckWarned = $false
+
+          function Test-BuildCanceled {
+              if ([string]::IsNullOrEmpty($env:SYSTEM_ACCESSTOKEN) -or
+                  [string]::IsNullOrEmpty($env:SYSTEM_COLLECTIONURI) -or
+                  [string]::IsNullOrEmpty($env:SYSTEM_TEAMPROJECTID) -or
+                  [string]::IsNullOrEmpty($env:BUILD_BUILDID)) {
+
+                  if (-not $script:cancelCheckWarned) {
+                      Write-Warning "SYSTEM_ACCESSTOKEN not available, can't check if the build was canceled."
+                      $script:cancelCheckWarned = $true
+                  }
+
+                  return $false
+              }
+
+              try {
+                  $buildUrl = "$($env:SYSTEM_COLLECTIONURI.TrimEnd('/'))/$($env:SYSTEM_TEAMPROJECTID)/_apis/build/builds/$($env:BUILD_BUILDID)?api-version=7.1"
+                  $build = Invoke-RestMethod -Uri $buildUrl -Method Get -Headers @{ Authorization = "Bearer $env:SYSTEM_ACCESSTOKEN" }
+
+                  return ($build.status -eq "cancelling") -or ($build.result -eq "canceled")
+              }
+              catch {
+                  if (-not $script:cancelCheckWarned) {
+                      Write-Warning "Error checking build status: $_"
+                      $script:cancelCheckWarned = $true
+                  }
+
+                  return $false
               }
           }
 
-          while (-not (Test-NugetVersionAvailable -url $nugetApiUrl -targetVersion $packageTargetVersion)) {
+          if ($explicitVersion) {
+              Write-Host "Target version is: $packageTargetVersion (explicit, waiting for this version)."
+          }
+          else {
+              $track = if ($isPreview) { "preview" } else { "stable" }
+              Write-Host "Target version is: $packageTargetVersion (from tag, waiting for it to be the latest $track version)."
+          }
 
-              # exit if the build was canceled
-              if ($env:AGENT_JOBSTATUS -eq "Canceled") {
+          while (-not (Test-NugetVersionAvailable -url $nugetApiUrl -targetVersion $packageTargetVersion -exactMatch $explicitVersion -preview $isPreview)) {
+              Write-Host "Target version ($packageTargetVersion) still not available from nuget.org feed. Waiting 5 minutes..."
+              Start-Sleep -Seconds 300
+
+              # exit if the build was canceled meanwhile
+              if (Test-BuildCanceled) {
                   Write-Host "Build was canceled. Exiting wait loop."
                   exit 0
               }
-
-              Write-Host "Version '$packageTargetVersion' still not available from nuget.org feed. Waiting 5 minutes..."
-              Start-Sleep -Seconds 300
           }
 
-          Write-Host "Version '$packageTargetVersion' available from nuget.org feed. Proceeding with update."
+          Write-Host "Version $packageTargetVersion available from nuget.org feed. Proceeding with update."
       }
 
       $librariesToUpdate = $env:REPOS_TO_UPDATE.Split([environment]::NewLine)
