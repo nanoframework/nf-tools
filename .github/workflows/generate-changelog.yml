@@ -30,6 +30,7 @@ jobs:
         id: update_release1
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          CHANGELOG: ${{ steps.build_changelog.outputs.changelog }}
         shell: bash
         run: |
 
