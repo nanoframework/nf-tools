@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>nanoFramework.Migrate.Cli</RootNamespace>
+    <AssemblyName>NanoMigrate.Cli.Commands</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- NuGet package metadata. Pack explicitly (GeneratePackageOnBuild off). -->
+  <PropertyGroup>
+    <PackageId>nanoFramework.Migrate.Cli.Commands</PackageId>
+    <Title>nanoFramework Migrate (shared Spectre command)</Title>
+    <Description>The shared `migrate` Spectre.Console.Cli command and its rendering, sitting over the nanoFramework.Migrate.Core engine. Referenced by both the standalone `nano-migrate` CLI and the `dotnet nano` umbrella tool so there is one MigrateCommand implementation.</Description>
+    <Authors>nanoFramework</Authors>
+    <Company>nanoFramework</Company>
+    <PackageProjectUrl>https://github.com/nanoframework/nf-tools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nanoframework/nf-tools</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>nanoFramework;MSBuild;SDK;migration;nfproj;Spectre;IoT;embedded;C#</PackageTags>
+    <Copyright>Copyright (c) .NET Foundation and Contributors</Copyright>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Git-height versioning (same scheme as the other nf-tools): CI packs with
+         -p:PublicRelease=true to produce a properly versioned package. -->
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.9.50">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Spectre presentation for the shared command. Pinned to the same 0.55.0
+         pair the rest of the tooling uses (Spectre.Console.Cli has no 0.57.0). -->
+    <PackageReference Include="Spectre.Console" Version="0.55.0" />
+    <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
+    <!-- Object-model enum for the report format (extensions + writer live on the value). -->
+    <PackageReference Include="Ardalis.SmartEnum" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NanoMigrate.Core\NanoMigrate.Core.csproj" />
+  </ItemGroup>
+
+  <!-- The engine is organized into vertical-slice sub-namespaces; surface them all
+       as global usings so the command layer can reference Core types unqualified. -->
+  <ItemGroup>
+    <Using Include="nanoFramework.Migrate.Core.Projects" />
+    <Using Include="nanoFramework.Migrate.Core.Solutions" />
+    <Using Include="nanoFramework.Migrate.Core.Backup" />
+    <Using Include="nanoFramework.Migrate.Core.Verification" />
+    <Using Include="nanoFramework.Migrate.Core.Fleet" />
+    <Using Include="nanoFramework.Migrate.Core.Common" />
+    <Using Include="nanoFramework.Migrate.Core.Reporting" />
+  </ItemGroup>
+
+</Project>
