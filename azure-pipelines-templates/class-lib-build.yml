@@ -205,6 +205,24 @@ steps:
   displayName: 'Publish Quality Gate Result'
   continueOnError: true
 
+- task: PowerShell@2
+  displayName: Check and fix native contract hash
+  inputs:
+    targetType: 'inline'
+    script: |
+
+      # v2 class libraries: the metadata processor outputs the native contract hash (replaces the native checksum)
+      if($null -eq $env:NF_NATIVE_CONTRACT_HASH)
+      {
+          Write-Host "No native contract hash found, faking one..."
+          Write-Host "##vso[task.setvariable variable=NF_NATIVE_CONTRACT_HASH]0x00000000"
+      }
+      else
+      {
+          Write-Host "Native contract hash found: $env:NF_NATIVE_CONTRACT_HASH"
+      }
+
+# nativeVersion and checksum are used by v1 nuspecs, nativeContractHash by v2 ones (unused properties are ignored by nuget pack)
 - task: NuGetCommand@2
   condition: >-
     and(
@@ -215,7 +233,7 @@ steps:
   displayName: Pack NuGet with class library
   inputs:
     command: 'custom' 
-    arguments: 'pack $(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(NF_ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NF_NATIVE_ASSEMBLY_CHECKSUM)"'
+    arguments: 'pack $(nugetPackageName).nuspec -Version $(MY_NUGET_VERSION) -Symbols -SymbolPackageFormat snupkg -properties nativeVersion="$(NF_ASSEMBLY_NATIVE_VERSION)";commit="$(Build.SourceVersion)";checksum="$(NF_NATIVE_ASSEMBLY_CHECKSUM)";nativeContractHash="$(NF_NATIVE_CONTRACT_HASH)"'
 
 - task: CopyFiles@1
   condition: >-
