@@ -3,13 +3,8 @@
 
 steps:
 
-# adding dummy task to avoid error
-- script: echo
-  displayName: dummy task
-
-# leaving this here in case we need to install a specific version of NuGet
-# - task: NuGetToolInstaller@1
-#   condition: succeeded()
-#   displayName: 'Install specific version of NuGet'
-#   inputs:
-#     versionSpec: '<6.6'
+- task: NuGetToolInstaller@1
+  condition: succeeded()
+  displayName: 'Install specific version of NuGet'
+  inputs:
+    versionSpec: '7.x'
