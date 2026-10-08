@@ -8,14 +8,19 @@ parameters:
 
 steps:
 
-# Query NuGet for the latest published description and compare native checksum/version.
-# Only runs on PR builds for libraries that have native support (NF_NATIVE_ASSEMBLY_CHECKSUM set).
+# Query NuGet for the latest published description and compare the native declaration values.
+# Only runs on PR builds for libraries that have native support. Two formats are handled:
+# - v2: NF_NATIVE_CONTRACT_HASH set by the metadata processor, only the native contract hash is compared.
+# - v1: NF_NATIVE_ASSEMBLY_CHECKSUM set by the metadata processor, checksum and AssemblyNativeVersion are compared.
 - task: PowerShell@2
   condition: >-
     and(
       succeededOrFailed(),
       eq(variables['StartReleaseCandidate'], false),
-      ne(variables['NF_NATIVE_ASSEMBLY_CHECKSUM'], ''),
+      or(
+        ne(variables['NF_NATIVE_CONTRACT_HASH'], ''),
+        ne(variables['NF_NATIVE_ASSEMBLY_CHECKSUM'], '')
+      ),
       ne(variables['System.PullRequest.PullRequestId'], '')
     )
   displayName: Check native checksum against published NuGet
@@ -26,12 +31,42 @@ steps:
 
       $packageId = "$(nugetPackageName)"
       $usePreview = [System.Convert]::ToBoolean("${{ parameters.usePreviewBuild }}")
-      $newChecksum = $env:NF_NATIVE_ASSEMBLY_CHECKSUM
-      $newNativeVersion = $env:NF_ASSEMBLY_NATIVE_VERSION
+
+      # v2 libraries have a native contract hash (0x00000000 is the placeholder used when packaging libraries without native code)
+      $isV2 = (-not [string]::IsNullOrEmpty($env:NF_NATIVE_CONTRACT_HASH)) -and ($env:NF_NATIVE_CONTRACT_HASH -ine '0x00000000')
+      $buildFormat = if ($isV2) { 'v2' } else { 'v1' }
+
+      if ($isV2)
+      {
+          $newChecksum = $env:NF_NATIVE_CONTRACT_HASH
+          $newNativeVersion = ''
+      }
+      else
+      {
+          $newChecksum = $env:NF_NATIVE_ASSEMBLY_CHECKSUM
+          $newNativeVersion = $env:NF_ASSEMBLY_NATIVE_VERSION
+
+          if ([string]::IsNullOrEmpty($newChecksum) -or ($newChecksum -ieq '0x00000000'))
+          {
+              Write-Host "No native declaration values in this build. Skipping."
+              Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]false"
+              exit 0
+          }
+      }
+
+      Write-Host "##vso[task.setvariable variable=NATIVE_DECLARATION_FORMAT]$buildFormat"
 
       Write-Host "Checking NuGet package: $packageId"
-      Write-Host "Build checksum    : $newChecksum"
-      Write-Host "Build native ver  : $newNativeVersion"
+
+      if ($isV2)
+      {
+          Write-Host "Build contract hash : $newChecksum"
+      }
+      else
+      {
+          Write-Host "Build checksum    : $newChecksum"
+          Write-Host "Build native ver  : $newNativeVersion"
+      }
 
       # Fetch the list of LISTED versions from the NuGet search service.
       $searchUrl = "https://azuresearch-usnc.nuget.org/query?q=packageid:$($packageId.ToLower())&prerelease=true&semVerLevel=2.0.0"
@@ -114,12 +149,25 @@ steps:
       }
 
       $description = $nuspec.package.metadata.description
+      $tags = $nuspec.package.metadata.tags
 
-      # Parse native version and checksum from description
-      # Expected format: "This package requires a target with <LibraryName> v1.4.0.0 (checksum 0x2D5CA905)"
-      $descPattern = '\S+ v(\S+) \(checksum (0x[0-9A-Fa-f]+)\)'
-      if ($description -match $descPattern)
+      # Parse the published native declaration values. The published package can be in either format.
+      # v2 description: "This package requires a target with <LibraryName> native contract hash 0x2D5CA905." (plus "nfnc-0x2D5CA905" tag)
+      # v1 description: "This package requires a target with <LibraryName> v1.4.0.0 (checksum 0x2D5CA905)"
+      $v2Pattern    = 'native contract hash (0x[0-9A-Fa-f]+)'
+      $v2TagPattern = 'nfnc-(0x[0-9A-Fa-f]+)'
+      $v1Pattern    = '\S+ v(\S+) \(checksum (0x[0-9A-Fa-f]+)\)'
+
+      if (($description -match $v2Pattern) -or ($tags -match $v2TagPattern))
       {
+          $publishedFormat        = 'v2'
+          $publishedChecksum      = $Matches[1]
+          $publishedNativeVersion = 'N/A'
+          Write-Host "Published contract hash : $publishedChecksum"
+      }
+      elseif ($description -match $v1Pattern)
+      {
+          $publishedFormat        = 'v1'
           $publishedNativeVersion = $Matches[1]
           $publishedChecksum      = $Matches[2]
           Write-Host "Published native ver : $publishedNativeVersion"
@@ -127,23 +175,26 @@ steps:
       }
       else
       {
-          Write-Host "Description does not contain native version/checksum pattern. Package may not have native support. Skipping."
+          Write-Host "Description does not contain native declaration values. Package may not have native support. Skipping."
           Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]false"
           exit 0
       }
 
       # Compare (case-insensitive for hex)
-      $checksumMatch = $publishedChecksum -ieq $newChecksum
-      $versionMatch  = $publishedNativeVersion -eq $newNativeVersion
+      # A published package in the other format (e.g. first v2 build of a library) is always a change: the values are computed differently.
+      $checksumMatch = ($publishedFormat -eq $buildFormat) -and ($publishedChecksum -ieq $newChecksum)
+
+      # v2 has no native version
+      $versionMatch  = $isV2 -or ($publishedNativeVersion -eq $newNativeVersion)
 
       if ($checksumMatch -and $versionMatch)
       {
-          Write-Host "Native checksum and version match. No update needed."
+          Write-Host "Native declaration values match. No update needed."
           Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]false"
       }
       else
       {
-          Write-Host "##[warning]Native checksum or version has changed!"
+          Write-Host "##[warning]Native declaration values have changed!"
           Write-Host "##vso[task.setvariable variable=CHECKSUM_MISMATCH]true"
           Write-Host "##vso[task.setvariable variable=PUBLISHED_NATIVE_VERSION]$publishedNativeVersion"
           Write-Host "##vso[task.setvariable variable=PUBLISHED_CHECKSUM]$publishedChecksum"
@@ -192,10 +243,21 @@ steps:
     script: |
 
       $packageName      = "$(nugetPackageName)"
-      $newChecksum      = $env:NF_NATIVE_ASSEMBLY_CHECKSUM
-      $newNativeVersion = $env:NF_ASSEMBLY_NATIVE_VERSION
+      $isV2             = $env:NATIVE_DECLARATION_FORMAT -eq 'v2'
       $pubChecksum      = $env:PUBLISHED_CHECKSUM
       $pubNativeVersion = $env:PUBLISHED_NATIVE_VERSION
+
+      if ($isV2)
+      {
+          # v2: only the native contract hash matters, there is no native version
+          $newChecksum      = $env:NF_NATIVE_CONTRACT_HASH
+          $newNativeVersion = ''
+      }
+      else
+      {
+          $newChecksum      = $env:NF_NATIVE_ASSEMBLY_CHECKSUM
+          $newNativeVersion = $env:NF_ASSEMBLY_NATIVE_VERSION
+      }
       $prNumber         = $env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER
       $repoName         = $env:BUILD_REPOSITORY_NAME
 
@@ -210,11 +272,51 @@ steps:
 
       # Hidden HTML-comment markers embedded in issue/PR-comment bodies.
       # Used to locate and compare stored values so updates are applied only when something actually changed.
-      $dataTag        = "<!-- nf-data: native-version=$newNativeVersion checksum=$newChecksum -->"
-      $dataTagPattern = '<!-- nf-data: native-version=(\S+) checksum=(0x[0-9A-Fa-f]+) -->'
       $commentMarker  = "<!-- nf-checksum-mismatch-comment -->"
       $checksumChanged      = ($newChecksum -ine $pubChecksum)
-      $nativeVersionChanged = ($newNativeVersion -ne $pubNativeVersion)
+
+      if ($isV2)
+      {
+          $dataTag        = "<!-- nf-data: contract-hash=$newChecksum -->"
+          $dataTagPattern = '<!-- nf-data: contract-hash=(0x[0-9A-Fa-f]+) -->'
+
+          # v2: there is no native version to bump, a change in the contract hash is enough
+          $nativeVersionChanged = $true
+          $valueRows = @(
+              "| Native contract hash | ``$pubChecksum`` | ``$newChecksum`` |"
+          )
+          $valuesChangedText = "The native contract hash of ``$packageName`` has changed."
+          $noIssueText = ":information_source: No Home tracking issue created for this run."
+      }
+      else
+      {
+          $dataTag        = "<!-- nf-data: native-version=$newNativeVersion checksum=$newChecksum -->"
+          $dataTagPattern = '<!-- nf-data: native-version=(\S+) checksum=(0x[0-9A-Fa-f]+) -->'
+          $nativeVersionChanged = ($newNativeVersion -ne $pubNativeVersion)
+          $valueRows = @(
+              "| Native version | ``$pubNativeVersion`` | ``$newNativeVersion`` |",
+              "| Checksum | ``$pubChecksum`` | ``$newChecksum`` |"
+          )
+          $valuesChangedText = "The checksum and/or native version of ``$packageName`` have changed."
+          $noIssueText = ":information_source: No Home tracking issue created for this run (requires both checksum and native version changes)."
+      }
+
+      # Checks if the values stored in a body marker match this build. Returns $null if there is no marker.
+      function Test-StoredValues([string]$body)
+      {
+          if ($body -notmatch $dataTagPattern)
+          {
+              return $null
+          }
+
+          if ($isV2)
+          {
+              return ($Matches[1] -ieq $newChecksum)
+          }
+
+          return (($Matches[2] -ieq $newChecksum) -and ($Matches[1] -eq $newNativeVersion))
+      }
+
       $shouldCreateIssue    = $checksumChanged -and $nativeVersionChanged
 
       # Fetch all PR comments once
@@ -287,7 +389,7 @@ steps:
 
       if ($shouldCreateIssue)
       {
-        Write-Host "Checksum and native version both changed — creating/updating Home tracking issue."
+        Write-Host "Native declaration values changed — creating/updating Home tracking issue."
 
         # Issue body
         $issueBody = @(
@@ -300,9 +402,7 @@ steps:
           "### Changed values",
           "",
           "| | Previously published | New (from $prLink) |",
-          "|---|---|---|",
-          "| Native version | ``$pubNativeVersion`` | ``$newNativeVersion`` |",
-          "| Checksum | ``$pubChecksum`` | ``$newChecksum`` |",
+          "|---|---|---|") + $valueRows + @(
           "",
           "### Stub files",
           "",
@@ -338,23 +438,19 @@ steps:
           $issueUrl    = $existingIssue.url
           $issueNumber = $existingIssue.number
 
-          if ($existingIssue.body -match $dataTagPattern)
-          {
-            $storedNativeVersion = $Matches[1]
-            $storedChecksum      = $Matches[2]
+          $storedMatch = Test-StoredValues $existingIssue.body
 
-            if (($storedChecksum -ieq $newChecksum) -and ($storedNativeVersion -eq $newNativeVersion))
-            {
-              Write-Host "Open issue exists with matching values — refreshing artifact URL: $issueUrl"
-            }
-            else
-            {
-              Write-Host "Open issue exists with changed values — updating: $issueUrl"
-            }
+          if ($null -eq $storedMatch)
+          {
+            Write-Host "Open issue exists without value marker — updating: $issueUrl"
+          }
+          elseif ($storedMatch)
+          {
+            Write-Host "Open issue exists with matching values — refreshing artifact URL: $issueUrl"
           }
           else
           {
-            Write-Host "Open issue exists without value marker — updating: $issueUrl"
+            Write-Host "Open issue exists with changed values — updating: $issueUrl"
           }
 
           gh issue edit $issueNumber --repo $homeRepo --body "$issueBody"
@@ -373,7 +469,7 @@ steps:
       }
       else
       {
-        Write-Host "Skipping Home issue creation because both checksum and native version did not change together."
+        Write-Host "Skipping Home issue creation because checksum and native version did not change together."
       }
 
       if ($issueUrl)
@@ -383,7 +479,7 @@ steps:
       }
       else
       {
-        $trackingLine = ":information_source: No Home tracking issue created for this run (requires both checksum and native version changes)."
+        $trackingLine = $noIssueText
         $detailsLine = ""
       }
 
@@ -394,12 +490,10 @@ steps:
               "",
               "## :warning: Native declaration update required!",
               "",
-              "The checksum and/or native version of ``$packageName`` have changed. The native declaration in [nf-interpreter](https://github.com/nanoframework/nf-interpreter) **must be updated** before this package can be released.",
+              "$valuesChangedText The native declaration in [nf-interpreter](https://github.com/nanoframework/nf-interpreter) **must be updated** before this package can be released.",
               "",
               "| | Previously published | This build |",
-              "|---|---|---|",
-              "| Native version | ``$pubNativeVersion`` | ``$newNativeVersion`` |",
-              "| Checksum | ``$pubChecksum`` | ``$newChecksum`` |",
+              "|---|---|---|") + $valueRows + @(
               "",
                 $trackingLine,
               "",
@@ -410,12 +504,11 @@ steps:
 
           if ($existingComment)
           {
-              if ($existingComment.body -match $dataTagPattern)
-              {
-                  $storedNativeVersion = $Matches[1]
-                  $storedChecksum      = $Matches[2]
+              $storedMatch = Test-StoredValues $existingComment.body
 
-                  if (($storedChecksum -ieq $newChecksum) -and ($storedNativeVersion -eq $newNativeVersion))
+              if ($null -ne $storedMatch)
+              {
+                  if ($storedMatch)
                   {
                       Write-Host "PR comment already up to date — skipping."
                   }
