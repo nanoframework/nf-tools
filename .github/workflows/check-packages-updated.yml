@@ -68,9 +68,57 @@ jobs:
             $solution = $solution[0]
           }
 
-          # restore & update
+          # restore
           nuget restore $solution -UseLockFile
-          nuget update $solution
+
+          # get projects in the solution
+          # (nuget update with a solution scans ALL packages.config under the solution folder, so update per project instead)
+          $solutionDir = $solution.DirectoryName
+
+          if($solution.Extension -eq ".slnx")
+          {
+            $projectPaths = ([xml](Get-Content $solution.FullName -Raw)).SelectNodes("//Project") | ForEach-Object { $_.Path }
+          }
+          else
+          {
+            $projectPaths = Select-String -Path $solution.FullName -Pattern '^Project\("\{[^}]+\}"\)\s*=\s*"[^"]*",\s*"([^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+          }
+
+          $projectPaths = $projectPaths | Where-Object { $_ -match 'proj$' }
+
+          # packages folder: use repositoryPath from NuGet.Config if set, otherwise default to 'packages' next to the solution
+          Push-Location $solutionDir
+          $repositoryPath = nuget config repositoryPath -AsPath 2>$null
+          Pop-Location
+
+          if([string]::IsNullOrWhiteSpace($repositoryPath))
+          {
+            $repositoryPath = Join-Path $solutionDir "packages"
+          }
+
+          # update NuGets of each project in the solution
+          foreach($projectPath in $projectPaths)
+          {
+            $projectFile = Join-Path $solutionDir ($projectPath -replace '[\\/]', [IO.Path]::DirectorySeparatorChar)
+            $packagesConfig = Join-Path (Split-Path $projectFile -Parent) "packages.config"
+
+            if(Test-Path $packagesConfig)
+            {
+              Write-Host "Checking NuGets for '$projectPath'"
+
+              nuget update $packagesConfig -RepositoryPath $repositoryPath
+
+              if($LASTEXITCODE -ne 0)
+              {
+                Write-Host "🛑 Failed to update NuGets for '$projectPath'! 🛑"
+                exit 1
+              }
+            }
+            else
+            {
+              Write-Host "Skipping '$projectPath' (no packages.config)"
+            }
+          }
 
           # check if anything was changed
           $repoStatus = "$(git status --short --porcelain)"
