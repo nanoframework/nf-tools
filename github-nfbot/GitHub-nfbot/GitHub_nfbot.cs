@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -128,7 +130,9 @@ namespace nanoFramework.Tools.GitHub
             dynamic payload = JsonConvert.DeserializeObject(requestBody);
 
             // setup OctoKit authentication
-            _octokitClient.Credentials = new Credentials(Environment.GetEnvironmentVariable("GITHUB_TOKEN"));
+            var configuration = executionContext.InstanceServices.GetService<IConfiguration>();
+            var githubToken = configuration?["GITHUB_TOKEN"];
+            _octokitClient.Credentials = new Credentials(githubToken);
 
             #region process PR events
 
