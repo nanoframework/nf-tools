@@ -166,7 +166,7 @@ namespace nanoFramework.Tools.GitHub
                         payload.pull_request.user.login == "github-actions[bot]")
                     {
                         // get PR
-                        Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                        Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.pull_request.number);
 
                         if (pr.Body.Contains(_tagVersionUpdate))
                         {
@@ -188,7 +188,7 @@ namespace nanoFramework.Tools.GitHub
                     else
                     {
                         // get PR
-                        Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                        Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.pull_request.number);
 
                         // fix title if needed
                         if (pr.Title.EndsWith("."))
@@ -254,7 +254,7 @@ namespace nanoFramework.Tools.GitHub
                     log.LogInformation($"Processing PR #{payload.pull_request.number} closed event...");
 
                     // get PR
-                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.pull_request.number);
 
                     // check for PR authored by nfbot or git-actions bot
                     if (pr.User.Login == "nfbot" ||
@@ -309,7 +309,7 @@ namespace nanoFramework.Tools.GitHub
                     await Task.Delay(TimeSpan.FromSeconds(3));
 
                     // was the PR merged?
-                    if (await _octokitClient.PullRequest.Merged(_gitOwner, payload.repository.name.ToString(), (int)payload.number))
+                    if (await _octokitClient.PullRequest.Merged(_gitOwner, payload.repository.name.ToString(), (int)payload.pull_request.number))
                     {
                         // yes, check contributors list
 
@@ -341,7 +341,7 @@ namespace nanoFramework.Tools.GitHub
                                 await _octokitClient.Issue.Comment.Create(
                                     _gitOwner,
                                     payload.repository.name.ToString(),
-                                    (int)payload.number,
+                                    (int)payload.pull_request.number,
                                     commentContent);
                             }
                         }
@@ -351,10 +351,10 @@ namespace nanoFramework.Tools.GitHub
                         // this branch was deleted without being merged, mark as invalid
 
                         // clear all labels
-                        await _octokitClient.Issue.Labels.RemoveAllFromIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                        await _octokitClient.Issue.Labels.RemoveAllFromIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.pull_request.number);
 
                         // add the invalid label
-                        await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.number, new string[] { _labelInvalidName });
+                        await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)payload.pull_request.number, new string[] { _labelInvalidName });
                     }
 
                     return new OkObjectResult("");
@@ -362,10 +362,10 @@ namespace nanoFramework.Tools.GitHub
                 else if (payload.action == "synchronize")
                 {
                     // get PR
-                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                    Octokit.PullRequest pr = await _octokitClient.PullRequest.Get(_gitOwner, payload.repository.name.ToString(), (int)payload.pull_request.number);
 
                     // get commits for this PR
-                    ReadOnlyCollection<Octokit.PullRequestCommit> prCommits = await _octokitClient.PullRequest.Commits(_gitOwner, payload.repository.name.ToString(), (int)payload.number);
+                    ReadOnlyCollection<Octokit.PullRequestCommit> prCommits = await _octokitClient.PullRequest.Commits(_gitOwner, payload.repository.name.ToString(), (int)payload.pull_request.number);
                     var commit = prCommits.First(c => c.Sha == payload.after.ToString());
 
                     ReadOnlyCollection<Octokit.Branch> branches = await _octokitClient.Repository.Branch.GetAll(_gitOwner, payload.repository.name.ToString());
