@@ -3,19 +3,6 @@
 // See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.TeamFoundation.Build.WebApi;
-using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.WebApi;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Octokit;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -26,6 +13,20 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Azure.Storage.Blobs;
+using Azure.Storage.Queues;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.TeamFoundation.Build.WebApi;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Octokit;
 
 namespace nanoFramework.Tools.GitHub
 {
@@ -117,6 +118,21 @@ namespace nanoFramework.Tools.GitHub
 
         static GitHubClient _octokitClient = new GitHubClient(new Octokit.ProductHeaderValue("nfbot"));
 
+        // queue and blob container used to decouple webhook reception from processing
+        private const string _webhookQueueName = "nfbot-webhooks";
+        private const string _webhookContainerName = "nfbot-webhooks";
+        private const string _storageConnectionSetting = "AzureWebJobsStorage";
+
+        // keep in sync with extensions.queues.maxDequeueCount in host.json
+        private const int _maxDequeueCount = 5;
+
+        // app setting with the Discord webhook URL for failure notifications
+        private const string _discordFailuresWebhookSetting = "DISCORD_FAILURES_WEBHOOK_URL";
+
+        /// <summary>
+        /// Receives GitHub webhook deliveries.
+        /// GitHub requires a response within 10 seconds, so the payload is stored and queued for processing by <see cref="ProcessQueuedWebhook"/>.
+        /// </summary>
         [Function("GitHub-nfbot")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
@@ -124,16 +140,333 @@ namespace nanoFramework.Tools.GitHub
         {
             ILogger log = executionContext.GetLogger("GitHub-nfbot");
 
-            log.LogInformation("GitHub nfbot processing request.");
+            string deliveryId = req.Headers["X-GitHub-Delivery"].FirstOrDefault();
+            string eventName = req.Headers["X-GitHub-Event"].FirstOrDefault() ?? "unknown";
+
+            if (string.IsNullOrEmpty(deliveryId))
+            {
+                deliveryId = $"local-{Guid.NewGuid()}";
+            }
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+
+            var configuration = executionContext.InstanceServices.GetService<IConfiguration>();
+
+            try
+            {
+                string context = DescribeDelivery(deliveryId, eventName, JsonConvert.DeserializeObject(requestBody));
+
+                string storageConnection = configuration?[_storageConnectionSetting];
+
+                // unique blob name, as a redelivery reuses the same delivery ID
+                string blobName = $"{deliveryId}-{Guid.NewGuid():N}.json";
+
+                var container = new BlobContainerClient(storageConnection, _webhookContainerName);
+                await container.CreateIfNotExistsAsync();
+                await container.GetBlobClient(blobName).UploadAsync(BinaryData.FromString(requestBody), overwrite: true);
+
+                // queue trigger expects base64 encoded messages
+                var queue = new QueueClient(
+                    storageConnection,
+                    _webhookQueueName,
+                    new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 });
+                await queue.CreateIfNotExistsAsync();
+
+                await queue.SendMessageAsync(JsonConvert.SerializeObject(new WebhookQueueMessage
+                {
+                    DeliveryId = deliveryId,
+                    EventName = eventName,
+                    BlobName = blobName
+                }));
+
+                log.LogInformation($"Queued {context} ({requestBody.Length} bytes) as {blobName}.");
+
+                return new AcceptedResult();
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Failed to queue delivery {deliveryId} ({eventName}): {DescribeException(ex)}");
+
+                dynamic failedPayload = null;
+
+                try
+                {
+                    failedPayload = JsonConvert.DeserializeObject(requestBody);
+                }
+                catch
+                {
+                    // payload isn't valid JSON, notify without links
+                }
+
+                await NotifyFailureAsync(
+                    configuration,
+                    $"Failed to queue GitHub '{eventName}' event",
+                    ex,
+                    deliveryId,
+                    failedPayload,
+                    log);
+
+                // let GitHub record the failure so the delivery can be redelivered
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        /// <summary>
+        /// Processes queued webhook deliveries.
+        /// Failures are retried by the Functions runtime (see host.json) and end in the poison queue after the last attempt.
+        /// </summary>
+        [Function("GitHub-nfbot-Processor")]
+        public static async Task ProcessQueuedWebhook(
+            [QueueTrigger(_webhookQueueName, Connection = _storageConnectionSetting)] string queueMessage,
+            FunctionContext executionContext)
+        {
+            ILogger log = executionContext.GetLogger("GitHub-nfbot");
+
+            executionContext.BindingContext.BindingData.TryGetValue("DequeueCount", out object dequeueCount);
+
+            WebhookQueueMessage message = JsonConvert.DeserializeObject<WebhookQueueMessage>(queueMessage);
+
+            IConfiguration configuration = executionContext.InstanceServices.GetService<IConfiguration>();
+
+            BlobContainerClient container = new BlobContainerClient(configuration?[_storageConnectionSetting], _webhookContainerName);
+            BlobClient blob = container.GetBlobClient(message.BlobName);
+
+            if (!await blob.ExistsAsync())
+            {
+                log.LogWarning($"Payload {message.BlobName} for delivery {message.DeliveryId} ({message.EventName}) not found. Assuming already processed.");
+                return;
+            }
+
+            string requestBody = (await blob.DownloadContentAsync()).Value.Content.ToString();
             dynamic payload = JsonConvert.DeserializeObject(requestBody);
 
-            // setup OctoKit authentication
-            var configuration = executionContext.InstanceServices.GetService<IConfiguration>();
-            var githubToken = configuration?["GITHUB_TOKEN"];
-            _octokitClient.Credentials = new Credentials(githubToken);
+            string context = $"{DescribeDelivery(message.DeliveryId, message.EventName, payload)} attempt {dequeueCount}";
 
+            log.LogInformation($"Processing {context}");
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+            try
+            {
+                // setup OctoKit authentication
+                string githubToken = configuration?["GITHUB_TOKEN"];
+                _octokitClient.Credentials = new Credentials(githubToken);
+
+                await ProcessPayloadAsync(payload, log);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, $"Failed processing {context} after {stopwatch.ElapsedMilliseconds}ms: {DescribeException(ex)}");
+
+                // notify only when retries are exhausted to avoid noise from transient failures
+                if (Convert.ToInt64(dequeueCount ?? 0) >= _maxDequeueCount)
+                {
+                    await NotifyFailureAsync(
+                        configuration,
+                        $"Failed processing GitHub '{message.EventName}' event after {dequeueCount} attempts",
+                        ex,
+                        message.DeliveryId,
+                        payload,
+                        log);
+                }
+
+                // rethrow so the runtime retries this message
+                throw;
+            }
+
+            log.LogInformation($"Completed {context} in {stopwatch.ElapsedMilliseconds}ms");
+
+            await blob.DeleteIfExistsAsync();
+        }
+
+        /// <summary>
+        /// Posts a failure notification card to Discord. Never throws.
+        /// </summary>
+        private static async Task NotifyFailureAsync(
+            IConfiguration configuration,
+            string title,
+            Exception exception,
+            string deliveryId,
+            dynamic payload,
+            ILogger log)
+        {
+            try
+            {
+                string webhookUrl = configuration?[_discordFailuresWebhookSetting];
+
+                if (string.IsNullOrEmpty(webhookUrl))
+                {
+                    log.LogWarning($"{_discordFailuresWebhookSetting} not set, skipping Discord failure notification.");
+                    return;
+                }
+
+                string repository = payload?.repository?.full_name?.ToString();
+
+                // link straight to the PR or issue when available, otherwise to the check run, commit or repository
+                string targetUrl = payload?.pull_request?.html_url?.ToString()
+                    ?? payload?.issue?.html_url?.ToString();
+
+                string target = payload?.pull_request?.number != null ? $"PR #{payload.pull_request.number}"
+                    : payload?.issue?.number != null ? $"issue #{payload.issue.number}"
+                    : null;
+
+                if (targetUrl == null
+                    && repository != null
+                    && payload?.check_run?.pull_requests is JArray checkRunPrs
+                    && checkRunPrs.Count > 0)
+                {
+                    target = $"PR #{checkRunPrs[0]["number"]}";
+                    targetUrl = $"https://github.com/{repository}/pull/{checkRunPrs[0]["number"]}";
+                }
+
+                targetUrl ??= payload?.check_run?.html_url?.ToString()
+                    ?? payload?.commit?.html_url?.ToString()
+                    ?? payload?.repository?.html_url?.ToString();
+
+                target ??= payload?.check_run != null ? "check run"
+                    : payload?.commit != null ? "commit"
+                    : null;
+
+                string reason = exception is ApiException apiException
+                    ? $"{exception.GetType().Name} (HTTP {(int)apiException.StatusCode}): {exception.Message}"
+                    : $"{exception.GetType().Name}: {exception.Message}";
+
+                if (reason.Length > 300)
+                {
+                    reason = reason.Substring(0, 297) + "...";
+                }
+
+                var description = new StringBuilder();
+
+                if (!string.IsNullOrEmpty(repository))
+                {
+                    description.Append($"**{repository}**");
+
+                    if (!string.IsNullOrEmpty(target))
+                    {
+                        description.Append($" {target}");
+                    }
+
+                    description.Append("\n");
+                }
+
+                description.Append(reason);
+
+                var discordPayload = new
+                {
+                    username = "nfbot",
+                    embeds = new[]
+                    {
+                        new
+                        {
+                            title = title.Length > 256 ? title.Substring(0, 256) : title,
+                            url = targetUrl,
+                            description = description.ToString(),
+                            color = 0xD32F2F,
+                            footer = new { text = $"Delivery {deliveryId}" },
+                            timestamp = DateTime.UtcNow.ToString("o")
+                        }
+                    }
+                };
+
+                using HttpClient client = new HttpClient();
+                using HttpResponseMessage response = await client.PostAsync(
+                    webhookUrl,
+                    new StringContent(
+                        JsonConvert.SerializeObject(discordPayload, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }),
+                        Encoding.UTF8,
+                        "application/json"));
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    log.LogWarning($"Discord failure notification returned {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
+                }
+            }
+            catch (Exception ex)
+            {
+                log.LogWarning(ex, $"Failed to send Discord failure notification: {ex.Message}");
+            }
+        }
+
+        private static string DescribeDelivery(string deliveryId, string eventName, dynamic payload)
+        {
+            string action = payload?.action?.ToString();
+            string repository = payload?.repository?.full_name?.ToString();
+            string number = payload?.pull_request?.number?.ToString()
+                ?? payload?.issue?.number?.ToString();
+            string sha = payload?.check_run?.head_sha?.ToString()
+                ?? payload?.sha?.ToString();
+
+            var description = new StringBuilder($"delivery {deliveryId} event '{eventName}'");
+
+            if (!string.IsNullOrEmpty(action))
+            {
+                description.Append($" action '{action}'");
+            }
+
+            if (!string.IsNullOrEmpty(repository))
+            {
+                description.Append($" repo {repository}");
+            }
+
+            if (!string.IsNullOrEmpty(number))
+            {
+                description.Append($" #{number}");
+            }
+
+            if (!string.IsNullOrEmpty(sha))
+            {
+                description.Append($" sha {sha}");
+            }
+
+            return description.ToString();
+        }
+
+        private static string DescribeException(Exception ex)
+        {
+            var description = new StringBuilder($"{ex.GetType().Name}: {ex.Message}");
+
+            if (ex is ApiException apiException)
+            {
+                description.Append($" | HTTP {(int)apiException.StatusCode} {apiException.StatusCode}");
+
+                if (apiException.ApiError?.Errors != null)
+                {
+                    foreach (var error in apiException.ApiError.Errors)
+                    {
+                        description.Append($" | error: {error.Resource}/{error.Field} {error.Code} {error.Message}");
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(apiException.HttpResponse?.Body?.ToString()))
+                {
+                    description.Append($" | response: {apiException.HttpResponse.Body}");
+                }
+
+                var rateLimit = apiException.HttpResponse?.ApiInfo?.RateLimit;
+
+                if (apiException is Octokit.RateLimitExceededException rateLimitException)
+                {
+                    description.Append($" | rate limit exceeded {rateLimitException.Remaining}/{rateLimitException.Limit}, resets {rateLimitException.Reset:u}");
+                }
+                else if (rateLimit != null)
+                {
+                    description.Append($" | rate limit {rateLimit.Remaining}/{rateLimit.Limit}, resets {rateLimit.Reset:u}");
+                }
+            }
+
+            if (ex.InnerException != null)
+            {
+                description.Append($" | inner {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+            }
+
+            return description.ToString();
+        }
+
+        private static async Task<IActionResult> ProcessPayloadAsync(
+            dynamic payload,
+            ILogger log)
+        {
             #region process PR events
 
             // process PR (make sure it's not a PR review)
@@ -267,7 +600,16 @@ namespace nanoFramework.Tools.GitHub
 
                         log.LogInformation($"Deleting URL \"heads/{originBranch}\"");
 
-                        await _octokitClient.Git.Reference.Delete(_gitOwner, payload.repository.name.ToString(), $"heads/{originBranch}");
+                        try
+                        {
+                            await _octokitClient.Git.Reference.Delete(_gitOwner, payload.repository.name.ToString(), $"heads/{originBranch}");
+                        }
+                        catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound
+                                                      || ex.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity)
+                        {
+                            // branch already deleted (e.g. auto-delete head branches), carry on with the remaining processing
+                            log.LogInformation($"Branch \"{originBranch}\" not deleted, probably already gone: {DescribeException(ex)}");
+                        }
 
                         // was this PR updating versions?
                         if (pr.Body.Contains(_tagVersionUpdate))
@@ -282,11 +624,11 @@ namespace nanoFramework.Tools.GitHub
 
                             log.LogInformation($"Found {openPrs.Count} open PRs");
 
-                            var currentBaseBranch = pr.Base.Ref;
+                            string currentBaseBranch = pr.Base.Ref;
 
                             // filter PRs created by our bots, only about version updates and earlier than the current PR
                             // include only PRs targeting the same base branch (main/develop/etc.)
-                            foreach (var pull in openPrs.Where(
+                            foreach (Octokit.PullRequest pull in openPrs.Where(
                                 p => (p.User.Login == "nfbot"
                                 || p.User.Login == "github-actions[bot]")
                                 && p.Body.Contains(_tagVersionUpdate)
@@ -324,7 +666,7 @@ namespace nanoFramework.Tools.GitHub
                         else
                         {
                             // grab contributors list
-                            string contributorsContent = UTF8Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, "Home", "CONTRIBUTORS.md"));
+                            string contributorsContent = Encoding.UTF8.GetString(await _octokitClient.Repository.Content.GetRawContent(_gitOwner, "Home", "CONTRIBUTORS.md"));
 
                             // try to find the user there
                             if (!contributorsContent.Contains($"https://github.com/{pr.User.Login}"))
@@ -623,12 +965,18 @@ namespace nanoFramework.Tools.GitHub
                         bool skipCIBuild = false;
 
                         // get required check runs for this branch
-                        BranchProtectionRequiredStatusChecks statusChecks = await _octokitClient.Repository.Branch.GetRequiredStatusChecks((long)payload.repository.id, pr.Base.Ref);
+                        BranchProtectionRequiredStatusChecks statusChecks = await GetRequiredStatusChecksAsync((long)payload.repository.id, pr.Base.Ref, log);
+
+                        if (statusChecks == null)
+                        {
+                            return new OkObjectResult("");
+                        }
 
                         // get status checks for PR
                         CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
 
-                        if (!checkRunStatus.CheckRuns.Any(cr => cr.Conclusion.Value != CheckConclusion.Success))
+                        // check runs still in progress have no conclusion
+                        if (!checkRunStatus.CheckRuns.Any(cr => !cr.Conclusion.HasValue || cr.Conclusion.Value != CheckConclusion.Success))
                         {
                             // all check runs are successful
                             if (checkRunStatus.TotalCount >= statusChecks.Contexts.Count)
@@ -759,7 +1107,7 @@ namespace nanoFramework.Tools.GitHub
                         else
                         {
                             // some are not success, quit
-                            log.LogInformation("Some check runs are NOT success, no point checking any further...");
+                            log.LogInformation("Some check runs are NOT success (or still in progress), no point checking any further...");
 
                         }
                     }
@@ -768,7 +1116,12 @@ namespace nanoFramework.Tools.GitHub
                         // PR it's a release branch
 
                         // get reuired check runs for this branch
-                        BranchProtectionRequiredStatusChecks statusChecks = await _octokitClient.Repository.Branch.GetRequiredStatusChecks((long)payload.repository.id, pr.Base.Ref);
+                        BranchProtectionRequiredStatusChecks statusChecks = await GetRequiredStatusChecksAsync((long)payload.repository.id, pr.Base.Ref, log);
+
+                        if (statusChecks == null)
+                        {
+                            return new OkObjectResult("");
+                        }
 
                         // get status checks for PR
                         CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
@@ -2555,15 +2908,48 @@ namespace nanoFramework.Tools.GitHub
                 commitMessage += "\r\n***NO_CI***";
             }
 
-            await _octokitClient.PullRequest.Merge(
-                pull_request.Base.Repository.Id,
-                pull_request.Number,
-                new MergePullRequest()
+            try
+            {
+                await _octokitClient.PullRequest.Merge(
+                    pull_request.Base.Repository.Id,
+                    pull_request.Number,
+                    new MergePullRequest()
+                    {
+                        MergeMethod = mergeMethod,
+                        CommitTitle = pull_request.Title,
+                        CommitMessage = commitMessage,
+                    });
+            }
+            catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.MethodNotAllowed
+                                          || ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                // several success events for the same commit can race to merge the PR
+                if (await _octokitClient.PullRequest.Merged(pull_request.Base.Repository.Id, pull_request.Number))
                 {
-                    MergeMethod = mergeMethod,
-                    CommitTitle = pull_request.Title,
-                    CommitMessage = commitMessage,
-                });
+                    log.LogInformation($"PR #{pull_request.Number} already merged: {DescribeException(ex)}");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        private static async Task<BranchProtectionRequiredStatusChecks> GetRequiredStatusChecksAsync(
+            long repositoryId,
+            string branch,
+            ILogger log)
+        {
+            try
+            {
+                return await _octokitClient.Repository.Branch.GetRequiredStatusChecks(repositoryId, branch);
+            }
+            catch (NotFoundException ex)
+            {
+                log.LogWarning($"No required status checks found for branch '{branch}', skipping: {DescribeException(ex)}");
+
+                return null;
+            }
         }
 
         public static async Task CloseIssue(
