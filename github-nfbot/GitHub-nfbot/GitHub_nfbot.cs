@@ -845,26 +845,25 @@ namespace nanoFramework.Tools.GitHub
                         // get PR combined status 
                         var prStatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.review.commit_id}/status", log);
 
-                        // get status checks for PR
-                        var checkSatus = await GetGitHubRequest($"{payload.pull_request.head.repo.url.ToString()}/commits/{payload.pull_request.head.sha}/check-runs", log);
+                        // get required check runs for the PR base branch
+                        JObject prBase = payload.pull_request.@base;
 
-                        bool allChecksSuccessfull = false;
+                        BranchProtectionRequiredStatusChecks statusChecks = await GetRequiredStatusChecksAsync(
+                            (long)payload.repository.id,
+                            prBase["ref"].ToString(),
+                            log);
 
-                        // iterate through all check status
-                        foreach (dynamic cr in (JArray)checkSatus.check_runs)
+                        if (statusChecks == null)
                         {
-                            if (cr.conclusion == "success")
-                            {
-                                // check pass
-                                allChecksSuccessfull = true;
-                            }
-                            else
-                            {
-                                // check failed, don't bother check others
-                                allChecksSuccessfull = false;
-                                break;
-                            }
+                            return new OkObjectResult("");
                         }
+
+                        // check if all required check runs are successful (non-required ones are ignored)
+                        bool allChecksSuccessfull = await AreRequiredChecksSuccessfulAsync(
+                            (string)payload.repository.name.ToString(),
+                            (string)payload.pull_request.head.sha.ToString(),
+                            statusChecks.Contexts,
+                            log);
 
                         if (allChecksSuccessfull)
                         {
@@ -972,143 +971,108 @@ namespace nanoFramework.Tools.GitHub
                             return new OkObjectResult("");
                         }
 
-                        // get status checks for PR
-                        CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
-
-                        // check runs still in progress have no conclusion
-                        if (!checkRunStatus.CheckRuns.Any(cr => !cr.Conclusion.HasValue || cr.Conclusion.Value != CheckConclusion.Success))
+                        // check if all required check runs are successful (non-required ones are ignored)
+                        if (await AreRequiredChecksSuccessfulAsync((string)payload.repository.name.ToString(), pr.Head.Sha, statusChecks.Contexts, log))
                         {
-                            // all check runs are successful
-                            if (checkRunStatus.TotalCount >= statusChecks.Contexts.Count)
-                            {
-                                int checksCount = 0;
+                            // get labels for this PR
+                            List<Label> prLabels = (List<Label>)pr.Labels;
 
-                                foreach (var statusCheck in statusChecks.Contexts)
+                            // check if this is running on samples repo
+                            if (!pr.HtmlUrl.ToString().Contains("nanoframework/Samples"))
+                            {
+                                // other repository
+
+                                // default is TO PUBLISH a new release 
+                                bool publishReleaseFlag = true;
+
+                                // check if this was a dependencies update OR a version update
+                                var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
+                                if (dependenciesLabel != null
+                                    || isVersionUpdate)
                                 {
-                                    if (checkRunStatus.CheckRuns.Any(c => c.Name == statusCheck))
+                                    // this is a dependencies/version update PR
+                                    var repo = await _octokitClient.Repository.Get(matchingPr.Head.Repository.Id);
+
+                                    if (repo.Topics.Contains(_topicNanoTool))
                                     {
-                                        checksCount++;
+                                        // this PR belongs to a tool repository
+                                        // nothing to do here
+                                        log.LogInformation($"PR belongs to nano tool, no more processing required.");
                                     }
                                     else
                                     {
-                                        log.LogInformation($"Status check {statusCheck} not reported as successful");
-                                    }
-                                }
+                                        // !! for libraries only!!
 
-                                if (checksCount >= statusChecks.Contexts.Count)
-                                {
-                                    // get labels for this PR
-                                    List<Label> prLabels = (List<Label>)pr.Labels;
+                                        // get files changed in this PR
+                                        IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
 
-                                    // check if this is running on samples repo
-                                    if (!pr.HtmlUrl.ToString().Contains("nanoframework/Samples"))
-                                    {
-                                        // other repository
+                                        // check if nuspec was changed (reason to publish a new release)
+                                        // otherwise skip as they are either in the Test or Benchmark or development dependencies
+                                        bool nuspecWasChanged = prFiles.Any(f => f.FileName.EndsWith(".nuspec"));
 
-                                        // default is TO PUBLISH a new release 
-                                        bool publishReleaseFlag = true;
-
-                                        // check if this was a dependencies update OR a version update
-                                        var dependenciesLabel = prLabels.FirstOrDefault(l => l.Name.ToString() == _labelTypeDependenciesName);
-                                        if (dependenciesLabel != null
-                                            || isVersionUpdate)
+                                        if (!nuspecWasChanged)
                                         {
-                                            // this is a dependencies/version update PR
-                                            var repo = await _octokitClient.Repository.Get(matchingPr.Head.Repository.Id);
+                                            log.LogInformation($"nuspec wasn't changed skipping CI build.");
 
-                                            if (repo.Topics.Contains(_topicNanoTool))
-                                            {
-                                                // this PR belongs to a tool repository
-                                                // nothing to do here
-                                                log.LogInformation($"PR belongs to nano tool, no more processing required.");
-                                            }
-                                            else
-                                            {
-                                                // !! for libraries only!!
+                                            // DON'T publish a new release
+                                            publishReleaseFlag = false;
 
-                                                // get files changed in this PR
-                                                IReadOnlyList<PullRequestFile> prFiles = await _octokitClient.PullRequest.Files(_gitOwner, payload.repository.name.ToString(), (int)pr.Number);
-
-                                                // check if nuspec was changed (reason to publish a new release)
-                                                // otherwise skip as they are either in the Test or Benchmark or development dependencies
-                                                var nuspecWasChanged = prFiles.Any(f => f.FileName.EndsWith(".nuspec"));
-
-                                                if (!nuspecWasChanged)
-                                                {
-                                                    log.LogInformation($"nuspec wasn't changed skipping CI build.");
-
-                                                    // DON'T publish a new release
-                                                    publishReleaseFlag = false;
-
-                                                    // skip build
-                                                    skipCIBuild = true;
-                                                }
-                                            }
-                                        }
-
-                                        // add publish release, unless labeled with SKIP BUILD
-                                        if (publishReleaseFlag &&
-                                            !prLabels.Any(l => l.Name.ToString() == _labelCiSkipBuildName))
-                                        {
-                                            // add publish release label
-
-                                            log.LogInformation($"Adding 'Publish release flag to PR.");
-
-                                            // add the Publish release label
-                                            await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)pr.Number, new string[] { _labelCiPublishReleaseName });
-                                        }
-
-                                        // check for SKIP BUILD label
-                                        if (prLabels.Any(l => l.Name.ToString() == _labelCiSkipBuildName))
-                                        {
-                                            // set this, no matter what
+                                            // skip build
                                             skipCIBuild = true;
                                         }
                                     }
+                                }
 
-                                    // all checks completed successfully
-                                    // merge PR, unless labeled with DON'T MERGE
-                                    if (prLabels.Any(l => l.Name.ToString() == _labelDontMergeName))
-                                    {
-                                        log.LogInformation("NOT merging PR because it's labeled with DON'T MERGE.");
-                                    }
-                                    else
-                                    {
-                                        // check if there is information about the mergeability of the PR
-                                        // and, if there is, if it can be merged
-                                        if (pr.Mergeable.HasValue && !pr.Mergeable.Value)
-                                        {
-                                            log.LogInformation($"PR can't be merged: {pr.MergeableState}");
-                                        }
-                                        else
-                                        {
-                                            // SQUASH if it's a regular PR
-                                            // MERGE if it's a release candidate merge
-                                            await MergePrWithStrategy(
-                                                pr,
-                                                skipCIBuild,
-                                                log,
-                                                isReleaseCandidate ? PullRequestMergeMethod.Merge : PullRequestMergeMethod.Squash);
-                                        }
-                                    }
-                                }
-                                else
+                                // add publish release, unless labeled with SKIP BUILD
+                                if (publishReleaseFlag &&
+                                    !prLabels.Any(l => l.Name.ToString() == _labelCiSkipBuildName))
                                 {
-                                    // not all required status check are missing, quit
-                                    log.LogInformation($"Check runs still missing, no point checking any further...");
+                                    // add publish release label
+
+                                    log.LogInformation($"Adding 'Publish release flag to PR.");
+
+                                    // add the Publish release label
+                                    await _octokitClient.Issue.Labels.AddToIssue(_gitOwner, payload.repository.name.ToString(), (int)pr.Number, new string[] { _labelCiPublishReleaseName });
                                 }
+
+                                // check for SKIP BUILD label
+                                if (prLabels.Any(l => l.Name.ToString() == _labelCiSkipBuildName))
+                                {
+                                    // set this, no matter what
+                                    skipCIBuild = true;
+                                }
+                            }
+
+                            // all checks completed successfully
+                            // merge PR, unless labeled with DON'T MERGE
+                            if (prLabels.Any(l => l.Name.ToString() == _labelDontMergeName))
+                            {
+                                log.LogInformation("NOT merging PR because it's labeled with DON'T MERGE.");
                             }
                             else
                             {
-                                // still some missing, quit
-                                log.LogInformation($"Check runs still missing, no point checking any further...");
+                                // check if there is information about the mergeability of the PR
+                                // and, if there is, if it can be merged
+                                if (pr.Mergeable.HasValue && !pr.Mergeable.Value)
+                                {
+                                    log.LogInformation($"PR can't be merged: {pr.MergeableState}");
+                                }
+                                else
+                                {
+                                    // SQUASH if it's a regular PR
+                                    // MERGE if it's a release candidate merge
+                                    await MergePrWithStrategy(
+                                        pr,
+                                        skipCIBuild,
+                                        log,
+                                        isReleaseCandidate ? PullRequestMergeMethod.Merge : PullRequestMergeMethod.Squash);
+                                }
                             }
                         }
                         else
                         {
                             // some are not success, quit
-                            log.LogInformation("Some check runs are NOT success (or still in progress), no point checking any further...");
-
+                            log.LogInformation("Some required check runs are NOT success (or still in progress), no point checking any further...");
                         }
                     }
                     else if (pr.Base.Ref.ToString().StartsWith("release-"))
@@ -1123,11 +1087,12 @@ namespace nanoFramework.Tools.GitHub
                             return new OkObjectResult("");
                         }
 
-                        // get status checks for PR
-                        CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, payload.repository.name.ToString(), pr.Head.Sha);
-
-                        // check if ALL check runs are in place
-                        if (checkRunStatus.TotalCount == statusChecks.Contexts.Where(c => !c.Contains("license/cla")).Count())
+                        // check if all required check runs are successful (non-required ones are ignored)
+                        if (await AreRequiredChecksSuccessfulAsync(
+                            (string)payload.repository.name.ToString(),
+                            pr.Head.Sha,
+                            statusChecks.Contexts.Where(c => !c.Contains("license/cla")),
+                            log))
                         {
                             // need an APPROVED review
 
@@ -2950,6 +2915,45 @@ namespace nanoFramework.Tools.GitHub
 
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Checks if all the required status checks have a successful check run for the given commit.
+        /// Check runs that are not required are ignored.
+        /// </summary>
+        private static async Task<bool> AreRequiredChecksSuccessfulAsync(
+            string repositoryName,
+            string sha,
+            IEnumerable<string> requiredContexts,
+            ILogger log)
+        {
+            CheckRunsResponse checkRunStatus = await _octokitClient.Check.Run.GetAllForReference(_gitOwner, repositoryName, sha);
+
+            bool allSuccessful = true;
+
+            foreach (string requiredContext in requiredContexts)
+            {
+                // consider only the latest run for each check (reruns)
+                CheckRun checkRun = checkRunStatus.CheckRuns
+                    .Where(c => c.Name == requiredContext)
+                    .OrderByDescending(c => c.Id)
+                    .FirstOrDefault();
+
+                if (checkRun == null)
+                {
+                    log.LogInformation($"Required status check {requiredContext} not reported");
+
+                    allSuccessful = false;
+                }
+                else if (!checkRun.Conclusion.HasValue || checkRun.Conclusion.Value != CheckConclusion.Success)
+                {
+                    log.LogInformation($"Required status check {requiredContext} not successful (status: {checkRun.Status}, conclusion: {checkRun.Conclusion?.StringValue ?? "none"})");
+
+                    allSuccessful = false;
+                }
+            }
+
+            return allSuccessful;
         }
 
         public static async Task CloseIssue(
