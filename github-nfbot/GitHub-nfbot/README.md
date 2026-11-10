@@ -47,6 +47,8 @@ Retry behaviour is configured in [host.json](host.json) (`extensions.queues`): 5
 
 ## Logging and troubleshooting
 
+PR template validation uses a repository-specific descriptor when available, otherwise the org template. `nano-website` uses its own headings and checkbox lists without requiring a Motivation and Context section; validation reviews link to the website's template.
+
 Each delivery is logged with its context, e.g.:
 
 ```text

@@ -1933,6 +1933,7 @@ namespace nanoFramework.Tools.GitHub
         private sealed class PrTemplate
         {
             public string Name { get; }
+            public string TemplateUrl { get; }
             public string[] RequiredSections { get; }
             public string[] OptionalSections { get; }
             // Identifying prefix of each canonical "Types of changes" checkbox line.
@@ -1950,9 +1951,11 @@ namespace nanoFramework.Tools.GitHub
                 string[] optionalSections,
                 string[] typesOfChangesLines,
                 string[] checklistLines,
-                bool requireAtLeastOneTypeTicked)
+                bool requireAtLeastOneTypeTicked,
+                string templateUrl = _prTemplateOrgUrl)
             {
                 Name = name;
+                TemplateUrl = templateUrl;
                 RequiredSections = requiredSections;
                 OptionalSections = optionalSections;
                 TypesOfChangesLines = typesOfChangesLines;
@@ -2056,6 +2059,34 @@ namespace nanoFramework.Tools.GitHub
                 },
                 requireAtLeastOneTypeTicked: true);
 
+            public static readonly PrTemplate NanoWebsite = new PrTemplate(
+                name: "NanoWebsite",
+                requiredSections: new[] { "Description", "Types of changes", "Checklist" },
+                optionalSections: new string[0],
+                typesOfChangesLines: new[]
+                {
+                    "New blog post",
+                    "New page",
+                    "Content update",
+                    "Improvement",
+                    "Bug fix",
+                    "New feature",
+                    "Breaking change",
+                    "Config and build",
+                    "Dependencies",
+                    "Unit Tests",
+                    "Documentation",
+                },
+                checklistLines: new[]
+                {
+                    "I have read the",
+                    "I have followed",
+                    "I have reviewed the affected pages locally or in a PR preview",
+                    "I have verified code, dependency or build changes locally",
+                },
+                requireAtLeastOneTypeTicked: true,
+                templateUrl: "https://github.com/nanoframework/nano-website/blob/main/.github/PULL_REQUEST_TEMPLATE.md");
+
             // Repo -> descriptor dispatch. Repos not in the map use OrgDefault.
             private static readonly IReadOnlyDictionary<string, PrTemplate> _byRepo =
                 new Dictionary<string, PrTemplate>(StringComparer.OrdinalIgnoreCase)
@@ -2063,6 +2094,7 @@ namespace nanoFramework.Tools.GitHub
                     ["nf-interpreter"] = NfInterpreter,
                     ["Home"] = Home,
                     ["Samples"] = Samples,
+                    ["nano-website"] = NanoWebsite,
                 };
 
             public static PrTemplate ForRepo(string repoName)
@@ -2237,7 +2269,7 @@ namespace nanoFramework.Tools.GitHub
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"🤖 Hey @{author}, your PR description doesn't match our [PR template]({_prTemplateOrgUrl}) and that breaks our auto-labeling.");
+            sb.AppendLine($"🤖 Hey @{author}, your PR description doesn't match our [PR template]({template.TemplateUrl}) and that breaks our auto-labeling.");
             sb.AppendLine();
             sb.AppendLine("Here's what's off:");
 
@@ -2280,7 +2312,7 @@ namespace nanoFramework.Tools.GitHub
             }
 
             sb.AppendLine();
-            sb.AppendLine($"Please paste the template from the [link above]({_prTemplateOrgUrl}) and fill it in — keep all the checkbox lines even if they don't apply (just leave them unticked). 🙏");
+            sb.AppendLine($"Please paste the template from the [link above]({template.TemplateUrl}) and fill it in — keep all the checkbox lines even if they don't apply (just leave them unticked). 🙏");
             sb.AppendLine();
 
             // collapsed AI-fixing prompt
@@ -2289,7 +2321,7 @@ namespace nanoFramework.Tools.GitHub
             sb.AppendLine();
             sb.AppendLine("```");
             sb.AppendLine("You are fixing a GitHub pull request description that failed the nanoFramework PR template check.");
-            sb.AppendLine($"Rewrite the PR body so that it strictly matches the template at {_prTemplateOrgUrl} (variant: \"{template.Name}\").");
+            sb.AppendLine($"Rewrite the PR body so that it strictly matches the template at {template.TemplateUrl} (variant: \"{template.Name}\").");
             sb.AppendLine();
             sb.AppendLine("Rules:");
             sb.AppendLine($"1. Keep these top-level headings, in this order: {string.Join(", ", template.RequiredSections.Select(s => "## " + s))}.");
@@ -2303,7 +2335,10 @@ namespace nanoFramework.Tools.GitHub
             {
                 sb.AppendLine($"   - [ ] {line} ...");
             }
-            sb.AppendLine("4. `## Description` must be non-empty. `## Motivation and Context` may be empty when there's nothing extra to add.");
+            sb.AppendLine("4. `## Description` must be non-empty."
+                + (template.RequiredSections.Contains("Motivation and Context")
+                    ? " `## Motivation and Context` may be empty when there's nothing extra to add."
+                    : string.Empty));
             sb.AppendLine("5. Do NOT invent new facts — preserve whatever real content the author already wrote.");
             sb.AppendLine("6. Do NOT remove checkbox lines just because they don't apply; leave them unticked.");
             sb.AppendLine();
