@@ -21,6 +21,7 @@ The following tools are available under the [tools](tools) folder:
 
 | Tool | Folder | Description |
 |------|--------|-------------|
+| `nano-migrate` (NanoMigrate) | [tools/migrate](tools/migrate) | Converts legacy `.nfproj` projects to SDK-style, single-repo or across an entire fleet. Driven by the companion [migration skill](skills/nanoframework-sdk-migration). |
 | `nanodu` (Dependency Updater) | [tools/DependencyUpdater](tools/DependencyUpdater) | Updates NuGet dependencies and related metadata for .NET nanoFramework solutions. |
 | `nanovc` (VersionCop) | [tools/VersionCop](tools/VersionCop) | Validates package version consistency and reports version mismatches in nanoFramework builds. |
 | `NanoProfiler` | [tools/Profiler](tools/Profiler) | Windows profiler application to inspect runtime and memory behavior of nanoFramework targets. |

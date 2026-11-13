@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>nanoFramework.Migrate.Core</RootNamespace>
+    <AssemblyName>NanoMigrate.Core</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- NuGet package metadata. Pack explicitly (GeneratePackageOnBuild off). -->
+  <PropertyGroup>
+    <PackageId>nanoFramework.Migrate.Core</PackageId>
+    <Title>nanoFramework Migrate (Core)</Title>
+    <Description>Conversion engine that migrates legacy nanoFramework .nfproj projects to the SDK-style MSBuild project system: folds packages.config into PackageReference and .nuspec metadata into Pack properties. Console-free library; see the nano-migrate CLI for an interactive front end.</Description>
+    <Authors>nanoFramework</Authors>
+    <Company>nanoFramework</Company>
+    <PackageProjectUrl>https://github.com/nanoframework/nf-tools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nanoframework/nf-tools</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>nanoFramework;MSBuild;SDK;migration;nfproj;IoT;embedded;C#</PackageTags>
+    <Copyright>Copyright (c) .NET Foundation and Contributors</Copyright>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Git-height versioning (same scheme as the other nf-tools): CI packs with
+         -p:PublicRelease=true to produce a properly versioned package. -->
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.9.50">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Official .NET Foundation solution (.sln/.slnx) reader/writer. We parse and
+         re-serialize solutions through this library rather than hand-rolling the
+         line/XML format, so only the nfproj->csproj retarget logic lives here. -->
+    <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
+  </ItemGroup>
+
+</Project>
