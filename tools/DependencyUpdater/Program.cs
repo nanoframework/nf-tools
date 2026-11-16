@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
@@ -29,6 +30,7 @@ namespace nanoFramework.Tools.DependencyUpdater
         private static string _nuGetConfigFile;
 
         static readonly GitHubClient _octokitClient = new(new ProductHeaderValue("nanodu"));
+        private static readonly HttpClient _nuGetClient = new();
         private static RunningEnvironment _runningEnvironment;
         private static string _gitHubAuth;
         private static string[] _solutionsExclusionList;
@@ -640,7 +642,7 @@ namespace nanoFramework.Tools.DependencyUpdater
 
                     if (libraryName == "Samples")
                     {
-                        UpdateProject(projectToUpdate, repositoryPath, ref updateCount, ref commitMessage);
+                        UpdateProject(projectToUpdate, repositoryPath, packageList, packageUpdateCache, ref updateCount, ref commitMessage);
                     }
                     else
                     {
@@ -702,7 +704,12 @@ namespace nanoFramework.Tools.DependencyUpdater
                             string updateResult = "";
                             string updateParameters;
 
-                            if ((stablePackages && !packageName.StartsWith("UnitsNet."))
+                            if (IsSourceLinkPackage(packageName))
+                            {
+                                updateParameters = GetSourceLinkUpdateParameters(projectToUpdate, packageName, repositoryPath,
+                                    packageUpdateCache[(packageName, packageOriginVersion)]);
+                            }
+                            else if ((stablePackages && !packageName.StartsWith("UnitsNet."))
                                 || (package.IsDevelopmentDependency && !packageName.StartsWith("nanoFramework.TestFramework")))
                             {
                                 // don't allow prerelease for:
@@ -1043,8 +1050,12 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// Builds a cache of available package updates for all unique packages in the solution.
         /// Returns a dictionary mapping (packageId, currentVersion) to availableVersion (or null if no update available).
         /// </summary>
-        private static Dictionary<(string Id, string Version), string> BuildPackageUpdateCache(string[] packageConfigs, bool stablePackages)
+        internal static Dictionary<(string Id, string Version), string> BuildPackageUpdateCache(
+            string[] packageConfigs,
+            bool stablePackages,
+            Func<string, bool, NuGetVersion> getLatestVersion = null)
         {
+            getLatestVersion ??= GetLatestListedVersion;
             var updateCache = new Dictionary<(string Id, string Version), string>();
             var uniquePackages = new Dictionary<(string Id, string Version), bool>(); // Track if development dependency
 
@@ -1085,13 +1096,14 @@ namespace nanoFramework.Tools.DependencyUpdater
                 {
                     // Determine if we should include prerelease versions for this package
                     bool useOnlyStable = stablePackages
+                        || IsSourceLinkPackage(packageId)
                         || (isDevelopmentDependency && !packageId.StartsWith("nanoFramework.TestFramework"));
 
-                    var latestVersion = GetLatestListedVersion(packageId, !useOnlyStable);
+                    var latestVersion = getLatestVersion(packageId, !useOnlyStable);
 
                     if (latestVersion is not null
                         && NuGetVersion.TryParse(packageVersion, out NuGetVersion currentVersion)
-                        && currentVersion < latestVersion)
+                        && (IsSourceLinkPackage(packageId) ? currentVersion != latestVersion : currentVersion < latestVersion))
                     {
                         updateCache[(packageId, packageVersion)] = latestVersion.ToString();
                         Console.WriteLine($"  ⬆️  {packageId}: {packageVersion} → {latestVersion}");
@@ -1101,7 +1113,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                         updateCache[(packageId, packageVersion)] = null;
                     }
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!IsSourceLinkPackage(packageId))
                 {
                     Console.WriteLine($"WARNING: Failed to fetch version info for {packageId}. Exception: {ex.Message}");
                     updateCache[(packageId, packageVersion)] = null;
@@ -1124,6 +1136,16 @@ namespace nanoFramework.Tools.DependencyUpdater
 
         private static NuGetVersion GetLatestListedVersion(string packageId, bool includePrerelease)
         {
+            if (IsSourceLinkPackage(packageId))
+            {
+                var packageIndex = _nuGetClient.GetStringAsync(
+                    $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLowerInvariant()}/index.json").GetAwaiter().GetResult();
+                using var index = JsonDocument.Parse(packageIndex);
+
+                return NuGetVersion.Parse(GetLatestSourceLinkVersion(packageId,
+                    index.RootElement.GetProperty("versions").EnumerateArray().Select(value => value.GetString())));
+            }
+
             using var httpClient = new HttpClient();
 
             string url = $"https://azuresearch-usnc.nuget.org/query?q=packageid:{Uri.EscapeDataString(packageId)}&prerelease={includePrerelease.ToString().ToLowerInvariant()}&semVerLevel=2.0.0";
@@ -1256,17 +1278,70 @@ namespace nanoFramework.Tools.DependencyUpdater
             return null;
         }
 
-        private static void UpdateProject(string projectToUpdate, string repositoryPath, ref int updateCount, ref StringBuilder commitMessage)
+        internal static bool IsSourceLinkPackage(string packageName)
+        {
+            return string.Equals(packageName, "Microsoft.Build.Tasks.Git", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(packageName, "Microsoft.SourceLink.Common", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(packageName, "Microsoft.SourceLink.GitHub", StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static string GetLatestSourceLinkVersion(string packageName, IEnumerable<string> versions)
+        {
+            var latestVersion = versions
+                .Select(NuGetVersion.Parse)
+                .Where(version => version.Major == 10 && !version.IsPrerelease)
+                .OrderByDescending(version => version)
+                .FirstOrDefault();
+
+            return latestVersion?.ToNormalizedString()
+                ?? throw new InvalidOperationException($"No stable 10.x version of {packageName} was found on nuget.org.");
+        }
+
+        private static string GetSourceLinkUpdateParameters(string projectToUpdate, string packageName, string repositoryPath, string version)
+        {
+            // pin SourceLink to v10.x
+            return $"\"{projectToUpdate}\" -Id {packageName} -Version {version} {repositoryPath} -FileConflictAction Overwrite -Source \"https://api.nuget.org/v3/index.json\"";
+        }
+
+        private static void UpdateProject(string projectToUpdate, string repositoryPath, IEnumerable<PackageReference> packages,
+            Dictionary<(string Id, string Version), string> packageUpdateCache, ref int updateCount, ref StringBuilder commitMessage)
         {
             string updateResult = "";
+            var sourceLinkPackages = packages.Where(p => IsSourceLinkPackage(p.PackageIdentity.Id)).ToList();
+            var otherPackages = packages.Where(p => !IsSourceLinkPackage(p.PackageIdentity.Id)).ToList();
 
-            if (!RunNugetCLI(
-                "update",
-                $"\"{projectToUpdate}\" {repositoryPath} -FileConflictAction Overwrite",
-                true,
-                ref updateResult))
+            if (sourceLinkPackages.Count == 0 || otherPackages.Count > 0)
             {
-                Environment.Exit(1);
+                var packageFilter = sourceLinkPackages.Count == 0
+                    ? ""
+                    : $" -Id {string.Join(";", otherPackages.Select(p => p.PackageIdentity.Id))}";
+
+                if (!RunNugetCLI(
+                    "update",
+                    $"\"{projectToUpdate}\" {repositoryPath} -FileConflictAction Overwrite{packageFilter}",
+                    true,
+                    ref updateResult))
+                {
+                    Environment.Exit(1);
+                }
+            }
+
+            foreach (var package in sourceLinkPackages)
+            {
+                var currentVersion = package.PackageIdentity.Version.ToNormalizedString();
+                var targetVersion = packageUpdateCache[(package.PackageIdentity.Id, currentVersion)] ?? currentVersion;
+
+                string sourceLinkResult = "";
+                if (!RunNugetCLI(
+                    "update",
+                    GetSourceLinkUpdateParameters(projectToUpdate, package.PackageIdentity.Id, repositoryPath, targetVersion),
+                    true,
+                    ref sourceLinkResult))
+                {
+                    Environment.Exit(1);
+                }
+
+                updateResult += Environment.NewLine + sourceLinkResult;
             }
 
             string updateRegex = "(?:Successfully installed \\')(?'package'.+)(?:' to )";
