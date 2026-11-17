@@ -8,6 +8,176 @@ namespace DependencyUpdater.Tests;
 [TestClass]
 public class ProgramTests
 {
+    private string _testDirectory = null!;
+
+    [TestInitialize]
+    public void Initialize()
+    {
+        _testDirectory = Path.Combine(Path.GetTempPath(), $"nanodu-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_testDirectory);
+    }
+
+    [TestCleanup]
+    public void Cleanup()
+    {
+        Directory.Delete(_testDirectory, true);
+    }
+
+    [TestMethod]
+    [DataRow("Library.sln")]
+    [DataRow("Library.SLN")]
+    [DataRow("Library.slnx")]
+    [DataRow("Library.SLNX")]
+    public void ResolveSolutionTargets_Should_SelectOnlyTopLevelSolution(string solutionName)
+    {
+        string solutionPath = Path.Combine(_testDirectory, solutionName);
+        File.WriteAllText(solutionPath, "");
+        File.WriteAllText(Path.Combine(_testDirectory, "Ignored.slnx.bak"), "");
+        string nestedDirectory = Directory.CreateDirectory(Path.Combine(_testDirectory, "nested")).FullName;
+        File.WriteAllText(Path.Combine(nestedDirectory, solutionName), "");
+        File.WriteAllText(Path.Combine(nestedDirectory, "Other.sln"), "");
+
+        var result = nanoFramework.Tools.DependencyUpdater.Program.ResolveSolutionTargets(
+            _testDirectory, false, false, null!);
+
+        Assert.IsTrue(result.SolutionsToCheck);
+        CollectionAssert.AreEqual(new[] { solutionPath }, result.Targets);
+        CollectionAssert.AreEqual(new[] { solutionPath },
+            nanoFramework.Tools.DependencyUpdater.Program.CollectSolutions(_testDirectory, result.Targets));
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void ResolveSolutionTargets_Should_FailWhenNoTopLevelSolutionsExist(bool hasNestedSolution)
+    {
+        if (hasNestedSolution)
+        {
+            string nestedDirectory = Directory.CreateDirectory(Path.Combine(_testDirectory, "nested")).FullName;
+            File.WriteAllText(Path.Combine(nestedDirectory, "Library.sln"), "");
+        }
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            nanoFramework.Tools.DependencyUpdater.Program.ResolveSolutionTargets(
+                _testDirectory, false, false, Array.Empty<string>()));
+
+        StringAssert.Contains(exception.Message, "No solution found");
+        StringAssert.Contains(exception.Message, "--solutions-to-check");
+        StringAssert.Contains(exception.Message, "--repos-to-update");
+    }
+
+    [TestMethod]
+    [DataRow("First.sln", "Second.sln")]
+    [DataRow("First.slnx", "Second.slnx")]
+    [DataRow("Library.sln", "Library.slnx")]
+    public void ResolveSolutionTargets_Should_FailWhenMultipleSolutionsExist(string first, string second)
+    {
+        File.WriteAllText(Path.Combine(_testDirectory, first), "");
+        File.WriteAllText(Path.Combine(_testDirectory, second), "");
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            nanoFramework.Tools.DependencyUpdater.Program.ResolveSolutionTargets(
+                _testDirectory, false, false, Array.Empty<string>()));
+
+        StringAssert.Contains(exception.Message, "Multiple solution files");
+        StringAssert.Contains(exception.Message, first);
+        StringAssert.Contains(exception.Message, second);
+        StringAssert.Contains(exception.Message, "--solutions-to-check");
+    }
+
+    [TestMethod]
+    [DataRow(true, false)]
+    [DataRow(false, true)]
+    public void ResolveSolutionTargets_Should_PreserveExplicitWorkflow(bool solutionsToCheck, bool reposToUpdate)
+    {
+        var result = nanoFramework.Tools.DependencyUpdater.Program.ResolveSolutionTargets(
+            Path.Combine(_testDirectory, "DoesNotExist"), solutionsToCheck, reposToUpdate,
+            new[] { "ExplicitTarget", "", null! });
+
+        Assert.AreEqual(solutionsToCheck, result.SolutionsToCheck);
+        CollectionAssert.AreEqual(new[] { "ExplicitTarget" }, result.Targets);
+    }
+
+    [TestMethod]
+    [DataRow("Library.sln")]
+    [DataRow("Library.slnx")]
+    [DataRow("*.sln")]
+    [DataRow("*.slnx")]
+    public void CollectSolutions_Should_PreserveExplicitRecursiveSearch(string target)
+    {
+        string nestedDirectory = Directory.CreateDirectory(Path.Combine(_testDirectory, "nested")).FullName;
+        string solutionPath = Path.Combine(nestedDirectory, $"Library{Path.GetExtension(target)}");
+        File.WriteAllText(solutionPath, "");
+        File.WriteAllText(Path.Combine(nestedDirectory, "Ignored.txt"), "");
+
+        CollectionAssert.AreEqual(new[] { solutionPath },
+            nanoFramework.Tools.DependencyUpdater.Program.CollectSolutions(_testDirectory, new[] { target }));
+    }
+
+    [TestMethod]
+    [DataRow("Library.nfproj", "")]
+    [DataRow("src/Library.nfproj", "src")]
+    [DataRow(@"src\Library.nfproj", "src")]
+    [DataRow("src/../Library.nfproj", "")]
+    public void FindProjectForPackageConfig_Should_ResolveSlnxProjectPaths(string projectPath, string projectDirectory)
+    {
+        string solutionContent = $"""
+            <Solution>
+              <Folder Name="/Libraries/">
+                <Project Path="{projectPath}" />
+              </Folder>
+              <Project Path="Other/Other.csproj" />
+            </Solution>
+            """;
+
+        var result = nanoFramework.Tools.DependencyUpdater.Program.FindProjectForPackageConfig(
+            Path.Combine(_testDirectory, "Library.slnx"), solutionContent,
+            Path.Combine(_testDirectory, projectDirectory, "packages.config"));
+
+        Assert.IsTrue(result.HasValue);
+        Assert.AreEqual(Path.Combine(_testDirectory, projectDirectory, "Library.nfproj"), result.Value.Path);
+        Assert.AreEqual("Library", result.Value.Name);
+    }
+
+    [TestMethod]
+    [DataRow("Unrelated")]
+    [DataRow("Other")]
+    public void FindProjectForPackageConfig_Should_IgnoreProjectsNotInSlnx(string projectDirectory)
+    {
+        const string solutionContent = """
+            <Solution>
+              <Project Path="src/Library.nfproj" />
+              <Project Path="Other/Other.csproj" />
+            </Solution>
+            """;
+
+        var result = nanoFramework.Tools.DependencyUpdater.Program.FindProjectForPackageConfig(
+            Path.Combine(_testDirectory, "Library.slnx"), solutionContent,
+            Path.Combine(_testDirectory, projectDirectory, "packages.config"));
+
+        Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("src.test")]
+    public void FindProjectForPackageConfig_Should_PreserveLegacySlnMatching(string projectDirectory)
+    {
+        string projectPath = Path.Combine(projectDirectory, "Library.nfproj");
+        string fullProjectPath = Path.Combine(_testDirectory, projectPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullProjectPath)!);
+        File.WriteAllText(fullProjectPath, "");
+        string solutionContent = $"Project(\"{{GUID}}\") = \"DisplayName\", \"{projectPath}\", \"{{GUID}}\"";
+
+        var result = nanoFramework.Tools.DependencyUpdater.Program.FindProjectForPackageConfig(
+            Path.Combine(_testDirectory, "Library.sln"), solutionContent,
+            Path.Combine(_testDirectory, projectDirectory, "packages.config"));
+
+        Assert.IsTrue(result.HasValue);
+        Assert.AreEqual(fullProjectPath, result.Value.Path);
+        Assert.AreEqual("DisplayName", result.Value.Name);
+    }
+
     [TestMethod]
     [DataRow("Microsoft.Build.Tasks.Git", true)]
     [DataRow("Microsoft.SourceLink.Common", true)]

@@ -43,10 +43,10 @@ namespace nanoFramework.Tools.DependencyUpdater
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="workingDirectory">Working directory. Required when updating a single repository.</param>
+        /// <param name="workingDirectory">Working directory. Defaults to the current directory.</param>
         /// <param name="stablePackages">Use stable NuGet package versions. This is the default configuration.</param>
         /// <param name="previewPackages">Use preview NuGet package versions.</param>
-        /// <param name="solutionsToCheck">List of Solution(s) to update in the <paramref name="workingDirectory"/> directory.</param>
+        /// <param name="solutionsToCheck">Update the listed .sln or .slnx solutions. When neither workflow option is specified, use the only solution in the working directory.</param>
         /// <param name="reposToUpdate">List of repository(es) to update.</param>
         /// <param name="exclusionList">List of solution names to exclude from the update. Comma separated, name only.</param>
         /// <param name="branchToPr">Name of the branch to submit PR with updates. Default is 'main'.</param>
@@ -81,10 +81,21 @@ namespace nanoFramework.Tools.DependencyUpdater
             // Detect running environment
             DetectEnvironment();
 
-            // sanity check 
-            if (!solutionsToCheck && !reposToUpdate)
+            workingDirectory = Path.GetFullPath(workingDirectory ?? Environment.CurrentDirectory);
+
+            if (!Directory.Exists(workingDirectory))
             {
-                WriteError($"❌ Missing required option: specify either '--solutions-to-check' or '--repos-to-update'");
+                WriteError($"❌ Directory not found: {workingDirectory}");
+                Environment.Exit(1);
+            }
+
+            try
+            {
+                (solutionsToCheck, args) = ResolveSolutionTargets(workingDirectory, solutionsToCheck, reposToUpdate, args);
+            }
+            catch (InvalidOperationException ex)
+            {
+                WriteError($"❌ {ex.Message}");
                 Environment.Exit(1);
             }
 
@@ -104,18 +115,6 @@ namespace nanoFramework.Tools.DependencyUpdater
             // find repo owner for runner
             _workingRepoOwner = GitHubHelper.GetRepoOwnerFromUrl(gitRepo.Item2);
 
-            if (workingDirectory is null)
-            {
-                // default to current directory
-                workingDirectory = Environment.CurrentDirectory;
-            }
-
-            if (!Directory.Exists(workingDirectory))
-            {
-                WriteError($"❌ Directory not found: {workingDirectory}");
-                Environment.Exit(1);
-            }
-
             if (previewPackages)
             {
                 stablePackages = false;
@@ -133,9 +132,6 @@ namespace nanoFramework.Tools.DependencyUpdater
                 WriteError($"❌ Cannot specify both stable and preview packages simultaneously");
                 Environment.Exit(1);
             }
-
-            // remove empty arguments
-            args = args.Where(a => !string.IsNullOrEmpty(a)).ToArray();
 
             _gitHubUser = gitHubUser;
             _baseBranch = branchToPr;
@@ -547,7 +543,7 @@ namespace nanoFramework.Tools.DependencyUpdater
                 // look for nfproj
                 string slnFileContent = File.ReadAllText(solutionFile);
 
-                if (!slnFileContent.Contains(".nfproj"))
+                if (!slnFileContent.Contains(".nfproj", StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine($"  ⚠️  No .nfproj files found - skipping");
                     WriteGroupEnd();
@@ -592,38 +588,17 @@ namespace nanoFramework.Tools.DependencyUpdater
                     Console.WriteLine();
                     WriteGroupStart($"📝 Processing project: {Path.GetFileName(Path.GetDirectoryName(packageConfigFile))}");
 
-                    // check if the project the packages.config belongs to it's in the solution 
-                    string projectPathInSln = Path.GetRelativePath(solutionPath, Directory.GetParent(packageConfigFile).FullName);
+                    var project = FindProjectForPackageConfig(solutionFile, slnFileContent, packageConfigFile);
 
-                    // check for project in the same folder
-                    if (projectPathInSln == ".")
-                    {
-                        projectPathInSln = "";
-                    }
-                    else
-                    {
-                        // need these extra replacements to adjust for regex expression
-                        projectPathInSln = projectPathInSln.Replace("\\", "\\\\");
-                        projectPathInSln = projectPathInSln.Replace(".", "\\.");
-
-                        // add trailing \ to match whatever will be in the solution file
-                        projectPathInSln += "\\\\";
-                    }
-
-                    Match match = Regex.Match(
-                        slnFileContent,
-                        $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")",
-                        RegexOptions.IgnoreCase);
-
-                    if (!match.Success)
+                    if (project is null)
                     {
                         Console.WriteLine($"  ⚠️  No matching project found - skipping");
                         WriteGroupEnd();
                         continue;
                     }
 
-                    string projectToUpdate = Directory.GetFiles(solutionPath, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault();
-                    string projectName = match.Groups["projectname"].Value;
+                    string projectToUpdate = project.Value.Path;
+                    string projectName = project.Value.Name;
 
 
 
@@ -1161,7 +1136,43 @@ namespace nanoFramework.Tools.DependencyUpdater
             return NuGetVersion.TryParse(versionStr, out NuGetVersion version) ? version : null;
         }
 
-        private static List<string> CollectSolutions(string workingDirectory, string[] solutionsToCheck)
+        internal static (bool SolutionsToCheck, string[] Targets) ResolveSolutionTargets(
+            string workingDirectory, bool solutionsToCheck, bool reposToUpdate, string[] args)
+        {
+            args = (args ?? Array.Empty<string>()).Where(a => !string.IsNullOrEmpty(a)).ToArray();
+
+            if (solutionsToCheck || reposToUpdate)
+            {
+                return (solutionsToCheck, args);
+            }
+
+            string[] solutions = Directory.GetFiles(workingDirectory, "*", SearchOption.TopDirectoryOnly)
+                .Where(IsSolutionFile)
+                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (solutions.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    $"No solution found in '{workingDirectory}'. Specify '--solutions-to-check' or '--repos-to-update'.");
+            }
+
+            if (solutions.Length > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Multiple solution files found in '{workingDirectory}': {string.Join(", ", solutions.Select(Path.GetFileName))}. Specify the solution to update with '--solutions-to-check'.");
+            }
+
+            return (true, new[] { Path.GetFullPath(solutions[0]) });
+        }
+
+        private static bool IsSolutionFile(string path)
+        {
+            return path.EndsWith(".sln", StringComparison.OrdinalIgnoreCase)
+                || path.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static List<string> CollectSolutions(string workingDirectory, string[] solutionsToCheck)
         {
             if (solutionsToCheck is null)
             {
@@ -1176,9 +1187,11 @@ namespace nanoFramework.Tools.DependencyUpdater
 
             var listToReturn = new List<string>();
 
-            foreach (string sln in solutionsToCheck.Where(s => s.EndsWith(".sln")))
+            foreach (string sln in solutionsToCheck.Where(IsSolutionFile))
             {
-                string[] solutions = Directory.GetFiles(workingDirectory, $"{sln}", SearchOption.AllDirectories);
+                string[] solutions = Path.IsPathRooted(sln)
+                    ? File.Exists(sln) ? new[] { sln } : Array.Empty<string>()
+                    : Directory.GetFiles(workingDirectory, sln, SearchOption.AllDirectories);
 
                 if (solutions.Any())
                 {
@@ -1192,6 +1205,63 @@ namespace nanoFramework.Tools.DependencyUpdater
             }
 
             return listToReturn;
+        }
+
+        internal static (string Path, string Name)? FindProjectForPackageConfig(
+            string solutionFile, string solutionContent, string packageConfigFile)
+        {
+            string solutionPath = Path.GetDirectoryName(Path.GetFullPath(solutionFile));
+            string projectDirectory = Path.GetDirectoryName(Path.GetFullPath(packageConfigFile));
+
+            if (solutionFile.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var project in XDocument.Parse(solutionContent).Descendants("Project"))
+                {
+                    string projectPath = (string)project.Attribute("Path")
+                        ?? throw new InvalidDataException($"Project is missing its Path in '{solutionFile}'.");
+
+                    if (!projectPath.EndsWith(".nfproj", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    string fullPath = Path.GetFullPath(Path.Combine(solutionPath,
+                        projectPath.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)));
+
+                    if (string.Equals(Path.GetDirectoryName(fullPath), projectDirectory, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return (fullPath, Path.GetFileNameWithoutExtension(fullPath));
+                    }
+                }
+
+                return null;
+            }
+
+            string projectPathInSln = Path.GetRelativePath(solutionPath, projectDirectory);
+
+            if (projectPathInSln == ".")
+            {
+                projectPathInSln = "";
+            }
+            else
+            {
+                projectPathInSln = projectPathInSln.Replace("\\", "\\\\");
+                projectPathInSln = projectPathInSln.Replace(".", "\\.");
+                projectPathInSln += "\\\\";
+            }
+
+            Match match = Regex.Match(
+                solutionContent,
+                $"(?> = \\\")(?'projectname'[a-zA-Z0-9_.-]+)(?>\\\", \\\"{projectPathInSln})(?'projectpath'[a-zA-Z0-9_.-]+.nfproj)(\\\")",
+                RegexOptions.IgnoreCase);
+
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            return (Directory.GetFiles(solutionPath, match.Groups["projectpath"].Value, SearchOption.AllDirectories).FirstOrDefault(),
+                match.Groups["projectname"].Value);
         }
 
         private static string FindNuspecFile(string solutionPath, string projectToUpdate, string projectName, string libraryName)
