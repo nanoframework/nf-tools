@@ -96,6 +96,11 @@ jobs:
             $repositoryPath = Join-Path $solutionDir "packages"
           }
 
+          # SourceLink 11.x requires VS2026; keep these packages on the latest stable 10.x for VS2022.
+          $sourceLinkPackages = @("Microsoft.Build.Tasks.Git", "Microsoft.SourceLink.Common", "Microsoft.SourceLink.GitHub")
+          $sourceLinkVersionPattern = '^10\.\d+\.\d+(?:\.\d+)?(?:\+[0-9A-Za-z.-]+)?$'
+          $sourceLinkVersionCache = @{}
+
           # update NuGets of each project in the solution
           foreach($projectPath in $projectPaths)
           {
@@ -106,7 +111,63 @@ jobs:
             {
               Write-Host "Checking NuGets for '$projectPath'"
 
-              nuget update $packagesConfig -RepositoryPath $repositoryPath
+              $packages = @(([xml](Get-Content $packagesConfig -Raw)).packages.package)
+              $pinnedPackages = @($packages | Where-Object { $sourceLinkPackages -contains $_.id })
+
+              foreach($package in $pinnedPackages)
+              {
+                $packageId = [string]$package.id
+
+                if(-not $sourceLinkVersionCache.ContainsKey($packageId))
+                {
+                  try
+                  {
+                    $index = Invoke-RestMethod -Uri "https://api.nuget.org/v3-flatcontainer/$($packageId.ToLowerInvariant())/index.json" -ErrorAction Stop
+                    $latestVersion = $index.versions |
+                      Where-Object { $_ -match $sourceLinkVersionPattern } |
+                      Sort-Object { [version](($_ -split '\+')[0]) } -Descending |
+                      Select-Object -First 1
+
+                    if(-not $latestVersion)
+                    {
+                      throw "No stable 10.x version of '$packageId' was found on nuget.org."
+                    }
+
+                    $sourceLinkVersionCache[$packageId] = $latestVersion
+                  }
+                  catch
+                  {
+                    Write-Host "Failed to resolve the pinned version of '$packageId': $_"
+                    exit 1
+                  }
+                }
+
+                $latestVersion = $sourceLinkVersionCache[$packageId]
+                $installedVersion = $package.version -replace '\+.*$', '' -replace '^(\d+\.\d+\.\d+)\.0$', '$1'
+                $expectedVersion = $latestVersion -replace '\+.*$', '' -replace '^(\d+\.\d+\.\d+)\.0$', '$1'
+
+                if($package.version -notmatch $sourceLinkVersionPattern -or [version]$installedVersion -ne [version]$expectedVersion)
+                {
+                  Write-Host "Package '$packageId' in '$packagesConfig' uses '$($package.version)'; expected latest stable 10.x '$latestVersion' (VS2022 pin)."
+                  exit 1
+                }
+              }
+
+              $updateArguments = @("update", $packagesConfig, "-RepositoryPath", $repositoryPath)
+
+              if($pinnedPackages.Count -gt 0)
+              {
+                $otherPackageIds = @($packages | Where-Object { $sourceLinkPackages -notcontains $_.id } | ForEach-Object { $_.id })
+
+                if($otherPackageIds.Count -eq 0)
+                {
+                  continue
+                }
+
+                $updateArguments += @("-Id", ($otherPackageIds -join ";"))
+              }
+
+              nuget @updateArguments
 
               if($LASTEXITCODE -ne 0)
               {
