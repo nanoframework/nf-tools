@@ -1,6 +1,12 @@
 # Copyright (c) .NET Foundation and Contributors
 # See LICENSE file in the project root for full license information.
 
+parameters:
+  # Set to false in later jobs to export version variables without overwriting the build number.
+  - name: setBuildId
+    type: boolean
+    default: true
+
 steps:
 
   #######################################
@@ -17,9 +23,14 @@ steps:
     condition: succeeded()
     displayName: Show nbgv version
 
-  - script: nbgv cloud -a -c
-    condition: succeeded()
-    displayName: Set build number
+  - ${{ if parameters.setBuildId }}:
+    - script: nbgv cloud -a -c
+      condition: succeeded()
+      displayName: Set build number
+  - ${{ else }}:
+    - script: nbgv cloud -a -c --skip-cloud-build-number
+      condition: succeeded()
+      displayName: Set version variables
 
   - task: PowerShell@2
     condition: and(succeeded(), eq(variables['StartReleaseCandidate'], false))
