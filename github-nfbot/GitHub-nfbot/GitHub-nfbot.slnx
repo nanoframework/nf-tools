@@ -3,4 +3,5 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="GitHub-nfbot.csproj" />
+  <Project Path="..\GitHub-nfbot.Tests\GitHub-nfbot.Tests.csproj" />
 </Solution>

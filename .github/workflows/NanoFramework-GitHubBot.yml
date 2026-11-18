@@ -7,9 +7,11 @@ on:
       - main
     paths:
       - github-nfbot/GitHub-nfbot/**
+      - github-nfbot/GitHub-nfbot.Tests/**
   pull_request:
     paths:
       - github-nfbot/GitHub-nfbot/**
+      - github-nfbot/GitHub-nfbot.Tests/**
 
 env:
   AZURE_FUNCTIONAPP_NAME: NanoFramework-GitHubBot
@@ -31,6 +33,9 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
+    - name: Test issue support notices
+      run: dotnet test ".\github-nfbot\GitHub-nfbot.Tests\GitHub-nfbot.Tests.csproj" --configuration ${{ env.CONFIGURATION }}
+
     - name: Build and publish Azure Function
       run: |
         dotnet publish "github-nfbot/GitHub-nfbot/GitHub-nfbot.csproj" --configuration ${{ env.CONFIGURATION }} --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"

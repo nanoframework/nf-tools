@@ -32,6 +32,16 @@ Retry behaviour is configured in [host.json](host.json) (`extensions.queues`): 5
 > [!NOTE]
 > A retry runs the whole processing again for that delivery. Most steps are idempotent (labels, merge, branch delete), but steps that post comments may repeat if the failure happened after them.
 
+### Issue support notices
+
+When an issue is opened, nfbot posts a support-options comment mentioning its author, then minimizes it as resolved instead of deleting it. The comment remains expandable, so the notification still has a destination without keeping the full notice visible in the conversation. GitHub controls notification delivery according to each recipient's settings; neither an email nor its timing is guaranteed. Before rollout, verify inbox/email behavior and the bot's permission to minimize comments in an authorized test issue.
+
+Eligibility uses only the issue's `author_association` from the webhook. `OWNER`, `MEMBER`, and `COLLABORATOR` are excluded case-insensitively. Missing or unknown associations receive the notice; no organization/team membership API calls or additional membership permissions are required. These exclusions apply to the issue author, not to other subscribers whom GitHub may also notify. Edits, reopened issues, and pull requests do not receive this notice.
+
+The professional-support link points to the website's engineering-partners section with `?ref=github-issue`. GoatCounter groups visits from all issue notices together; the link contains no author, repository, or issue identifiers. The Discord invite links directly to the server.
+
+A hidden marker identifies this bot's support comments, and a renewable blob lease (`support-notices/{repositoryId}-{issueNumber}` in `nfbot-webhooks`) serializes overlapping deliveries. Lock blobs are retained for reuse. Retries search all comment pages, reuse the marked comment, and finish minimization without reposting. Already minimized notices are left unchanged. If minimization fails, the comment remains intact and the delivery follows the existing queue retry/failure-notification path. A crash or lost response after GitHub accepts comment creation is ambiguous; retries reconcile against GitHub's comment list rather than blindly creating another comment.
+
 ### Events handled
 
 | Event | Processing |
@@ -114,3 +124,5 @@ Built and deployed by the [NanoFramework-GitHubBot.yml](../../.github/workflows/
 - Settings are read from `local.settings.json` (not committed) and/or [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) (`UserSecretsId` in the project).
 - For the queue/blob storage run [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite) and set `AzureWebJobsStorage` to `UseDevelopmentStorage=true`.
 - Start with `func start` (or F5 in Visual Studio) and post a payload to `http://localhost:7071/api/GitHub-nfbot` with headers `X-GitHub-Event` and `X-GitHub-Delivery`.
+
+Run the support-notice regression tests with `dotnet test ..\GitHub-nfbot.Tests\GitHub-nfbot.Tests.csproj`. They use in-memory GitHub and storage HTTP handlers, not production credentials or services.
