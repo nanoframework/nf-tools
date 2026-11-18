@@ -1,6 +1,6 @@
 @{
     RootModule = 'VstsTaskSdk.psm1'
-    ModuleVersion = '0.21.3' # Do not modify. This value gets replaced at build time with the value from the package.json.
+    ModuleVersion = '0.21.8' # Do not modify. This value gets replaced at build time with the value from the package.json.
     GUID = 'bbed04e2-4e8e-4089-90a2-58b858fed8d8'
     Author = 'Microsoft Corporation'
     CompanyName = 'Microsoft Corporation'
@@ -14,7 +14,7 @@
     PrivateData = @{
         PSData = @{
             ProjectUri = 'https://github.com/Microsoft/azure-pipelines-task-lib'
-            CommitHash = '058bf6fcc7d6fc35c7980baa6674f2e12c68d43f' # Do not modify. This value gets replaced at build time.
+            CommitHash = 'e653ad05c830860c2c7ddfe420d21c820aca5139' # Do not modify. This value gets replaced at build time.
         }
     }
     HelpInfoURI = 'https://github.com/Microsoft/azure-pipelines-task-lib'

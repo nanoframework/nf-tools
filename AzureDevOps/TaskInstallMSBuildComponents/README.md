@@ -2,11 +2,11 @@
 
 This is the project for an Azure DevOps extension. The task installs the nanoFramework MSBuild components required to build an _nfproj_ in an Azure Pipeline.
 
-The task runs on Windows using PowerShell. Its runtime files are bundled under `TaskFiles`, including the vendored PowerShell SDK. There is no task-local npm install or TypeScript build.
+The task runs on Windows using PowerShell. Its runtime files are bundled under `TaskFiles`, including the vendored PowerShell SDK.
 
-Required components to build/pack the installer:
-- [VstsTaskSdk](https://github.com/Microsoft/azure-pipelines-task-lib/tree/master/powershell) inside `TaskFiles\ps_modules\VstsTaskSdk`
-- [7zip](https://www.npmjs.com/package/7zip) inside TaskFiles\7zip
+The vendored SDK in `TaskFiles\ps_modules\VstsTaskSdk` comes from the [VstsTaskSdk 0.21.8 PowerShell Gallery package](https://www.powershellgallery.com/packages/VstsTaskSdk/0.21.8). PowerShellGet installation metadata is not part of the vendored module.
+
+The installer extracts the downloaded Visual Studio extension with PowerShell's built-in `Expand-Archive`.
 
 Steps to package/publish the task in the "Add a build or release task" [tutorial](https://docs.microsoft.com/en-us/azure/devops/extend/develop/add-build-task?view=vsts#packageext).
 
