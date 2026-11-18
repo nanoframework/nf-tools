@@ -28,13 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20.x'
-          cache: 'npm'
-          cache-dependency-path: '${{ env.EXTENSION_PATH }}/package-lock.json'
-
-      - name: Install dependencies
-        working-directory: ${{ env.EXTENSION_PATH }}
-        run: npm ci
+          node-version: '26.x'
 
       - name: Install TFX CLI
         run: npm install -g tfx-cli
@@ -47,10 +41,48 @@ jobs:
             Write-Error "vss-extension.json not found"
             exit 1
           }
-          $manifest = Get-Content vss-extension.json | ConvertFrom-Json
+          $manifest = Get-Content vss-extension.json -Raw | ConvertFrom-Json
+          $task = Get-Content TaskFiles/task.json -Raw | ConvertFrom-Json
+          $taskVersion = "$($task.version.Major).$($task.version.Minor).$($task.version.Patch)"
+          if ($manifest.version -ne $taskVersion) {
+            Write-Error "Extension version ($($manifest.version)) does not match task version ($taskVersion)."
+            exit 1
+          }
+
+          $event = Get-Content $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+          $baseSha = $event.before
+          if ([string]::IsNullOrWhiteSpace($baseSha) -or $baseSha -match '^0+$') {
+            $baseSha = git rev-parse HEAD^
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Unable to determine the previous revision for the version preflight."
+              exit 1
+            }
+          }
+
+          $baseManifestJson = git show "${baseSha}:$env:EXTENSION_PATH/vss-extension.json" | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Unable to read the extension manifest from the previous revision ($baseSha)."
+            exit 1
+          }
+          $baseManifest = $baseManifestJson | ConvertFrom-Json
+
+          try {
+            $currentVersion = [version]$manifest.version
+            $previousVersion = [version]$baseManifest.version
+          }
+          catch {
+            Write-Error "Current and previous extension versions must be numeric major.minor.patch values."
+            exit 1
+          }
+
+          if ($currentVersion -le $previousVersion) {
+            Write-Error "Extension version $($manifest.version) must be greater than the previous version $($baseManifest.version). Bump the task and extension versions before publishing."
+            exit 1
+          }
+
           Write-Host "✓ Extension ID: $($manifest.id)"
           Write-Host "✓ Publisher: $($manifest.publisher)"
-          Write-Host "✓ Version: $($manifest.version)"
+          Write-Host "✓ Version: $($manifest.version) (task and extension versions match; version increased)"
 
       - name: Publish extension to marketplace
         working-directory: ${{ env.EXTENSION_PATH }}
@@ -62,7 +94,7 @@ jobs:
             exit 1
           }
           
-          Write-Host "Publishing extension..."
+          Write-Host "Submitting extension..."
           tfx extension publish --publisher nanoframework --manifest-globs vss-extension.json --token "$env:AZDO_PAT" --no-wait-validation
           
           if ($LASTEXITCODE -ne 0) {
@@ -70,13 +102,13 @@ jobs:
             exit 1
           }
           
-          Write-Host "✓ Extension published successfully"
+          Write-Host "✓ Extension submitted successfully"
 
-      - name: Log published version
+      - name: Log submitted version
         if: success()
         working-directory: ${{ env.EXTENSION_PATH }}
         run: |
-          $manifest = Get-Content vss-extension.json | ConvertFrom-Json
-          Write-Host "Published extension version: $($manifest.version)"
+          $manifest = Get-Content vss-extension.json -Raw | ConvertFrom-Json
+          Write-Host "Submitted extension version: $($manifest.version)"
           Write-Host "Publisher: $($manifest.publisher)"
           Write-Host "Extension: $($manifest.name)"

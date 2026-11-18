@@ -18,7 +18,7 @@ Install TFX CLI separately with `npm install -g tfx-cli`, then run these command
 
 ### Automated Publishing
 
-The extension is automatically published to the Azure DevOps Marketplace when changes are pushed to the main branch. This is managed by the GitHub Actions workflow `.github/workflows/publish-msbuild-task.yml`.
+The extension is automatically submitted to the Azure DevOps Marketplace when changes are pushed to the main branch. This is managed by the GitHub Actions workflow `.github/workflows/publish-msbuild-task.yml`.
 
 #### Setting up Automated Publishing
 
@@ -38,23 +38,20 @@ To enable automated publishing, you need to configure a GitHub secret with an Az
 3. Configure the token:
    - **Name**: `GitHub Actions - Marketplace Publishing` (or similar)
    - **Organization**: nanoframework
-   - **Scopes**:
-     - ✓ Marketplace (Publish)
-     - ✓ Code (Read & Write)
-   - **Expiration**: Set to 1 year or longer (recommended)
+   - **Scope**: Marketplace (Publish)
+   - **Expiration**: Choose an expiration that follows your organization's token policy
 4. Click "Create"
 5. Copy the full token immediately (it won't be shown again)
 6. Paste it into the GitHub secret as described above
 
 **Token Permissions Required:**
 
-- **Marketplace: Publish** - Required to publish extensions
-- **Code: Read & Write** - Required for Azure DevOps authentication
+- **Marketplace: Publish** - Required to publish extensions; no Code scope is needed
 
 **Security Best Practices:**
 
 - Keep the PAT token secure and never commit it to the repository
-- Rotate the token periodically (recommend annually)
+- Rotate the token according to your organization's token policy
 - If the token is compromised, regenerate it immediately at the Azure DevOps settings page
 - The token is only accessible during workflow execution via the GitHub secret
 

@@ -1,7 +1,7 @@
 {
     "id": "f6b0f82b-5241-459f-af57-9b6c0ea76a33",
     "name": "InstallNanoMSBuildComponents",
-    "friendlyName": "Install nanoFramework MSBuild components",
+    "friendlyName": "Install .NET nanoFramework MSBuild components",
     "description": "Install .NET nanoFramework MSBuild components allowing building a .NET nanoFramework C# application with msbuild.",
     "helpMarkDown": "",
     "category": "Tool",
@@ -14,7 +14,7 @@
     "author": ".NET nanoFramework Project Contributors",
     "version": {
         "Major": 1,
-        "Minor": 261,
+        "Minor": 262,
         "Patch": 0
     },
     "inputs": [
@@ -32,7 +32,7 @@
             "label": "Use preview",
             "defaultValue": "false",
             "required": false,
-            "helpMarkDown": "Optional parameter specifying if the experimental VS instance should be used."
+            "helpMarkDown": "Optional parameter specifying whether to install the preview Visual Studio extension from Open VSIX Gallery."
         }
     ],
     "preview": false,

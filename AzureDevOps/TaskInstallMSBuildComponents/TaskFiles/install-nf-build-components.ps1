@@ -12,7 +12,7 @@ Import-VstsLocStrings "$PSScriptRoot\Task.json"
 
 # Get the inputs2
 [string]$gitHubToken = Get-VstsInput -Name GitHubToken
-[bool]$isPreview = Get-VstsInput -Name UsePreview -AsBool
+[bool]$isPreview = Get-VstsInput -Name usePreview -AsBool
 
 function DownloadVsixFile($fileUrl, $downloadFileName)
 {
@@ -122,17 +122,32 @@ else
 
     Write-Debug "  🌐 Fetching latest releases from GitHub"
 
-    # Use Invoke-WebRequest to get the release JSON
-    $response = Invoke-WebRequest -Uri 'https://api.github.com/repos/nanoframework/nf-Visual-Studio-extension/releases?per_page=10' -Headers $headers -UseBasicParsing
+    $vs2022Release = $null
+    $vs2019Release = $null
+    $releasePage = 1
+    $hasMoreReleases = $true
 
-    # Convert the response content to JSON objects
-    $releases = $response.Content | ConvertFrom-Json
+    while(($null -eq $vs2022Release -or $null -eq $vs2019Release) -and $hasMoreReleases)
+    {
+        $releaseUri = "https://api.github.com/repos/nanoframework/nf-Visual-Studio-extension/releases?per_page=100&page=$releasePage"
+        $response = Invoke-WebRequest -Uri $releaseUri -Headers $headers -UseBasicParsing
+        $releases = @($response.Content | ConvertFrom-Json)
+        $finalReleases = @($releases | Where-Object { -not $_.draft })
 
-    # Filter out draft releases
-    $finalReleases = $releases | Where-Object { -not $_.draft }
+        if(-not $vs2022Release)
+        {
+            $vs2022Release = $finalReleases | Where-Object { $_.tag_name -match '^v2022\.\d+\.\d+\.\d+$' } | Select-Object -First 1
+        }
 
-    # Extract tags using the tag_name property
-    $vs2022Release = $finalReleases | Where-Object { $_.tag_name -match '^v2022\.\d+\.\d+\.\d+$' } | Select-Object -First 1
+        if(-not $vs2019Release)
+        {
+            $vs2019Release = $finalReleases | Where-Object { $_.tag_name -match '^v2019\.\d+\.\d+\.\d+$' } | Select-Object -First 1
+        }
+
+        $hasMoreReleases = $releases.Count -eq 100
+        $releasePage++
+    }
+
     if($vs2022Release)
     {
         $vs2022Tag = $vs2022Release.tag_name
@@ -143,7 +158,6 @@ else
         Write-Debug "  ⚠️  No VS2022 release found (pattern: v2022.x.x.x)"
     }
 
-    $vs2019Release = $finalReleases | Where-Object { $_.tag_name -match '^v2019\.\d+\.\d+\.\d+$' } | Select-Object -First 1
     if($vs2019Release)
     {
         $vs2019Tag = $vs2019Release.tag_name
